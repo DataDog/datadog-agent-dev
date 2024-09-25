@@ -1,0 +1,13 @@
+[envs.default]
+installer = "uv"
+
+[envs.types]
+extra-dependencies = [
+  "mypy",
+  "pytest",
+]
+[envs.types.scripts]
+check = "mypy --install-types --non-interactive {args:src/deva tests}"
+
+[envs.hatch-static-analysis]
+config-path = "ruff_defaults.toml"
