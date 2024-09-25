@@ -1,0 +1,23 @@
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
+name = "datadog-agent-dev"
+dynamic = ["version"]
+description = "Tool for developing on the Datadog Agent platform"
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+authors = [
+  { name = "Datadog, Inc.", email = "dev@datadoghq.com" },
+]
+
+[project.urls]
+Homepage = "https://github.com/DataDog/datadog-agent-dev"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.targets.wheel]
+bypass-selection = true
