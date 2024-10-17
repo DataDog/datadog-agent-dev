@@ -12,12 +12,81 @@ license = "MIT"
 authors = [
   { name = "Datadog, Inc.", email = "dev@datadoghq.com" },
 ]
+keywords = [
+  "datadog",
+  "agent",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = [
+  "click~=8.1",
+  "dep-sync~=0.1",
+  "find-exe~=0.1",
+  "msgspec~=0.18",
+  "msgspec-click~=0.2",
+  "platformdirs~=4.2",
+  "rich~=13.7",
+  "rich-click~=1.8",
+  "tomlkit~=0.13",
+]
 
 [project.urls]
 Homepage = "https://github.com/DataDog/datadog-agent-dev"
+Documentation = "https://datadoghq.dev/datadog-agent/setup/"
+
+[project.scripts]
+deva = "deva.cli:main"
 
 [tool.hatch.version]
 source = "vcs"
 
 [tool.hatch.build.targets.wheel]
-bypass-selection = true
+packages = ["src/deva"]
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/deva/_version.py"
+
+[tool.mypy]
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+enable_error_code = ["ignore-without-code", "truthy-bool"]
+follow_imports = "normal"
+ignore_missing_imports = true
+pretty = true
+show_column_numbers = true
+warn_no_return = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+check_untyped_defs = false
+no_implicit_optional = false
+strict_optional = false
+warn_return_any = false
+warn_unused_ignores = false
+
+[tool.coverage.run]
+source_pkgs = ["deva", "tests"]
+branch = true
+parallel = true
+omit = [
+  "src/deva/__main__.py",
+]
+
+[tool.coverage.paths]
+deva = ["src/deva", "*/deva/src/deva"]
+tests = ["tests", "*/deva/tests"]
+
+[tool.coverage.report]
+show_missing = true
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]

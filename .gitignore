@@ -21,3 +21,6 @@ __pycache__/
 
 # Root files
 /.coverage*
+
+# Auto-generated during builds
+/src/deva/_version.py
