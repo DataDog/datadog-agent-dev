@@ -69,6 +69,8 @@ def isolation() -> Generator[Path, None, None]:
             ConfigEnvVars.CACHE: str(cache_dir),
             AppEnvVars.NO_COLOR: "1",
             "DEVA_SELF_TESTING": "true",
+            "GIT_AUTHOR_NAME": "Foo Bar",
+            "GIT_AUTHOR_EMAIL": "foo@bar.baz",
             "COLUMNS": "80",
             "LINES": "24",
         }
@@ -94,6 +96,18 @@ def config_file(tmp_path: pathlib.Path) -> ConfigFile:
     config = ConfigFile(path)
     config.restore()
     return config
+
+
+@pytest.fixture
+def private_storage(config_file: ConfigFile) -> Generator[None, None, None]:
+    cache_dir = config_file.path.parent / "cache"
+    cache_dir.mkdir()
+    data_dir = config_file.path.parent / "data"
+    data_dir.mkdir()
+    config_file.data["storage"] = {"cache": str(cache_dir), "data": str(data_dir)}
+    config_file.save()
+    with EnvVars({ConfigEnvVars.CACHE: str(cache_dir), ConfigEnvVars.DATA: str(data_dir)}):
+        yield
 
 
 @pytest.fixture

@@ -4,8 +4,20 @@
 from __future__ import annotations
 
 import re
+import sys
+from contextlib import contextmanager
 from datetime import UTC, datetime
+from functools import cache
+from shutil import which
 from textwrap import dedent as _dedent
+from typing import TYPE_CHECKING, Any
+from unittest import mock
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+    from subprocess import CompletedProcess
+
+CallArgsT = list[tuple[tuple[Any, ...], dict[str, Any]]]
 
 
 def dedent(text: str) -> str:
@@ -23,3 +35,29 @@ def get_current_timestamp() -> float:
 def assert_output_match(output: str, pattern: str, *, exact: bool = True) -> None:
     flags = re.MULTILINE if exact else re.MULTILINE | re.DOTALL
     assert re.search(dedent(pattern), output, flags=flags) is not None, output
+
+
+@cache
+def locate(executable: str) -> str:
+    # This is used for cross-platform subprocess call assertions as our utilities
+    # only resolve the executable path on Windows.
+    return (which(executable) if sys.platform == "win32" else executable) or executable
+
+
+@contextmanager
+def hybrid_patch(target: str, *, return_values: dict[int, CompletedProcess]) -> Generator[CallArgsT, None, None]:
+    calls: CallArgsT = []
+    num_calls = 0
+
+    def side_effect(*args, **kwargs):
+        nonlocal num_calls
+
+        num_calls += 1
+        if num_calls in return_values:
+            return return_values[num_calls]
+
+        calls.append((args, kwargs))
+        return mock.MagicMock(returncode=0)
+
+    with mock.patch(target, side_effect=side_effect):
+        yield calls

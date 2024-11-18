@@ -22,10 +22,15 @@ def test_default_scrubbed(deva, config_file, helpers, default_cache_dir, default
 
         [env.dev]
         default-type = "{DEFAULT_DEV_ENV}"
+        universal-shell = false
 
         [storage]
         data = "{default_data_directory}"
         cache = "{default_cache_directory}"
+
+        [git.user]
+        name = "Foo Bar"
+        email = "foo@bar.baz"
 
         [github.auth]
         user = "foo"
@@ -62,10 +67,15 @@ def test_reveal(deva, config_file, helpers, default_cache_dir, default_data_dir)
 
         [env.dev]
         default-type = "{DEFAULT_DEV_ENV}"
+        universal-shell = false
 
         [storage]
         data = "{default_data_directory}"
         cache = "{default_cache_directory}"
+
+        [git.user]
+        name = "Foo Bar"
+        email = "foo@bar.baz"
 
         [github.auth]
         user = "foo"

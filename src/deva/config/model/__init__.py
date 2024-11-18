@@ -8,6 +8,7 @@ from typing import Any
 from msgspec import Struct, convert, field, to_builtins
 
 from deva.config.model.env import EnvConfig
+from deva.config.model.git import GitConfig
 from deva.config.model.github import GitHubConfig
 from deva.config.model.orgs import OrgConfig
 from deva.config.model.storage import StorageDirs
@@ -24,6 +25,7 @@ class RootConfig(Struct, frozen=True, omit_defaults=True):
     env: EnvConfig = field(default_factory=EnvConfig)
     envs: dict[str, dict[str, Any]] = {}
     storage: StorageDirs = field(default_factory=StorageDirs)
+    git: GitConfig = field(default_factory=GitConfig)
     github: GitHubConfig = field(default_factory=GitHubConfig)
     terminal: TerminalConfig = field(default_factory=TerminalConfig)
 

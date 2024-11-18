@@ -22,6 +22,7 @@ def cmd(app: Application, key: str, value: str | None) -> None:
     Set the value of config keys. If the value is omitted, you will
     be prompted, with the input hidden if it is sensitive.
     """
+    import json
     from fnmatch import fnmatch
 
     import msgspec
@@ -76,8 +77,11 @@ def cmd(app: Application, key: str, value: str | None) -> None:
 
     branch_config[key] = new_config[key]
 
+    # Reconstruct the config without weird tomlkit objects that mirror built-in types
+    fresh_config = json.loads(json.dumps(user_config))
+
     try:
-        construct_model(dict(user_config))
+        construct_model(fresh_config)
     except msgspec.ValidationError as e:
         app.display_error(str(e))
         app.abort()

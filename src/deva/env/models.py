@@ -8,13 +8,16 @@ from enum import StrEnum
 from msgspec import Struct
 
 
-class EnvironmentStage(StrEnum):
-    ACTIVE = "active"
-    INACTIVE = "inactive"
+class EnvironmentState(StrEnum):
+    STARTED = "started"
+    STOPPED = "stopped"
     STARTING = "starting"
     STOPPING = "stopping"
+    ERROR = "error"
+    NONEXISTENT = "nonexistent"
+    UNKNOWN = "unknown"
 
 
 class EnvironmentStatus(Struct, frozen=True, forbid_unknown_fields=True):
-    stage: EnvironmentStage
+    state: EnvironmentState
     info: str = ""
