@@ -13,7 +13,7 @@ from deva.config.constants import AppEnvVars, ConfigEnvVars
 
 
 @dynamic_group(
-    context_settings={"help_option_names": ["-h", "--help"], "max_content_width": 120},
+    context_settings={"help_option_names": ["-h", "--help"], "max_content_width": 120, "show_default": True},
     invoke_without_command=True,
     external_plugins=True,
     subcommands=(

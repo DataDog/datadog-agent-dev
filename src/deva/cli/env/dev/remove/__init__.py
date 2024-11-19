@@ -16,23 +16,26 @@ if TYPE_CHECKING:
 
 @dynamic_command(short_help="Remove a developer environment")
 @option_env_type()
+@click.option("--id", "instance", default="default", help="Unique identifier for the environment")
 @click.pass_obj
-def cmd(app: Application, env_type: str) -> None:
+def cmd(app: Application, *, env_type: str, instance: str) -> None:
     """
     Remove a developer environment.
     """
     from deva.env.dev import get_dev_env
-    from deva.env.models import EnvironmentStage
+    from deva.env.models import EnvironmentState
 
     env = get_dev_env(env_type)(
         app=app,
         name=env_type,
+        instance=instance,
     )
     status = env.status()
-    expected_stage = EnvironmentStage.INACTIVE
-    if status.stage != expected_stage:
+    transition_states = {EnvironmentState.ERROR, EnvironmentState.STOPPED}
+    if status.state not in transition_states:
         app.abort(
-            f"Cannot remove developer environment `{env_type}` in stage `{status.stage}`, must be `{expected_stage}`"
+            f"Cannot remove developer environment `{env_type}` in state `{status.state}`, must be one of: "
+            f"{", ".join(sorted(transition_states))}"
         )
 
     env.remove()

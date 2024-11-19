@@ -14,25 +14,15 @@ if TYPE_CHECKING:
     from deva.cli.application import Application
 
 
-@dynamic_command(
-    short_help="Run a command within a developer environment",
-    context_settings={"help_option_names": [], "ignore_unknown_options": True},
-)
-@click.argument("args", required=True, nargs=-1)
+@dynamic_command(short_help="Open a code editor for the developer environment")
 @option_env_type()
 @click.option("--id", "instance", default="default", help="Unique identifier for the environment")
-@click.option("--repo", "-r", help="The Datadog repository in which to run the command")
-@click.pass_context
-def cmd(ctx: click.Context, *, args: tuple[str, ...], env_type: str, instance: str, repo: str | None) -> None:
+@click.option("--repo", "-r", help="The Datadog repository to work on")
+@click.pass_obj
+def cmd(app: Application, *, env_type: str, instance: str, repo: str | None) -> None:
     """
-    Run a command within a developer environment.
+    Open a code editor for the developer environment.
     """
-    app: Application = ctx.obj
-    first_arg = args[0]
-    if first_arg in {"-h", "--help"}:
-        app.display(ctx.get_help())
-        app.abort(code=0)
-
     from deva.env.dev import get_dev_env
     from deva.env.models import EnvironmentState
 
@@ -46,4 +36,4 @@ def cmd(ctx: click.Context, *, args: tuple[str, ...], env_type: str, instance: s
     if status.state != expected_state:
         app.abort(f"Developer environment `{env_type}` is in state `{status.state}`, must be `{expected_state}`")
 
-    env.run_command(list(args), repo=repo)
+    env.code(repo=repo)

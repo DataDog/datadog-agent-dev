@@ -16,6 +16,7 @@ from deva.config.constants import Verbosity
 if TYPE_CHECKING:
     from rich.status import Status
     from rich.style import Style
+    from rich.table import Table
 
     from deva.config.model.terminal import TerminalConfig
 
@@ -107,6 +108,9 @@ class Terminal:
     def display_header(self, title: str) -> None:
         self.console.rule(Text(title, self.__style_success))
 
+    def display_table(self, data: dict[str, Any]) -> None:
+        self.output(_construct_table(data, key_style=self.__style_success))
+
     def display_syntax(self, *args: Any, **kwargs: Any) -> None:
         from rich.syntax import Syntax
 
@@ -114,6 +118,9 @@ class Terminal:
         self.output(Syntax(*args, **kwargs))
 
     def status(self, *args: Any, **kwargs: Any) -> Status:
+        if not self.console.is_interactive:
+            self.display_waiting(*args, **kwargs)
+
         kwargs.setdefault("spinner", self.__style_spinner)
         return self.console.status(*args, **kwargs)
 
@@ -185,3 +192,19 @@ def _parse_style(level: str, style: str) -> Style:
     except StyleSyntaxError as e:  # no cov
         message = f"Invalid style definition for `terminal.styles.{level}`: {e}"
         raise ValueError(message) from None
+
+
+def _construct_table(data: dict[str, Any], *, key_style: Style) -> Table:
+    from rich.table import Table
+
+    table = Table(show_header=False)
+    table.add_column(style=key_style)
+    table.add_column()
+
+    for key, value in data.items():
+        if isinstance(value, dict):
+            table.add_row(key, _construct_table(value, key_style=key_style))
+        else:
+            table.add_row(key, str(value))
+
+    return table

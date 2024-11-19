@@ -16,8 +16,9 @@ if TYPE_CHECKING:
 
 @dynamic_command(short_help="Check the status of a developer environment")
 @option_env_type()
+@click.option("--id", "instance", default="default", help="Unique identifier for the environment")
 @click.pass_obj
-def cmd(app: Application, env_type: str) -> None:
+def cmd(app: Application, *, env_type: str, instance: str) -> None:
     """
     Check the status of a developer environment.
     """
@@ -26,8 +27,9 @@ def cmd(app: Application, env_type: str) -> None:
     env = get_dev_env(env_type)(
         app=app,
         name=env_type,
+        instance=instance,
     )
     status = env.status()
-    app.display(f"Stage: {status.stage.value}")
+    app.display(f"State: {status.state.value}")
     if status.info:
         app.display(status.info)

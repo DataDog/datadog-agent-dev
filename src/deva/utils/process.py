@@ -4,7 +4,8 @@
 from __future__ import annotations
 
 import os
-from typing import TYPE_CHECKING, Any
+import sys
+from typing import TYPE_CHECKING, Any, NoReturn
 
 from deva.utils.platform import PLATFORM_ID
 
@@ -19,13 +20,24 @@ class SubprocessRunner:
     def __init__(self, app: Application) -> None:
         self.__app = app
 
+    def wait(self, command: list[str] | str, *, message: str = "", **kwargs: Any) -> None:
+        if self.__app.config.terminal.verbosity >= 1:
+            self.run(command, **kwargs)
+        else:
+            with self.__app.status(self.__app.style_waiting(message or f"Running: {command}")):
+                self.capture(command, **kwargs)
+
     def run(self, command: list[str] | str, **kwargs: Any) -> subprocess.CompletedProcess:
         import subprocess
 
         command, kwargs = self.__sanitize_arguments(command, **kwargs)
         check = kwargs.pop("check", True)
 
-        process = subprocess.run(command, **kwargs)  # noqa: PLW1510
+        try:
+            process = subprocess.run(command, **kwargs)  # noqa: PLW1510
+        except FileNotFoundError:
+            self.__app.abort(f"Executable `{command[0]}` not found: {command}")
+
         if check and process.returncode:
             if process.stderr or process.stdout:
                 # Callers might not want to merge both streams so try stderr first
@@ -42,6 +54,16 @@ class SubprocessRunner:
         kwargs["stdout"] = subprocess.PIPE
         kwargs["stderr"] = subprocess.STDOUT if cross_streams else subprocess.PIPE
         return self.run(command, **kwargs).stdout
+
+    if sys.platform == "win32":
+
+        def replace_current_process(self, command: list[str]) -> NoReturn:
+            process = self.run(command, check=False)
+            self.__app.abort(code=process.returncode)
+    else:
+
+        def replace_current_process(self, command: list[str]) -> NoReturn:  # noqa: PLR6301
+            os.execvp(command[0], command)  # noqa: S606
 
     @staticmethod
     def __sanitize_arguments(command: list[str] | str, **kwargs: Any) -> tuple[list[str] | str, dict[str, Any]]:

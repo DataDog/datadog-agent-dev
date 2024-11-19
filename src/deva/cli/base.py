@@ -20,6 +20,10 @@ class DynamicContext(click.RichContext):
         # https://github.com/pallets/click/pull/2784
         return []
 
+    def get_dynamic_sibling(self) -> click.RichContext:
+        cmd = DynamicCommand(name=None, params=self.dynamic_params)
+        return cmd.make_context(info_name=None, args=self.args, parent=self)
+
 
 class DynamicCommand(click.RichCommand):
     context_class = DynamicContext

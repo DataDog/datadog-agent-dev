@@ -50,16 +50,17 @@ def test_value_integer_negative(deva, config_file, helpers):
 @pytest.mark.parametrize("value", [True, False])
 def test_value_boolean(deva, config_file, helpers, value):
     toml_value = str(value).lower()
-    result = deva("config", "set", "foo", toml_value)
+    result = deva("config", "set", "env.dev.universal-shell", toml_value)
 
     assert result.exit_code == 0, result.output
     assert result.output == helpers.dedent(
         f"""
-        foo = {toml_value}
+        [env.dev]
+        universal-shell = {toml_value}
         """
     )
 
-    assert config_file.data["foo"] is value
+    assert config_file.model.env.dev.universal_shell is value
 
 
 def test_value_deep(deva, config_file, helpers):
