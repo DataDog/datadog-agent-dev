@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 import click
 
 from deva.cli.base import dynamic_command
+from deva.utils import logging
 
 if TYPE_CHECKING:
     from deva.cli.application import Application
@@ -18,4 +19,4 @@ if TYPE_CHECKING:
 @click.argument('message', default='')
 def cmd(app: Application, message: str) -> None:
     """Log error message."""
-    app.display(f"Error: {message}")
+    logging.error(app, message)
