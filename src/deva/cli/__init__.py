@@ -17,8 +17,10 @@ from deva.config.constants import AppEnvVars, ConfigEnvVars
     invoke_without_command=True,
     external_plugins=True,
     subcommands=(
+        "celian",
         "config",
         "env",
+        "log",
     ),
 )
 @click.rich_config(
