@@ -27,6 +27,7 @@ dependencies = [
   "click~=8.1",
   "dep-sync~=0.1",
   "find-exe~=0.1",
+  "hatch>=1.13.0",
   "msgspec~=0.18",
   "msgspec-click~=0.2",
   "platformdirs~=4.2",
