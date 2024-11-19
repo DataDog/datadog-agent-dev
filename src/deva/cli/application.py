@@ -7,6 +7,7 @@ from functools import cached_property
 from typing import TYPE_CHECKING, Any, NoReturn
 
 from deva.cli.terminal import Terminal
+from deva.cli.utils.platform import Platform
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -20,6 +21,7 @@ class Application(Terminal):
     def __init__(self, *, terminator: Callable[[int], NoReturn], config_file: ConfigFile, **kwargs: Any) -> None:
         super().__init__(config=config_file.model.terminal, **kwargs)
 
+        self.__platform = Platform(self.output)
         self.__terminator = terminator
         self.__config_file = config_file
 
@@ -42,3 +44,7 @@ class Application(Terminal):
         from deva.utils.process import SubprocessRunner
 
         return SubprocessRunner(self)
+
+    @cached_property
+    def platform(self) -> Platform:
+        return self.__platform
