@@ -3,18 +3,16 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
-import click
 import sys
 import time
-
 from functools import cached_property
 from typing import TYPE_CHECKING, Any, NoReturn
 
-from deva.cli.terminal import Terminal
-from datadog_api_client import Configuration, ApiClient
+from datadog_api_client import ApiClient, Configuration
 from datadog_api_client.v1.api.events_api import EventsApi
 from datadog_api_client.v1.model.event_create_request import EventCreateRequest
 
+from deva.cli.terminal import Terminal
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -54,12 +52,15 @@ class Application(Terminal):
 
     def send_telemetry(self, exit_code: int) -> None:
         duration = round(time.perf_counter() - self.__start_time, 1)
-        if not self.config_file.data["telemetry"]["user_consent"] or not self.config_file.data["telemetry"]["dd_api_key"]:
+        if (
+            not self.config_file.data["telemetry"]["user_consent"]
+            or not self.config_file.data["telemetry"]["dd_api_key"]
+        ):
             return
 
         body = EventCreateRequest(
-            title = "Deva command invoked",
-            text = f"Command:{sys.argv[1:]} Exit code:{exit_code} Duration:{duration}",
+            title="Deva command invoked",
+            text=f"Command:{sys.argv[1:]} Exit code:{exit_code} Duration:{duration}",
             tags=["cli:deva"],
         )
         config = Configuration(api_key={"apiKeyAuth": self.config_file.data["telemetry"]["dd_api_key"]})

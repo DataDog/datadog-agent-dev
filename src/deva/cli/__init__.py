@@ -4,14 +4,14 @@
 from __future__ import annotations
 
 import os
-import time
 
 import rich_click as click
 
-from deva.utils.vault import fetch_secret
 from deva._version import __version__
 from deva.cli.base import dynamic_group
 from deva.config.constants import AppEnvVars, ConfigEnvVars
+from deva.utils.vault import fetch_secret
+
 
 @dynamic_group(
     context_settings={"help_option_names": ["-h", "--help"], "max_content_width": 120, "show_default": True},
@@ -124,7 +124,6 @@ def deva(
     if cache_dir is not None:
         config.data.setdefault("storage", {})["cache"] = cache_dir
 
-
     if color is None:
         if os.environ.get(AppEnvVars.NO_COLOR) == "1":
             color = False
@@ -144,20 +143,25 @@ def deva(
     app = Application(terminator=ctx.exit, config_file=config, enable_color=color, interactive=interactive)
 
     # Telemetry config
-    if interactive != False:
+    if not interactive:
         if app.config_file.data.get("telemetry").get("user_consent") is None:
-            user_consent = app.prompt("Would you like to enable telemetry to help improve the tool (works only for DD employees) [Y/n] ", default="yes")
-            if user_consent.lower() not in ["n", "no"]:
+            user_consent = app.prompt(
+                "Would you like to enable telemetry to help improve the tool (works only for DD employees) [Y/n] ",
+                default="yes",
+            )
+            if user_consent.lower() not in {"n", "no"}:
                 app.config_file.data["telemetry"]["user_consent"] = True
             else:
                 app.config_file.data["telemetry"]["user_consent"] = False
-        if app.config_file.data.get("telemetry").get("user_consent") and not app.config_file.data.get("telemetry").get("dd_api_key"):
+        if app.config_file.data.get("telemetry").get("user_consent") and not app.config_file.data.get("telemetry").get(
+            "dd_api_key"
+        ):
             try:
                 dd_api_key = fetch_secret("group/subproduct-agent/deva", "telemetry-api-key")
                 app.config_file.data["telemetry"]["dd_api_key"] = dd_api_key
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 We want to ignore any exception caused by telemtry issue
                 if verbosity > 0:
-                    print(f"Failed to fetch telemetry API key: {e}")
+                    app.display_warning(f"Error fetching telemetry API key: {e}")
         app.config_file.save()
     if not ctx.invoked_subcommand:
         app.output(ctx.get_help())
@@ -166,14 +170,17 @@ def deva(
     # Persist app data for sub-commands
     ctx.obj = app
 
+
 def main() -> None:
     try:
         deva(prog_name="deva", windows_expand_args=False)
     except Exception:  # noqa: BLE001
         import os
         import sys
+
         import click as click_core
         from rich.console import Console
+
         console = Console()
         deva_debug = os.getenv("DEVA_DEBUG") in {"1", "true"}
         console.print_exception(suppress=[click, click_core], show_locals=deva_debug)

@@ -64,6 +64,7 @@ class ConfigFile:
     @classmethod
     def get_default_location(cls) -> Path:
         from platformdirs import user_data_dir
+
         return Path(user_data_dir("dd-agent-dev", appauthor=False)) / "config.toml"
 
     def __load(self) -> dict[str, Any]:

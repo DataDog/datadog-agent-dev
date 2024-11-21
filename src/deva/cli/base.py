@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import importlib
 import sys
-import time
 from functools import cached_property, partial
 from typing import TYPE_CHECKING, Any
 
@@ -24,7 +23,7 @@ class DynamicContext(click.RichContext):
     def get_dynamic_sibling(self) -> click.RichContext:
         cmd = DynamicCommand(name=None, params=self.dynamic_params)
         return cmd.make_context(info_name=None, args=self.args, parent=self)
-    
+
     def exit(self, code: int = 0) -> None:
         self.obj.send_telemetry(code)
         super().exit(code)
@@ -33,7 +32,6 @@ class DynamicContext(click.RichContext):
         self.obj.send_telemetry(1)
         super().fail(message)
 
-    
 
 class DynamicCommand(click.RichCommand):
     context_class = DynamicContext
@@ -72,7 +70,7 @@ class DynamicCommand(click.RichCommand):
                 app.subprocess.run(command)
         res = super().invoke(ctx)
         app.send_telemetry(0)
-    
+
         return res
 
 

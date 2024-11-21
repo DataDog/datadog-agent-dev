@@ -37,7 +37,6 @@ class SubprocessRunner:
             process = subprocess.run(command, **kwargs)  # noqa: PLW1510
         except FileNotFoundError:
             self.__app.abort(f"Executable `{command[0]}` not found: {command}")
-        
 
         if check and process.returncode:
             if process.stderr or process.stdout:
