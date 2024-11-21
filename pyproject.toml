@@ -24,6 +24,8 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
+  "datadog-api-client~=2.30.0",
+  "hvac~=2.3.0",
   "click~=8.1",
   "dep-sync~=0.1",
   "find-exe~=0.1",

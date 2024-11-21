@@ -22,7 +22,6 @@ def cmd(app: Application) -> None:
     import json
 
     from deva.env.dev import get_dev_env
-
     env_data = {}
     storage_dirs = app.config.storage.join("env", "dev")
     for env_type in sorted(storage_dirs.data.iterdir()):
