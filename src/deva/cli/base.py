@@ -24,6 +24,14 @@ class DynamicContext(click.RichContext):
         cmd = DynamicCommand(name=None, params=self.dynamic_params)
         return cmd.make_context(info_name=None, args=self.args, parent=self)
 
+    def exit(self, code: int = 0) -> None:
+        self.obj.send_telemetry(code)
+        super().exit(code)
+
+    def fail(self, message: str) -> None:
+        self.obj.send_telemetry(1)
+        super().fail(message)
+
 
 class DynamicCommand(click.RichCommand):
     context_class = DynamicContext
@@ -43,6 +51,7 @@ class DynamicCommand(click.RichCommand):
         return params
 
     def invoke(self, ctx: click.Context) -> Any:
+        app: Application = ctx.obj
         if self.callback is not None and self._dependencies is not None:
             from dep_sync import Dependency, dependency_state
 
@@ -57,11 +66,12 @@ class DynamicCommand(click.RichCommand):
 
                 command.extend(map(str, dep_state.missing))
 
-                app: Application = ctx.obj
                 app.display_waiting("Synchronizing dependencies...")
                 app.subprocess.run(command)
+        res = super().invoke(ctx)
+        app.send_telemetry(0)
 
-        return super().invoke(ctx)
+        return res
 
 
 class DynamicGroup(click.RichGroup):
