@@ -104,6 +104,7 @@ def deva(
     from deva.cli.application import Application
     from deva.config.file import ConfigFile
     from deva.utils.ci import running_in_ci
+    from deva.utils.fs import Path
 
     config = ConfigFile(config_file)
     if not config.path.is_file():
@@ -146,6 +147,12 @@ def deva(
     if not ctx.invoked_subcommand:
         app.output(ctx.get_help())
         app.abort(code=0)
+
+    cwd = Path.cwd()
+    if (version_file := cwd / ".deva-version").is_file() or (version_file := cwd / ".deva" / "version").is_file():
+        pinned_version = version_file.read_text().strip()
+        if pinned_version != __version__:
+            app.abort(f"deva version mismatch: {__version__} != {pinned_version}")
 
     # Persist app data for sub-commands
     ctx.obj = app
