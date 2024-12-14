@@ -8,9 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+***Changed:***
+
+- Use local versions of repositories rather than remote clones for developer environments by default
+
 ***Added:***
 
 - Allow repositories to require specific versions in a `.deva-version` or `.deva/version` file
+- Add `--clone` flag to the `env dev start` command to clone repositories rather than using local checkouts
 
 ## 0.1.0 - 2024-12-09
 

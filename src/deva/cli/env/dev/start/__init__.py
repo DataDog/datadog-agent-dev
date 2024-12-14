@@ -50,6 +50,8 @@ def cmd(ctx: click.Context, *, env_type: str, instance: str) -> None:
     }
     user_config = dict(app.config.envs.get(env_type, {}))
     user_config.update(dynamic_options)
+    if "clone" not in user_config and app.config.env.dev.clone_repos:
+        user_config["clone"] = True
     if "shell" not in user_config and app.config.env.dev.universal_shell:
         user_config["shell"] = "nu"
 
