@@ -22,6 +22,7 @@ def test_default_scrubbed(deva, config_file, helpers, default_cache_dir, default
 
         [env.dev]
         default-type = "{DEFAULT_DEV_ENV}"
+        clone-repos = false
         universal-shell = false
 
         [storage]
@@ -67,6 +68,7 @@ def test_reveal(deva, config_file, helpers, default_cache_dir, default_data_dir)
 
         [env.dev]
         default-type = "{DEFAULT_DEV_ENV}"
+        clone-repos = false
         universal-shell = false
 
         [storage]

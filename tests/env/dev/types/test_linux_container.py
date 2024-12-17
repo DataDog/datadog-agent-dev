@@ -38,6 +38,7 @@ def test_default_config(app):
 
     assert msgspec.to_builtins(container.config) == {
         "cli": "docker",
+        "clone": False,
         "image": "datadog/agent-dev-env-linux",
         "no_pull": False,
         "repos": ["datadog-agent"],
@@ -103,7 +104,83 @@ class TestStart:
             """
         )
 
-    def test_default(self, deva, helpers, mocker, tmp_path):
+    def test_default(self, deva, helpers, mocker, temp_dir):
+        repos_dir = temp_dir / "repos"
+        repos_dir.ensure_dir()
+        repo_dir = repos_dir / "datadog-agent"
+        repo_dir.ensure_dir()
+
+        write_server_config = mocker.patch("deva.utils.ssh.write_server_config")
+        with (
+            repo_dir.as_cwd(),
+            helpers.hybrid_patch(
+                "subprocess.run",
+                return_values={
+                    # Start command checks the status
+                    1: CompletedProcess([], returncode=0, stdout="{}"),
+                    # Start method checks the status
+                    2: CompletedProcess([], returncode=0, stdout="{}"),
+                    # Capture image pull
+                    # Capture container run
+                    # Readiness check
+                    5: CompletedProcess([], returncode=0, stdout="Server listening on :: port 22"),
+                },
+            ) as calls,
+        ):
+            result = deva("env", "dev", "start")
+
+        assert result.exit_code == 0, result.output
+        assert result.output == helpers.dedent(
+            """
+            Pulling image: datadog/agent-dev-env-linux
+            Creating and starting container: deva-linux-container-default
+            Waiting for container: deva-linux-container-default
+            """
+        )
+
+        write_server_config.assert_called_once_with(
+            "localhost",
+            {
+                "StrictHostKeyChecking": "no",
+                "ForwardAgent": "yes",
+                "UserKnownHostsFile": "/dev/null",
+            },
+        )
+
+        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / ".shared"
+        starship_mount = get_starship_mount(shared_dir)
+        assert calls == [
+            (
+                ([helpers.locate("docker"), "pull", "datadog/agent-dev-env-linux"],),
+                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT},
+            ),
+            (
+                (
+                    [
+                        helpers.locate("docker"),
+                        "run",
+                        "--pull",
+                        "never",
+                        "-d",
+                        "--name",
+                        "deva-linux-container-default",
+                        "-p",
+                        "55909:22",
+                        "-e",
+                        "DD_SHELL=zsh",
+                        *starship_mount,
+                        "-v",
+                        f"{shared_dir / "shell" / "zsh" / ".zsh_history"}:/root/.shared/shell/zsh/.zsh_history",
+                        "-v",
+                        f"{repo_dir}:/root/repos/datadog-agent",
+                        "datadog/agent-dev-env-linux",
+                    ],
+                ),
+                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT},
+            ),
+        ]
+
+    def test_clone(self, deva, helpers, mocker, temp_dir):
         write_server_config = mocker.patch("deva.utils.ssh.write_server_config")
         with helpers.hybrid_patch(
             "subprocess.run",
@@ -119,7 +196,7 @@ class TestStart:
                 # Capture repo cloning
             },
         ) as calls:
-            result = deva("env", "dev", "start")
+            result = deva("env", "dev", "start", "--clone")
 
         assert result.exit_code == 0, result.output
         assert result.output == helpers.dedent(
@@ -140,7 +217,7 @@ class TestStart:
             },
         )
 
-        shared_dir = tmp_path / "data" / "env" / "dev" / "linux-container" / ".shared"
+        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / ".shared"
         starship_mount = get_starship_mount(shared_dir)
         assert calls == [
             (
@@ -187,21 +264,28 @@ class TestStart:
             ),
         ]
 
-    def test_no_pull(self, deva, helpers, mocker, tmp_path):
+    def test_no_pull(self, deva, helpers, mocker, temp_dir):
+        repos_dir = temp_dir / "repos"
+        repos_dir.ensure_dir()
+        repo_dir = repos_dir / "datadog-agent"
+        repo_dir.ensure_dir()
+
         write_server_config = mocker.patch("deva.utils.ssh.write_server_config")
-        with helpers.hybrid_patch(
-            "subprocess.run",
-            return_values={
-                # Start command checks the status
-                1: CompletedProcess([], returncode=0, stdout="{}"),
-                # Start method checks the status
-                2: CompletedProcess([], returncode=0, stdout="{}"),
-                # Capture container run
-                # Readiness check
-                4: CompletedProcess([], returncode=0, stdout="Server listening on :: port 22"),
-                # Capture repo cloning
-            },
-        ) as calls:
+        with (
+            repo_dir.as_cwd(),
+            helpers.hybrid_patch(
+                "subprocess.run",
+                return_values={
+                    # Start command checks the status
+                    1: CompletedProcess([], returncode=0, stdout="{}"),
+                    # Start method checks the status
+                    2: CompletedProcess([], returncode=0, stdout="{}"),
+                    # Capture container run
+                    # Readiness check
+                    4: CompletedProcess([], returncode=0, stdout="Server listening on :: port 22"),
+                },
+            ) as calls,
+        ):
             result = deva("env", "dev", "start", "--no-pull")
 
         assert result.exit_code == 0, result.output
@@ -209,7 +293,6 @@ class TestStart:
             """
             Creating and starting container: deva-linux-container-default
             Waiting for container: deva-linux-container-default
-            Cloning repository: datadog-agent
             """
         )
 
@@ -222,7 +305,7 @@ class TestStart:
             },
         )
 
-        shared_dir = tmp_path / "data" / "env" / "dev" / "linux-container" / ".shared"
+        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / ".shared"
         starship_mount = get_starship_mount(shared_dir)
         assert calls == [
             (
@@ -242,30 +325,96 @@ class TestStart:
                         *starship_mount,
                         "-v",
                         f"{shared_dir / "shell" / "zsh" / ".zsh_history"}:/root/.shared/shell/zsh/.zsh_history",
+                        "-v",
+                        f"{repo_dir}:/root/repos/datadog-agent",
                         "datadog/agent-dev-env-linux",
-                    ],
-                ),
-                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT},
-            ),
-            (
-                (
-                    [
-                        helpers.locate("ssh"),
-                        "-A",
-                        "-q",
-                        "-t",
-                        "-p",
-                        "55909",
-                        "root@localhost",
-                        "--",
-                        "cd /root && git dd-clone datadog-agent",
                     ],
                 ),
                 {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT},
             ),
         ]
 
-    def test_multiple_clones(self, deva, helpers, mocker, tmp_path):
+    def test_multiple(self, deva, helpers, mocker, temp_dir):
+        repos_dir = temp_dir / "repos"
+        repos_dir.ensure_dir()
+        repo1_dir = repos_dir / "datadog-agent"
+        repo1_dir.ensure_dir()
+        repo2_dir = repos_dir / "integrations-core"
+        repo2_dir.ensure_dir()
+
+        write_server_config = mocker.patch("deva.utils.ssh.write_server_config")
+        with (
+            repo1_dir.as_cwd(),
+            helpers.hybrid_patch(
+                "subprocess.run",
+                return_values={
+                    # Start command checks the status
+                    1: CompletedProcess([], returncode=0, stdout="{}"),
+                    # Start method checks the status
+                    2: CompletedProcess([], returncode=0, stdout="{}"),
+                    # Capture image pull
+                    # Capture container run
+                    # Readiness check
+                    5: CompletedProcess([], returncode=0, stdout="Server listening on :: port 22"),
+                },
+            ) as calls,
+        ):
+            result = deva("env", "dev", "start", "-r", "datadog-agent", "-r", "integrations-core")
+
+        assert result.exit_code == 0, result.output
+        assert result.output == helpers.dedent(
+            """
+            Pulling image: datadog/agent-dev-env-linux
+            Creating and starting container: deva-linux-container-default
+            Waiting for container: deva-linux-container-default
+            """
+        )
+
+        write_server_config.assert_called_once_with(
+            "localhost",
+            {
+                "StrictHostKeyChecking": "no",
+                "ForwardAgent": "yes",
+                "UserKnownHostsFile": "/dev/null",
+            },
+        )
+
+        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / ".shared"
+        starship_mount = get_starship_mount(shared_dir)
+        assert calls == [
+            (
+                ([helpers.locate("docker"), "pull", "datadog/agent-dev-env-linux"],),
+                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT},
+            ),
+            (
+                (
+                    [
+                        helpers.locate("docker"),
+                        "run",
+                        "--pull",
+                        "never",
+                        "-d",
+                        "--name",
+                        "deva-linux-container-default",
+                        "-p",
+                        "55909:22",
+                        "-e",
+                        "DD_SHELL=zsh",
+                        *starship_mount,
+                        "-v",
+                        f"{shared_dir / "shell" / "zsh" / ".zsh_history"}:/root/.shared/shell/zsh/.zsh_history",
+                        "-v",
+                        f"{repo1_dir}:/root/repos/datadog-agent",
+                        "-v",
+                        f"{repo2_dir}:/root/repos/integrations-core",
+                        "datadog/agent-dev-env-linux",
+                    ],
+                ),
+                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT},
+            ),
+        ]
+
+    def test_multiple_clones(self, deva, helpers, mocker, temp_dir):
         write_server_config = mocker.patch("deva.utils.ssh.write_server_config")
         with helpers.hybrid_patch(
             "subprocess.run",
@@ -281,7 +430,7 @@ class TestStart:
                 # Capture repo cloning
             },
         ) as calls:
-            result = deva("env", "dev", "start", "-r", "datadog-agent@tag", "-r", "integrations-core")
+            result = deva("env", "dev", "start", "-r", "datadog-agent@tag", "-r", "integrations-core", "--clone")
 
         assert result.exit_code == 0, result.output
         assert result.output == helpers.dedent(
@@ -303,7 +452,7 @@ class TestStart:
             },
         )
 
-        shared_dir = tmp_path / "data" / "env" / "dev" / "linux-container" / ".shared"
+        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / ".shared"
         starship_mount = get_starship_mount(shared_dir)
         assert calls == [
             (

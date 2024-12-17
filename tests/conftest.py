@@ -51,9 +51,7 @@ def deva():
 
 @pytest.fixture
 def temp_dir(tmp_path: pathlib.Path) -> Path:
-    path = Path(tmp_path, "temp")
-    path.mkdir()
-    return path
+    return Path(tmp_path)
 
 
 @pytest.fixture(scope="session", autouse=True)
