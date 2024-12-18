@@ -18,6 +18,7 @@ __pycache__/
 /.ruff_cache/
 /.vscode/
 /dist/
+/site/
 
 # Root files
 /.coverage*

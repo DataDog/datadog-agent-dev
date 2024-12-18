@@ -18,6 +18,7 @@ from deva.config.constants import AppEnvVars, ConfigEnvVars
     external_plugins=True,
     subcommands=(
         "config",
+        "docs",
         "env",
     ),
 )
