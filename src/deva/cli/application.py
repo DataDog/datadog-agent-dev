@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 
     from deva.config.file import ConfigFile
     from deva.config.model import RootConfig
+    from deva.tools import Tools
     from deva.utils.process import SubprocessRunner
 
 
@@ -38,7 +39,21 @@ class Application(Terminal):
         return self.__config_file.model
 
     @cached_property
+    def metadata(self) -> dict[str, Any]:
+        import json
+        from importlib import resources
+
+        content = resources.files("deva").joinpath("metadata.json").read_text(encoding="utf-8")
+        return json.loads(content)
+
+    @cached_property
     def subprocess(self) -> SubprocessRunner:
         from deva.utils.process import SubprocessRunner
 
         return SubprocessRunner(self)
+
+    @cached_property
+    def tools(self) -> Tools:
+        from deva.tools import Tools
+
+        return Tools(self)

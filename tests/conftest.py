@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import os
 import pathlib
+import shutil
 import sys
 from typing import TYPE_CHECKING
 
@@ -121,6 +122,11 @@ def default_data_dir() -> Path:
 @pytest.fixture(scope="session")
 def default_cache_dir() -> Path:
     return Path(user_cache_dir("deva", appauthor=False))
+
+
+@pytest.fixture(scope="session")
+def uv_on_path():
+    return shutil.which("uv")
 
 
 def pytest_runtest_setup(item):

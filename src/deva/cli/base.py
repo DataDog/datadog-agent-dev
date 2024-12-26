@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import importlib
-import sys
 from functools import cached_property, partial
 from typing import TYPE_CHECKING, Any
 
@@ -44,22 +43,8 @@ class DynamicCommand(click.RichCommand):
 
     def invoke(self, ctx: click.Context) -> Any:
         if self.callback is not None and self._dependencies is not None:
-            from dep_sync import Dependency, dependency_state
-
-            dep_state = dependency_state(list(map(Dependency, self._dependencies)))
-            if dep_state.missing:
-                import shutil
-
-                if uv_exe := shutil.which("uv"):
-                    command = [uv_exe, "pip", "install", "--python", sys.executable]
-                else:
-                    command = [sys.executable, "-m", "pip", "install"]
-
-                command.extend(map(str, dep_state.missing))
-
-                app: Application = ctx.obj
-                app.display_waiting("Synchronizing dependencies...")
-                app.subprocess.run(command)
+            app: Application = ctx.obj
+            ensure_deps_installed(app, self._dependencies)
 
         return super().invoke(ctx)
 
@@ -138,6 +123,33 @@ class DynamicGroup(click.RichGroup):
             raise TypeError(message)
 
         return cmd_object
+
+
+def ensure_deps_installed(
+    app: Application,
+    dependencies: list[str],
+    *,
+    constraints: list[str] | None = None,
+    sys_path: list[str] | None = None,
+) -> None:
+    from dep_sync import Dependency, dependency_state
+
+    from deva.utils.fs import temp_directory
+
+    dep_state = dependency_state(list(map(Dependency, dependencies)), sys_path=sys_path)
+    if dep_state.missing:
+        command = ["pip", "install"]
+        app.display_waiting("Synchronizing dependencies...")
+        with temp_directory() as temp_dir:
+            requirements_file = temp_dir / "requirements.txt"
+            requirements_file.write_text("\n".join(map(str, dep_state.missing)))
+            command.extend(["-r", str(requirements_file)])
+            if constraints:
+                constraints_file = temp_dir / "constraints.txt"
+                constraints_file.write_text("\n".join(constraints))
+                command.extend(["-c", str(constraints_file)])
+
+            app.tools.uv.run(command)
 
 
 def _get_external_plugin_callback(cmd_name: str, executable: str) -> click.Command:

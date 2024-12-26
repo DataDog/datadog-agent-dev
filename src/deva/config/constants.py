@@ -10,6 +10,7 @@ class AppEnvVars:
     INTERACTIVE = "DEVA_INTERACTIVE"
     QUIET = "DEVA_QUIET"
     VERBOSE = "DEVA_VERBOSE"
+    NO_DYNAMIC_DEPS = "DEVA_NO_DYNAMIC_DEPS"
     # https://no-color.org
     NO_COLOR = "NO_COLOR"
     FORCE_COLOR = "FORCE_COLOR"

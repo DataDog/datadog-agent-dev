@@ -603,7 +603,7 @@ class TestShell:
             return_value=CompletedProcess([], returncode=0, stdout=json.dumps([{"State": {"Status": "running"}}])),
         )
         write_server_config = mocker.patch("deva.utils.ssh.write_server_config")
-        exit_with_command = mocker.patch("deva.utils.process.SubprocessRunner.replace_current_process")
+        replace_current_process = mocker.patch("deva.utils.process.SubprocessRunner.replace_current_process")
 
         result = deva("env", "dev", "shell")
 
@@ -618,7 +618,7 @@ class TestShell:
                 "UserKnownHostsFile": "/dev/null",
             },
         )
-        exit_with_command.assert_called_once_with([
+        replace_current_process.assert_called_once_with([
             "ssh",
             "-A",
             "-q",
