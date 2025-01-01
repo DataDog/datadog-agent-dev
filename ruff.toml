@@ -15,5 +15,8 @@ ignore = [
   "PLC0415",
 ]
 
+[lint.extend-per-file-ignores]
+"release/**/*" = ["INP001"]
+
 [lint.isort]
 known-first-party = ["deva"]

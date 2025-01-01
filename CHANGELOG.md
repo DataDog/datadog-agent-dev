@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 - Allow repositories to require specific versions in a `.deva-version` or `.deva/version` file
 - Add `--clone` flag to the `env dev start` command to clone repositories rather than using local checkouts
+- Add binary releases for all supported platforms
 
 ## 0.1.0 - 2024-12-09
 

@@ -177,6 +177,10 @@ deva = "deva.cli:main"
 [tool.hatch.version]
 source = "vcs"
 
+[tool.hatch.version.raw-options]
+version_scheme = "python-simplified-semver"
+local_scheme = "no-local-version"
+
 [tool.hatch.build.hooks.custom]
 [tool.hatch.build.targets.wheel]
 packages = ["src/deva"]
