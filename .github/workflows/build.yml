@@ -407,14 +407,14 @@ jobs:
         APPLE_APP_STORE_CONNECT_API_DATA: "${{ secrets.APPLE_APP_STORE_CONNECT_API_DATA }}"
         APPLE_DEVELOPER_ID_APPLICATION_CERTIFICATE: "${{ secrets.APPLE_DEVELOPER_ID_APPLICATION_CERTIFICATE }}"
         APPLE_DEVELOPER_ID_APPLICATION_PRIVATE_KEY: "${{ secrets.APPLE_DEVELOPER_ID_APPLICATION_PRIVATE_KEY }}"
-        # APPLE_DEVELOPER_ID_INSTALLER_CERTIFICATE: "${{ secrets.APPLE_DEVELOPER_ID_INSTALLER_CERTIFICATE }}"
-        # APPLE_DEVELOPER_ID_INSTALLER_PRIVATE_KEY: "${{ secrets.APPLE_DEVELOPER_ID_INSTALLER_PRIVATE_KEY }}"
+        APPLE_DEVELOPER_ID_INSTALLER_CERTIFICATE: "${{ secrets.APPLE_DEVELOPER_ID_INSTALLER_CERTIFICATE }}"
+        APPLE_DEVELOPER_ID_INSTALLER_PRIVATE_KEY: "${{ secrets.APPLE_DEVELOPER_ID_INSTALLER_PRIVATE_KEY }}"
       run: |-
         echo "$APPLE_APP_STORE_CONNECT_API_DATA" > /tmp/app-store-connect.json
         echo "$APPLE_DEVELOPER_ID_APPLICATION_CERTIFICATE" > /tmp/certificate-application.pem
         echo "$APPLE_DEVELOPER_ID_APPLICATION_PRIVATE_KEY" > /tmp/private-key-application.pem
-        # echo "$APPLE_DEVELOPER_ID_INSTALLER_CERTIFICATE" > /tmp/certificate-installer.pem
-        # echo "$APPLE_DEVELOPER_ID_INSTALLER_PRIVATE_KEY" > /tmp/private-key-installer.pem
+        echo "$APPLE_DEVELOPER_ID_INSTALLER_CERTIFICATE" > /tmp/certificate-installer.pem
+        echo "$APPLE_DEVELOPER_ID_INSTALLER_PRIVATE_KEY" > /tmp/private-key-installer.pem
 
     # https://developer.apple.com/documentation/security/hardened_runtime
     - name: Sign binaries
@@ -468,48 +468,48 @@ jobs:
           fi
         done
 
-    # - name: Build universal binary
-    #   run: >-
-    #     pyoxidizer build macos_universal_binary
-    #     --release
-    #     --var version ${{ env.VERSION }}
+    - name: Build universal binary
+      run: >-
+        pyoxidizer build macos_universal_binary
+        --release
+        --var version ${{ env.VERSION }}
 
-    # - name: Prepare universal binary
-    #   id: binary
-    #   run: |-
-    #     binary=$(echo build/*/release/*/${{ env.APP_NAME }})
-    #     chmod +x "$binary"
-    #     echo "path=$binary" >> "$GITHUB_OUTPUT"
+    - name: Prepare universal binary
+      id: binary
+      run: |-
+        binary=$(echo build/*/release/*/${{ env.APP_NAME }})
+        chmod +x "$binary"
+        echo "path=$binary" >> "$GITHUB_OUTPUT"
 
-    # - name: Build PKG
-    #   run: >-
-    #     python release/macos/build_pkg.py
-    #     --binary ${{ steps.binary.outputs.path }}
-    #     --version ${{ env.VERSION }}
-    #     staged
+    - name: Build PKG
+      run: >-
+        python release/macos/build_pkg.py
+        --binary ${{ steps.binary.outputs.path }}
+        --version ${{ env.VERSION }}
+        staged
 
-    # - name: Stage PKG
-    #   id: pkg
-    #   run: |-
-    #     mkdir signed
-    #     pkg_file="$(ls staged)"
-    #     echo "path=$pkg_file" >> "$GITHUB_OUTPUT"
+    - name: Stage PKG
+      id: pkg
+      run: |-
+        mkdir signed
+        pkg_file="$(ls staged)"
+        echo "path=$pkg_file" >> "$GITHUB_OUTPUT"
 
-    # - name: Sign PKG
-    #   run: >-
-    #     rcodesign sign -vv
-    #     --pem-source /tmp/certificate-installer.pem
-    #     --pem-source /tmp/private-key-installer.pem
-    #     "staged/${{ steps.pkg.outputs.path }}"
-    #     "signed/${{ steps.pkg.outputs.path }}"
+    - name: Sign PKG
+      run: >-
+        rcodesign sign -vv
+        --pem-source /tmp/certificate-installer.pem
+        --pem-source /tmp/private-key-installer.pem
+        "staged/${{ steps.pkg.outputs.path }}"
+        "signed/${{ steps.pkg.outputs.path }}"
 
-    # - name: Notarize PKG
-    #   run: >-
-    #     rcodesign notary-submit -vv
-    #     --max-wait-seconds ${{ env.NOTARY_WAIT_TIME }}
-    #     --api-key-path /tmp/app-store-connect.json
-    #     --staple
-    #     "signed/${{ steps.pkg.outputs.path }}"
+    - name: Notarize PKG
+      run: >-
+        rcodesign notary-submit -vv
+        --max-wait-seconds ${{ env.NOTARY_WAIT_TIME }}
+        --api-key-path /tmp/app-store-connect.json
+        --staple
+        "signed/${{ steps.pkg.outputs.path }}"
 
     - name: Upload binaries
       uses: actions/upload-artifact@v4
@@ -518,12 +518,12 @@ jobs:
         path: archives/*
         if-no-files-found: error
 
-    # - name: Upload installer
-    #   uses: actions/upload-artifact@v4
-    #   with:
-    #     name: installers-${{ runner.os }}
-    #     path: signed/${{ steps.pkg.outputs.path }}
-    #     if-no-files-found: error
+    - name: Upload installer
+      uses: actions/upload-artifact@v4
+      with:
+        name: installers-${{ runner.os }}
+        path: signed/${{ steps.pkg.outputs.path }}
+        if-no-files-found: error
 
   distributions-dev:
     name: Build development distributions
