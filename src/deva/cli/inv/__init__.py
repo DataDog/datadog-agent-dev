@@ -30,13 +30,17 @@ def cmd(app: Application, *, args: tuple[str, ...], no_dynamic_deps: bool) -> No
     """
     Invoke a local task.
     """
+    from deva.utils.fs import Path
+
     features = app.metadata["features"]
     required_deps = list(features["legacy-tasks"])
 
     invoke_args = [arg for arg in args if not arg.startswith("-")]
     if invoke_args:
         task = invoke_args[0]
-        if task.startswith("system-probe."):
+        if Path.cwd().name == "test-infra-definitions":
+            required_deps.extend(features["legacy-test-infra-definitions"])
+        elif task.startswith("system-probe."):
             required_deps.extend(features["legacy-btf-gen"])
         elif task.startswith("kmt."):
             required_deps.extend(features["legacy-kernel-matrix-testing"])

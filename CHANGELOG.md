@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+***Fixed:***
+
+- The `inv` command now supports the dependencies of tasks defined in the `test-infra-definitions` repo
+
 ## 0.2.0 - 2025-01-02
 
 ***Changed:***
