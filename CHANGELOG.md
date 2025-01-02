@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+## 0.2.0 - 2025-01-02
+
 ***Changed:***
 
 - Use local versions of repositories rather than remote clones for developer environments by default
