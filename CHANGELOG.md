@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+## 0.3.0 - 2025-01-03
+
+***Added:***
+
+- Add PKG installer for macOS
+
 ***Fixed:***
 
 - The `inv` command now supports the dependencies of tasks defined in the `test-infra-definitions` repo
