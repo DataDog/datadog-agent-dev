@@ -19,7 +19,6 @@ defaults:
     shell: bash
 
 env:
-  DEVA_BUILD_METADATA_CHECK: "true"
   APP_NAME: deva
   PYTHON_VERSION: "3.12"
   PYOXIDIZER_VERSION: "0.24.0"
@@ -35,18 +34,27 @@ jobs:
       version: ${{ steps.version.outputs.version }}
 
     steps:
+    - name: Install system dependencies
+      run: sudo apt install -y libvirt-dev pkg-config
+
     - name: Checkout code
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
-    - name: Set up Python ${{ env.PYTHON_VERSION }}
+    - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: ${{ env.PYTHON_VERSION }}
+        python-version-file: pyproject.toml
 
     - name: Install UV
-      run: curl -LsSf https://github.com/astral-sh/uv/releases/latest/download/uv-installer.sh | sh
+      uses: astral-sh/setup-uv@v5
+
+    - name: Check lock file
+      run: uv lock --check --verbose
+      env:
+        # https://github.com/astral-sh/uv/issues/7533#issuecomment-2578130122
+        SETUPTOOLS_SCM_PRETEND_VERSION: "0.0.0"
 
     - name: Install tools
       run: uv pip install --system hatch
@@ -153,13 +161,13 @@ jobs:
         |
         tar --strip-components=1 -xzf - -C $PYAPP_REPO
 
-    - name: Set up Python ${{ env.PYTHON_VERSION }}
+    - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: ${{ env.PYTHON_VERSION }}
+        python-version-file: pyproject.toml
 
     - name: Install UV
-      run: curl -LsSf https://github.com/astral-sh/uv/releases/latest/download/uv-installer.sh | sh
+      uses: astral-sh/setup-uv@v5
 
     - name: Install Hatch
       run: |-
@@ -278,13 +286,13 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up Python ${{ env.PYTHON_VERSION }}
+    - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: ${{ env.PYTHON_VERSION }}
+        python-version-file: pyproject.toml
 
     - name: Install UV
-      run: curl -LsSf https://github.com/astral-sh/uv/releases/latest/download/uv-installer.sh | sh
+      uses: astral-sh/setup-uv@v5
 
     - name: Install PyOxidizer ${{ env.PYOXIDIZER_VERSION }}
       run: uv pip install --system pyoxidizer==${{ env.PYOXIDIZER_VERSION }}
@@ -364,13 +372,13 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up Python ${{ env.PYTHON_VERSION }}
+    - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: ${{ env.PYTHON_VERSION }}
+        python-version-file: pyproject.toml
 
     - name: Install UV
-      run: curl -LsSf https://github.com/astral-sh/uv/releases/latest/download/uv-installer.sh | sh
+      uses: astral-sh/setup-uv@v5
 
     - name: Install PyOxidizer ${{ env.PYOXIDIZER_VERSION }}
       run: uv pip install --system pyoxidizer==${{ env.PYOXIDIZER_VERSION }}

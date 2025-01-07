@@ -3,10 +3,12 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
+import os
 from functools import cached_property
 from typing import TYPE_CHECKING, Any, NoReturn
 
 from deva.cli.terminal import Terminal
+from deva.config.constants import AppEnvVars
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -39,14 +41,6 @@ class Application(Terminal):
         return self.__config_file.model
 
     @cached_property
-    def metadata(self) -> dict[str, Any]:
-        import json
-        from importlib import resources
-
-        content = resources.files("deva").joinpath("metadata.json").read_text(encoding="utf-8")
-        return json.loads(content)
-
-    @cached_property
     def subprocess(self) -> SubprocessRunner:
         from deva.utils.process import SubprocessRunner
 
@@ -57,3 +51,7 @@ class Application(Terminal):
         from deva.tools import Tools
 
         return Tools(self)
+
+    @cached_property
+    def dynamic_deps_allowed(self) -> bool:
+        return os.getenv(AppEnvVars.NO_DYNAMIC_DEPS) not in {"1", "true"}

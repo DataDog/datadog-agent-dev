@@ -20,6 +20,7 @@ from deva.config.constants import AppEnvVars, ConfigEnvVars
         "config",
         "env",
         "inv",
+        "self",
     ),
 )
 @click.rich_config(

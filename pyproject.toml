@@ -7,7 +7,7 @@ name = "datadog-agent-dev"
 dynamic = ["version"]
 description = "Tool for developing on the Datadog Agent platform"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = "~=3.12.0"
 license = "MIT"
 authors = [
   { name = "Datadog, Inc.", email = "dev@datadoghq.com" },
@@ -29,16 +29,17 @@ dependencies = [
   "find-exe~=0.1",
   "msgspec~=0.18",
   "msgspec-click~=0.2",
+  "packaging",
   "platformdirs~=4.2",
   "rich~=13.7",
   "rich-click~=1.8",
   "tomlkit~=0.13",
   # https://peps.python.org/pep-0696/
   "typing-extensions>=4.6.0; python_version < '3.13'",
-  "uv~=0.5.11",
+  "uv~=0.5.15",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 ### The following dependencies were defined in the build image repo
 # https://github.com/DataDog/datadog-agent-buildimages/blob/main/requirements/constraints.txt
 legacy-constraints = [
@@ -114,8 +115,12 @@ legacy-e2e = [
 ### The following dependencies were defined in the Agent tasks directory:
 # https://github.com/DataDog/datadog-agent/blob/main/tasks/requirements.txt
 legacy-tasks = [
+    { include-group = "legacy-build" },
+    { include-group = "legacy-docs" },
+    { include-group = "legacy-github" },
+    { include-group = "legacy-notifications" },
+    { include-group = "legacy-release" },
     "debugpy==1.8.2",
-    "datadog-agent-dev[legacy-build,legacy-docs,legacy-release,legacy-github,legacy-notifications]",
 ]
 # https://github.com/DataDog/datadog-agent/blob/main/tasks/requirements_docs.txt
 legacy-docs = [
@@ -168,7 +173,7 @@ legacy-kernel-matrix-testing = [
 ]
 # https://github.com/DataDog/test-infra-definitions/blob/main/requirements.txt
 legacy-test-infra-definitions = [
-    "colorama>=0.4.6",
+    "colorama>=0.4.4",
     "pydantic==2.10.4",
     "pyperclip==1.9.0",
     "pyright==1.1.391",
@@ -189,9 +194,13 @@ source = "vcs"
 version_scheme = "python-simplified-semver"
 local_scheme = "no-local-version"
 
-[tool.hatch.build.hooks.custom]
 [tool.hatch.build.targets.wheel]
 packages = ["src/deva"]
+
+[tool.hatch.build.targets.wheel.shared-data]
+"uv.lock" = "deva-data/uv.lock"
+# TODO: remove when this is fixed https://github.com/astral-sh/uv/issues/6722
+"pyproject.toml" = "deva-data/pyproject.toml"
 
 [tool.hatch.build.hooks.vcs]
 version-file = "src/deva/_version.py"
