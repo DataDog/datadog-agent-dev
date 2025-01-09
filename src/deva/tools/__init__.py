@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from deva.cli.application import Application
+    from deva.tools.docker import Docker
     from deva.tools.uv import UV
 
 
@@ -20,3 +21,9 @@ class Tools:
         from deva.tools.uv import UV
 
         return UV(self.__app)
+
+    @cached_property
+    def docker(self) -> Docker:
+        from deva.tools.docker import Docker
+
+        return Docker(self.__app)

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import importlib
+import sys
 from functools import cached_property, partial
 from typing import TYPE_CHECKING, Any
 
@@ -27,9 +28,16 @@ class DynamicContext(click.RichContext):
 class DynamicCommand(click.RichCommand):
     context_class = DynamicContext
 
-    def __init__(self, *args: Any, dependencies: list[str] | None = None, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        *args: Any,
+        features: list[str] | None = None,
+        dependencies: list[str] | None = None,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(*args, **kwargs)
 
+        self._features = features
         self._dependencies = dependencies
 
     def get_params(self, ctx: click.Context) -> list[click.Parameter]:
@@ -42,9 +50,13 @@ class DynamicCommand(click.RichCommand):
         return params
 
     def invoke(self, ctx: click.Context) -> Any:
-        if self.callback is not None and self._dependencies is not None:
-            app: Application = ctx.obj
-            ensure_deps_installed(app, self._dependencies)
+        app: Application = ctx.obj
+        if self.callback is not None and app.dynamic_deps_allowed:
+            if self._features is not None:
+                ensure_features_installed(self._features, app=app)
+
+            if self._dependencies is not None:
+                ensure_deps_installed(self._dependencies, app=app)
 
         return super().invoke(ctx)
 
@@ -126,12 +138,15 @@ class DynamicGroup(click.RichGroup):
 
 
 def ensure_deps_installed(
-    app: Application,
     dependencies: list[str],
     *,
+    app: Application,
     constraints: list[str] | None = None,
     sys_path: list[str] | None = None,
 ) -> None:
+    if not dependencies:
+        return
+
     from dep_sync import Dependency, dependency_state
 
     from deva.utils.fs import temp_directory
@@ -139,7 +154,7 @@ def ensure_deps_installed(
     dep_state = dependency_state(list(map(Dependency, dependencies)), sys_path=sys_path)
     if dep_state.missing:
         command = ["pip", "install"]
-        app.display_waiting("Synchronizing dependencies...")
+        app.display_waiting("Synchronizing dependencies")
         with temp_directory() as temp_dir:
             requirements_file = temp_dir / "requirements.txt"
             requirements_file.write_text("\n".join(map(str, dep_state.missing)))
@@ -150,6 +165,49 @@ def ensure_deps_installed(
                 command.extend(["-c", str(constraints_file)])
 
             app.tools.uv.run(command)
+
+
+def ensure_features_installed(
+    features: list[str],
+    *,
+    app: Application,
+    prefix: str = sys.prefix,
+) -> None:
+    if not features:
+        return
+
+    import shutil
+    import sysconfig
+
+    from deva.utils.fs import Path, temp_directory
+    from deva.utils.process import EnvVars
+
+    # https://docs.astral.sh/uv/reference/cli/#uv-sync
+    command = [
+        "sync",
+        "--frozen",
+        # Prevent synchronizing the project itself because some required dependencies
+        # have extension modules. On Windows, files cannot be modified while they are
+        # in use. This also affects the entry point script `deva.exe`.
+        "--no-install-project",
+        "--inexact",
+    ]
+    for feature in features:
+        command.extend(["--only-group", feature])
+
+    with temp_directory() as temp_dir:
+        data_dir = Path(sysconfig.get_path("data")) / "deva-data"
+        for filename in ("uv.lock", "pyproject.toml"):
+            data_file = data_dir / filename
+            shutil.copy(data_file, temp_dir)
+
+        env_vars = EnvVars()
+        # https://docs.astral.sh/uv/concepts/projects/config/#project-environment-path
+        env_vars["UV_PROJECT_ENVIRONMENT"] = prefix
+        # Remove warning from output if we happen to display it due to an error
+        env_vars.pop("VIRTUAL_ENV", None)
+
+        app.tools.uv.wait(command, message="Synchronizing dependencies", cwd=str(temp_dir), env=env_vars)
 
 
 def _get_external_plugin_callback(cmd_name: str, executable: str) -> click.Command:

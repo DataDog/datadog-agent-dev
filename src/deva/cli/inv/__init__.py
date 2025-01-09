@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 import click
 
-from deva.cli.base import dynamic_command, ensure_deps_installed
+from deva.cli.base import dynamic_command, ensure_features_installed
 from deva.config.constants import AppEnvVars
 
 if TYPE_CHECKING:
@@ -32,18 +32,16 @@ def cmd(app: Application, *, args: tuple[str, ...], no_dynamic_deps: bool) -> No
     """
     from deva.utils.fs import Path
 
-    features = app.metadata["features"]
-    required_deps = list(features["legacy-tasks"])
-
+    features = ["legacy-tasks"]
     invoke_args = [arg for arg in args if not arg.startswith("-")]
     if invoke_args:
         task = invoke_args[0]
         if Path.cwd().name == "test-infra-definitions":
-            required_deps.extend(features["legacy-test-infra-definitions"])
+            features.append("legacy-test-infra-definitions")
         elif task.startswith("system-probe."):
-            required_deps.extend(features["legacy-btf-gen"])
+            features.append("legacy-btf-gen")
         elif task.startswith("kmt."):
-            required_deps.extend(features["legacy-kernel-matrix-testing"])
+            features.append("legacy-kernel-matrix-testing")
 
     if no_dynamic_deps:
         app.subprocess.replace_current_process(["python", "-m", "invoke", *args])
@@ -51,10 +49,9 @@ def cmd(app: Application, *, args: tuple[str, ...], no_dynamic_deps: bool) -> No
 
     venv_path = app.config.storage.join("venvs", "legacy").data
     with app.tools.uv.virtual_env(venv_path) as venv:
-        ensure_deps_installed(
-            app,
-            required_deps,
-            constraints=features["legacy-constraints"],
-            sys_path=venv.get_sys_path(app),
+        ensure_features_installed(
+            features,
+            app=app,
+            prefix=str(venv.path),
         )
         app.subprocess.replace_current_process(["python", "-m", "invoke", *args])

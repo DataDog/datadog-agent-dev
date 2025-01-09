@@ -15,7 +15,6 @@ env:
   DIST_URL: "https://github.com/astral-sh/python-build-standalone/releases/download"
   DIST_VERSION: "20241219"
   DIST_PYTHON_VERSION: "3.12.8"
-  DEVA_BUILD_METADATA_CHECK: "true"
   PYTHONDONTWRITEBYTECODE: "1"
   PIP_ONLY_BINARY: ":all:"
   # Some pip environment variables are weird, this means do not compile
@@ -33,7 +32,7 @@ jobs:
         python-version: ${{ env.DIST_PYTHON_VERSION }}
 
     - name: Install UV
-      run: curl -LsSf https://github.com/astral-sh/uv/releases/latest/download/uv-installer.sh | sh
+      uses: astral-sh/setup-uv@v5
 
     - name: Install from PyPI
       if: inputs.version
@@ -73,7 +72,6 @@ jobs:
         docker run --rm -d
         --name builder
         --workdir /home
-        --env DEVA_BUILD_METADATA_CHECK
         --env PYTHONDONTWRITEBYTECODE
         --env PIP_ONLY_BINARY
         --env PIP_NO_COMPILE
