@@ -8,6 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+## 0.4.0 - 2025-01-09
+
+***Added:***
+
+- Add `self dep` command group to manage dependencies of the `deva` tool itself
+- Use a lock file for dependency management
+
 ## 0.3.0 - 2025-01-03
 
 ***Added:***
