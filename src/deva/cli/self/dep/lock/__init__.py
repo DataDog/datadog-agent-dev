@@ -13,9 +13,13 @@ if TYPE_CHECKING:
     from deva.cli.application import Application
 
 
-@dynamic_command(short_help="Lock dependencies")
+@dynamic_command(
+    short_help="Lock dependencies",
+    context_settings={"help_option_names": [], "ignore_unknown_options": True},
+)
+@click.argument("args", nargs=-1)
 @click.pass_obj
-def cmd(app: Application) -> None:
+def cmd(app: Application, *, args: tuple[str, ...]) -> None:
     """
     Lock dependencies.
     """
@@ -61,4 +65,5 @@ requires-python = "{requires_python}"\
             "-v",
             f"{Path.cwd()}:/app",
             "deva-lock-deps",
+            *args,
         ])

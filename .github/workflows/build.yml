@@ -34,9 +34,6 @@ jobs:
       version: ${{ steps.version.outputs.version }}
 
     steps:
-    - name: Install system dependencies
-      run: sudo apt install -y libvirt-dev pkg-config
-
     - name: Checkout code
       uses: actions/checkout@v4
       with:
@@ -50,14 +47,11 @@ jobs:
     - name: Install UV
       uses: astral-sh/setup-uv@v5
 
-    - name: Check lock file
-      run: uv lock --check --verbose
-      env:
-        # https://github.com/astral-sh/uv/issues/7533#issuecomment-2578130122
-        SETUPTOOLS_SCM_PRETEND_VERSION: "0.0.0"
-
     - name: Install tools
-      run: uv pip install --system hatch
+      run: uv pip install --system hatch .
+
+    - name: Check lock file
+      run: deva self dep lock --check --verbose
 
     # Windows installers don't accept non-integer versions so we ubiquitously
     # perform the following transformation: X.Y.Z.devN -> X.Y.Z.N
