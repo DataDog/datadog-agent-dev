@@ -8,9 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+## 0.4.1 - 2025-01-18
+
 ***Fixed:***
 
 - Relax the allowed version of the `cryptography` dependency
+- Backport dependency update of `pyright`
 
 ## 0.4.0 - 2025-01-09
 
