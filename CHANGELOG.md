@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+***Fixed:***
+
+- Relax the allowed version of the `cryptography` dependency
+
 ## 0.4.0 - 2025-01-09
 
 ***Added:***
