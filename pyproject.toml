@@ -148,7 +148,6 @@ legacy-release = [
 # https://github.com/DataDog/datadog-agent/blob/main/tasks/libs/requirements-github.txt
 legacy-github = [
     "beautifulsoup4~=4.12.3",
-    "cryptography==39.0.1",
     "lxml~=5.2.2",
     "pygithub==1.59.1",
     "pyjwt==2.4.0",
