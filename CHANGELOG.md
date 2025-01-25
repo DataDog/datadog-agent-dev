@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+***Fixed:***
+
+- Repository-specific version files (`.deva-version` or `.deva/version`) now define the minimum required version rather than the exact version
+
 ## 0.4.1 - 2025-01-18
 
 ***Fixed:***

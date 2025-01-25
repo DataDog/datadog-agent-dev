@@ -67,6 +67,7 @@ def isolation() -> Generator[Path, None, None]:
             ConfigEnvVars.DATA: str(data_dir),
             ConfigEnvVars.CACHE: str(cache_dir),
             AppEnvVars.NO_COLOR: "1",
+            "PYAPP": "1",
             "DEVA_SELF_TESTING": "true",
             "GIT_AUTHOR_NAME": "Foo Bar",
             "GIT_AUTHOR_EMAIL": "foo@bar.baz",
