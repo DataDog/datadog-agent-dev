@@ -56,9 +56,9 @@ install_deva() {
 fallback_install_deva() {
   echo -e "${PURPLE}Installing deva ${DEVA_INSTALL_VERSION}${RESET}"
   if [[ "${DEVA_INSTALL_VERSION}" == "latest" ]]; then
-    pipx install --pip-args=--upgrade deva
+    pipx install --pip-args=--upgrade datadog-agent-dev
   else
-    pipx install "deva==${DEVA_INSTALL_VERSION}"
+    pipx install "datadog-agent-dev==${DEVA_INSTALL_VERSION}"
   fi
 
   deva --version
