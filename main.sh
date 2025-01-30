@@ -23,6 +23,19 @@ else
 fi
 INSTALL_PATH="${DEVA_INSTALL_PATH:-${RUNNER_TOOL_CACHE}${SEP}.deva}"
 
+install_features() {
+  if [[ -n "${FEATURES}" ]]; then
+    echo -e "${PURPLE}Installing features: ${FEATURES}${RESET}"
+
+    ARGS=()
+    for feature in $FEATURES; do
+      ARGS+=("-f" "$feature")
+    done
+
+    "${1}" -v self dep sync "${ARGS[@]}"
+  fi
+}
+
 install_deva() {
   mkdir -p "${INSTALL_PATH}"
   archive="${INSTALL_PATH}${SEP}$1"
@@ -46,8 +59,10 @@ install_deva() {
   rm "${archive}"
 
   echo -e "${PURPLE}Installing deva ${DEVA_INSTALL_VERSION}${RESET}"
-  "${INSTALL_PATH}${SEP}deva" --version
-  "${INSTALL_PATH}${SEP}deva" self cache dist --remove
+  deva_path="${INSTALL_PATH}${SEP}deva"
+  "$deva_path" --version
+  "$deva_path" self cache dist --remove
+  install_features "$deva_path"
 
   if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
     echo "${INSTALL_PATH}" >> "${GITHUB_PATH}"
@@ -63,6 +78,7 @@ fallback_install_deva() {
   fi
 
   deva --version
+  install_features deva
 }
 
 if [[ "${TARGET_PLATFORM}" == "linux" ]]; then
@@ -80,7 +96,7 @@ elif [[ "${TARGET_PLATFORM}" == "windows" ]]; then
     fallback_install_deva
   fi
 elif [[ "${TARGET_PLATFORM}" == "macos" ]]; then
-  if [[ "${TARGET_ARCH}" == "ARM64" ]]; then
+  if [[ "${TARGET_ARCH}" == "arm64" ]]; then
     install_deva "deva-aarch64-apple-darwin.tar.gz"
   elif [[ "${TARGET_ARCH}" == "x64" ]]; then
     install_deva "deva-x86_64-apple-darwin.tar.gz"
@@ -89,15 +105,4 @@ elif [[ "${TARGET_PLATFORM}" == "macos" ]]; then
   fi
 else
   fallback_install_deva
-fi
-
-if [[ -n "${FEATURES}" ]]; then
-  echo -e "${PURPLE}Installing features: ${FEATURES}${RESET}"
-
-  ARGS=()
-  for feature in $FEATURES; do
-    ARGS+=("-f" "$feature")
-  done
-
-  deva dep sync "${ARGS[@]}"
 fi

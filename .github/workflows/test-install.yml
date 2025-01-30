@@ -35,6 +35,7 @@ jobs:
       shell: bash
       env:
         DEVA_INSTALL_VERSION: latest
+        DEVA_INSTALL_FEATURES: legacy-tasks
 
     - name: Verify
       run: deva --version
