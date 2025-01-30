@@ -32,7 +32,7 @@ install_features() {
       ARGS+=("-f" "$feature")
     done
 
-    "${1}" self dep sync "${ARGS[@]}"
+    "${1}" -v self dep sync "${ARGS[@]}"
   fi
 }
 
