@@ -17,7 +17,7 @@ For strict security guarantees, it's best practice to [pin](https://docs.github.
 
 ```yaml
 - name: Install deva
-  uses: DataDog/datadog-agent-dev@a766c250d61f24777684624cb86fc956350bac10
+  uses: DataDog/datadog-agent-dev@0e357ea399de7ee599d0a016aa173e90152306aa
 ```
 
 ## Options
