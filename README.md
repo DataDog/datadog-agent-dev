@@ -17,7 +17,7 @@ For strict security guarantees, it's best practice to [pin](https://docs.github.
 
 ```yaml
 - name: Install deva
-  uses: DataDog/datadog-agent-dev@install
+  uses: DataDog/datadog-agent-dev@9711e279d2c74ff301b24d2dc51822c9bc741f94
 ```
 
 ## Options
@@ -37,6 +37,6 @@ It's possible to use the [install script](https://github.com/DataDog/datadog-age
     - `windows`
     - `macos`
 - Set the `DEVA_INSTALL_ARCH` environment variable to the current architecture using one of the following values:
-    - `X64`
-    - `ARM64`
+    - `x64`
+    - `arm64`
 - Install [pipx](https://github.com/pypa/pipx) as a fallback installation method for when there is no [standalone binary](https://deva.pypa.io/latest/install/#standalone-binaries) available. In this case, nothing will be written to `GITHUB_PATH`.
