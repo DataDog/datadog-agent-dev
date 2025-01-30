@@ -25,7 +25,7 @@ For strict security guarantees, it's best practice to [pin](https://docs.github.
 Name | Default | Description
 --- | --- | ---
 `version` | `latest` | The version of deva to install (e.g. `0.4.2`).
-`features` | | The space-separated list of features to install (e.g. `feat1 feat2`).
+`features` | | A space-separated list of features to install (e.g. `feat1 feat2`).
 
 ## External consumers
 
