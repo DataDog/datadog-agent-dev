@@ -1,0 +1,20 @@
+name: Install deva Action
+description: Install and configure deva
+branding:
+  icon: download-cloud
+  color: purple
+
+inputs:
+  version:
+    description: The version of deva to install
+    default: latest
+
+runs:
+  using: composite
+  steps:
+  - name: Install and configure deva
+    # Command needs to be wrapped in single quotes so backslashes are preserved for Windows paths
+    run: "'${{ github.action_path }}${{ runner.os == 'Windows' && '\\' || '/' }}main.sh'"
+    shell: bash
+    env:
+      DEVA_INSTALL_VERSION: ${{ inputs.version }}
