@@ -80,7 +80,7 @@ elif [[ "${TARGET_PLATFORM}" == "windows" ]]; then
     fallback_install_deva
   fi
 elif [[ "${TARGET_PLATFORM}" == "macos" ]]; then
-  if [[ "${TARGET_ARCH}" == "ARM64" ]]; then
+  if [[ "${TARGET_ARCH}" == "arm64" ]]; then
     install_deva "deva-aarch64-apple-darwin.tar.gz"
   elif [[ "${TARGET_ARCH}" == "x64" ]]; then
     install_deva "deva-x86_64-apple-darwin.tar.gz"

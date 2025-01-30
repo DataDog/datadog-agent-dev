@@ -8,6 +8,9 @@ inputs:
   version:
     description: The version of deva to install
     default: latest
+  features:
+    description: Space-separated list of features to install
+    default: ""
 
 runs:
   using: composite
@@ -17,5 +20,5 @@ runs:
     run: "'${{ github.action_path }}${{ runner.os == 'Windows' && '\\' || '/' }}main.sh'"
     shell: bash
     env:
-      DEVA_INSTALL_VERSION: ${{ inputs.version }}
-      DEVA_INSTALL_FEATURES: legacy-tasks
+      DEVA_INSTALL_VERSION: "${{ inputs.version }}"
+      DEVA_INSTALL_FEATURES: "${{ inputs.features }}"
