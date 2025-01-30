@@ -17,7 +17,7 @@ For strict security guarantees, it's best practice to [pin](https://docs.github.
 
 ```yaml
 - name: Install deva
-  uses: DataDog/datadog-agent-dev@9711e279d2c74ff301b24d2dc51822c9bc741f94
+  uses: DataDog/datadog-agent-dev@a766c250d61f24777684624cb86fc956350bac10
 ```
 
 ## Options
@@ -25,6 +25,7 @@ For strict security guarantees, it's best practice to [pin](https://docs.github.
 Name | Default | Description
 --- | --- | ---
 `version` | `latest` | The version of deva to install (e.g. `0.4.2`).
+`features` | | The space-separated list of features to install (e.g. `feat1 feat2`).
 
 ## External consumers
 

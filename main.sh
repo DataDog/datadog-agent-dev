@@ -14,6 +14,7 @@ PURPLE="\033[1;35m"
 RESET="\033[0m"
 TARGET_PLATFORM=$(to_lowercase "${DEVA_INSTALL_PLATFORM:-${RUNNER_OS}}")
 TARGET_ARCH=$(to_lowercase "${DEVA_INSTALL_ARCH:-${RUNNER_ARCH}}")
+FEATURES="${DEVA_INSTALL_FEATURES:-}"
 
 if [[ "${TARGET_PLATFORM}" == "windows" ]]; then
   SEP="\\"
@@ -88,4 +89,15 @@ elif [[ "${TARGET_PLATFORM}" == "macos" ]]; then
   fi
 else
   fallback_install_deva
+fi
+
+if [[ -n "${FEATURES}" ]]; then
+  echo -e "${PURPLE}Installing features: ${FEATURES}${RESET}"
+
+  ARGS=()
+  for feature in $FEATURES; do
+    ARGS+=("-f" "$feature")
+  done
+
+  deva dep sync "${ARGS[@]}"
 fi

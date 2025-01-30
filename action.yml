@@ -18,3 +18,4 @@ runs:
     shell: bash
     env:
       DEVA_INSTALL_VERSION: ${{ inputs.version }}
+      DEVA_INSTALL_FEATURES: legacy-tasks
