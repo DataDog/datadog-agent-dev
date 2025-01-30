@@ -44,7 +44,7 @@ install_deva() {
   if [[ "${DEVA_INSTALL_VERSION}" == "latest" ]]; then
     curl -sSLo "${archive}" "https://github.com/DataDog/datadog-agent-dev/releases/latest/download/$1"
   else
-    curl -sSLo "${archive}" "https://github.com/DataDog/datadog-agent-dev/releases/download/deva-v${DEVA_INSTALL_VERSION}/$1"
+    curl -sSLo "${archive}" "https://github.com/DataDog/datadog-agent-dev/releases/download/v${DEVA_INSTALL_VERSION}/$1"
   fi
 
   if [[ "${archive}" =~ \.zip$ ]]; then
