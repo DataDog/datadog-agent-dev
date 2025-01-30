@@ -2,12 +2,18 @@
 set -euo pipefail
 IFS=$'\n\t'
 
+to_lowercase() {
+  if [[ "${BASH_VERSINFO[0]}" -ge 4 ]]; then
+    echo "${1,,}"
+  else
+    echo "${1}" | tr '[:upper:]' '[:lower:]'
+  fi
+}
+
 PURPLE="\033[1;35m"
 RESET="\033[0m"
-TARGET_PLATFORM=${DEVA_INSTALL_PLATFORM:-${RUNNER_OS}}
-TARGET_PLATFORM=${TARGET_PLATFORM,,}
-TARGET_ARCH=${DEVA_INSTALL_ARCH:-${RUNNER_ARCH}}
-TARGET_ARCH=${TARGET_ARCH,,}
+TARGET_PLATFORM=$(to_lowercase "${DEVA_INSTALL_PLATFORM:-${RUNNER_OS}}")
+TARGET_ARCH=$(to_lowercase "${DEVA_INSTALL_ARCH:-${RUNNER_ARCH}}")
 
 if [[ "${TARGET_PLATFORM}" == "windows" ]]; then
   SEP="\\"
