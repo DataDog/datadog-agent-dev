@@ -39,4 +39,4 @@ It's possible to use the [install script](https://github.com/DataDog/datadog-age
 - Set the `DEVA_INSTALL_ARCH` environment variable to the current architecture using one of the following values:
     - `x64`
     - `arm64`
-- Install [pipx](https://github.com/pypa/pipx) as a fallback installation method for when there is no [standalone binary](https://deva.pypa.io/latest/install/#standalone-binaries) available. In this case, nothing will be written to `GITHUB_PATH`.
+- Install [pipx](https://github.com/pypa/pipx) as a fallback installation method for when there is no [standalone binary](https://deva.pypa.io/latest/install/#standalone-binaries) available.
