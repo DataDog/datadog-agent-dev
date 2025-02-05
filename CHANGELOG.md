@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+***Fixed:***
+
+- Use the proper Python executable when running the `inv` command without dynamic dependencies
+
 ## 0.4.2 - 2025-01-26
 
 ***Fixed:***

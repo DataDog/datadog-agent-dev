@@ -44,7 +44,9 @@ def cmd(app: Application, *, args: tuple[str, ...], no_dynamic_deps: bool) -> No
             features.append("legacy-kernel-matrix-testing")
 
     if no_dynamic_deps:
-        app.subprocess.replace_current_process(["python", "-m", "invoke", *args])
+        import sys
+
+        app.subprocess.replace_current_process([sys.executable, "-m", "invoke", *args])
         return
 
     venv_path = app.config.storage.join("venvs", "legacy").data
