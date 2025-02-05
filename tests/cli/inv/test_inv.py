@@ -83,7 +83,7 @@ def test_no_dynamic_deps_flag(deva, mocker):
     assert replace_current_process.call_args_list == [
         mock.call(
             [
-                "python",
+                sys.executable,
                 "-m",
                 "invoke",
                 "foo",
@@ -104,7 +104,7 @@ def test_no_dynamic_deps_env_var(deva, mocker):
     assert replace_current_process.call_args_list == [
         mock.call(
             [
-                "python",
+                sys.executable,
                 "-m",
                 "invoke",
                 "foo",
