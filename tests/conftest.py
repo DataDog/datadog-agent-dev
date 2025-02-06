@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import os
 import pathlib
+import shutil
 import sys
 from typing import TYPE_CHECKING
 
@@ -51,9 +52,7 @@ def deva():
 
 @pytest.fixture
 def temp_dir(tmp_path: pathlib.Path) -> Path:
-    path = Path(tmp_path, "temp")
-    path.mkdir()
-    return path
+    return Path(tmp_path)
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -68,6 +67,7 @@ def isolation() -> Generator[Path, None, None]:
             ConfigEnvVars.DATA: str(data_dir),
             ConfigEnvVars.CACHE: str(cache_dir),
             AppEnvVars.NO_COLOR: "1",
+            "PYAPP": "1",
             "DEVA_SELF_TESTING": "true",
             "GIT_AUTHOR_NAME": "Foo Bar",
             "GIT_AUTHOR_EMAIL": "foo@bar.baz",
@@ -123,6 +123,11 @@ def default_data_dir() -> Path:
 @pytest.fixture(scope="session")
 def default_cache_dir() -> Path:
     return Path(user_cache_dir("deva", appauthor=False))
+
+
+@pytest.fixture(scope="session")
+def uv_on_path():
+    return shutil.which("uv")
 
 
 def pytest_runtest_setup(item):

@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
+import os
 import sys
 import time
 from functools import cached_property
@@ -13,12 +14,14 @@ from datadog_api_client.v1.api.events_api import EventsApi
 from datadog_api_client.v1.model.event_create_request import EventCreateRequest
 
 from deva.cli.terminal import Terminal
+from deva.config.constants import AppEnvVars
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from deva.config.file import ConfigFile
     from deva.config.model import RootConfig
+    from deva.tools import Tools
     from deva.utils.process import SubprocessRunner
 
 
@@ -49,6 +52,19 @@ class Application(Terminal):
         from deva.utils.process import SubprocessRunner
 
         return SubprocessRunner(self)
+    @cached_property
+    def tools(self) -> Tools:
+        from deva.tools import Tools
+
+        return Tools(self)
+
+    @cached_property
+    def dynamic_deps_allowed(self) -> bool:
+        return os.getenv(AppEnvVars.NO_DYNAMIC_DEPS) not in {"1", "true"}
+
+    @cached_property
+    def managed_installation(self) -> bool:
+        return os.getenv("PYAPP") is not None
 
     def send_telemetry(self, exit_code: int) -> None:
         duration = round(time.perf_counter() - self.__start_time, 1)

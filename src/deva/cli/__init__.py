@@ -20,6 +20,8 @@ from deva.utils.vault import fetch_secret
     subcommands=(
         "config",
         "env",
+        "inv",
+        "self",
     ),
 )
 @click.rich_config(
@@ -105,6 +107,7 @@ def deva(
     from deva.cli.application import Application
     from deva.config.file import ConfigFile
     from deva.utils.ci import running_in_ci
+    from deva.utils.fs import Path
 
     config = ConfigFile(config_file)
     if not config.path.is_file():
@@ -166,6 +169,22 @@ def deva(
     if not ctx.invoked_subcommand:
         app.output(ctx.get_help())
         app.abort(code=0)
+
+    cwd = Path.cwd()
+    if (version_file := cwd / ".deva-version").is_file() or (version_file := cwd / ".deva" / "version").is_file():
+        pinned_version = version_file.read_text().strip()
+        pinned_version_parts = list(map(int, pinned_version.split(".")))
+        # Limit to X.Y.Z in case of dev versions e.g. 1.2.3.dev1
+        current_version_parts = list(map(int, __version__.split(".")[:3]))
+
+        if current_version_parts < pinned_version_parts:
+            app.display_critical(
+                f"Repo requires at least deva version {pinned_version} but {__version__} is installed."
+            )
+            if app.managed_installation:
+                app.display("Run the following command:\ndeva self update")
+
+            app.abort()
 
     # Persist app data for sub-commands
     ctx.obj = app

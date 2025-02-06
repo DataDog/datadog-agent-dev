@@ -60,6 +60,7 @@ class SubprocessRunner:
         def replace_current_process(self, command: list[str]) -> NoReturn:
             process = self.run(command, check=False)
             self.__app.abort(code=process.returncode)
+
     else:
 
         def replace_current_process(self, command: list[str]) -> NoReturn:  # noqa: PLR6301

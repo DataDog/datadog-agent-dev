@@ -10,7 +10,7 @@ This is the main interface for developing on the Datadog Agent platform.
 pip install datadog-agent-dev
 ```
 
-See the [standard instructions](https://datadoghq.dev/datadog-agent/setup/#deva-recommended) for more information.
+See the [standard instructions](https://datadoghq.dev/datadog-agent/setup/#tooling) for more information.
 
 ## License
 
