@@ -79,7 +79,7 @@ Duration: {elapsed_time:.2f} seconds
 """,
         tags=["cli:deva"],
     )
-    config = Configuration(api_key=api_key)
+    config = Configuration(api_key={"apiKeyAuth": api_key})
     with ApiClient(config) as api_client:
         api_instance = EventsApi(api_client)
         api_instance.create_event(body=body)
