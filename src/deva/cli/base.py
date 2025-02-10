@@ -34,10 +34,13 @@ class DynamicContext(click.RichContext):
         if self._depth == 1:
             app: Application = self.obj
 
+            # https://github.com/pallets/click/blob/8.1.8/src/click/exceptions.py#L296
             if isinstance(exc_value, Exit):
                 exit_code = exc_value.exit_code
+            # https://github.com/pallets/click/blob/8.1.8/src/click/exceptions.py#L64
             elif isinstance(exc_value, UsageError):
                 exit_code = 2
+            # https://github.com/pallets/click/blob/8.1.8/src/click/exceptions.py#L29
             else:
                 exit_code = 1
 

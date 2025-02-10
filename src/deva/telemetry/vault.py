@@ -81,11 +81,11 @@ def login_oidc_get_token() -> str:
 
     class AuthHandler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:  # noqa: N802
-            params = URLSearchParams(URL(self.path).search)
+            params = URLSearchParams(self.path)
             self.server.token = params.get("code")  # type: ignore[attr-defined]
             self.send_response(200)
             self.end_headers()
-            self.wfile.write(str.encode(SELF_CLOSING_PAGE))
+            self.wfile.write(SELF_CLOSING_PAGE.encode())
 
     server_address = ("", OIDC_CALLBACK_PORT)
     httpd = Server(server_address, AuthHandler)

@@ -7,11 +7,10 @@ from deva.cli.base import dynamic_group
 
 
 @dynamic_group(
-    short_help="Manage telemetry submission",
+    short_help="Manage daemon logging",
     subcommands=(
-        "disable",
-        "enable",
-        "log",
+        "remove",
+        "show",
     ),
 )
 def cmd() -> None:

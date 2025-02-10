@@ -37,13 +37,28 @@ class TelemetryManager:
     def consent_recorded(self) -> bool:
         return self.__consent_file.is_file()
 
-    @cached_property
-    def __consent_file(self) -> Path:
-        return self.__app.config.storage.cache / "telemetry-consent"
+    def read_log(self) -> str:
+        return self.__log_file.read_text(encoding="utf-8") if self.__log_file.is_file() else ""
+
+    def clear_log(self) -> None:
+        if self.__log_file.is_file():
+            self.__log_file.unlink()
 
     @cached_property
     def __enabled(self) -> bool:
         return self.__consent_file.read_text(encoding="utf-8") == "1" if self.consent_recorded() else False
+
+    @cached_property
+    def __consent_file(self) -> Path:
+        return self.__storage_dir / "consent.txt"
+
+    @cached_property
+    def __log_file(self) -> Path:
+        return self.__storage_dir / "daemon.log"
+
+    @cached_property
+    def __storage_dir(self) -> Path:
+        return self.__app.config.storage.cache / "telemetry"
 
     @cached_property
     def __write_dir(self) -> Path:
@@ -58,6 +73,9 @@ class TelemetryManager:
 
         from deva.utils.process import EnvVars
 
-        env_vars = EnvVars({"DEVA_TELEMETRY_WRITE_DIR": str(self.__write_dir)})
+        env_vars = EnvVars({
+            "DEVA_TELEMETRY_WRITE_DIR": str(self.__write_dir),
+            "DEVA_TELEMETRY_LOG_FILE": str(self.__log_file),
+        })
         self.__app.subprocess.spawn_daemon([sys.executable, "-m", "deva.telemetry.daemon"], env=env_vars)
         self.__started = True

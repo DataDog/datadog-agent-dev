@@ -19,9 +19,10 @@ from deva.utils.fs import Path
 from deva.utils.platform import join_command_args
 
 WRITE_DIR = Path(os.environ["DEVA_TELEMETRY_WRITE_DIR"])
+LOG_FILE = Path(os.environ["DEVA_TELEMETRY_LOG_FILE"])
 
 logging.basicConfig(
-    filename=str(WRITE_DIR / "daemon.log"),
+    filename=str(LOG_FILE),
     level=logging.INFO,
     format="%(asctime)s | %(levelname)s | %(message)s",
 )
