@@ -9,6 +9,7 @@ from deva.cli.base import dynamic_group
 
 __subcommands = [
     "dep",
+    "telemetry",
 ]
 
 # We want the auto-generated documentation to include the default management commands:

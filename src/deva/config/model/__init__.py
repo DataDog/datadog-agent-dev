@@ -12,7 +12,6 @@ from deva.config.model.git import GitConfig
 from deva.config.model.github import GitHubConfig
 from deva.config.model.orgs import OrgConfig
 from deva.config.model.storage import StorageDirs
-from deva.config.model.telemetry import TelemetryConfig
 from deva.config.model.terminal import TerminalConfig
 from deva.utils.fs import Path
 
@@ -29,7 +28,6 @@ class RootConfig(Struct, frozen=True, omit_defaults=True):
     git: GitConfig = field(default_factory=GitConfig)
     github: GitHubConfig = field(default_factory=GitHubConfig)
     terminal: TerminalConfig = field(default_factory=TerminalConfig)
-    telemetry: TelemetryConfig = field(default_factory=TelemetryConfig)
 
 
 def construct_model(data: dict[str, Any]) -> RootConfig:

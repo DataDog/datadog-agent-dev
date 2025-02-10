@@ -1,11 +1,16 @@
-# SPDX-FileCopyrightText: 2024-present Datadog, Inc. <dev@datadoghq.com>
+# SPDX-FileCopyrightText: 2025-present Datadog, Inc. <dev@datadoghq.com>
 #
 # SPDX-License-Identifier: MIT
-import urllib.parse
+from __future__ import annotations
+
+import logging
 import webbrowser
+from typing import Any
 
 import hvac
+from ada_url import URL, URLSearchParams
 
+VAULT_URL = "https://vault.us1.ddbuild.io"
 OIDC_CALLBACK_PORT = 8250
 OIDC_REDIRECT_URI = f"http://localhost:{OIDC_CALLBACK_PORT}/oidc/callback"
 SELF_CLOSING_PAGE = """
@@ -33,17 +38,20 @@ window.onload = function load() {
 """
 
 
-def init_client():
-    client = hvac.Client(url="https://vault.us1.ddbuild.io")
+def init_client() -> hvac.Client:
+    logging.info("Initializing HVAC client")
+    client = hvac.Client(url=VAULT_URL)
 
     auth_url_response = client.auth.oidc.oidc_authorization_url_request(redirect_uri=OIDC_REDIRECT_URI, role=None)
+    logging.info("Received auth URL response: %s", auth_url_response)
     auth_url = auth_url_response["data"]["auth_url"]
     if not auth_url:
-        return None
+        message = "No auth URL in response"
+        raise ValueError(message)
 
-    params = urllib.parse.parse_qs(auth_url.split("?")[1])
-    auth_url_nonce = params["nonce"][0]
-    auth_url_state = params["state"][0]
+    params = URLSearchParams(URL(auth_url).search)
+    auth_url_nonce = params.get("nonce")
+    auth_url_state = params.get("state")
 
     webbrowser.open(auth_url)
     token = login_oidc_get_token()
@@ -63,33 +71,29 @@ def init_client():
 
 
 # handles the callback
-def login_oidc_get_token():
+def login_oidc_get_token() -> str:
     from http.server import BaseHTTPRequestHandler, HTTPServer
 
-    class HttpServ(HTTPServer):
-        def __init__(self, *args, **kwargs):
-            HTTPServer.__init__(self, *args, **kwargs)
-            self.token = None
+    class Server(HTTPServer):
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            super().__init__(*args, **kwargs)
+            self.token = ""
 
     class AuthHandler(BaseHTTPRequestHandler):
-        token = ""
-
-        def do_GET(self):  # noqa: N802
-            params = urllib.parse.parse_qs(self.path.split("?")[1])
-            self.server.token = params["code"][0]
+        def do_GET(self) -> None:  # noqa: N802
+            params = URLSearchParams(URL(self.path).search)
+            self.server.token = params.get("code")  # type: ignore[attr-defined]
             self.send_response(200)
             self.end_headers()
             self.wfile.write(str.encode(SELF_CLOSING_PAGE))
 
     server_address = ("", OIDC_CALLBACK_PORT)
-    httpd = HttpServ(server_address, AuthHandler)
+    httpd = Server(server_address, AuthHandler)
     httpd.handle_request()
     return httpd.token
 
 
-def fetch_secret(name: str, key: str):
+def fetch_secret(name: str, key: str) -> str:
     client = init_client()
-    if client is None:
-        return None
     secret = client.secrets.kv.v2.read_secret_version(path=name, mount_point="kv")
     return secret["data"]["data"][key]

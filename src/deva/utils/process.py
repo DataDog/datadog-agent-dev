@@ -61,10 +61,34 @@ class SubprocessRunner:
             process = self.run(command, check=False)
             self.__app.abort(code=process.returncode)
 
+        def spawn_daemon(self, command: list[str] | str, **kwargs: Any) -> None:
+            import subprocess
+
+            kwargs["creationflags"] = (
+                subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW
+            )
+            kwargs["stdin"] = subprocess.DEVNULL
+            kwargs["stdout"] = subprocess.DEVNULL
+            kwargs["stderr"] = subprocess.DEVNULL
+            kwargs["close_fds"] = True
+            command, kwargs = self.__sanitize_arguments(command, **kwargs)
+            subprocess.Popen(command, **kwargs)
+
     else:
 
         def replace_current_process(self, command: list[str]) -> NoReturn:  # noqa: PLR6301
             os.execvp(command[0], command)  # noqa: S606
+
+        def spawn_daemon(self, command: list[str] | str, **kwargs: Any) -> None:
+            import subprocess
+
+            kwargs["start_new_session"] = True
+            kwargs["stdin"] = subprocess.DEVNULL
+            kwargs["stdout"] = subprocess.DEVNULL
+            kwargs["stderr"] = subprocess.DEVNULL
+            kwargs["close_fds"] = True
+            command, kwargs = self.__sanitize_arguments(command, **kwargs)
+            subprocess.Popen(command, **kwargs)
 
     @staticmethod
     def __sanitize_arguments(command: list[str] | str, **kwargs: Any) -> tuple[list[str] | str, dict[str, Any]]:

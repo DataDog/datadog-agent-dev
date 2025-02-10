@@ -2,6 +2,25 @@ version = 1
 requires-python = ">=3.12.0, <3.13"
 
 [[package]]
+name = "ada-url"
+version = "1.16.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "cffi" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/cd/25/5a37b23ecb0f0690e3b92035860cf7396afd870f721bebfdb092ad59fc2d/ada_url-1.16.0.tar.gz", hash = "sha256:1b32f32e5caaefb2719c6aadf81a05e334ecfb497c664ce83151e8f1e539d6e3", size = 257549 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/23/06/20a0021b1d69097bdf95d126573e4b97bbece7105a4144ce219db8d02564/ada_url-1.16.0-cp312-cp312-macosx_10_15_universal2.whl", hash = "sha256:c8b2d13d47e9836010d5e2f5f2142b81542040a3b683479e6923168d4b7355da", size = 746368 },
+    { url = "https://files.pythonhosted.org/packages/b3/0c/c036662bb0c086e5da840dbb46b12b9d40d3ce888e0bec525c55884a774c/ada_url-1.16.0-cp312-cp312-macosx_10_15_x86_64.whl", hash = "sha256:325ba4e9c4f5ebda042b5ed4f9e5fd7961dd901b01b3db9b5a12f5ee79a4efbf", size = 505964 },
+    { url = "https://files.pythonhosted.org/packages/7c/4a/43ed407d0f6d439751ed290fa60a0aad1bd0fa9595b117ab239f32138280/ada_url-1.16.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:007a15ecd79fc127d4e8d52cbfc16ed3ef480caa46191a129b43f90a79957b48", size = 496053 },
+    { url = "https://files.pythonhosted.org/packages/59/b2/f63b7f5b58d1b98bb3e9aa9c48c0a0b9713b072b206a72c74df9c171b905/ada_url-1.16.0-cp312-cp312-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:2c07c28d274a73e3a651c0f551b547b43478da4301e1b1ae6d22e942dc8972ad", size = 1827235 },
+    { url = "https://files.pythonhosted.org/packages/17/ff/9c685146012286fa515962473cab54a960a9c3957869c131a2f72e8d477e/ada_url-1.16.0-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:58fddcf378a6cb35cfd98a2b5560b29f8616d6f7b14f79fc91c21b87574e2a6a", size = 1910171 },
+    { url = "https://files.pythonhosted.org/packages/ee/fc/f9f850e59fb174d79bf78ee5b9a8cecc15196baee5c4286a41ed077db151/ada_url-1.16.0-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:aca15ac82c5c75065fdd402449d202f6fb89e5d34a2c66609d46975c8b81c00e", size = 2734966 },
+    { url = "https://files.pythonhosted.org/packages/47/4e/1d78ca2ea07cbb85657a5e80569f8f7c704784be2039c36fb2e78a0dd6db/ada_url-1.16.0-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:344f060ef95652706c71e7d21a9c694ca240951230554ec06de7705a2002523a", size = 2875391 },
+    { url = "https://files.pythonhosted.org/packages/23/42/447be9da79d2f991b35c30663dfd6424082cac84664e5f6bd548cad2c2eb/ada_url-1.16.0-cp312-cp312-win_amd64.whl", hash = "sha256:064a1b230a2973da9f0d92cf324c825f508246e49cf763b56fbd3ed319916457", size = 428233 },
+]
+
+[[package]]
 name = "annotated-types"
 version = "0.7.0"
 source = { registry = "https://pypi.org/simple" }
@@ -283,9 +302,13 @@ sdist = { url = "https://files.pythonhosted.org/packages/f1/2a/8c3ac3d8bc94e6de8
 name = "datadog-agent-dev"
 source = { editable = "." }
 dependencies = [
+    { name = "ada-url" },
     { name = "click" },
+    { name = "datadog-api-client" },
     { name = "dep-sync" },
     { name = "find-exe" },
+    { name = "hvac" },
+    { name = "keyring" },
     { name = "msgspec" },
     { name = "msgspec-click" },
     { name = "packaging" },
@@ -453,9 +476,13 @@ legacy-test-infra-definitions = [
 
 [package.metadata]
 requires-dist = [
+    { name = "ada-url", specifier = "~=1.16.0" },
     { name = "click", specifier = "~=8.1" },
+    { name = "datadog-api-client", specifier = "~=2.29.0" },
     { name = "dep-sync", specifier = "~=0.1" },
     { name = "find-exe", specifier = "~=0.1" },
+    { name = "hvac", specifier = "~=2.3.0" },
+    { name = "keyring", specifier = "~=25.6.0" },
     { name = "msgspec", specifier = "~=0.18" },
     { name = "msgspec-click", specifier = "~=0.2" },
     { name = "packaging" },
@@ -787,6 +814,18 @@ wheels = [
 ]
 
 [[package]]
+name = "hvac"
+version = "2.3.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/48/a4/c0b698a7250b7a5c2956427406560701862215c646e079a7907846608f44/hvac-2.3.0.tar.gz", hash = "sha256:1b85e3320e8642dd82f234db63253cda169a817589e823713dc5fca83119b1e2", size = 332660 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0b/34/56facf52e2ea14ce640f434ccf00311af6f3a1df0019d4682ba28ea09948/hvac-2.3.0-py3-none-any.whl", hash = "sha256:a3afc5710760b6ee9b3571769df87a0333da45da05a5f9f963e1d3925a84be7d", size = 155860 },
+]
+
+[[package]]
 name = "idna"
 version = "3.10"
 source = { registry = "https://pypi.org/simple" }
@@ -811,6 +850,48 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/54/4d/e940025e2ce31a8ce1202635910747e5a87cc3a6a6bb2d00973375014749/isodate-0.7.2.tar.gz", hash = "sha256:4cd1aa0f43ca76f4a6c6c0292a85f40b35ec2e43e315b59f06e6d32171a953e6", size = 29705 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/15/aa/0aca39a37d3c7eb941ba736ede56d689e7be91cab5d9ca846bde3999eba6/isodate-0.7.2-py3-none-any.whl", hash = "sha256:28009937d8031054830160fce6d409ed342816b543597cece116d966c6d99e15", size = 22320 },
+]
+
+[[package]]
+name = "jaraco-classes"
+version = "3.4.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "more-itertools" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/06/c0/ed4a27bc5571b99e3cff68f8a9fa5b56ff7df1c2251cc715a652ddd26402/jaraco.classes-3.4.0.tar.gz", hash = "sha256:47a024b51d0239c0dd8c8540c6c7f484be3b8fcf0b2d85c13825780d3b3f3acd", size = 11780 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7f/66/b15ce62552d84bbfcec9a4873ab79d993a1dd4edb922cbfccae192bd5b5f/jaraco.classes-3.4.0-py3-none-any.whl", hash = "sha256:f662826b6bed8cace05e7ff873ce0f9283b5c924470fe664fff1c2f00f581790", size = 6777 },
+]
+
+[[package]]
+name = "jaraco-context"
+version = "6.0.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/df/ad/f3777b81bf0b6e7bc7514a1656d3e637b2e8e15fab2ce3235730b3e7a4e6/jaraco_context-6.0.1.tar.gz", hash = "sha256:9bae4ea555cf0b14938dc0aee7c9f32ed303aa20a3b73e7dc80111628792d1b3", size = 13912 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ff/db/0c52c4cf5e4bd9f5d7135ec7669a3a767af21b3a308e1ed3674881e52b62/jaraco.context-6.0.1-py3-none-any.whl", hash = "sha256:f797fc481b490edb305122c9181830a3a5b76d84ef6d1aef2fb9b47ab956f9e4", size = 6825 },
+]
+
+[[package]]
+name = "jaraco-functools"
+version = "4.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "more-itertools" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ab/23/9894b3df5d0a6eb44611c36aec777823fc2e07740dabbd0b810e19594013/jaraco_functools-4.1.0.tar.gz", hash = "sha256:70f7e0e2ae076498e212562325e805204fc092d7b4c17e0e86c959e249701a9d", size = 19159 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9f/4f/24b319316142c44283d7540e76c7b5a6dbd5db623abd86bb7b3491c21018/jaraco.functools-4.1.0-py3-none-any.whl", hash = "sha256:ad159f13428bc4acbf5541ad6dec511f91573b90fba04df61dafa2a1231cf649", size = 10187 },
+]
+
+[[package]]
+name = "jeepney"
+version = "0.8.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/d6/f4/154cf374c2daf2020e05c3c6a03c91348d59b23c5366e968feb198306fdf/jeepney-0.8.0.tar.gz", hash = "sha256:5efe48d255973902f6badc3ce55e2aa6c5c3b3bc642059ef3a91247bcfcc5806", size = 106005 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ae/72/2a1e2290f1ab1e06f71f3d0f1646c9e4634e70e1d37491535e19266e8dc9/jeepney-0.8.0-py3-none-any.whl", hash = "sha256:c0a454ad016ca575060802ee4d590dd912e35c122fa04e70306de3d076cce755", size = 48435 },
 ]
 
 [[package]]
@@ -856,6 +937,23 @@ name = "jsmin"
 version = "3.0.1"
 source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/5e/73/e01e4c5e11ad0494f4407a3f623ad4d87714909f50b17a06ed121034ff6e/jsmin-3.0.1.tar.gz", hash = "sha256:c0959a121ef94542e807a674142606f7e90214a2b3d1eb17300244bbb5cc2bfc", size = 13925 }
+
+[[package]]
+name = "keyring"
+version = "25.6.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "jaraco-classes" },
+    { name = "jaraco-context" },
+    { name = "jaraco-functools" },
+    { name = "jeepney", marker = "sys_platform == 'linux'" },
+    { name = "pywin32-ctypes", marker = "sys_platform == 'win32'" },
+    { name = "secretstorage", marker = "sys_platform == 'linux'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/70/09/d904a6e96f76ff214be59e7aa6ef7190008f52a0ab6689760a98de0bf37d/keyring-25.6.0.tar.gz", hash = "sha256:0b39998aa941431eb3d9b0d4b2460bc773b9df6fed7621c2dfb291a7e0187a66", size = 62750 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d3/32/da7f44bcb1105d3e88a0b74ebdca50c59121d2ddf71c9e34ba47df7f3a56/keyring-25.6.0-py3-none-any.whl", hash = "sha256:552a3f7af126ece7ed5c89753650eec89c7eaae8617d0aa4d9ad2b75111266bd", size = 39085 },
+]
 
 [[package]]
 name = "levenshtein"
@@ -1081,6 +1179,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/46/e7/417d1f8a59a04d30dcbc5458f11f119a18630b627d17ffbb546e9d9f9897/mkdocs-minify-plugin-0.7.2.tar.gz", hash = "sha256:6a551e22d6517eaef9e1890afd60021dc1dcd1255de02d266f588d1ace040713", size = 8137 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/8b/08/6c1a5a558970d1c4d31780c2072cae1f9410ba549ea8788da96767c3452d/mkdocs_minify_plugin-0.7.2-py3-none-any.whl", hash = "sha256:ae8bfc4a68806883e990ea025938b3f989da7b9fa08ea8390dba47adf25e0c5b", size = 6489 },
+]
+
+[[package]]
+name = "more-itertools"
+version = "10.6.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/88/3b/7fa1fe835e2e93fd6d7b52b2f95ae810cf5ba133e1845f726f5a992d62c2/more-itertools-10.6.0.tar.gz", hash = "sha256:2cd7fad1009c31cc9fb6a035108509e6547547a7a738374f10bd49a09eb3ee3b", size = 125009 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/23/62/0fe302c6d1be1c777cab0616e6302478251dfbf9055ad426f5d0def75c89/more_itertools-10.6.0-py3-none-any.whl", hash = "sha256:6eb054cb4b6db1473f6e15fcc676a08e4732548acd47c708f0e179c2c7c01e89", size = 63038 },
 ]
 
 [[package]]
@@ -1484,6 +1591,15 @@ wheels = [
 ]
 
 [[package]]
+name = "pywin32-ctypes"
+version = "0.2.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/85/9f/01a1a99704853cb63f253eea009390c88e7131c67e66a0a02099a8c917cb/pywin32-ctypes-0.2.3.tar.gz", hash = "sha256:d162dc04946d704503b2edc4d55f3dba5c1d539ead017afa00142c38b9885755", size = 29471 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/de/3d/8161f7711c017e01ac9f008dfddd9410dff3674334c233bde66e7ba65bbf/pywin32_ctypes-0.2.3-py3-none-any.whl", hash = "sha256:8a1513379d709975552d202d942d9837758905c8d01eb82b8bcc30918929e7b8", size = 30756 },
+]
+
+[[package]]
 name = "pyyaml"
 version = "6.0.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1684,6 +1800,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/5a/47/d676353674e651910085e3537866f093d2b9e9699e95e89d960e78df9ecf/s3transfer-0.6.2.tar.gz", hash = "sha256:cab66d3380cca3e70939ef2255d01cd8aece6a4907a9528740f668c4b0611861", size = 132821 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d9/17/a3b666f5ef9543cfd3c661d39d1e193abb9649d0cfbbfee3cf3b51d5af02/s3transfer-0.6.2-py3-none-any.whl", hash = "sha256:b014be3a8a2aab98cfe1abc7229cc5a9a0cf05eb9c1f2b86b230fd8df3f78084", size = 79765 },
+]
+
+[[package]]
+name = "secretstorage"
+version = "3.3.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "cryptography" },
+    { name = "jeepney" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/53/a4/f48c9d79cb507ed1373477dbceaba7401fd8a23af63b837fa61f1dcd3691/SecretStorage-3.3.3.tar.gz", hash = "sha256:2403533ef369eca6d2ba81718576c5e0f564d5cca1b58f73a8b23e7d4eeebd77", size = 19739 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/54/24/b4293291fa1dd830f353d2cb163295742fa87f179fcc8a20a306a81978b7/SecretStorage-3.3.3-py3-none-any.whl", hash = "sha256:f356e6628222568e3af06f2eba8df495efa13b3b63081dafd4f7d9a7b7bc9f99", size = 15221 },
 ]
 
 [[package]]
