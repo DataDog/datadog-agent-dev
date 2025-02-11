@@ -6,11 +6,15 @@ from __future__ import annotations
 import importlib
 import sys
 from functools import cached_property, partial
+from time import perf_counter_ns
 from typing import TYPE_CHECKING, Any
 
 import rich_click as click
+from click.exceptions import Exit, UsageError
 
 if TYPE_CHECKING:
+    from types import TracebackType
+
     from deva.cli.application import Application
 
 
@@ -23,6 +27,27 @@ class DynamicContext(click.RichContext):
     def get_dynamic_sibling(self) -> click.RichContext:
         cmd = DynamicCommand(name=None, params=self.dynamic_params)
         return cmd.make_context(info_name=None, args=self.args, parent=self)
+
+    def __exit__(
+        self, exc_type: type[BaseException] | None, exc_value: BaseException | None, tb: TracebackType | None
+    ) -> None:
+        if self._depth == 1:
+            app: Application = self.obj
+
+            # https://github.com/pallets/click/blob/8.1.8/src/click/exceptions.py#L296
+            if isinstance(exc_value, Exit):
+                exit_code = exc_value.exit_code
+            # https://github.com/pallets/click/blob/8.1.8/src/click/exceptions.py#L64
+            elif isinstance(exc_value, UsageError):
+                exit_code = 2
+            # https://github.com/pallets/click/blob/8.1.8/src/click/exceptions.py#L29
+            else:
+                exit_code = 1
+
+            app.telemetry.submit_data("exit_code", str(exit_code))
+            app.telemetry.submit_data("end_time", str(perf_counter_ns()))
+
+        super().__exit__(exc_type, exc_value, tb)
 
 
 class DynamicCommand(click.RichCommand):
@@ -62,6 +87,9 @@ class DynamicCommand(click.RichCommand):
 
 
 class DynamicGroup(click.RichGroup):
+    context_class = DynamicContext
+    command_class = DynamicCommand
+
     def __init__(
         self, *args: Any, external_plugins: bool | None = None, subcommands: tuple[str], **kwargs: Any
     ) -> None:

@@ -3,7 +3,12 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
+from time import perf_counter_ns
+
+START_TIME = perf_counter_ns()
+
 import os
+import sys
 
 import rich_click as click
 
@@ -146,6 +151,22 @@ def deva(
             ctx.fail(f"Error loading config: {config.path}\n{e}")
 
     app = Application(terminator=ctx.exit, config_file=config, enable_color=color, interactive=interactive)
+
+    # Persist app data for sub-commands
+    ctx.obj = app
+
+    # Telemetry submission
+    if not app.telemetry.consent_recorded() and app.console.is_interactive:
+        if app.confirm(
+            "Would you like to enable telemetry to help improve the tool (only works for Datadog employees)"
+        ):
+            app.telemetry.consent()
+        else:
+            app.telemetry.dissent()
+
+    app.telemetry.submit_data("start_time", str(START_TIME))
+    app.telemetry.submit_data("command", str(sys.argv[1:]))
+
     if not ctx.invoked_subcommand:
         app.output(ctx.get_help())
         app.abort(code=0)
@@ -165,9 +186,6 @@ def deva(
                 app.display("Run the following command:\ndeva self update")
 
             app.abort()
-
-    # Persist app data for sub-commands
-    ctx.obj = app
 
 
 def main() -> None:

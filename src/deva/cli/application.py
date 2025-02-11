@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 
     from deva.config.file import ConfigFile
     from deva.config.model import RootConfig
+    from deva.telemetry.manager import TelemetryManager
     from deva.tools import Tools
     from deva.utils.process import SubprocessRunner
 
@@ -59,3 +60,9 @@ class Application(Terminal):
     @cached_property
     def managed_installation(self) -> bool:
         return os.getenv("PYAPP") is not None
+
+    @cached_property
+    def telemetry(self) -> TelemetryManager:
+        from deva.telemetry.manager import TelemetryManager
+
+        return TelemetryManager(self)
