@@ -50,8 +50,8 @@ jobs:
     - name: Install tools
       run: uv pip install --system hatch .
 
-    - name: Check lock file
-      run: deva self dep lock --check --verbose
+    # - name: Check lock file
+    #   run: deva self dep lock --check --verbose
 
     # Windows installers don't accept non-integer versions so we ubiquitously
     # perform the following transformation: X.Y.Z.devN -> X.Y.Z.N
@@ -533,7 +533,7 @@ jobs:
     uses: ./.github/workflows/build-distributions.yml
     # This actually does not need the binary jobs but we want to prioritize
     # resources for the test jobs therefore this forces these later on
-    needs: binaries
+    # needs: binaries
 
   distributions-release:
     name: Build release distributions

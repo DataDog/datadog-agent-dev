@@ -13,8 +13,8 @@ defaults:
 
 env:
   DIST_URL: "https://github.com/astral-sh/python-build-standalone/releases/download"
-  DIST_VERSION: "20241219"
-  DIST_PYTHON_VERSION: "3.12.8"
+  DIST_VERSION: "20250205"
+  DIST_PYTHON_VERSION: "3.12.9"
   PYTHONDONTWRITEBYTECODE: "1"
   PIP_ONLY_BINARY: ":all:"
   # Some pip environment variables are weird, this means do not compile
@@ -93,7 +93,7 @@ jobs:
     - name: Install deva
       run: >-
         docker exec builder
-        /home/python/bin/python -m pip install
+        /home/python/bin/python -m pip install -vvv
         ${{ inputs.version && format('datadog-agent-dev=={0}', inputs.version) || '/home/datadog-agent-dev' }}
 
     - name: Make scripts portable

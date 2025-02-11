@@ -24,19 +24,20 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
-  "click~=8.1",
-  "dep-sync~=0.1",
-  "find-exe~=0.1",
-  "msgspec~=0.18",
-  "msgspec-click~=0.2",
-  "packaging",
-  "platformdirs~=4.2",
-  "rich~=13.7",
-  "rich-click~=1.8",
-  "tomlkit~=0.13",
-  # https://peps.python.org/pep-0696/
-  "typing-extensions>=4.6.0; python_version < '3.13'",
-  "uv~=0.5.20",
+  "ada-url~=1.16.0",
+#   "click~=8.1",
+#   "dep-sync~=0.1",
+#   "find-exe~=0.1",
+#   "msgspec~=0.18",
+#   "msgspec-click~=0.2",
+#   "packaging",
+#   "platformdirs~=4.2",
+#   "rich~=13.7",
+#   "rich-click~=1.8",
+#   "tomlkit~=0.13",
+#   # https://peps.python.org/pep-0696/
+#   "typing-extensions>=4.6.0; python_version < '3.13'",
+#   "uv~=0.5.20",
 ]
 
 [dependency-groups]
