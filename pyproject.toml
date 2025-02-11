@@ -3,7 +3,7 @@ requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
 [project]
-name = "datadog-agent-dev"
+name = "dda"
 dynamic = ["version"]
 description = "Tool for developing on the Datadog Agent platform"
 readme = "README.md"

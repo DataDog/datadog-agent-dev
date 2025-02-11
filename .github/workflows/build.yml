@@ -77,7 +77,7 @@ jobs:
 
   publish-pypi:
     name: Publish to PyPI
-    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
+    # if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
     needs: python-artifacts
     runs-on: ubuntu-latest
 
