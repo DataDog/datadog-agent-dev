@@ -24,7 +24,7 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
-  "ada-url~=1.16.0",
+  "ada-url~=1.15.3",
   "datadog-api-client~=2.29.0",
   "hvac~=2.3.0",
   "click~=8.1",

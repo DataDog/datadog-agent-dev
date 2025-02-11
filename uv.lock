@@ -3,21 +3,21 @@ requires-python = ">=3.12.0, <3.13"
 
 [[package]]
 name = "ada-url"
-version = "1.16.0"
+version = "1.15.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cffi" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/cd/25/5a37b23ecb0f0690e3b92035860cf7396afd870f721bebfdb092ad59fc2d/ada_url-1.16.0.tar.gz", hash = "sha256:1b32f32e5caaefb2719c6aadf81a05e334ecfb497c664ce83151e8f1e539d6e3", size = 257549 }
+sdist = { url = "https://files.pythonhosted.org/packages/bf/96/73903c06cff317f0cbd921e7ce394d9e114cd849c10759dd0d0c784ca953/ada_url-1.15.3.tar.gz", hash = "sha256:c1d3bd341082d887c9503bffc10a3b5b33bc514a89c425b656078065a2c8f599", size = 217421 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/23/06/20a0021b1d69097bdf95d126573e4b97bbece7105a4144ce219db8d02564/ada_url-1.16.0-cp312-cp312-macosx_10_15_universal2.whl", hash = "sha256:c8b2d13d47e9836010d5e2f5f2142b81542040a3b683479e6923168d4b7355da", size = 746368 },
-    { url = "https://files.pythonhosted.org/packages/b3/0c/c036662bb0c086e5da840dbb46b12b9d40d3ce888e0bec525c55884a774c/ada_url-1.16.0-cp312-cp312-macosx_10_15_x86_64.whl", hash = "sha256:325ba4e9c4f5ebda042b5ed4f9e5fd7961dd901b01b3db9b5a12f5ee79a4efbf", size = 505964 },
-    { url = "https://files.pythonhosted.org/packages/7c/4a/43ed407d0f6d439751ed290fa60a0aad1bd0fa9595b117ab239f32138280/ada_url-1.16.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:007a15ecd79fc127d4e8d52cbfc16ed3ef480caa46191a129b43f90a79957b48", size = 496053 },
-    { url = "https://files.pythonhosted.org/packages/59/b2/f63b7f5b58d1b98bb3e9aa9c48c0a0b9713b072b206a72c74df9c171b905/ada_url-1.16.0-cp312-cp312-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:2c07c28d274a73e3a651c0f551b547b43478da4301e1b1ae6d22e942dc8972ad", size = 1827235 },
-    { url = "https://files.pythonhosted.org/packages/17/ff/9c685146012286fa515962473cab54a960a9c3957869c131a2f72e8d477e/ada_url-1.16.0-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:58fddcf378a6cb35cfd98a2b5560b29f8616d6f7b14f79fc91c21b87574e2a6a", size = 1910171 },
-    { url = "https://files.pythonhosted.org/packages/ee/fc/f9f850e59fb174d79bf78ee5b9a8cecc15196baee5c4286a41ed077db151/ada_url-1.16.0-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:aca15ac82c5c75065fdd402449d202f6fb89e5d34a2c66609d46975c8b81c00e", size = 2734966 },
-    { url = "https://files.pythonhosted.org/packages/47/4e/1d78ca2ea07cbb85657a5e80569f8f7c704784be2039c36fb2e78a0dd6db/ada_url-1.16.0-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:344f060ef95652706c71e7d21a9c694ca240951230554ec06de7705a2002523a", size = 2875391 },
-    { url = "https://files.pythonhosted.org/packages/23/42/447be9da79d2f991b35c30663dfd6424082cac84664e5f6bd548cad2c2eb/ada_url-1.16.0-cp312-cp312-win_amd64.whl", hash = "sha256:064a1b230a2973da9f0d92cf324c825f508246e49cf763b56fbd3ed319916457", size = 428233 },
+    { url = "https://files.pythonhosted.org/packages/f8/56/71dfaf58fba3850f41606b6e662510e1eaf8632946d17b9d60155e0859e2/ada_url-1.15.3-cp312-cp312-macosx_10_15_universal2.whl", hash = "sha256:82797ae677e3ed5399c209932d05db32615118d550cb77c184c6a98f80a4a42d", size = 634598 },
+    { url = "https://files.pythonhosted.org/packages/58/5d/26b56472053ef01a5924e63d622b015fb2a03e965e4a2338807b957eca40/ada_url-1.15.3-cp312-cp312-macosx_10_15_x86_64.whl", hash = "sha256:f70bc89bfbfbcc51cc1ee8cb9cab12663945acac28a724b1eb64eb2830f9f0f2", size = 428501 },
+    { url = "https://files.pythonhosted.org/packages/ab/50/d440ad6bc4c2ee67d8f997af2a4aeeeadb0d355a271163cb79b66c0b6a41/ada_url-1.15.3-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:abd9ba0783eef17a94d119a64d8efb1ee73b0bd328f521caa9919924c61da409", size = 421360 },
+    { url = "https://files.pythonhosted.org/packages/7d/b8/178589103aa9f66a2945cca918c57ea118c6d4b8a2fc36d0f42b951754dd/ada_url-1.15.3-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:580e64e0e29cbcd55f95896037472028765f28cf7d1f43a27d5f670d98a3e299", size = 1597825 },
+    { url = "https://files.pythonhosted.org/packages/5e/2c/a9bfa3e22190a228f7de770a179f37e7cd24a5309f3087bdd389cba3ef0e/ada_url-1.15.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c253ac0c82680e2aaef793acba35d10170474dbd02bd3db8a46375801e4a8ab2", size = 1562419 },
+    { url = "https://files.pythonhosted.org/packages/27/2e/75ecb0f6547807d59fb5e87090647a7075fd4d132381ec772520fb16ca37/ada_url-1.15.3-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:9f87a642809852cf686caaf9c2ae0ee1e2d2e89449683a92a433a8e81ab3e13a", size = 2480215 },
+    { url = "https://files.pythonhosted.org/packages/c3/29/99a6bdb96d4e1a1682036f2a91f8c0d8b12c224e8c9acd8bdaddef7d1a58/ada_url-1.15.3-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:ddc159a70eacb54afb1ed3590ae79c29e19c0b4031c5bdc915d47b6c40222c45", size = 2612726 },
+    { url = "https://files.pythonhosted.org/packages/43/b3/39b09954cd0c08c152765aeb68532ceeaaec91c906ea9f60f4f60a761e87/ada_url-1.15.3-cp312-cp312-win_amd64.whl", hash = "sha256:0d2efe08608f2f1be01ac33922edea808083dad01b4512a661895028a25fb0ed", size = 380712 },
 ]
 
 [[package]]
@@ -476,7 +476,7 @@ legacy-test-infra-definitions = [
 
 [package.metadata]
 requires-dist = [
-    { name = "ada-url", specifier = "~=1.16.0" },
+    { name = "ada-url", specifier = "~=1.15.3" },
     { name = "click", specifier = "~=8.1" },
     { name = "datadog-api-client", specifier = "~=2.29.0" },
     { name = "dep-sync", specifier = "~=0.1" },

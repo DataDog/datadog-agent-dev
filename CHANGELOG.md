@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+***Added:***
+
+- Add telemetry collection for Datadog employees
+
 ## 0.4.3 - 2025-02-05
 
 ***Fixed:***
