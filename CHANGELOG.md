@@ -11,6 +11,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ***Added:***
 
 - Add telemetry collection for Datadog employees
+- Update dependencies
+- Update prebuilt distributions to use Python 3.12.9
 
 ## 0.4.3 - 2025-02-05
 
