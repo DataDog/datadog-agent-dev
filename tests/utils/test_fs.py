@@ -8,7 +8,7 @@ import sys
 
 import pytest
 
-from deva.utils.fs import Path, temp_directory
+from dda.utils.fs import Path, temp_directory
 
 
 class TestPath:

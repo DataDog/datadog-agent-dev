@@ -19,7 +19,7 @@ defaults:
     shell: bash
 
 env:
-  APP_NAME: deva
+  APP_NAME: dda
   PYTHON_VERSION: "3.12"
   PYOXIDIZER_VERSION: "0.24.0"
   DIST_URL: "https://github.com/DataDog/datadog-agent-dev/releases/download"
@@ -51,7 +51,7 @@ jobs:
       run: uv pip install --system hatch .
 
     - name: Check lock file
-      run: deva self dep lock --check --verbose
+      run: dda self dep lock --check --verbose
 
     # Windows installers don't accept non-integer versions so we ubiquitously
     # perform the following transformation: X.Y.Z.devN -> X.Y.Z.N
@@ -209,7 +209,7 @@ jobs:
       run: |-
         echo "PYAPP_SKIP_INSTALL=true" >> $GITHUB_ENV
         echo "PYAPP_FULL_ISOLATION=true" >> $GITHUB_ENV
-        echo "PYAPP_DISTRIBUTION_SOURCE=${{ env.DIST_URL }}/v${{ needs.python-artifacts.outputs.version }}/deva-dist-${{ matrix.job.target }}.tar.gz" >> $GITHUB_ENV
+        echo "PYAPP_DISTRIBUTION_SOURCE=${{ env.DIST_URL }}/v${{ needs.python-artifacts.outputs.version }}/dda-dist-${{ matrix.job.target }}.tar.gz" >> $GITHUB_ENV
         echo "PYAPP_DISTRIBUTION_PATH_PREFIX=python" >> $GITHUB_ENV
         echo "PYAPP_ALLOW_UPDATES=true" >> $GITHUB_ENV
 
@@ -223,11 +223,15 @@ jobs:
       run: |-
         old_version="${{ needs.python-artifacts.outputs.old-version }}"
         version="${{ needs.python-artifacts.outputs.version }}"
+        echo "old_version: $old_version"
+        echo "version: $version"
 
         if [[ "$version" != "$old_version" ]]; then
           cd dist/binary
           old_binary="$(ls)"
+          echo "old_binary: $old_binary"
           binary="${old_binary/$old_version/$version}"
+          echo "binary: $binary"
           mv "$old_binary" "$binary"
         fi
 
@@ -580,6 +584,19 @@ jobs:
         pattern: installers-*
         path: installers
         merge-multiple: true
+
+    - name: Create backward compatibility artifacts
+      run: |-
+        # Create copies of dda- artifacts with deva- prefix for backward compatibility
+        for dir in archives distributions installers; do
+          cd $dir
+          for file in dda-*; do
+            if [ -f "$file" ]; then
+              cp "$file" "${file/dda-/deva-}"
+            fi
+          done
+          cd ..
+        done
 
     - name: Add assets to current release
       uses: softprops/action-gh-release@v2

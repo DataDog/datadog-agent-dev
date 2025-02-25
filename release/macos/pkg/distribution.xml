@@ -3,7 +3,7 @@
   <!--
   https://developer.apple.com/library/archive/documentation/DeveloperTools/Reference/DistributionDefinitionRef/Chapters/Distribution_XML_Ref.html
   -->
-  <title>deva</title>
+  <title>dda</title>
   <license file="LICENSE.txt" mime-type="text/plain"/>
   <readme file="README.html" mime-type="text/html"/>
   <background mime-type="image/png" file="icon.png" alignment="left" scaling="proportional"/>
@@ -12,11 +12,11 @@
   <domains enable_localSystem="true"/>
 
   <choices-outline>
-    <line choice="com.datadoghq.deva.choice"/>
+    <line choice="com.datadoghq.dda.choice"/>
   </choices-outline>
-  <choice title="deva (universal)" id="com.datadoghq.deva.choice">
-    <pkg-ref id="com.datadoghq.deva.pkg"/>
+  <choice title="dda (universal)" id="com.datadoghq.dda.choice">
+    <pkg-ref id="com.datadoghq.dda.pkg"/>
   </choice>
 
-  <pkg-ref id="com.datadoghq.deva.pkg">com.datadoghq.deva.pkg</pkg-ref>
+  <pkg-ref id="com.datadoghq.dda.pkg">com.datadoghq.dda.pkg</pkg-ref>
 </installer-gui-script>

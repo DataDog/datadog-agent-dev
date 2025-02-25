@@ -39,7 +39,7 @@ jobs:
       # Try to install the specific version that was just released until successful
       run: |-
         for i in {1..20}; do
-          uv pip install --system datadog-agent-dev==${{ inputs.version }} && break || sleep 5
+          uv pip install --system dda==${{ inputs.version }} && break || sleep 5
         done
 
   linux:
@@ -75,7 +75,7 @@ jobs:
         --env PYTHONDONTWRITEBYTECODE
         --env PIP_ONLY_BINARY
         --env PIP_NO_COMPILE
-        --volume ${{ github.workspace }}:/home/datadog-agent-dev
+        --volume ${{ github.workspace }}:/home/dda
         ${{ matrix.job.image }}
         sleep infinity
 
@@ -90,16 +90,16 @@ jobs:
         docker exec builder
         tar xzf cpython-${{ env.DIST_PYTHON_VERSION }}+${{ env.DIST_VERSION }}-${{ matrix.job.target-override || matrix.job.target }}-install_only.tar.gz
 
-    - name: Install deva
+    - name: Install dda
       run: >-
         docker exec builder
         /home/python/bin/python -m pip install
-        ${{ inputs.version && format('datadog-agent-dev=={0}', inputs.version) || '/home/datadog-agent-dev' }}
+        ${{ inputs.version && format('dda=={0}', inputs.version) || '/home/dda' }}
 
     - name: Make scripts portable
       run: >-
         docker exec builder
-        /home/python/bin/python /home/datadog-agent-dev/release/unix/make_scripts_portable.py
+        /home/python/bin/python /home/dda/release/unix/make_scripts_portable.py
 
     - name: Strip debug symbols
       run: >-
@@ -109,10 +109,10 @@ jobs:
     - name: Archive distribution
       run: >-
         docker exec builder
-        tar czf deva-dist-${{ matrix.job.target }}.tar.gz python
+        tar czf dda-dist-${{ matrix.job.target }}.tar.gz python
 
     - name: Move to host
-      run: docker cp builder:/home/deva-dist-${{ matrix.job.target }}.tar.gz .
+      run: docker cp builder:/home/dda-dist-${{ matrix.job.target }}.tar.gz .
 
     - name: Check original size
       run: >-
@@ -120,13 +120,13 @@ jobs:
         ls -lh cpython-${{ env.DIST_PYTHON_VERSION }}+${{ env.DIST_VERSION }}-${{ matrix.job.target-override || matrix.job.target }}-install_only.tar.gz
 
     - name: Check final size
-      run: ls -lh deva-dist-${{ matrix.job.target }}.tar.gz
+      run: ls -lh dda-dist-${{ matrix.job.target }}.tar.gz
 
     - name: Upload archive
       uses: actions/upload-artifact@v4
       with:
         name: distribution-${{ matrix.job.target }}
-        path: deva-dist-${{ matrix.job.target }}.tar.gz
+        path: dda-dist-${{ matrix.job.target }}.tar.gz
 
   windows-macos:
     name: Distribution ${{ matrix.job.target }}
@@ -155,11 +155,11 @@ jobs:
     - name: Unpack distribution
       run: tar xzf cpython-${{ env.DIST_PYTHON_VERSION }}+${{ env.DIST_VERSION }}-${{ matrix.job.target }}-install_only.tar.gz
 
-    - name: Install deva
+    - name: Install dda
       run: >-
         ${{ startsWith(matrix.job.os, 'windows-') && '.\\python\\python.exe' || './python/bin/python' }}
         -m pip install
-        ${{ inputs.version && format('datadog-agent-dev=={0}', inputs.version) || '.' }}
+        ${{ inputs.version && format('dda=={0}', inputs.version) || '.' }}
 
     - name: Make scripts portable
       run: >-
@@ -176,16 +176,16 @@ jobs:
       shell: pwsh
 
     - name: Archive distribution
-      run: tar czf deva-dist-${{ matrix.job.target }}.tar.gz python
+      run: tar czf dda-dist-${{ matrix.job.target }}.tar.gz python
 
     - name: Check original size
       run: ls -lh cpython-${{ env.DIST_PYTHON_VERSION }}+${{ env.DIST_VERSION }}-${{ matrix.job.target }}-install_only.tar.gz
 
     - name: Check final size
-      run: ls -lh deva-dist-${{ matrix.job.target }}.tar.gz
+      run: ls -lh dda-dist-${{ matrix.job.target }}.tar.gz
 
     - name: Upload archive
       uses: actions/upload-artifact@v4
       with:
         name: distribution-${{ matrix.job.target }}
-        path: deva-dist-${{ matrix.job.target }}.tar.gz
+        path: dda-dist-${{ matrix.job.target }}.tar.gz

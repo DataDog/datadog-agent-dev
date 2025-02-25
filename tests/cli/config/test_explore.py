@@ -4,9 +4,9 @@
 from __future__ import annotations
 
 
-def test(deva, config_file, mocker):
+def test(dda, config_file, mocker):
     mock = mocker.patch("click.launch")
-    result = deva("config", "explore")
+    result = dda("config", "explore")
 
     assert result.exit_code == 0, result.output
     mock.assert_called_once_with(str(config_file.path), locate=True)
