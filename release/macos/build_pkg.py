@@ -16,16 +16,16 @@ from tempfile import TemporaryDirectory
 
 REPO_DIR = Path.cwd()
 ASSETS_DIR = Path(__file__).parent / "pkg"
-IDENTIFIER = "com.datadoghq.deva"
+IDENTIFIER = "com.datadoghq.dda"
 COMPONENT_PACKAGE_NAME = f"{IDENTIFIER}.pkg"
 README = """\
 <!DOCTYPE html>
 <html>
 <head></head>
 <body>
-  <p>This will install deva v{version} globally.</p>
+  <p>This will install dda v{version} globally.</p>
 
-  <p>For more information on installing and upgrading deva, see our <a href="https://datadoghq.dev/datadog-agent/setup/">Installation Guide</a>.</p>
+  <p>For more information on installing and upgrading dda, see our <a href="https://datadoghq.dev/datadog-agent/setup/">Installation Guide</a>.</p>
 </body>
 </html>
 """
@@ -63,7 +63,7 @@ def main():
         root_dir = temp_dir / "root"
         root_dir.mkdir()
 
-        # This is where we globally install deva. We choose to not offer per-user installs because we can't
+        # This is where we globally install dda. We choose to not offer per-user installs because we can't
         # find out where the location is and therefore cannot add to PATH usually. For more information, see:
         # https://github.com/aws/aws-cli/commit/f3c3eb8262786142a1712b6da5a1515ad9dc66c5
         relative_binary_dir = Path("usr", "local", binary_name, "bin")

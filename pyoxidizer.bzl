@@ -1,7 +1,7 @@
 VERSION = VARS["version"]
-APP_NAME = "deva"
-DISPLAY_NAME = "deva"
-AUTHOR = "Python Packaging Authority"
+APP_NAME = "dda"
+DISPLAY_NAME = "dda"
+AUTHOR = "Datadog, Inc."
 
 
 def make_msi(target):

@@ -7,7 +7,7 @@ import os
 
 import pytest
 
-from deva.utils import platform
+from dda.utils import platform
 
 
 @pytest.mark.requires_windows

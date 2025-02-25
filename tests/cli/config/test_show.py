@@ -3,14 +3,14 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
-from deva.env.dev import DEFAULT_DEV_ENV
+from dda.env.dev import DEFAULT_DEV_ENV
 
 
-def test_default_scrubbed(deva, config_file, helpers, default_cache_dir, default_data_dir):
+def test_default_scrubbed(dda, config_file, helpers, default_cache_dir, default_data_dir):
     config_file.data["github"]["auth"] = {"user": "foo", "token": "bar"}
     config_file.save()
 
-    result = deva("config", "show")
+    result = dda("config", "show")
 
     default_cache_directory = str(default_cache_dir).replace("\\", "\\\\")
     default_data_directory = str(default_data_dir).replace("\\", "\\\\")
@@ -52,11 +52,11 @@ def test_default_scrubbed(deva, config_file, helpers, default_cache_dir, default
     )
 
 
-def test_reveal(deva, config_file, helpers, default_cache_dir, default_data_dir):
+def test_reveal(dda, config_file, helpers, default_cache_dir, default_data_dir):
     config_file.data["github"]["auth"] = {"user": "foo", "token": "bar"}
     config_file.save()
 
-    result = deva("config", "show", "-a")
+    result = dda("config", "show", "-a")
 
     default_cache_directory = str(default_cache_dir).replace("\\", "\\\\")
     default_data_directory = str(default_data_dir).replace("\\", "\\\\")

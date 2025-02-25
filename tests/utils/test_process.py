@@ -6,7 +6,7 @@ from __future__ import annotations
 import os
 import sys
 
-from deva.utils.process import EnvVars
+from dda.utils.process import EnvVars
 
 
 def get_random_name():

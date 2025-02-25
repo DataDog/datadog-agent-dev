@@ -3,7 +3,7 @@ requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
 [project]
-name = "datadog-agent-dev"
+name = "dda"
 dynamic = ["version"]
 description = "Tool for developing on the Datadog Agent platform"
 readme = "README.md"
@@ -189,7 +189,8 @@ Homepage = "https://github.com/DataDog/datadog-agent-dev"
 Documentation = "https://datadoghq.dev/datadog-agent/setup/"
 
 [project.scripts]
-deva = "deva.cli:main"
+dda = "dda.cli:main"
+deva = "dda.cli:main"
 
 [tool.hatch.version]
 source = "vcs"
@@ -198,16 +199,19 @@ source = "vcs"
 version_scheme = "python-simplified-semver"
 local_scheme = "no-local-version"
 
+[tool.hatch.build.targets.binary]
+scripts = ["dda"]
+
 [tool.hatch.build.targets.wheel]
-packages = ["src/deva"]
+packages = ["src/dda"]
 
 [tool.hatch.build.targets.wheel.shared-data]
-"uv.lock" = "deva-data/uv.lock"
+"uv.lock" = "dda-data/uv.lock"
 # TODO: remove when this is fixed https://github.com/astral-sh/uv/issues/6722
-"pyproject.toml" = "deva-data/pyproject.toml"
+"pyproject.toml" = "dda-data/pyproject.toml"
 
 [tool.hatch.build.hooks.vcs]
-version-file = "src/deva/_version.py"
+version-file = "src/dda/_version.py"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -230,16 +234,16 @@ warn_return_any = false
 warn_unused_ignores = false
 
 [tool.coverage.run]
-source_pkgs = ["deva", "tests"]
+source_pkgs = ["dda", "tests"]
 branch = true
 parallel = true
 omit = [
-  "src/deva/__main__.py",
+  "src/dda/__main__.py",
 ]
 
 [tool.coverage.paths]
-deva = ["src/deva", "*/deva/src/deva"]
-tests = ["tests", "*/deva/tests"]
+dda = ["src/dda", "*/dda/src/dda"]
+tests = ["tests", "*/dda/tests"]
 
 [tool.coverage.report]
 show_missing = true

@@ -303,7 +303,22 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/f1/2a/8c3ac3d8bc94e6de8d7ae270bb5bc437b210bb9d6d9e46630c98f4abd20c/csscompressor-0.9.5.tar.gz", hash = "sha256:afa22badbcf3120a4f392e4d22f9fff485c044a1feda4a950ecc5eba9dd31a05", size = 237808 }
 
 [[package]]
-name = "datadog-agent-dev"
+name = "datadog-api-client"
+version = "2.29.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "certifi" },
+    { name = "python-dateutil" },
+    { name = "typing-extensions" },
+    { name = "urllib3" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/b2/fa/d913f2201b4c441e0111f51709cd87d7f8389737986424a3f0b512fb8a2a/datadog_api_client-2.29.0.tar.gz", hash = "sha256:d28dd671c67ae424c4a5806e4f9ae0db384b80d8ef6d79e48a9250602f0d968d", size = 2385565 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/95/54/0005546f4fc0b3ee4b15e6f1e98b8afc6ee9bdd48220a196ffb38b8f01b3/datadog_api_client-2.29.0-py3-none-any.whl", hash = "sha256:ea5968f583bbe489799c3d3f02b788ce1a12816baf98ad93ff4f5d9328211d7f", size = 2692705 },
+]
+
+[[package]]
+name = "dda"
 source = { editable = "." }
 dependencies = [
     { name = "ada-url" },
@@ -649,21 +664,6 @@ legacy-test-infra-definitions = [
     { name = "pyperclip", specifier = "==1.9.0" },
     { name = "pyright", specifier = "==1.1.391" },
     { name = "termcolor", specifier = "==2.5.0" },
-]
-
-[[package]]
-name = "datadog-api-client"
-version = "2.29.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "certifi" },
-    { name = "python-dateutil" },
-    { name = "typing-extensions" },
-    { name = "urllib3" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/b2/fa/d913f2201b4c441e0111f51709cd87d7f8389737986424a3f0b512fb8a2a/datadog_api_client-2.29.0.tar.gz", hash = "sha256:d28dd671c67ae424c4a5806e4f9ae0db384b80d8ef6d79e48a9250602f0d968d", size = 2385565 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/95/54/0005546f4fc0b3ee4b15e6f1e98b8afc6ee9bdd48220a196ffb38b8f01b3/datadog_api_client-2.29.0-py3-none-any.whl", hash = "sha256:ea5968f583bbe489799c3d3f02b788ce1a12816baf98ad93ff4f5d9328211d7f", size = 2692705 },
 ]
 
 [[package]]

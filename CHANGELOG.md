@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+***Changed:***
+
+- Rename package to `dda`
+
 ***Added:***
 
 - Add telemetry collection for Datadog employees
@@ -24,7 +28,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ***Fixed:***
 
-- Repository-specific version files (`.deva-version` or `.deva/version`) now define the minimum required version rather than the exact version
+- Repository-specific version files (`.dda-version` or `.dda/version`) now define the minimum required version rather than the exact version
 
 ## 0.4.1 - 2025-01-18
 
@@ -37,7 +41,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ***Added:***
 
-- Add `self dep` command group to manage dependencies of the `deva` tool itself
+- Add `self dep` command group to manage dependencies of the `dda` tool itself
 - Use a lock file for dependency management
 
 ## 0.3.0 - 2025-01-03
@@ -58,7 +62,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ***Added:***
 
-- Allow repositories to require specific versions in a `.deva-version` or `.deva/version` file
+- Allow repositories to require specific versions in a `.dda-version` or `.dda/version` file
 - Add `--clone` flag to the `env dev start` command to clone repositories rather than using local checkouts
 - Add binary releases for all supported platforms
 

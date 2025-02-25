@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import pytest
 
-from deva._version import __version__
+from dda._version import __version__
 
 
 @pytest.fixture(scope="module")
@@ -16,35 +16,35 @@ def next_major_version():
 
 
 class TestVersionMismatch:
-    def test_root(self, deva, helpers, temp_dir, next_major_version):
-        version_file = temp_dir / ".deva-version"
+    def test_root(self, dda, helpers, temp_dir, next_major_version):
+        version_file = temp_dir / ".dda-version"
         with temp_dir.as_cwd():
             version_file.write_text(next_major_version)
 
-            result = deva("config")
+            result = dda("config")
 
         assert result.exit_code == 1, result.output
         assert result.output == helpers.dedent(
             f"""
-            Repo requires at least deva version {next_major_version} but {__version__} is installed.
+            Repo requires at least dda version {next_major_version} but {__version__} is installed.
             Run the following command:
-            deva self update
+            dda self update
             """
         )
 
-    def test_directory(self, deva, helpers, temp_dir, next_major_version):
-        version_file = temp_dir / ".deva" / "version"
+    def test_directory(self, dda, helpers, temp_dir, next_major_version):
+        version_file = temp_dir / ".dda" / "version"
         version_file.parent.ensure_dir()
         with temp_dir.as_cwd():
             version_file.write_text(next_major_version)
 
-            result = deva("config")
+            result = dda("config")
 
         assert result.exit_code == 1, result.output
         assert result.output == helpers.dedent(
             f"""
-            Repo requires at least deva version {next_major_version} but {__version__} is installed.
+            Repo requires at least dda version {next_major_version} but {__version__} is installed.
             Run the following command:
-            deva self update
+            dda self update
             """
         )

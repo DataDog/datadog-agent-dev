@@ -15,4 +15,4 @@ extra-dependencies = [
   "pytest",
 ]
 [envs.types.scripts]
-check = "mypy --install-types --non-interactive {args:src/deva tests}"
+check = "mypy --install-types --non-interactive {args:src/dda tests}"

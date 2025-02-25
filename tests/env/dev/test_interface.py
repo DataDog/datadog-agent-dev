@@ -8,8 +8,8 @@ from typing import NoReturn
 import msgspec
 import pytest
 
-from deva.env.dev.interface import DeveloperEnvironmentConfig, DeveloperEnvironmentInterface
-from deva.env.models import EnvironmentState, EnvironmentStatus
+from dda.env.dev.interface import DeveloperEnvironmentConfig, DeveloperEnvironmentInterface
+from dda.env.models import EnvironmentState, EnvironmentStatus
 
 pytestmark = [pytest.mark.usefixtures("private_storage")]
 

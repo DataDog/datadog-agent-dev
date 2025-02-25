@@ -23,4 +23,4 @@ __pycache__/
 /.coverage*
 
 # Auto-generated during builds
-/src/deva/_version.py
+/src/dda/_version.py
