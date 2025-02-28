@@ -1,12 +1,12 @@
-name: Install deva Action
-description: Install and configure deva
+name: Install dda Action
+description: Install and configure dda
 branding:
   icon: download-cloud
   color: purple
 
 inputs:
   version:
-    description: The version of deva to install
+    description: The version of dda to install
     default: latest
   features:
     description: Space-separated list of features to install
@@ -15,10 +15,10 @@ inputs:
 runs:
   using: composite
   steps:
-  - name: Install and configure deva
+  - name: Install and configure dda
     # Command needs to be wrapped in single quotes so backslashes are preserved for Windows paths
     run: "'${{ github.action_path }}${{ runner.os == 'Windows' && '\\' || '/' }}main.sh'"
     shell: bash
     env:
-      DEVA_INSTALL_VERSION: "${{ inputs.version }}"
-      DEVA_INSTALL_FEATURES: "${{ inputs.features }}"
+      DDA_INSTALL_VERSION: "${{ inputs.version }}"
+      DDA_INSTALL_FEATURES: "${{ inputs.features }}"
