@@ -17,14 +17,14 @@ For strict security guarantees, it's best practice to [pin](https://docs.github.
 
 ```yaml
 - name: Install dda
-  uses: DataDog/datadog-agent-dev@12e0af36a86c69664b8c3589c4e41550581cc07e
+  uses: DataDog/datadog-agent-dev@e1806a36cb1da98f3a4852c6620b628bc31d81b6
 ```
 
 ## Options
 
 Name | Default | Description
 --- | --- | ---
-`version` | `latest` | The version of dda to install (e.g. `0.4.2`).
+`version` | `latest` | The version of dda to install (e.g. `0.5.0`).
 `features` | | A space-separated list of features to install (e.g. `feat1 feat2`).
 
 ## External consumers
