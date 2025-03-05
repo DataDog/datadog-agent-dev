@@ -16,7 +16,10 @@ pytestmark = [pytest.mark.usefixtures("private_storage")]
 
 
 def test_default(dda, helpers, temp_dir, uv_on_path, mocker):
-    replace_current_process = mocker.patch("dda.utils.process.SubprocessRunner.replace_current_process")
+    replace_current_process = mocker.patch(
+        "dda.utils.process.SubprocessRunner.replace_current_process",
+        side_effect=lambda *args, **kwargs: sys.exit(0),  # noqa: ARG005
+    )
     subprocess_run = mocker.patch("subprocess.run", return_value=subprocess.CompletedProcess([], returncode=0))
 
     result = dda("inv", "foo")
@@ -73,7 +76,10 @@ def test_default(dda, helpers, temp_dir, uv_on_path, mocker):
 
 
 def test_no_dynamic_deps_flag(dda, mocker):
-    replace_current_process = mocker.patch("dda.utils.process.SubprocessRunner.replace_current_process")
+    replace_current_process = mocker.patch(
+        "dda.utils.process.SubprocessRunner.replace_current_process",
+        side_effect=lambda *args, **kwargs: sys.exit(0),  # noqa: ARG005
+    )
 
     result = dda("inv", "--no-dynamic-deps", "foo")
 
@@ -93,7 +99,10 @@ def test_no_dynamic_deps_flag(dda, mocker):
 
 
 def test_no_dynamic_deps_env_var(dda, mocker):
-    replace_current_process = mocker.patch("dda.utils.process.SubprocessRunner.replace_current_process")
+    replace_current_process = mocker.patch(
+        "dda.utils.process.SubprocessRunner.replace_current_process",
+        side_effect=lambda *args, **kwargs: sys.exit(0),  # noqa: ARG005
+    )
 
     with EnvVars({AppEnvVars.NO_DYNAMIC_DEPS: "1"}):
         result = dda("inv", "foo")
