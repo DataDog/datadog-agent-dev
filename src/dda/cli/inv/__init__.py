@@ -40,14 +40,11 @@ def cmd(app: Application, *, args: tuple[str, ...], no_dynamic_deps: bool) -> No
             features.append("legacy-test-infra-definitions")
         elif task.startswith("system-probe."):
             features.append("legacy-btf-gen")
-        elif task.startswith("kmt."):
-            features.append("legacy-kernel-matrix-testing")
 
     if no_dynamic_deps:
         import sys
 
         app.subprocess.replace_current_process([sys.executable, "-m", "invoke", *args])
-        return
 
     venv_path = app.config.storage.join("venvs", "legacy").data
     with app.tools.uv.virtual_env(venv_path) as venv:
