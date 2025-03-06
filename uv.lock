@@ -424,7 +424,6 @@ legacy-kernel-matrix-testing = [
     { name = "jinja2" },
     { name = "libvirt-python" },
     { name = "python-levenshtein" },
-    { name = "tabulate", extra = ["widechars"] },
     { name = "termcolor" },
     { name = "thefuzz" },
 ]
@@ -434,6 +433,7 @@ legacy-notifications = [
     { name = "pyyaml" },
     { name = "requests" },
     { name = "slack-sdk" },
+    { name = "tabulate", extra = ["widechars"] },
 ]
 legacy-release = [
     { name = "atlassian-python-api" },
@@ -476,6 +476,7 @@ legacy-tasks = [
     { name = "ruff" },
     { name = "semver" },
     { name = "slack-sdk" },
+    { name = "tabulate", extra = ["widechars"] },
     { name = "toml" },
     { name = "types-pyyaml" },
     { name = "types-requests" },
@@ -483,6 +484,7 @@ legacy-tasks = [
     { name = "types-toml" },
     { name = "urllib3" },
     { name = "vulture" },
+    { name = "watchdog" },
     { name = "yattag" },
 ]
 legacy-test-infra-definitions = [
@@ -518,7 +520,7 @@ legacy-agent-deploy = [
     { name = "azure-identity", specifier = "==1.14.1" },
     { name = "azure-mgmt-resource", specifier = "==23.0.1" },
     { name = "pygithub", specifier = "==1.59.1" },
-    { name = "setuptools", specifier = "==42.0.2" },
+    { name = "setuptools", specifier = "==75.8.2" },
     { name = "virtualenv", specifier = "==16.7.9" },
 ]
 legacy-btf-gen = [
@@ -559,7 +561,7 @@ legacy-constraints = [
     { name = "azure-identity", specifier = "==1.14.1" },
     { name = "azure-mgmt-resource", specifier = "==23.0.1" },
     { name = "jira", specifier = "==3.5.2" },
-    { name = "setuptools", specifier = "==42.0.2" },
+    { name = "setuptools", specifier = "==75.8.2" },
     { name = "virtualenv", specifier = "==16.7.9" },
     { name = "wheel", specifier = "==0.40.0" },
 ]
@@ -596,7 +598,6 @@ legacy-kernel-matrix-testing = [
     { name = "jinja2", specifier = "==3.0.3" },
     { name = "libvirt-python", specifier = "==10.9.0" },
     { name = "python-levenshtein", specifier = "==0.26.1" },
-    { name = "tabulate", extras = ["widechars"], specifier = "==0.9.0" },
     { name = "termcolor", specifier = "==2.5.0" },
     { name = "thefuzz", specifier = "==0.22.1" },
 ]
@@ -606,6 +607,7 @@ legacy-notifications = [
     { name = "pyyaml", specifier = "==6.0.1" },
     { name = "requests", specifier = "==2.31.0" },
     { name = "slack-sdk", specifier = "~=3.27.1" },
+    { name = "tabulate", extras = ["widechars"], specifier = "==0.9.0" },
 ]
 legacy-release = [
     { name = "atlassian-python-api", specifier = "==3.41.3" },
@@ -648,6 +650,7 @@ legacy-tasks = [
     { name = "ruff", specifier = "==0.3.5" },
     { name = "semver", specifier = "==2.10.0" },
     { name = "slack-sdk", specifier = "~=3.27.1" },
+    { name = "tabulate", extras = ["widechars"], specifier = "==0.9.0" },
     { name = "toml", specifier = "==0.10.2" },
     { name = "toml", specifier = "~=0.10.2" },
     { name = "types-pyyaml", specifier = "==6.0.12.20240311" },
@@ -656,6 +659,7 @@ legacy-tasks = [
     { name = "types-toml", specifier = "==0.10.8.20240310" },
     { name = "urllib3", specifier = "==1.26.15" },
     { name = "vulture", specifier = "==2.6" },
+    { name = "watchdog", specifier = "==6.0.0" },
     { name = "yattag", specifier = "==1.15.2" },
 ]
 legacy-test-infra-definitions = [
@@ -1833,11 +1837,11 @@ wheels = [
 
 [[package]]
 name = "setuptools"
-version = "42.0.2"
+version = "75.8.2"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/f7/b6/5b98441b6749ea1db1e41e5e6e7a93cbdd7ffd45e11fe1b22d45884bc777/setuptools-42.0.2.zip", hash = "sha256:c5b372090d7c8709ce79a6a66872a91e518f7d65af97fca78135e1cb10d4b940", size = 858444 }
+sdist = { url = "https://files.pythonhosted.org/packages/d1/53/43d99d7687e8cdef5ab5f9ec5eaf2c0423c2b35133a2b7e7bc276fc32b21/setuptools-75.8.2.tar.gz", hash = "sha256:4880473a969e5f23f2a2be3646b2dfd84af9028716d398e46192f84bc36900d2", size = 1344083 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/54/28/c45d8b54c1339f9644b87663945e54a8503cfef59cf0f65b3ff5dd17cf64/setuptools-42.0.2-py2.py3-none-any.whl", hash = "sha256:c8abd0f3574bc23afd2f6fd2c415ba7d9e097c8a99b845473b0d957ba1e2dac6", size = 583156 },
+    { url = "https://files.pythonhosted.org/packages/a9/38/7d7362e031bd6dc121e5081d8cb6aa6f6fedf2b67bf889962134c6da4705/setuptools-75.8.2-py3-none-any.whl", hash = "sha256:558e47c15f1811c1fa7adbd0096669bf76c1d3f433f58324df69f3f5ecac4e8f", size = 1229385 },
 ]
 
 [[package]]
