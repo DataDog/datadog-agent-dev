@@ -50,7 +50,7 @@ legacy-constraints = [
     "azure-identity==1.14.1",
     "azure-mgmt-resource==23.0.1",
     "jira==3.5.2",
-    "setuptools==42.0.2",
+    "setuptools==75.8.2",
     "virtualenv==16.7.9",
     "wheel==0.40.0",
 ]
@@ -91,7 +91,7 @@ legacy-agent-deploy = [
     "azure-identity==1.14.1",
     "azure-mgmt-resource==23.0.1",
     "pygithub==1.59.1",
-    "setuptools==42.0.2",
+    "setuptools==75.8.2",
     "virtualenv==16.7.9",
 ]
 # https://github.com/DataDog/datadog-agent-buildimages/blob/main/requirements/btf-gen.txt
@@ -126,6 +126,7 @@ legacy-tasks = [
     { include-group = "legacy-notifications" },
     { include-group = "legacy-release" },
     "debugpy==1.8.2",
+    "watchdog==6.0.0",
 ]
 # https://github.com/DataDog/datadog-agent/blob/main/tasks/requirements_docs.txt
 legacy-docs = [
@@ -165,6 +166,7 @@ legacy-notifications = [
     "requests==2.31.0",
     "pyyaml==6.0.1",
     "slack-sdk~=3.27.1",
+    "tabulate[widechars]==0.9.0",
 ]
 # https://github.com/DataDog/datadog-agent/blob/main/tasks/kernel_matrix_testing/requirements.txt
 legacy-kernel-matrix-testing = [
@@ -173,7 +175,6 @@ legacy-kernel-matrix-testing = [
     "termcolor==2.5.0",
     "thefuzz==0.22.1",
     "python-levenshtein==0.26.1",
-    "tabulate[widechars]==0.9.0",
 ]
 # https://github.com/DataDog/test-infra-definitions/blob/main/requirements.txt
 legacy-test-infra-definitions = [
