@@ -34,8 +34,8 @@ jobs:
       run: "'${{ github.workspace }}${{ runner.os == 'Windows' && '\\' || '/' }}main.sh'"
       shell: bash
       env:
-        DEVA_INSTALL_VERSION: latest
-        DEVA_INSTALL_FEATURES: legacy-tasks
+        DDA_INSTALL_VERSION: latest
+        DDA_INSTALL_FEATURES: legacy-tasks
 
     - name: Verify
-      run: deva --version
+      run: dda --version
