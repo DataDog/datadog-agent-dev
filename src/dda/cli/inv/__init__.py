@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 import click
 
-from dda.cli.base import dynamic_command, ensure_features_installed
+from dda.cli.base import dynamic_command, ensure_deps_installed, ensure_features_installed
 from dda.config.constants import AppEnvVars
 
 if TYPE_CHECKING:
@@ -20,19 +20,58 @@ if TYPE_CHECKING:
 )
 @click.argument("args", nargs=-1)
 @click.option(
+    "--feat",
+    "extra_features",
+    multiple=True,
+    help="""\
+Extra features to install (multiple allowed).
+After a feature is installed once, it will always be available.
+""",
+)
+@click.option(
+    "--dep",
+    "extra_dependencies",
+    multiple=True,
+    help="""\
+Extra dependencies to install (multiple allowed).
+After a dependency is installed once, it will always be available.
+""",
+)
+@click.option(
     "--no-dynamic-deps",
     envvar=AppEnvVars.NO_DYNAMIC_DEPS,
     is_flag=True,
     help="Assume required dependencies are already installed",
 )
-@click.pass_obj
-def cmd(app: Application, *, args: tuple[str, ...], no_dynamic_deps: bool) -> None:
+@click.option(
+    "-h",
+    "--help",
+    "show_help",
+    is_flag=True,
+    help="Show this help message and exit",
+)
+@click.pass_context
+def cmd(
+    ctx: click.Context,
+    *,
+    args: tuple[str, ...],
+    extra_features: tuple[str, ...],
+    extra_dependencies: tuple[str, ...],
+    no_dynamic_deps: bool,
+    show_help: bool,
+) -> None:
     """
     Invoke a local task.
     """
     from dda.utils.fs import Path
 
-    features = ["legacy-tasks"]
+    app: Application = ctx.obj
+
+    if show_help:
+        app.display(ctx.get_help())
+        return
+
+    features = ["legacy-tasks", *extra_features]
     invoke_args = [arg for arg in args if not arg.startswith("-")]
     if invoke_args:
         task = invoke_args[0]
@@ -53,4 +92,7 @@ def cmd(app: Application, *, args: tuple[str, ...], no_dynamic_deps: bool) -> No
             app=app,
             prefix=str(venv.path),
         )
+        if extra_dependencies:
+            ensure_deps_installed(list(extra_dependencies), app=app, sys_path=venv.get_sys_path(app))
+
         app.subprocess.replace_current_process(["python", "-m", "invoke", *args])
