@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+***Added:***
+
+- Add `--feat` and `--dep` flags to the `inv` command to install extra features and dependencies
+
 ## 0.5.2 - 2025-03-06
 
 ***Fixed:***
