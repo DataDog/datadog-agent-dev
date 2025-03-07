@@ -28,7 +28,7 @@ install_features() {
     echo -e "${PURPLE}Installing features: ${FEATURES}${RESET}"
 
     ARGS=()
-    for feature in $FEATURES; do
+    for feature in $(echo $FEATURES); do
       ARGS+=("-f" "$feature")
     done
 
