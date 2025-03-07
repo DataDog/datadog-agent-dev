@@ -38,4 +38,4 @@ jobs:
         DDA_INSTALL_FEATURES: legacy-tasks
 
     - name: Verify
-      run: deva --version
+      run: dda --version
