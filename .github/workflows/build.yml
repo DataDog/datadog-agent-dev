@@ -249,7 +249,7 @@ jobs:
         else
           new_binary="${{ env.APP_NAME }}"
           mv "$old_binary" "$new_binary"
-          chmod +x "$new_binary"
+          chmod 755 "$new_binary"
           tar -czf "../../packaging/${{ env.APP_NAME }}-${{ matrix.job.target }}.tar.gz" "$new_binary"
         fi
 
