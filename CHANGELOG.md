@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+## 0.6.1 - 2025-03-10
+
+***Fixed:***
+
+- Fix the read permissions of the `dda` binary on non-Windows platforms
+
 ## 0.6.0 - 2025-03-07
 
 ***Added:***
