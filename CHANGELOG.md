@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ***Fixed:***
 
 - Fix escaping on the non-Windows entry points of prebuilt distributions
+- Fix the help text of commands that have dynamic parameters
 
 ## 0.6.1 - 2025-03-10
 

@@ -64,6 +64,7 @@ class DynamicCommand(click.RichCommand):
 
         self._features = features
         self._dependencies = dependencies
+        self.__help_option: click.Option | None = None
 
     def get_params(self, ctx: click.Context) -> list[click.Parameter]:
         # https://github.com/pallets/click/pull/2784
@@ -84,6 +85,33 @@ class DynamicCommand(click.RichCommand):
                 ensure_deps_installed(self._dependencies, app=app)
 
         return super().invoke(ctx)
+
+    def get_help_option(self, ctx: click.Context) -> click.Option | None:
+        if self.__help_option is not None:
+            return self.__help_option
+
+        help_option = super().get_help_option(ctx)
+        if help_option is not None:
+            original_callback = help_option.callback
+
+            all_callbacks_executed = False
+
+            def callback(ctx: click.Context, param: click.Parameter, value: Any) -> None:
+                nonlocal all_callbacks_executed
+                if not all_callbacks_executed:
+                    # Callbacks for other parameters may influence the help text
+                    for other_param in ctx.command.get_params(ctx):
+                        if other_param is not param and other_param.callback is not None:
+                            other_param.callback(ctx, other_param, None)
+                    all_callbacks_executed = True
+
+                if original_callback is not None:
+                    original_callback(ctx, param, value)
+
+            help_option.callback = callback
+            self.__help_option = help_option
+
+        return self.__help_option
 
 
 class DynamicGroup(click.RichGroup):

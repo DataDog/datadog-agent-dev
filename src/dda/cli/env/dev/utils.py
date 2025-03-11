@@ -24,12 +24,6 @@ def get_env_type(ctx: click.Context, param: click.Option, value: str | None) -> 
     return env_type
 
 
-def option_env_type_callback(ctx: click.Context, param: click.Option, value: str | None) -> str:
-    from dda.cli.env.dev.utils import get_env_type
-
-    return get_env_type(ctx, param, value)
-
-
 option_env_type = partial(
     click.option,
     "--type",
@@ -38,6 +32,6 @@ option_env_type = partial(
     type=click.Choice(AVAILABLE_DEV_ENVS),
     show_default=True,
     is_eager=True,
-    callback=option_env_type_callback,
+    callback=get_env_type,
     help="The type of developer environment",
 )

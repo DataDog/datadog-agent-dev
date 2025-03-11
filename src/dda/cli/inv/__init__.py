@@ -48,7 +48,7 @@ After a dependency is installed once, it will always be available.
     "--help",
     "show_help",
     is_flag=True,
-    help="Show this help message and exit",
+    help="Show this help message and exit.",
 )
 @click.pass_context
 def cmd(
