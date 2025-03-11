@@ -9,10 +9,10 @@ from pathlib import Path
 def main():
     interpreter = Path(sys.executable).resolve()
 
-    # https://github.com/astral-sh/python-build-standalone/blob/20241219/cpython-unix/build-cpython.sh#L947-L949
+    # https://github.com/astral-sh/python-build-standalone/blob/20250212/cpython-unix/build-cpython.sh#L1002-L1004
     portable_shebang = b"""\
 #!/bin/sh
-'''exec' "\\$(dirname -- "\\$(realpath -- "\\$0")")/%s" "\\$0" "\\$@"
+'''exec' "$(dirname -- "$(realpath -- "$0")")/%s" "$0" "$@"
 ' '''
 """ % interpreter.name.encode()
 
