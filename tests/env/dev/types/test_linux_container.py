@@ -30,7 +30,7 @@ def get_starship_mount(shared_dir: Path) -> list[str]:
     if not starship_config_file.exists():
         return []
 
-    return ["-v", f"{shared_dir / "shell" / "starship.toml"}:/root/.shared/shell/starship.toml"]
+    return ["-v", f"{shared_dir / 'shell' / 'starship.toml'}:/root/.shared/shell/starship.toml"]
 
 
 def test_default_config(app):
@@ -170,7 +170,7 @@ class TestStart:
                         "DD_SHELL=zsh",
                         *starship_mount,
                         "-v",
-                        f"{shared_dir / "shell" / "zsh" / ".zsh_history"}:/root/.shared/shell/zsh/.zsh_history",
+                        f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
                         "-v",
                         f"{repo_dir}:/root/repos/datadog-agent",
                         "datadog/agent-dev-env-linux",
@@ -240,7 +240,7 @@ class TestStart:
                         "DD_SHELL=zsh",
                         *starship_mount,
                         "-v",
-                        f"{shared_dir / "shell" / "zsh" / ".zsh_history"}:/root/.shared/shell/zsh/.zsh_history",
+                        f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
                         "datadog/agent-dev-env-linux",
                     ],
                 ),
@@ -324,7 +324,7 @@ class TestStart:
                         "DD_SHELL=zsh",
                         *starship_mount,
                         "-v",
-                        f"{shared_dir / "shell" / "zsh" / ".zsh_history"}:/root/.shared/shell/zsh/.zsh_history",
+                        f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
                         "-v",
                         f"{repo_dir}:/root/repos/datadog-agent",
                         "datadog/agent-dev-env-linux",
@@ -402,7 +402,7 @@ class TestStart:
                         "DD_SHELL=zsh",
                         *starship_mount,
                         "-v",
-                        f"{shared_dir / "shell" / "zsh" / ".zsh_history"}:/root/.shared/shell/zsh/.zsh_history",
+                        f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
                         "-v",
                         f"{repo1_dir}:/root/repos/datadog-agent",
                         "-v",
@@ -475,7 +475,7 @@ class TestStart:
                         "DD_SHELL=zsh",
                         *starship_mount,
                         "-v",
-                        f"{shared_dir / "shell" / "zsh" / ".zsh_history"}:/root/.shared/shell/zsh/.zsh_history",
+                        f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
                         "datadog/agent-dev-env-linux",
                     ],
                 ),
