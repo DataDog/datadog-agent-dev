@@ -6,7 +6,7 @@ from __future__ import annotations
 from functools import cached_property
 from typing import TYPE_CHECKING, Annotated, Any, Literal, NoReturn
 
-import msgspec  # noqa: TCH002
+import msgspec
 
 from dda.env.dev.interface import DeveloperEnvironmentConfig, DeveloperEnvironmentInterface
 

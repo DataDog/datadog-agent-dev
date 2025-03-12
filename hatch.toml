@@ -3,6 +3,7 @@ installer = "uv"
 
 [envs.hatch-static-analysis]
 config-path = "ruff_defaults.toml"
+dependencies = ["ruff==0.9.9"]
 
 [envs.hatch-test]
 extra-dependencies = [

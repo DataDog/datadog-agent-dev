@@ -35,7 +35,7 @@ def cmd(app: Application, *, env_type: str, instance: str) -> None:
     if status.state not in transition_states:
         app.abort(
             f"Cannot remove developer environment `{env_type}` in state `{status.state}`, must be one of: "
-            f"{", ".join(sorted(transition_states))}"
+            f"{', '.join(sorted(transition_states))}"
         )
 
     env.remove()
