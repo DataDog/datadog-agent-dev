@@ -484,7 +484,7 @@ jobs:
       id: binary
       run: |-
         binary=$(echo build/*/release/*/${{ env.APP_NAME }})
-        chmod +x "$binary"
+        chmod 755 "$binary"
         echo "path=$binary" >> "$GITHUB_OUTPUT"
 
     - name: Build PKG
