@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 - Fix escaping on the non-Windows entry points of prebuilt distributions
 - Fix the help text of commands that have dynamic parameters
+- Fix the read permissions of the `dda` binary within the PKG installer
 
 ## 0.6.1 - 2025-03-10
 
