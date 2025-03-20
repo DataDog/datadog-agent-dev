@@ -10,8 +10,9 @@ from ast import literal_eval
 
 import keyring
 from datadog_api_client import ApiClient, Configuration
-from datadog_api_client.v1.api.events_api import EventsApi
-from datadog_api_client.v1.model.event_create_request import EventCreateRequest
+from datadog_api_client.v2.api.logs_api import LogsApi
+from datadog_api_client.v2.model.http_log import HTTPLog
+from datadog_api_client.v2.model.http_log_item import HTTPLogItem
 from msgspec import ValidationError, convert
 
 from dda.telemetry.model import TelemetryData
@@ -27,6 +28,16 @@ logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(message)s",
 )
 logging.info("Telemetry daemon started")
+
+
+def get_log_level(exit_code: int) -> str:
+    if exit_code == 0:
+        return "info"
+
+    if 1 < exit_code < 128:  # noqa: PLR2004
+        return "warn"
+
+    return "error"
 
 
 def nano_to_seconds(nano: int) -> float:
@@ -71,19 +82,27 @@ def main() -> None:
     command = join_command_args(literal_eval(telemetry_data.command))
     elapsed_time = nano_to_seconds(telemetry_data.end_time - telemetry_data.start_time)
 
-    body = EventCreateRequest(
-        title="dda command invoked",
-        text=f"""\
-Command: {command}
-Exit code: {telemetry_data.exit_code}
-Duration: {elapsed_time:.2f} seconds
-""",
-        tags=["cli:dda"],
-    )
+    logging.info("Creating HTTPLogItem")
+    try:
+        log_item = HTTPLogItem(
+            message=f"{command} (exit code: {telemetry_data.exit_code}, duration: {elapsed_time:.2f} seconds)",
+            level=get_log_level(telemetry_data.exit_code),
+            service="cli-dda",
+            ddtags="cli:dda",
+            exit_code=telemetry_data.exit_code,
+            duration=elapsed_time,
+        )
+    except Exception:
+        logging.exception("Failed to create HTTPLogItem")
+        return
+
+    logging.info("Submitting HTTPLog")
     config = Configuration(api_key={"apiKeyAuth": api_key})
     with ApiClient(config) as api_client:
-        api_instance = EventsApi(api_client)
-        api_instance.create_event(body=body)
+        api_instance = LogsApi(api_client)
+        api_instance.submit_log(body=HTTPLog(value=[log_item]))
+
+    logging.info("Submitted log item: %s", log_item)
 
 
 if __name__ == "__main__":

@@ -8,6 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+***Added:***
+
+- Telemetry now uses logs instead of events
+
+***Fixed:***
+
+- Fix the `self telemetry log remove` command
+
 ## 0.6.2 - 2025-03-12
 
 ***Fixed:***
