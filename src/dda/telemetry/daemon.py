@@ -34,7 +34,8 @@ def get_log_level(exit_code: int) -> str:
     if exit_code == 0:
         return "info"
 
-    if 1 < exit_code < 128:  # noqa: PLR2004
+    # https://github.com/pallets/click/blob/8.1.8/src/click/exceptions.py#L64
+    if exit_code == 2:  # noqa: PLR2004
         return "warn"
 
     return "error"
