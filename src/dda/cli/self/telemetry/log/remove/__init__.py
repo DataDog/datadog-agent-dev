@@ -19,4 +19,4 @@ def cmd(app: Application) -> None:
     """
     Clear the log.
     """
-    app.display(app.telemetry.read_log())
+    app.telemetry.clear_log()
