@@ -16,8 +16,8 @@ pytestmark = [pytest.mark.usefixtures("private_storage")]
 
 
 def test_default(dda, helpers, temp_dir, uv_on_path, mocker):
-    replace_current_process = mocker.patch(
-        "dda.utils.process.SubprocessRunner.replace_current_process",
+    exit_with_command = mocker.patch(
+        "dda.utils.process.SubprocessRunner.exit_with_command",
         side_effect=lambda *args, **kwargs: sys.exit(0),  # noqa: ARG005
     )
     subprocess_run = mocker.patch("subprocess.run", return_value=subprocess.CompletedProcess([], returncode=0))
@@ -63,7 +63,7 @@ def test_default(dda, helpers, temp_dir, uv_on_path, mocker):
             env=mock.ANY,
         ),
     ]
-    assert replace_current_process.call_args_list == [
+    assert exit_with_command.call_args_list == [
         mock.call(
             [
                 "python",
@@ -76,8 +76,8 @@ def test_default(dda, helpers, temp_dir, uv_on_path, mocker):
 
 
 def test_no_dynamic_deps_flag(dda, mocker):
-    replace_current_process = mocker.patch(
-        "dda.utils.process.SubprocessRunner.replace_current_process",
+    exit_with_command = mocker.patch(
+        "dda.utils.process.SubprocessRunner.exit_with_command",
         side_effect=lambda *args, **kwargs: sys.exit(0),  # noqa: ARG005
     )
 
@@ -86,7 +86,7 @@ def test_no_dynamic_deps_flag(dda, mocker):
     assert result.exit_code == 0, result.output
     assert not result.output
 
-    assert replace_current_process.call_args_list == [
+    assert exit_with_command.call_args_list == [
         mock.call(
             [
                 sys.executable,
@@ -99,8 +99,8 @@ def test_no_dynamic_deps_flag(dda, mocker):
 
 
 def test_no_dynamic_deps_env_var(dda, mocker):
-    replace_current_process = mocker.patch(
-        "dda.utils.process.SubprocessRunner.replace_current_process",
+    exit_with_command = mocker.patch(
+        "dda.utils.process.SubprocessRunner.exit_with_command",
         side_effect=lambda *args, **kwargs: sys.exit(0),  # noqa: ARG005
     )
 
@@ -110,7 +110,7 @@ def test_no_dynamic_deps_env_var(dda, mocker):
     assert result.exit_code == 0, result.output
     assert not result.output
 
-    assert replace_current_process.call_args_list == [
+    assert exit_with_command.call_args_list == [
         mock.call(
             [
                 sys.executable,

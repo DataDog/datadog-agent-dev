@@ -55,11 +55,14 @@ class SubprocessRunner:
         kwargs["stderr"] = subprocess.STDOUT if cross_streams else subprocess.PIPE
         return self.run(command, **kwargs).stdout
 
+    def exit_with_command(self, command: list[str]) -> NoReturn:
+        process = self.run(command, check=False)
+        self.__app.abort(code=process.returncode)
+
     if sys.platform == "win32":
 
         def replace_current_process(self, command: list[str]) -> NoReturn:
-            process = self.run(command, check=False)
-            self.__app.abort(code=process.returncode)
+            self.exit_with_command(command)
 
         def spawn_daemon(self, command: list[str] | str, **kwargs: Any) -> None:
             import subprocess
