@@ -8,10 +8,6 @@ from dda.cli.base import dynamic_group
 
 @dynamic_group(
     short_help="Manage daemon logging",
-    subcommands=(
-        "remove",
-        "show",
-    ),
 )
 def cmd() -> None:
     pass

@@ -3,9 +3,10 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
-import importlib
+import os
 import sys
 from functools import cached_property, partial
+from importlib.util import module_from_spec, spec_from_file_location
 from time import perf_counter_ns
 from typing import TYPE_CHECKING, Any
 
@@ -13,12 +14,59 @@ import rich_click as click
 from click.exceptions import Exit, UsageError
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from types import TracebackType
 
     from dda.cli.application import Application
 
 
 class DynamicContext(click.RichContext):
+    @cached_property
+    def allow_external_plugins(self) -> bool:
+        command: DynamicGroup = self.command  # type: ignore[assignment]
+        if command.allow_external_plugins is not None:
+            return command.allow_external_plugins
+
+        parent: DynamicContext | None = self.parent  # type: ignore[assignment]
+        if parent is None:
+            return bool(command.allow_external_plugins)
+
+        return parent.allow_external_plugins
+
+    @cached_property
+    def external_plugins(self) -> dict[str, str]:
+        import os
+
+        import find_exe
+
+        plugin_prefix = f"{self.command_path.replace(' ', '-')}-"
+        exe_pattern = f"^{plugin_prefix}[^-]+$"
+
+        plugins: dict[str, str] = {}
+        for executable in find_exe.with_pattern(exe_pattern):
+            exe_name = os.path.splitext(os.path.basename(executable))[0]
+            plugin_name = exe_name[len(plugin_prefix) :]
+            plugins[plugin_name] = executable
+
+        return plugins
+
+    @cached_property
+    def search_paths(self) -> dict[int, str]:
+        parent: DynamicContext | None = self.parent  # type: ignore[assignment]
+        if parent is None:
+            command: DynamicGroup = self.command  # type: ignore[assignment]
+            return command.get_default_search_paths()
+
+        new_search_paths = {}
+        parent_cmd_name = self.command_path.split()[-1]
+        for i, search_path in parent.search_paths.items():
+            group_dir = os.path.join(search_path, parent_cmd_name)
+            cmd_path = os.path.join(group_dir, "__init__.py")
+            if os.path.isfile(cmd_path):
+                new_search_paths[i] = group_dir
+
+        return new_search_paths
+
     @cached_property
     def dynamic_params(self) -> list[click.Option]:
         # https://github.com/pallets/click/pull/2784
@@ -31,9 +79,8 @@ class DynamicContext(click.RichContext):
     def __exit__(
         self, exc_type: type[BaseException] | None, exc_value: BaseException | None, tb: TracebackType | None
     ) -> None:
-        if self._depth == 1:
-            app: Application = self.obj
-
+        app: Application | None = self.obj
+        if app is not None and self._depth == 1:
             # https://github.com/pallets/click/blob/8.1.8/src/click/exceptions.py#L296
             if isinstance(exc_value, Exit):
                 exit_code = exc_value.exit_code
@@ -66,16 +113,25 @@ class DynamicCommand(click.RichCommand):
         self._dependencies = dependencies
         self.__help_option: click.Option | None = None
 
-    def get_params(self, ctx: click.Context) -> list[click.Parameter]:
+        self.__dynamic_path_id = 0
+
+    def set_dynamic_path_id(self, dynamic_path_id: int) -> None:
+        self.__dynamic_path_id = dynamic_path_id
+
+    @property
+    def dynamic_path_id(self) -> int:
+        return self.__dynamic_path_id
+
+    def get_params(self, ctx: DynamicContext) -> list[click.Parameter]:  # type: ignore[override]
         # https://github.com/pallets/click/pull/2784
         # https://github.com/pallets/click/blob/8.1.7/src/click/core.py#L1255
-        params = [*self.params, *ctx.dynamic_params]  # type: ignore[attr-defined]
+        params = [*self.params, *ctx.dynamic_params]
         if (help_option := self.get_help_option(ctx)) is not None:
             params.append(help_option)
 
         return params
 
-    def invoke(self, ctx: click.Context) -> Any:
+    def invoke(self, ctx: DynamicContext) -> Any:  # type: ignore[override]
         app: Application = ctx.obj
         if self.callback is not None and app.dynamic_deps_allowed:
             if self._features is not None:
@@ -84,9 +140,23 @@ class DynamicCommand(click.RichCommand):
             if self._dependencies is not None:
                 ensure_deps_installed(self._dependencies, app=app)
 
-        return super().invoke(ctx)
+        # Only add dynamic command paths to Python's search path, the first one is always the root command group
+        if self.dynamic_path_id != 0:
+            root_ctx = ctx
+            while root_ctx.parent is not None:
+                parent: DynamicContext = root_ctx.parent  # type: ignore[assignment]
+                root_ctx = parent
 
-    def get_help_option(self, ctx: click.Context) -> click.Option | None:
+            search_path = root_ctx.search_paths[self.dynamic_path_id]
+            sys.path.insert(0, search_path)
+
+        try:
+            return super().invoke(ctx)
+        finally:
+            if self.dynamic_path_id != 0:
+                sys.path.pop(0)
+
+    def get_help_option(self, ctx: DynamicContext) -> click.Option | None:  # type: ignore[override]
         if self.__help_option is not None:
             return self.__help_option
 
@@ -96,7 +166,7 @@ class DynamicCommand(click.RichCommand):
 
             all_callbacks_executed = False
 
-            def callback(ctx: click.Context, param: click.Parameter, value: Any) -> None:
+            def callback(ctx: DynamicContext, param: click.Parameter, value: Any) -> None:
                 nonlocal all_callbacks_executed
                 if not all_callbacks_executed:
                     # Callbacks for other parameters may influence the help text
@@ -108,7 +178,7 @@ class DynamicCommand(click.RichCommand):
                 if original_callback is not None:
                     original_callback(ctx, param, value)
 
-            help_option.callback = callback
+            help_option.callback = callback  # type: ignore[assignment]
             self.__help_option = help_option
 
         return self.__help_option
@@ -119,75 +189,91 @@ class DynamicGroup(click.RichGroup):
     command_class = DynamicCommand
 
     def __init__(
-        self, *args: Any, external_plugins: bool | None = None, subcommands: tuple[str], **kwargs: Any
+        self,
+        *args: Any,
+        allow_external_plugins: bool | None = None,
+        subcommand_filter: Callable[[str], bool] | None = None,
+        search_path_finder: Callable[[], list[str]] | None = None,
+        **kwargs: Any,
     ) -> None:
         super().__init__(*args, **kwargs)
 
-        self._external_plugins = external_plugins
-        # e.g. ('dev', 'runtime', 'qa')
-        self._subcommands = subcommands
+        self.allow_external_plugins = allow_external_plugins
+        self.__subcommand_filter = subcommand_filter
+        self.__search_path_finder = search_path_finder
+        self.__subcommand_cache: list[str] | None = None
+
+        self.__dynamic_path_id = 0
+
+    def set_dynamic_path_id(self, dynamic_path_id: int) -> None:
+        self.__dynamic_path_id = dynamic_path_id
 
     @property
-    def _module(self) -> str:
-        # e.g. dda.cli.env
-        return self.callback.__module__
+    def dynamic_path_id(self) -> int:
+        return self.__dynamic_path_id
 
-    @cached_property
-    def _plugins(self) -> dict[str, str]:
-        import os
+    def list_commands(self, ctx: DynamicContext) -> list[str]:  # type: ignore[override]
+        if self.__subcommand_cache is not None:
+            return self.__subcommand_cache
 
-        import find_exe
+        commands = super().list_commands(ctx)
+        commands.extend(
+            entry
+            for search_path in ctx.search_paths.values()
+            for entry in os.listdir(search_path)
+            if not entry.startswith("_.") and os.path.isfile(os.path.join(search_path, entry, "__init__.py"))
+        )
 
-        plugin_prefix = self.callback.__module__.replace("dda.cli", "dda", 1).replace(".", "-")
-        plugin_prefix = f"{plugin_prefix}-"
-        exe_pattern = f"^{plugin_prefix}[^-]+$"
+        if ctx.allow_external_plugins:
+            commands.extend(ctx.external_plugins)
 
-        plugins: dict[str, str] = {}
-        for executable in find_exe.with_pattern(exe_pattern):
-            exe_name = os.path.splitext(os.path.basename(executable))[0]
-            plugin_name = exe_name[len(plugin_prefix) :]
-            plugins[plugin_name] = executable
+        self.__subcommand_cache = sorted(command for command in commands if self._subcommand_allowed(command))
+        return self.__subcommand_cache
 
-        return plugins
+    def get_command(self, ctx: DynamicContext, cmd_name: str) -> DynamicCommand | DynamicGroup | None:  # type: ignore[override]
+        command: DynamicCommand | DynamicGroup | None = super().get_command(ctx, cmd_name)  # type: ignore[assignment]
+        if command is not None or not self._subcommand_allowed(cmd_name):
+            return command
+
+        for i, search_path in ctx.search_paths.items():
+            cmd_path = os.path.join(search_path, cmd_name, "__init__.py")
+            if os.path.isfile(cmd_path):
+                command = self._lazy_load(cmd_name, cmd_path)
+                command.set_dynamic_path_id(i)
+                return command
+
+        if cmd_name in ctx.external_plugins:
+            return _get_external_plugin_callback(cmd_name, ctx.external_plugins[cmd_name])
+
+        return command
+
+    def _subcommand_allowed(self, cmd_name: str) -> bool:
+        return self.__subcommand_filter is None or self.__subcommand_filter(cmd_name)
+
+    def get_default_search_paths(self) -> dict[int, str]:
+        callback = self.callback
+        # functools.partial
+        while callback is not None and hasattr(callback, "__wrapped__"):
+            callback = callback.__wrapped__
+
+        search_paths = [os.getcwd() if callback is None else os.path.dirname(callback.__code__.co_filename)]
+        if self.__search_path_finder is not None:
+            search_paths.extend(self.__search_path_finder())
+
+        return dict(enumerate(search_paths))
 
     @classmethod
-    def _create_module_meta_key(cls, module: str) -> str:
-        return f"{module}.plugins"
+    def _lazy_load(cls, cmd_name: str, path: str) -> DynamicCommand | DynamicGroup:
+        spec = spec_from_file_location(cmd_name, path)
+        if spec is None:
+            message = f"Path to command `{cmd_name}` doesn't exist: {path}"
+            raise ValueError(message)
 
-    def _external_plugins_allowed(self, ctx: click.Context) -> bool:
-        if self._external_plugins is not None:
-            return self._external_plugins
-
-        parent_module_parts = self._module.split(".")[:-1]
-        parent_key = self._create_module_meta_key(".".join(parent_module_parts))
-        return bool(ctx.meta[parent_key])
-
-    def list_commands(self, ctx: click.Context) -> list[str]:
-        commands = super().list_commands(ctx)
-        commands.extend(self._subcommands)
-        if self._external_plugins_allowed(ctx):
-            commands.extend(self._plugins)
-        return sorted(commands)
-
-    def get_command(self, ctx: click.Context, cmd_name: str) -> click.Command | None:
-        # Pass down the default setting for allowing external plugins, see:
-        # https://click.palletsprojects.com/en/8.1.x/api/#click.Context.meta
-        ctx.meta[self._create_module_meta_key(self._module)] = self._external_plugins_allowed(ctx)
-
-        if cmd_name in self._subcommands:
-            return self._lazy_load(cmd_name)
-
-        if cmd_name in self._plugins:
-            return _get_external_plugin_callback(cmd_name, self._plugins[cmd_name])
-
-        return super().get_command(ctx, cmd_name)
-
-    def _lazy_load(self, cmd_name: str) -> click.Command:
-        import_path = f"{self._module}.{cmd_name}"
-        mod = importlib.import_module(import_path)
-        cmd_object = getattr(mod, "cmd", None)
-        if not isinstance(cmd_object, click.Command):
-            message = f"Unable to lazily load command: {import_path}.cmd"
+        module = module_from_spec(spec)
+        spec.loader.exec_module(module)  # type: ignore[union-attr]
+        cmd_object = getattr(module, "cmd", None)
+        if not isinstance(cmd_object, DynamicCommand | DynamicGroup):
+            message = f"Unable to lazily load command `cmd` from: {path}"
             raise TypeError(message)
 
         return cmd_object
@@ -266,15 +352,15 @@ def ensure_features_installed(
         app.tools.uv.wait(command, message="Synchronizing dependencies", cwd=str(temp_dir), env=env_vars)
 
 
-def _get_external_plugin_callback(cmd_name: str, executable: str) -> click.Command:
-    @click.command(
+def _get_external_plugin_callback(cmd_name: str, executable: str) -> DynamicCommand:
+    @dynamic_command(
         name=cmd_name,
         short_help="[external plugin]",
         context_settings={"help_option_names": [], "ignore_unknown_options": True},
     )
-    @click.argument("args", required=True, nargs=-1)
+    @click.argument("args", nargs=-1)
     @click.pass_context
-    def _external_plugin_callback(ctx: click.Context, args: tuple[str, ...]) -> None:
+    def _external_plugin_callback(ctx: click.Context, *, args: tuple[str, ...]) -> None:
         import subprocess
 
         process = subprocess.run([executable, *args], check=False)

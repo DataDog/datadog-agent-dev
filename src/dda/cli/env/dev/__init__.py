@@ -8,17 +8,6 @@ from dda.cli.base import dynamic_group
 
 @dynamic_group(
     short_help="Work with developer environments",
-    subcommands=(
-        "code",
-        "gui",
-        "ls",
-        "remove",
-        "run",
-        "shell",
-        "start",
-        "status",
-        "stop",
-    ),
 )
 def cmd() -> None:
     pass
