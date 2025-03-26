@@ -8,7 +8,6 @@ from dda.cli.base import dynamic_group
 
 @dynamic_group(
     short_help="Work with environments",
-    subcommands=("dev",),
 )
 def cmd() -> None:
     pass

@@ -8,11 +8,6 @@ from dda.cli.base import dynamic_group
 
 @dynamic_group(
     short_help="Manage telemetry submission",
-    subcommands=(
-        "disable",
-        "enable",
-        "log",
-    ),
 )
 def cmd() -> None:
     pass

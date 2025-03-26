@@ -17,16 +17,21 @@ from dda.cli.base import dynamic_group
 from dda.config.constants import AppEnvVars, ConfigEnvVars
 
 
+def search_path_finder() -> list[str]:
+    search_paths = []
+
+    scripts_dir = os.path.join(os.getcwd(), ".dda", "scripts")
+    if os.path.isdir(scripts_dir):
+        search_paths.append(scripts_dir)
+
+    return search_paths
+
+
 @dynamic_group(
     context_settings={"help_option_names": ["-h", "--help"], "max_content_width": 120, "show_default": True},
     invoke_without_command=True,
-    external_plugins=True,
-    subcommands=(
-        "config",
-        "env",
-        "inv",
-        "self",
-    ),
+    allow_external_plugins=True,
+    search_path_finder=search_path_finder,
 )
 @click.rich_config(
     help_config=click.RichHelpConfiguration(

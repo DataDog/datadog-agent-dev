@@ -8,13 +8,6 @@ from dda.cli.base import dynamic_group
 
 @dynamic_group(
     short_help="Manage the config file",
-    subcommands=(
-        "explore",
-        "find",
-        "restore",
-        "set",
-        "show",
-    ),
 )
 def cmd() -> None:
     pass
