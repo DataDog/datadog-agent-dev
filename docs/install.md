@@ -10,31 +10,27 @@
 2. Run your downloaded file and follow the on-screen instructions.
 3. Restart your terminal.
 4. To verify that the shell can find and run the `dda` command in your `PATH`, use the following command.
-
-    ```
-    $ dda --version
-    <<<DDA_VERSION>>>
-    ```
+        ```
+        $ dda --version
+        <<<DDA_VERSION>>>
+        ```
 ////
 
 //// tab | Command line installer
 1. Download the file using the `curl` command. The `-o` option specifies the file name that the downloaded package is written to. In this example, the file is written to `dda-universal.pkg` in the current directory.
-
-     ```
-     curl -Lo dda-universal.pkg https://github.com/DataDog/datadog-agent-dev/releases/latest/download/dda-universal.pkg
-     ```
+        ```
+        curl -Lo dda-universal.pkg https://github.com/DataDog/datadog-agent-dev/releases/latest/download/dda-universal.pkg
+        ```
 2. Run the standard macOS [`installer`](https://ss64.com/osx/installer.html) program, specifying the downloaded `.pkg` file as the source. Use the `-pkg` parameter to specify the name of the package to install, and the `-target /` parameter for the drive in which to install the package. The files are installed to `/usr/local/dda`, and an entry is created at `/etc/paths.d/dda` that instructs shells to add the `/usr/local/dda` directory to. You must include sudo on the command to grant write permissions to those folders.
-
-     ```
-     sudo installer -pkg ./dda-universal.pkg -target /
-     ```
+        ```
+        sudo installer -pkg ./dda-universal.pkg -target /
+        ```
 3. Restart your terminal.
 4. To verify that the shell can find and run the `dda` command in your `PATH`, use the following command.
-
-     ```
-     $ dda --version
-     <<<DDA_VERSION>>>
-     ```
+        ```
+        $ dda --version
+        <<<DDA_VERSION>>>
+        ```
 ////
 ///
 
@@ -45,33 +41,31 @@
 2. Run your downloaded file and follow the on-screen instructions.
 3. Restart your terminal.
 4. To verify that the shell can find and run the `dda` command in your `PATH`, use the following command.
-
-     ```
-     $ dda --version
-     <<<DDA_VERSION>>>
-     ```
+        ```
+        $ dda --version
+        <<<DDA_VERSION>>>
+        ```
 ////
 
 //// tab | Command line installer
 1. Download and run the installer using the standard Windows [`msiexec`](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/msiexec) program, specifying one of the `.msi` files as the source. Use the `/passive` and `/i` parameters to request an unattended, normal installation.
 
-     ///// tab | x64
-     ```
-     msiexec /passive /i https://github.com/DataDog/datadog-agent-dev/releases/latest/download/dda-x64.msi
-     ```
-     /////
-     ///// tab | x86
-     ```
-     msiexec /passive /i https://github.com/DataDog/datadog-agent-dev/releases/latest/download/dda-x86.msi
-     ```
-     /////
+        ///// tab | x64
+        ```
+        msiexec /passive /i https://github.com/DataDog/datadog-agent-dev/releases/latest/download/dda-x64.msi
+        ```
+        /////
+        ///// tab | x86
+        ```
+        msiexec /passive /i https://github.com/DataDog/datadog-agent-dev/releases/latest/download/dda-x86.msi
+        ```
+        /////
 2. Restart your terminal.
 3. To verify that the shell can find and run the `dda` command in your `PATH`, use the following command.
-
-     ```
-     $ dda --version
-     <<<DDA_VERSION>>>
-     ```
+        ```
+        $ dda --version
+        <<<DDA_VERSION>>>
+        ```
 ////
 ///
 
