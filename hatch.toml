@@ -20,34 +20,24 @@ check = "mypy --install-types --non-interactive {args:src/dda tests}"
 
 [envs.docs]
 dependencies = [
-  "mkdocs~=1.5.2",
-  "mkdocs-material~=9.4.6",
+  "mkdocs~=1.6.1",
+  "mkdocs-material~=9.5.40",
   # Plugins
-  "mkdocs-minify-plugin~=0.7.1",
-  "mkdocs-git-revision-date-localized-plugin~=1.2.0",
-  "mkdocstrings-python~=1.10.0",
+  "mkdocs-minify-plugin~=0.8.0",
+  "mkdocs-git-revision-date-localized-plugin~=1.2.9",
+  "mkdocs-glightbox~=0.4.0",
   "mkdocs-redirects~=1.2.1",
-  "mkdocs-glightbox~=0.3.4",
-  "mkdocs-pdf-export-plugin~=0.5.10",
-  "weasyprint~=56.1.0",
+  "mkdocstrings-python~=1.16.2",
   # Extensions
-  "mkdocs-click~=0.8.0",
-  "pymdown-extensions~=10.3.0",
-  "mkpatcher~=1.0.2",
+  "pymdown-extensions~=10.11.2",
   # Necessary for syntax highlighting in code blocks
-  "pygments~=2.16.1",
+  "pygments~=2.18.0",
   # Validation
-  # https://github.com/linkchecker/linkchecker/pull/669#issuecomment-1267236287
-  "linkchecker @ git+https://github.com/linkchecker/linkchecker.git@d9265bb71c2054bf57b8c5734a4825d62505c779",
-]
-# API & CLI documentation
-post-install-commands = [
-  "pip install -e .",
+  "linkchecker~=10.5.0",
 ]
 [envs.docs.env-vars]
-# Use a set timestamp for reproducible builds, see:
-# https://reproducible-builds.org/specs/source-date-epoch/
 SOURCE_DATE_EPOCH = "1580601600"
+PYTHONUNBUFFERED = "1"
 [envs.docs.scripts]
 build = "mkdocs build --clean --strict {args}"
 serve = "mkdocs serve --dev-addr localhost:8000 {args}"

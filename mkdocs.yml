@@ -4,21 +4,21 @@ site_author: Datadog
 site_url: https://datadoghq.dev/datadog-agent-dev/
 repo_name: datadog/datadog-agent-dev
 repo_url: https://github.com/DataDog/datadog-agent-dev
-edit_uri: blob/main/docs/public
-copyright: Copyright &copy; Datadog, Inc. 2024-present
+edit_uri: blob/main/docs
+copyright: Copyright &copy; Datadog, Inc. 2025-present
 
-docs_dir: docs/public
+docs_dir: docs
 site_dir: site
 theme:
   name: material
   language: en
+  font:
+    text: Roboto
+    code: Roboto Mono
   favicon: assets/images/favicon.ico
   logo: assets/images/logo.svg
   icon:
     repo: fontawesome/brands/github-alt
-  font:
-    text: Roboto
-    code: Roboto Mono
   palette:
   - media: "(prefers-color-scheme: dark)"
     scheme: slate
@@ -35,6 +35,8 @@ theme:
   features:
   - content.action.edit
   - content.code.copy
+  - content.tabs.link
+  - content.tooltips
   - navigation.expand
   - navigation.footer
   - navigation.instant
@@ -45,17 +47,47 @@ theme:
 nav:
 - Home:
   - About: index.md
+  - Install: install.md
+
+
+hooks:
+- docs/.hooks/plugin_register.py
+- docs/.hooks/title_from_content.py
 
 plugins:
   # Enable for bug reports
   # info: {}
   # Built-in
   search: {}
+  # Extra
+  glightbox: {}
   minify:
     minify_html: true
   git-revision-date-localized:
     type: date
     strict: false
+  mkdocstrings:
+    default_handler: python
+    handlers:
+      python:
+        paths:
+        - src
+        options:
+          # Rendering
+          show_root_full_path: false
+          # Headings
+          show_root_heading: true
+          show_source: false
+          show_symbol_type_toc: true
+          # Docstrings
+          show_if_no_docstring: true
+          # Signatures/annotations
+          show_signature_annotations: true
+          signature_crossrefs: true
+          # Other
+          show_bases: false
+        inventories:
+        - https://docs.python.org/3/objects.inv
 
 markdown_extensions:
 # Built-in
@@ -72,6 +104,11 @@ markdown_extensions:
 - pymdownx.arithmatex:
 - pymdownx.betterem:
     smart_enable: all
+- pymdownx.blocks.tab:
+    alternate_style: true
+    slugify: !!python/object/apply:pymdownx.slugs.slugify
+      kwds:
+        case: lower
 - pymdownx.caret:
 - pymdownx.critic:
 - pymdownx.details:
@@ -94,7 +131,7 @@ markdown_extensions:
     normalize_issue_symbols: true
     provider: github
     user: DataDog
-    repo: datadog-agent
+    repo: datadog-agent-dev
 - pymdownx.mark:
 - pymdownx.progressbar:
 - pymdownx.saneheaders:
@@ -102,14 +139,13 @@ markdown_extensions:
 - pymdownx.snippets:
     check_paths: true
     base_path:
-    - docs/public/.snippets
+    - docs/.snippets
     auto_append:
     - links.txt
     - abbrs.txt
 - pymdownx.superfences:
 - pymdownx.tabbed:
     alternate_style: true
-    combine_header_slug: true
     slugify: !!python/object/apply:pymdownx.slugs.slugify
       kwds:
         case: lower

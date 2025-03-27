@@ -16,6 +16,7 @@ ignore = [
 ]
 
 [lint.extend-per-file-ignores]
+"docs/.hooks/**/*" = ["INP001"]
 "release/**/*" = ["INP001"]
 # Saving the start time comes before imports
 "src/dda/cli/__init__.py" = ["E402"]
