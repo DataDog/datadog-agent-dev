@@ -54,7 +54,7 @@ legacy-constraints = [
     "azure-mgmt-resource==23.0.1",
     "jira==3.5.2",
     "setuptools==75.8.2",
-    "virtualenv==16.7.9",
+    "virtualenv==20.29.3",
     "wheel==0.40.0",
 ]
 # https://github.com/DataDog/datadog-agent-buildimages/blob/main/requirements.txt
@@ -95,7 +95,7 @@ legacy-agent-deploy = [
     "azure-mgmt-resource==23.0.1",
     "pygithub==1.59.1",
     "setuptools==75.8.2",
-    "virtualenv==16.7.9",
+    "virtualenv==20.29.3",
 ]
 # https://github.com/DataDog/datadog-agent-buildimages/blob/main/requirements/btf-gen.txt
 legacy-btf-gen = [

@@ -539,7 +539,7 @@ legacy-agent-deploy = [
     { name = "azure-mgmt-resource", specifier = "==23.0.1" },
     { name = "pygithub", specifier = "==1.59.1" },
     { name = "setuptools", specifier = "==75.8.2" },
-    { name = "virtualenv", specifier = "==16.7.9" },
+    { name = "virtualenv", specifier = "==20.29.3" },
 ]
 legacy-btf-gen = [
     { name = "awscli", specifier = "==1.29.45" },
@@ -580,7 +580,7 @@ legacy-constraints = [
     { name = "azure-mgmt-resource", specifier = "==23.0.1" },
     { name = "jira", specifier = "==3.5.2" },
     { name = "setuptools", specifier = "==75.8.2" },
-    { name = "virtualenv", specifier = "==16.7.9" },
+    { name = "virtualenv", specifier = "==20.29.3" },
     { name = "wheel", specifier = "==0.40.0" },
 ]
 legacy-docs = [
@@ -735,6 +735,15 @@ wheels = [
 ]
 
 [[package]]
+name = "distlib"
+version = "0.3.9"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/0d/dd/1bec4c5ddb504ca60fc29472f3d27e8d4da1257a854e1d96742f15c1d02d/distlib-0.3.9.tar.gz", hash = "sha256:a60f20dea646b8a33f3e7772f74dc0b2d0772d2837ee1342a00645c81edf9403", size = 613923 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/91/a1/cf2472db20f7ce4a6be1253a81cfdf85ad9c7885ffbed7047fb72c24cf87/distlib-0.3.9-py2.py3-none-any.whl", hash = "sha256:47f8c22fd27c27e25a65601af709b38e4f0a45ea4fc2e710f65755fa8caaaf87", size = 468973 },
+]
+
+[[package]]
 name = "dnspython"
 version = "2.7.0"
 source = { registry = "https://pypi.org/simple" }
@@ -787,12 +796,12 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/57/e0/1b5f95c2651284a5d4fdfb2cc5ecad57fb694084cce59d9d4acb7ac30ecf/dulwich-0.21.6.tar.gz", hash = "sha256:30fbe87e8b51f3813c131e2841c86d007434d160bd16db586b40d47f31dd05b0", size = 445545 }
 
 [[package]]
-name = "editables"
-version = "0.5"
+name = "filelock"
+version = "3.18.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/37/4a/986d35164e2033ddfb44515168a281a7986e260d344cf369c3f52d4c3275/editables-0.5.tar.gz", hash = "sha256:309627d9b5c4adc0e668d8c6fa7bac1ba7c8c5d415c2d27f60f081f8e80d1de2", size = 14744 }
+sdist = { url = "https://files.pythonhosted.org/packages/0a/10/c23352565a6544bdc5353e0b15fc1c563352101f30e24bf500207a54df9a/filelock-3.18.0.tar.gz", hash = "sha256:adbc88eabb99d2fec8c9c1b229b171f18afa655400173ddc653d5d01501fb9f2", size = 18075 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6b/be/0f2f4a5e8adc114a02b63d92bf8edbfa24db6fc602fca83c885af2479e0e/editables-0.5-py3-none-any.whl", hash = "sha256:61e5ffa82629e0d8bfe09bc44a07db3c1ab8ed1ce78a6980732870f19b5e7d4c", size = 5098 },
+    { url = "https://files.pythonhosted.org/packages/4d/36/2a115987e2d8c300a974597416d9de88f2444426de9571f4b59b2cca3acc/filelock-3.18.0-py3-none-any.whl", hash = "sha256:c401f4f8377c4464e6db25fff06205fd89bdd83b65eb0488ed1b160f780e21de", size = 16215 },
 ]
 
 [[package]]
@@ -851,7 +860,7 @@ wheels = [
 
 [[package]]
 name = "hatch"
-version = "1.9.7"
+version = "1.13.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
@@ -867,28 +876,28 @@ dependencies = [
     { name = "tomli-w" },
     { name = "tomlkit" },
     { name = "userpath" },
+    { name = "uv" },
     { name = "virtualenv" },
     { name = "zstandard" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/0d/d2/cf2c772634c3ab65a0244ebcead8aeff671cbd29f1f72a1f4460698d9650/hatch-1.9.7.tar.gz", hash = "sha256:19a7b82179f94f2adddbad76aa7e65ab90cad55ab103d53827637935c9e6624c", size = 689639 }
+sdist = { url = "https://files.pythonhosted.org/packages/af/ed/5001de278f8d7381cbc84f5efdae72308fe37493bc063878f6a1ac07dab8/hatch-1.13.0.tar.gz", hash = "sha256:5e1a75770cfe8f3ebae3abfded3a976238b0acefd19cdabc5245597525b8066f", size = 5188060 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a8/cb/8000f900ff85e164ab3d52c74ee20dd4bacd191ae5fb2dab00e72006dab5/hatch-1.9.7-py3-none-any.whl", hash = "sha256:0ffb5eae45127a6718f074cb80ce3fbab452fda1bb5144f9743da961f90eb57d", size = 110812 },
+    { url = "https://files.pythonhosted.org/packages/13/8d/6d965a22bc38cec091ba82131624bb5d75471094d7fe05e829536de3de2f/hatch-1.13.0-py3-none-any.whl", hash = "sha256:bb1a18558a626279cae338b4d8a9d3ca4226d5e06d50de600608c57acd131b67", size = 125757 },
 ]
 
 [[package]]
 name = "hatchling"
-version = "1.21.1"
+version = "1.25.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "editables" },
     { name = "packaging" },
     { name = "pathspec" },
     { name = "pluggy" },
     { name = "trove-classifiers" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d8/a1/7dd1caa87c0b15c04c6291e25112e5d082cce02ee87f221a8be1d594f857/hatchling-1.21.1.tar.gz", hash = "sha256:bba440453a224e7d4478457fa2e8d8c3633765bafa02975a6b53b9bf917980bc", size = 58059 }
+sdist = { url = "https://files.pythonhosted.org/packages/a3/51/8a4a67a8174ce59cf49e816e38e9502900aea9b4af672d0127df8e10d3b0/hatchling-1.25.0.tar.gz", hash = "sha256:7064631a512610b52250a4d3ff1bd81551d6d1431c4eb7b72e734df6c74f4262", size = 64632 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/3a/bb/40528a09a33845bd7fd75c33b3be7faec3b5c8f15f68a58931da67420fb9/hatchling-1.21.1-py3-none-any.whl", hash = "sha256:21e8c13f8458b219a91cb84e5b61c15bf786695d1c4fabc29e91e78f94bfe892", size = 76740 },
+    { url = "https://files.pythonhosted.org/packages/0c/8b/90e80904fdc24ce33f6fc6f35ebd2232fe731a8528a22008458cf197bc4d/hatchling-1.25.0-py3-none-any.whl", hash = "sha256:b47948e45d4d973034584dd4cb39c14b6a70227cf287ab7ec0ad7983408a882c", size = 84077 },
 ]
 
 [[package]]
@@ -2222,11 +2231,16 @@ wheels = [
 
 [[package]]
 name = "virtualenv"
-version = "16.7.9"
+version = "20.29.3"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/aa/3b/213c384c65e17995cccd0f2bb993b7b82c41f62e74c2f8f39c8e60549d86/virtualenv-16.7.9.tar.gz", hash = "sha256:0d62c70883c0342d59c11d0ddac0d954d0431321a41ab20851facf2b222598f3", size = 5121717 }
+dependencies = [
+    { name = "distlib" },
+    { name = "filelock" },
+    { name = "platformdirs" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c7/9c/57d19fa093bcf5ac61a48087dd44d00655f85421d1aa9722f8befbf3f40a/virtualenv-20.29.3.tar.gz", hash = "sha256:95e39403fcf3940ac45bc717597dba16110b74506131845d9b687d5e73d947ac", size = 4320280 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/05/f1/2e07e8ca50e047b9cc9ad56cf4291f4e041fa73207d000a095fe478abf84/virtualenv-16.7.9-py2.py3-none-any.whl", hash = "sha256:55059a7a676e4e19498f1aad09b8313a38fcc0cdbe4fdddc0e9b06946d21b4bb", size = 3354125 },
+    { url = "https://files.pythonhosted.org/packages/c2/eb/c6db6e3001d58c6a9e67c74bb7b4206767caa3ccc28c6b9eaf4c23fb4e34/virtualenv-20.29.3-py3-none-any.whl", hash = "sha256:3e3d00f5807e83b234dfb6122bf37cfadf4be216c53a49ac059d02414f819170", size = 4301458 },
 ]
 
 [[package]]
