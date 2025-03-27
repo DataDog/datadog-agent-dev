@@ -44,7 +44,7 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = [
+self-dev = [
     "hatch",
 ]
 ### The following dependencies were defined in the build image repo

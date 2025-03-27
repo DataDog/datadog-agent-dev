@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from dda.cli.application import Application
 
 
-@dynamic_command(short_help="Build documentation", features=["dev"])
+@dynamic_command(short_help="Build documentation", features=["self-dev"])
 @click.option("--check", is_flag=True, help="Ensure links are valid")
 @click.pass_obj
 def cmd(app: Application, *, check: bool) -> None:

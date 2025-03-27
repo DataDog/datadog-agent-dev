@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from dda.cli.application import Application
 
 
-@dynamic_command(short_help="Serve documentation", features=["dev"])
+@dynamic_command(short_help="Serve documentation", features=["self-dev"])
 @click.option(
     "--dirty",
     is_flag=True,

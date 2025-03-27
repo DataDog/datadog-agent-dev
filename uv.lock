@@ -354,9 +354,6 @@ dependencies = [
 ]
 
 [package.dev-dependencies]
-dev = [
-    { name = "hatch" },
-]
 legacy-agent-deploy = [
     { name = "azure-identity" },
     { name = "azure-mgmt-resource" },
@@ -511,6 +508,9 @@ legacy-test-infra-definitions = [
     { name = "pyright" },
     { name = "termcolor" },
 ]
+self-dev = [
+    { name = "hatch" },
+]
 
 [package.metadata]
 requires-dist = [
@@ -533,7 +533,6 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "hatch" }]
 legacy-agent-deploy = [
     { name = "azure-identity", specifier = "==1.14.1" },
     { name = "azure-mgmt-resource", specifier = "==23.0.1" },
@@ -687,6 +686,7 @@ legacy-test-infra-definitions = [
     { name = "pyright", specifier = "==1.1.391" },
     { name = "termcolor", specifier = "==2.5.0" },
 ]
+self-dev = [{ name = "hatch" }]
 
 [[package]]
 name = "debugpy"

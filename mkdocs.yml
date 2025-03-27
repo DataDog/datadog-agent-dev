@@ -49,7 +49,6 @@ nav:
   - About: index.md
   - Install: install.md
 
-
 hooks:
 - docs/.hooks/plugin_register.py
 - docs/.hooks/title_from_content.py
