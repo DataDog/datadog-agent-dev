@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import os
 import pathlib
+import shutil
 import sys
 from typing import TYPE_CHECKING
 
@@ -12,13 +13,13 @@ import pytest
 from click.testing import CliRunner as __CliRunner
 from platformdirs import user_cache_dir, user_data_dir
 
-from deva.cli.application import Application
-from deva.config.constants import AppEnvVars, ConfigEnvVars
-from deva.config.file import ConfigFile
-from deva.utils.ci import running_in_ci
-from deva.utils.fs import Path, temp_directory
-from deva.utils.platform import PLATFORM_ID
-from deva.utils.process import EnvVars
+from dda.cli.application import Application
+from dda.config.constants import AppEnvVars, ConfigEnvVars
+from dda.config.file import ConfigFile
+from dda.utils.ci import running_in_ci
+from dda.utils.fs import Path, temp_directory
+from dda.utils.platform import PLATFORM_ID
+from dda.utils.process import EnvVars
 
 if TYPE_CHECKING:
     import pathlib
@@ -43,17 +44,15 @@ class ConfigFileHelper(ConfigFile):
 
 
 @pytest.fixture(scope="session")
-def deva():
-    from deva import cli
+def dda():
+    from dda import cli
 
-    return CliRunner(cli.deva)
+    return CliRunner(cli.dda)
 
 
 @pytest.fixture
 def temp_dir(tmp_path: pathlib.Path) -> Path:
-    path = Path(tmp_path, "temp")
-    path.mkdir()
-    return path
+    return Path(tmp_path)
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -68,7 +67,8 @@ def isolation() -> Generator[Path, None, None]:
             ConfigEnvVars.DATA: str(data_dir),
             ConfigEnvVars.CACHE: str(cache_dir),
             AppEnvVars.NO_COLOR: "1",
-            "DEVA_SELF_TESTING": "true",
+            "PYAPP": "1",
+            "DDA_SELF_TESTING": "true",
             "GIT_AUTHOR_NAME": "Foo Bar",
             "GIT_AUTHOR_EMAIL": "foo@bar.baz",
             "COLUMNS": "80",
@@ -117,12 +117,17 @@ def app(config_file: ConfigFile) -> Application:
 
 @pytest.fixture(scope="session")
 def default_data_dir() -> Path:
-    return Path(user_data_dir("deva", appauthor=False))
+    return Path(user_data_dir("dda", appauthor=False))
 
 
 @pytest.fixture(scope="session")
 def default_cache_dir() -> Path:
-    return Path(user_cache_dir("deva", appauthor=False))
+    return Path(user_cache_dir("dda", appauthor=False))
+
+
+@pytest.fixture(scope="session")
+def uv_on_path():
+    return shutil.which("uv")
 
 
 def pytest_runtest_setup(item):

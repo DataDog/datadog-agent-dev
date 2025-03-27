@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import pytest
 
-from deva.utils.ssh import derive_dynamic_ssh_port, ssh_base_command
+from dda.utils.ssh import derive_dynamic_ssh_port, ssh_base_command
 
 
 @pytest.mark.parametrize("port", [pytest.param(22, id="int port"), pytest.param("22", id="str port")])
@@ -23,5 +23,5 @@ def test_derive_dynamic_ssh_port() -> None:
 #     hostname = "localhost"
 #     write_server_config(hostname, {"foo": "bar", "baz": "qux"})
 
-#     config_file = Path.home() / ".ssh" / ".deva" / hostname
+#     config_file = Path.home() / ".ssh" / ".dda" / hostname
 #     assert config_file.is_file()

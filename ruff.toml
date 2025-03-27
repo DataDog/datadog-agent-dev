@@ -15,5 +15,7 @@ ignore = [
   "PLC0415",
 ]
 
-[lint.isort]
-known-first-party = ["deva"]
+[lint.extend-per-file-ignores]
+"release/**/*" = ["INP001"]
+# Saving the start time comes before imports
+"src/dda/cli/__init__.py" = ["E402"]

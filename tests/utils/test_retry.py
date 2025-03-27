@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import pytest
 
-from deva.utils.retry import wait_for
+from dda.utils.retry import wait_for
 
 
 class TestWaitFor:
