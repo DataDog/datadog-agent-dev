@@ -1,0 +1,65 @@
+name: docs
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+    branches:
+    - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        # Fetch all history for applying timestamps to every page
+        fetch-depth: 0
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install ourself
+      run: pip install .
+
+    - name: Check documentation
+      run: dda run docs build --check
+
+    - name: Build documentation
+      run: dda run docs build
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: documentation
+        path: site
+
+  publish:
+    runs-on: ubuntu-latest
+
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs:
+    - build
+
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/download-artifact@v4
+      with:
+        name: documentation
+        path: site
+
+    - uses: peaceiris/actions-gh-pages@v4
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./site
+        commit_message: ${{ github.event.head_commit.message }}
+        # Write .nojekyll at the root, see:
+        # https://help.github.com/en/github/working-with-github-pages/about-github-pages#static-site-generators
+        enable_jekyll: false
+        # Only deploy if there were changes
+        allow_empty_commit: false
