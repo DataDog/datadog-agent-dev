@@ -27,13 +27,15 @@ install_features() {
   if [[ -n "${FEATURES}" ]]; then
     echo -e "${PURPLE}Installing features: ${FEATURES}${RESET}"
 
+#    ARGS=$(echo "$FEATURES" | awk 'BEGIN{ORS=" "}{for (i=1;i<=NF;i++){print "--feature",$i}}')
     ARGS=()
     for feature in $(echo $FEATURES); do
       ARGS+=("-f" "$feature")
     done
+    echo ${ARGS[@]}
 
-    echo "${1}" -v self dep sync "${ARGS[@]}"
-    "${1}" -v self dep sync "${ARGS[@]}"
+    echo "${1} -v self dep sync ${ARGS[@]}"
+    "${1}" -v self dep sync ${ARGS[@]}
   fi
 }
 
