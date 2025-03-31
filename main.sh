@@ -28,8 +28,10 @@ install_features() {
     echo -e "${PURPLE}Installing features: ${FEATURES}${RESET}"
 
 #    ARGS=$(echo "$FEATURES" | awk 'BEGIN{ORS=" "}{for (i=1;i<=NF;i++){print "--feature",$i}}')
+  echo "FEATURES: $FEATURES /"
     ARGS=()
     for feature in $FEATURES; do
+      echo "feature: $feature /")
       ARGS+=("-f" "$feature")
     done
     echo ${ARGS[@]}
