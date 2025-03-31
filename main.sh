@@ -27,9 +27,8 @@ install_features() {
   if [[ -n "${FEATURES}" ]]; then
     echo -e "${PURPLE}Installing features: ${FEATURES}${RESET}"
 
-#    ARGS=$(echo "$FEATURES" | awk 'BEGIN{ORS=" "}{for (i=1;i<=NF;i++){print "--feature",$i}}')
     # Temporarily change IFS to space just for this loop
-    IFS=' ' read -ra features <<< "$MY_VAR"
+    IFS=' ' read -ra features <<< "$FEATURES"
     ARGS=()
     for feature in features; do
       ARGS+=("-f" "$feature")
