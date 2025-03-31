@@ -31,7 +31,7 @@ install_features() {
   echo "FEATURES: $FEATURES /"
     ARGS=()
     for feature in $FEATURES; do
-      echo "feature: $feature /")
+      echo "feature: $feature /"
       ARGS+=("-f" "$feature")
     done
     echo ${ARGS[@]}
