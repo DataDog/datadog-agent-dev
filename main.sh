@@ -29,7 +29,7 @@ install_features() {
 
 #    ARGS=$(echo "$FEATURES" | awk 'BEGIN{ORS=" "}{for (i=1;i<=NF;i++){print "--feature",$i}}')
     ARGS=()
-    for feature in $(echo $FEATURES); do
+    for feature in $FEATURES; do
       ARGS+=("-f" "$feature")
     done
     echo ${ARGS[@]}
