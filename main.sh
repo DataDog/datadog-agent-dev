@@ -35,7 +35,6 @@ install_features() {
       ARGS+=("-f" "$feature")
     done
 
-    echo "${1} -v self dep sync ${ARGS[@]}"
     "${1}" -v self dep sync ${ARGS[@]}
   fi
 }
