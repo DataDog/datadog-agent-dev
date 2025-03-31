@@ -28,13 +28,12 @@ install_features() {
     echo -e "${PURPLE}Installing features: ${FEATURES}${RESET}"
 
 #    ARGS=$(echo "$FEATURES" | awk 'BEGIN{ORS=" "}{for (i=1;i<=NF;i++){print "--feature",$i}}')
-  echo "FEATURES: $FEATURES /"
+    # Temporarily change IFS to space just for this loop
+    IFS=' ' read -ra features <<< "$MY_VAR"
     ARGS=()
-    for feature in $FEATURES; do
-      echo "feature: $feature /"
+    for feature in features; do
       ARGS+=("-f" "$feature")
     done
-    echo ${ARGS[@]}
 
     echo "${1} -v self dep sync ${ARGS[@]}"
     "${1}" -v self dep sync ${ARGS[@]}
