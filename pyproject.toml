@@ -47,6 +47,15 @@ dependencies = [
 self-dev = [
     "hatch",
 ]
+http = [
+    "httpx",
+]
+github = [
+    "pygithub",
+]
+gitlab = [
+    "python-gitlab",
+]
 ### The following dependencies were defined in the build image repo
 # https://github.com/DataDog/datadog-agent-buildimages/blob/main/requirements/constraints.txt
 legacy-constraints = [

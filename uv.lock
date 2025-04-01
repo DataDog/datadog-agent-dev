@@ -354,6 +354,15 @@ dependencies = [
 ]
 
 [package.dev-dependencies]
+github = [
+    { name = "pygithub" },
+]
+gitlab = [
+    { name = "python-gitlab" },
+]
+http = [
+    { name = "httpx" },
+]
 legacy-agent-deploy = [
     { name = "azure-identity" },
     { name = "azure-mgmt-resource" },
@@ -533,6 +542,9 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
+github = [{ name = "pygithub" }]
+gitlab = [{ name = "python-gitlab" }]
+http = [{ name = "httpx" }]
 legacy-agent-deploy = [
     { name = "azure-identity", specifier = "==1.14.1" },
     { name = "azure-mgmt-resource", specifier = "==23.0.1" },
