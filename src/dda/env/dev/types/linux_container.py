@@ -69,6 +69,9 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 [self.config.cli, "start", self.container_name], message=f"Starting container: {self.container_name}"
             )
         else:
+            from dda.config.constants import AppEnvVars
+            from dda.telemetry.secrets import resolve_api_key
+            from dda.utils.process import EnvVars
             from dda.utils.retry import wait_for
 
             if not self.config.no_pull:
@@ -88,7 +91,9 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 "-p",
                 f"{self.ssh_port}:22",
                 "-e",
-                f"DD_SHELL={self.config.shell}",
+                "DD_SHELL",
+                "-e",
+                AppEnvVars.TELEMETRY_API_KEY,
             ]
             for shared_shell_file in self.shell.collect_shared_files():
                 unix_path = shared_shell_file.relative_to(self.global_shared_dir).as_posix()
@@ -107,7 +112,17 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                     command.extend(("-v", f"{repo_path}:{self.repo_path(repo)}"))
 
             command.append(self.config.image)
-            self.app.subprocess.wait(command, message=f"Creating and starting container: {self.container_name}")
+
+            env = EnvVars()
+            env["DD_SHELL"] = self.config.shell
+            if (api_key := resolve_api_key()) is not None:
+                env[AppEnvVars.TELEMETRY_API_KEY] = api_key
+
+            self.app.subprocess.wait(
+                command,
+                message=f"Creating and starting container: {self.container_name}",
+                env=env,
+            )
 
             with self.app.status(self.app.style_waiting(f"Waiting for container: {self.container_name}")):
                 wait_for(self.check_readiness, timeout=30, wait=0.3)

@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+***Fixed:***
+
+- Fix telemetry log API submission
+- Support telemetry submission within the `linux-container` developer environment type
+
 ## 0.8.0 - 2025-03-26
 
 ***Added:***
