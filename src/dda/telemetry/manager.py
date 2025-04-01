@@ -71,11 +71,12 @@ class TelemetryManager:
     def __start_daemon(self) -> None:
         import sys
 
+        from dda.telemetry.constants import DaemonEnvVars
         from dda.utils.process import EnvVars
 
         env_vars = EnvVars({
-            "DDA_TELEMETRY_WRITE_DIR": str(self.__write_dir),
-            "DDA_TELEMETRY_LOG_FILE": str(self.__log_file),
+            DaemonEnvVars.WRITE_DIR: str(self.__write_dir),
+            DaemonEnvVars.LOG_FILE: str(self.__log_file),
         })
         self.__app.subprocess.spawn_daemon([sys.executable, "-m", "dda.telemetry.daemon"], env=env_vars)
         self.__started = True

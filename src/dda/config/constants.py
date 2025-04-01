@@ -11,6 +11,7 @@ class AppEnvVars:
     QUIET = "DDA_QUIET"
     VERBOSE = "DDA_VERBOSE"
     NO_DYNAMIC_DEPS = "DDA_NO_DYNAMIC_DEPS"
+    TELEMETRY_API_KEY = "DDA_TELEMETRY_API_KEY"
     # https://no-color.org
     NO_COLOR = "NO_COLOR"
     FORCE_COLOR = "FORCE_COLOR"

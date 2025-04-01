@@ -11,6 +11,7 @@ from subprocess import CompletedProcess
 import msgspec
 import pytest
 
+from dda.config.constants import AppEnvVars
 from dda.env.dev.types.linux_container import LinuxContainer
 from dda.utils.fs import Path
 
@@ -167,7 +168,9 @@ class TestStart:
                         "-p",
                         "59730:22",
                         "-e",
-                        "DD_SHELL=zsh",
+                        "DD_SHELL",
+                        "-e",
+                        AppEnvVars.TELEMETRY_API_KEY,
                         *starship_mount,
                         "-v",
                         f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
@@ -176,7 +179,7 @@ class TestStart:
                         "datadog/agent-dev-env-linux",
                     ],
                 ),
-                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT},
+                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT, "env": mocker.ANY},
             ),
         ]
 
@@ -237,14 +240,16 @@ class TestStart:
                         "-p",
                         "59730:22",
                         "-e",
-                        "DD_SHELL=zsh",
+                        "DD_SHELL",
+                        "-e",
+                        AppEnvVars.TELEMETRY_API_KEY,
                         *starship_mount,
                         "-v",
                         f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
                         "datadog/agent-dev-env-linux",
                     ],
                 ),
-                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT},
+                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT, "env": mocker.ANY},
             ),
             (
                 (
@@ -321,7 +326,9 @@ class TestStart:
                         "-p",
                         "59730:22",
                         "-e",
-                        "DD_SHELL=zsh",
+                        "DD_SHELL",
+                        "-e",
+                        AppEnvVars.TELEMETRY_API_KEY,
                         *starship_mount,
                         "-v",
                         f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
@@ -330,7 +337,7 @@ class TestStart:
                         "datadog/agent-dev-env-linux",
                     ],
                 ),
-                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT},
+                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT, "env": mocker.ANY},
             ),
         ]
 
@@ -399,7 +406,9 @@ class TestStart:
                         "-p",
                         "59730:22",
                         "-e",
-                        "DD_SHELL=zsh",
+                        "DD_SHELL",
+                        "-e",
+                        AppEnvVars.TELEMETRY_API_KEY,
                         *starship_mount,
                         "-v",
                         f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
@@ -410,7 +419,7 @@ class TestStart:
                         "datadog/agent-dev-env-linux",
                     ],
                 ),
-                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT},
+                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT, "env": mocker.ANY},
             ),
         ]
 
@@ -472,14 +481,16 @@ class TestStart:
                         "-p",
                         "59730:22",
                         "-e",
-                        "DD_SHELL=zsh",
+                        "DD_SHELL",
+                        "-e",
+                        AppEnvVars.TELEMETRY_API_KEY,
                         *starship_mount,
                         "-v",
                         f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
                         "datadog/agent-dev-env-linux",
                     ],
                 ),
-                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT},
+                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT, "env": mocker.ANY},
             ),
             (
                 (

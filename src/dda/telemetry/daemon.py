@@ -8,19 +8,20 @@ import os
 import time
 from ast import literal_eval
 
-import keyring
 from datadog_api_client import ApiClient, Configuration
 from datadog_api_client.v2.api.logs_api import LogsApi
 from datadog_api_client.v2.model.http_log import HTTPLog
 from datadog_api_client.v2.model.http_log_item import HTTPLogItem
 from msgspec import ValidationError, convert
 
+from dda.telemetry.constants import DaemonEnvVars
 from dda.telemetry.model import TelemetryData
+from dda.telemetry.secrets import fetch_api_key, read_api_key, save_api_key
 from dda.utils.fs import Path
 from dda.utils.platform import join_command_args
 
-WRITE_DIR = Path(os.environ["DDA_TELEMETRY_WRITE_DIR"])
-LOG_FILE = Path(os.environ["DDA_TELEMETRY_LOG_FILE"])
+WRITE_DIR = Path(os.environ[DaemonEnvVars.WRITE_DIR])
+LOG_FILE = Path(os.environ[DaemonEnvVars.LOG_FILE])
 
 logging.basicConfig(
     filename=str(LOG_FILE),
@@ -47,21 +48,26 @@ def nano_to_seconds(nano: int) -> float:
 
 def main() -> None:
     logging.info("Getting API key from keyring")
-    api_key = keyring.get_password("dda", "telemetry_api_key")
+    try:
+        api_key = read_api_key()
+    except Exception:
+        logging.exception("Failed to read API key from keyring")
+        return
+
     if not api_key:
         logging.error("No API key found in keyring, fetching from Vault")
 
-        from dda.telemetry.vault import fetch_secret
-
         try:
-            # TODO: update this to the new secret path
-            api_key = fetch_secret("group/subproduct-agent/deva", "telemetry-api-key")
+            api_key = fetch_api_key()
         except Exception:
             logging.exception("Failed to fetch API key from Vault")
             return
 
         logging.info("Storing API key in keyring")
-        keyring.set_password("dda", "telemetry_api_key", api_key)
+        try:
+            save_api_key(api_key)
+        except Exception:
+            logging.exception("Failed to save API key to keyring")
 
     while True:
         data = {}
@@ -90,8 +96,8 @@ def main() -> None:
             level=get_log_level(telemetry_data.exit_code),
             service="cli-dda",
             ddtags="cli:dda",
-            exit_code=telemetry_data.exit_code,
-            duration=elapsed_time,
+            exit_code=str(telemetry_data.exit_code),
+            duration=str(elapsed_time),
         )
     except Exception:
         logging.exception("Failed to create HTTPLogItem")
