@@ -221,7 +221,7 @@ class DynamicGroup(click.RichGroup):
             entry
             for search_path in ctx.search_paths.values()
             for entry in os.listdir(search_path)
-            if not entry.startswith("_.") and os.path.isfile(os.path.join(search_path, entry, "__init__.py"))
+            if not entry.startswith(("_", ".")) and os.path.isfile(os.path.join(search_path, entry, "__init__.py"))
         )
 
         if ctx.allow_external_plugins:
