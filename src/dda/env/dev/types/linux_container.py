@@ -77,7 +77,6 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             self.docker.wait(["start", self.container_name], message=f"Starting container: {self.container_name}")
         else:
             from dda.config.constants import AppEnvVars
-            from dda.telemetry.secrets import resolve_api_key
             from dda.utils.process import EnvVars
             from dda.utils.retry import wait_for
 
@@ -119,8 +118,8 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
 
             env = EnvVars()
             env["DD_SHELL"] = self.config.shell
-            if (api_key := resolve_api_key()) is not None:
-                env[AppEnvVars.TELEMETRY_API_KEY] = api_key
+            if self.app.telemetry.api_key is not None:
+                env[AppEnvVars.TELEMETRY_API_KEY] = self.app.telemetry.api_key
 
             self.docker.wait(
                 command,
