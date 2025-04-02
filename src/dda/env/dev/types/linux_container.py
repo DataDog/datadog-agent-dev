@@ -13,6 +13,7 @@ from dda.env.dev.interface import DeveloperEnvironmentConfig, DeveloperEnvironme
 if TYPE_CHECKING:
     from dda.env.models import EnvironmentStatus
     from dda.env.shells.interface import Shell
+    from dda.tools.docker import Docker
 
 
 class LinuxContainerConfig(DeveloperEnvironmentConfig):
@@ -60,14 +61,20 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
     def config_class(cls) -> type[LinuxContainerConfig]:
         return LinuxContainerConfig
 
+    @cached_property
+    def docker(self) -> Docker:
+        from dda.tools.docker import Docker
+
+        docker = Docker(self.app)
+        docker.path = self.config.cli
+        return docker
+
     def start(self) -> None:
         from dda.env.models import EnvironmentState
 
         status = self.__latest_status if self.__latest_status is not None else self.status()
         if status.state == EnvironmentState.STOPPED:
-            self.app.subprocess.wait(
-                [self.config.cli, "start", self.container_name], message=f"Starting container: {self.container_name}"
-            )
+            self.docker.wait(["start", self.container_name], message=f"Starting container: {self.container_name}")
         else:
             from dda.config.constants import AppEnvVars
             from dda.telemetry.secrets import resolve_api_key
@@ -75,13 +82,10 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             from dda.utils.retry import wait_for
 
             if not self.config.no_pull:
-                self.app.subprocess.wait(
-                    [self.config.cli, "pull", self.config.image], message=f"Pulling image: {self.config.image}"
-                )
+                self.docker.wait(["pull", self.config.image], message=f"Pulling image: {self.config.image}")
 
             self.shared_dir.ensure_dir()
             command = [
-                self.config.cli,
                 "run",
                 "--pull",
                 "never",
@@ -118,7 +122,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             if (api_key := resolve_api_key()) is not None:
                 env[AppEnvVars.TELEMETRY_API_KEY] = api_key
 
-            self.app.subprocess.wait(
+            self.docker.wait(
                 command,
                 message=f"Creating and starting container: {self.container_name}",
                 env=env,
@@ -142,24 +146,20 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                     self.app.subprocess.wait(self.construct_command(clone_command), message=wait_message)
 
     def stop(self) -> None:
-        self.app.subprocess.wait(
-            [self.config.cli, "stop", "-t", "0", self.container_name],
+        self.docker.wait(
+            ["stop", "-t", "0", self.container_name],
             message=f"Stopping container: {self.container_name}",
         )
 
     def remove(self) -> None:
-        self.app.subprocess.wait(
-            [self.config.cli, "rm", "-f", self.container_name], message=f"Removing container: {self.container_name}"
-        )
+        self.docker.wait(["rm", "-f", self.container_name], message=f"Removing container: {self.container_name}")
 
     def status(self) -> EnvironmentStatus:
         import json
 
         from dda.env.models import EnvironmentState, EnvironmentStatus
 
-        output = self.app.subprocess.capture(
-            [self.config.cli, "inspect", self.container_name], check=False, cross_streams=False
-        )
+        output = self.docker.capture(["inspect", self.container_name], check=False, cross_streams=False)
         items = json.loads(output)
         if not items:
             return EnvironmentStatus(state=EnvironmentState.NONEXISTENT)
@@ -191,7 +191,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         self.ensure_ssh_config()
         ssh_command = self.ssh_base_command()
         ssh_command.append(self.shell.get_login_command(cwd=self.repo_path(repo)))
-        self.app.subprocess.replace_current_process(ssh_command)
+        self.app.subprocess.exit_with_command(ssh_command)
 
     def code(self, *, repo: str | None = None) -> None:
         self.ensure_ssh_config()
@@ -236,7 +236,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         return ssh_command
 
     def check_readiness(self) -> bool:
-        output = self.app.subprocess.capture([self.config.cli, "logs", self.container_name])
+        output = self.docker.capture(["logs", self.container_name])
         return "Server listening on :: port 22" in output
 
     def ssh_base_command(self) -> list[str]:
