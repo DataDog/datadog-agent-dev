@@ -35,6 +35,7 @@ dependencies = [
   "msgspec-click~=0.2",
   "packaging",
   "platformdirs~=4.2",
+  "psutil~=7.0",
   "rich~=13.7",
   "rich-click~=1.8",
   "tomlkit~=0.13",

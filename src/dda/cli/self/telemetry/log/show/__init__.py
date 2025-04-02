@@ -19,4 +19,12 @@ def cmd(app: Application) -> None:
     """
     Show the log.
     """
-    app.display(app.telemetry.read_log())
+    if not app.telemetry.log_file.is_file():
+        app.display_warning("No logs available")
+        return
+
+    import shutil
+    import sys
+
+    with app.telemetry.log_file.open(encoding="utf-8") as f:
+        shutil.copyfileobj(f, sys.stdout)
