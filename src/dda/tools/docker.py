@@ -12,6 +12,9 @@ class Docker(Tool):
     def format_command(self, command: list[str]) -> list[str]:
         return [self.path, *command]
 
+    def env_vars(self) -> dict[str, str]:  # noqa: PLR6301
+        return {"DOCKER_CLI_HINTS": "0"}
+
     @cached_property
     def path(self) -> str:
         import shutil

@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 - Add initial dependency features for common functionality (`http`, `github`, `gitlab`)
 - Telemetry is now submitted immediately after the command completes rather than a short wait
+- Prevent Docker CLI hints/tips output
 
 ***Fixed:***
 

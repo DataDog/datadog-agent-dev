@@ -153,7 +153,7 @@ class TestStart:
         assert calls == [
             (
                 ([helpers.locate("docker"), "pull", "datadog/agent-dev-env-linux"],),
-                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT},
+                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT, "env": mocker.ANY},
             ),
             (
                 (
@@ -225,7 +225,7 @@ class TestStart:
         assert calls == [
             (
                 ([helpers.locate("docker"), "pull", "datadog/agent-dev-env-linux"],),
-                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT},
+                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT, "env": mocker.ANY},
             ),
             (
                 (
@@ -391,7 +391,7 @@ class TestStart:
         assert calls == [
             (
                 ([helpers.locate("docker"), "pull", "datadog/agent-dev-env-linux"],),
-                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT},
+                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT, "env": mocker.ANY},
             ),
             (
                 (
@@ -466,7 +466,7 @@ class TestStart:
         assert calls == [
             (
                 ([helpers.locate("docker"), "pull", "datadog/agent-dev-env-linux"],),
-                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT},
+                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT, "env": mocker.ANY},
             ),
             (
                 (
@@ -540,7 +540,7 @@ class TestStop:
             """
         )
 
-    def test_default(self, dda, helpers):
+    def test_default(self, dda, helpers, mocker):
         with helpers.hybrid_patch(
             "subprocess.run",
             return_values={
@@ -561,7 +561,7 @@ class TestStop:
         assert calls == [
             (
                 ([helpers.locate("docker"), "stop", "-t", "0", "dda-linux-container-default"],),
-                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT},
+                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT, "env": mocker.ANY},
             ),
         ]
 
@@ -579,7 +579,7 @@ class TestRemove:
             """
         )
 
-    def test_default(self, dda, helpers):
+    def test_default(self, dda, helpers, mocker):
         with helpers.hybrid_patch(
             "subprocess.run",
             return_values={
@@ -602,7 +602,7 @@ class TestRemove:
         assert calls == [
             (
                 ([helpers.locate("docker"), "rm", "-f", "dda-linux-container-default"],),
-                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT},
+                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT, "env": mocker.ANY},
             ),
         ]
 
@@ -614,7 +614,7 @@ class TestShell:
             return_value=CompletedProcess([], returncode=0, stdout=json.dumps([{"State": {"Status": "running"}}])),
         )
         write_server_config = mocker.patch("dda.utils.ssh.write_server_config")
-        replace_current_process = mocker.patch("dda.utils.process.SubprocessRunner.replace_current_process")
+        exit_with_command = mocker.patch("dda.utils.process.SubprocessRunner.exit_with_command")
 
         result = dda("env", "dev", "shell")
 
@@ -629,7 +629,7 @@ class TestShell:
                 "UserKnownHostsFile": "/dev/null",
             },
         )
-        replace_current_process.assert_called_once_with([
+        exit_with_command.assert_called_once_with([
             "ssh",
             "-A",
             "-q",

@@ -29,7 +29,6 @@ def cmd(app: Application, *, args: tuple[str, ...]) -> None:
     from packaging.specifiers import SpecifierSet
 
     from dda.utils.fs import Path
-    from dda.utils.process import EnvVars
 
     minor_version: int | None = None
     requires_python = distribution("dda").metadata["Requires-Python"]
@@ -47,23 +46,22 @@ requires-python = "{requires_python}"\
 """
         )
 
-    with EnvVars({"DOCKER_CLI_HINTS": "false"}):
-        app.tools.docker.run([
-            "build",
-            "--build-arg",
-            f"PYTHON_VERSION=3.{minor_version}",
-            "--tag",
-            "dda-lock-deps",
-            "-f",
-            str(resources.files("dda.cli.self.dep.lock").joinpath("Dockerfile")),
-            ".",
-        ])
-        app.tools.docker.run([
-            "run",
-            "--rm",
-            "-t",
-            "-v",
-            f"{Path.cwd()}:/app",
-            "dda-lock-deps",
-            *args,
-        ])
+    app.tools.docker.run([
+        "build",
+        "--build-arg",
+        f"PYTHON_VERSION=3.{minor_version}",
+        "--tag",
+        "dda-lock-deps",
+        "-f",
+        str(resources.files("dda.cli.self.dep.lock").joinpath("Dockerfile")),
+        ".",
+    ])
+    app.tools.docker.run([
+        "run",
+        "--rm",
+        "-t",
+        "-v",
+        f"{Path.cwd()}:/app",
+        "dda-lock-deps",
+        *args,
+    ])
