@@ -11,10 +11,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ***Added:***
 
 - Add initial dependency features for common functionality (`http`, `github`, `gitlab`)
+- Telemetry is now submitted immediately after the command completes rather than a short wait
 
 ***Fixed:***
 
 - Fix ignored directory heuristic for finding local commands
+- Reduce log verbosity of telemetry daemon
+- Fix `self telemetry log show` command when the log file contents do not fit within memory
 
 ## 0.8.1 - 2025-04-01
 
