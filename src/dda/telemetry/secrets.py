@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import os
-from contextlib import suppress
 
 import keyring
 
@@ -29,14 +28,3 @@ def fetch_api_key() -> str:
     from dda.telemetry.vault import fetch_secret
 
     return fetch_secret("group/subproduct-agent/deva", "telemetry-api-key")
-
-
-def resolve_api_key() -> str | None:
-    api_key: str | None = None
-    with suppress(Exception):
-        api_key = read_api_key()
-        if not api_key:
-            api_key = fetch_api_key()
-            save_api_key(api_key)
-
-    return api_key

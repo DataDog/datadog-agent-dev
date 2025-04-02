@@ -46,6 +46,24 @@ class TelemetryManager:
         return self.__storage_dir / "daemon.log"
 
     @cached_property
+    def api_key(self) -> str | None:
+        if not self.__enabled:
+            return None
+
+        from contextlib import suppress
+
+        from dda.telemetry.secrets import fetch_api_key, read_api_key, save_api_key
+
+        api_key: str | None = None
+        with suppress(Exception):
+            api_key = read_api_key()
+            if not api_key:
+                api_key = fetch_api_key()
+                save_api_key(api_key)
+
+        return api_key
+
+    @cached_property
     def __enabled(self) -> bool:
         return self.__consent_file.read_text(encoding="utf-8") == "1" if self.consent_recorded() else False
 
