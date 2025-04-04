@@ -49,7 +49,14 @@ class LinuxContainerConfig(DeveloperEnvironmentConfig):
             }
         ),
     ] = "zsh"
-
+    arch: Annotated[
+        Literal["amd64", "arm64"],
+        msgspec.Meta(
+            extra={
+                "help": "The architecture to use e.g. `amd64` or `arm64`",
+            }
+        ),
+    ] = "arm64"
 
 class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -81,7 +88,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             from dda.utils.retry import wait_for
 
             if not self.config.no_pull:
-                self.docker.wait(["pull", self.config.image], message=f"Pulling image: {self.config.image}")
+                self.docker.wait(["pull", self.config.image, "--platform", f"linux/{self.config.arch}"], message=f"Pulling image: {self.config.image}")
 
             self.shared_dir.ensure_dir()
             command = [
@@ -89,6 +96,8 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 "--pull",
                 "never",
                 "-d",
+                "--platform",
+                f"linux/{self.config.arch}",
                 "--name",
                 self.container_name,
                 "-p",
