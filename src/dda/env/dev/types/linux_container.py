@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from functools import cached_property
-from typing import TYPE_CHECKING, Annotated, Any, Literal, NoReturn, Optional
+from typing import TYPE_CHECKING, Annotated, Any, Literal, NoReturn
 
 import msgspec
 
@@ -50,7 +50,7 @@ class LinuxContainerConfig(DeveloperEnvironmentConfig):
         ),
     ] = "zsh"
     arch: Annotated[
-        Optional[str],
+        str | None,
         msgspec.Meta(
             extra={
                 "help": "The architecture to use e.g. `amd64` or `arm64`",
@@ -91,7 +91,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             if not self.config.no_pull:
                 pull_command = ["pull", self.config.image]
                 if self.config.arch is not None:
-                    pull_command.extend(["--platform", f"linux/{self.config.arch}"])
+                    pull_command.extend(("--platform", f"linux/{self.config.arch}"))
                 self.docker.wait(pull_command, message=f"Pulling image: {self.config.image}")
 
             self.shared_dir.ensure_dir()
@@ -110,7 +110,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 AppEnvVars.TELEMETRY_API_KEY,
             ]
             if self.config.arch is not None:
-                command.extend(["--platform", f"linux/{self.config.arch}"])
+                command.extend(("--platform", f"linux/{self.config.arch}"))
 
             for shared_shell_file in self.shell.collect_shared_files():
                 unix_path = shared_shell_file.relative_to(self.global_shared_dir).as_posix()
