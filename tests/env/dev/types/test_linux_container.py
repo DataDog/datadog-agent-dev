@@ -38,7 +38,7 @@ def test_default_config(app):
     container = LinuxContainer(app=app, name="linux-container", instance="default")
 
     assert msgspec.to_builtins(container.config) == {
-        "arch": "None",
+        "arch": None,
         "cli": "docker",
         "clone": False,
         "image": "datadog/agent-dev-env-linux",
