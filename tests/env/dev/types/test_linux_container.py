@@ -614,7 +614,7 @@ class TestShell:
             return_value=CompletedProcess([], returncode=0, stdout=json.dumps([{"State": {"Status": "running"}}])),
         )
         write_server_config = mocker.patch("dda.utils.ssh.write_server_config")
-        exit_with_command = mocker.patch("dda.utils.process.SubprocessRunner.exit_with_command")
+        exit_with = mocker.patch("dda.utils.process.SubprocessRunner.exit_with")
 
         result = dda("env", "dev", "shell")
 
@@ -629,7 +629,7 @@ class TestShell:
                 "UserKnownHostsFile": "/dev/null",
             },
         )
-        exit_with_command.assert_called_once_with([
+        exit_with.assert_called_once_with([
             "ssh",
             "-A",
             "-q",

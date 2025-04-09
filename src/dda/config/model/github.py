@@ -7,6 +7,16 @@ from msgspec import Struct, field
 
 
 class GitHubAuth(Struct, frozen=True):
+    """
+    /// tab | :octicons-file-code-16: config.toml
+    ```toml
+    [github.auth]
+    user = "username"
+    token = "*****"
+    ```
+    ///
+    """
+
     user: str = ""
     token: str = ""
 

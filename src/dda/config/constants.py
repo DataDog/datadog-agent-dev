@@ -6,6 +6,16 @@ from __future__ import annotations
 from enum import IntEnum
 
 
+class Verbosity(IntEnum):
+    SILENT = -3
+    ERROR = -2
+    WARNING = -1
+    INFO = 0
+    VERBOSE = 1
+    DEBUG = 2
+    TRACE = 3
+
+
 class AppEnvVars:
     INTERACTIVE = "DDA_INTERACTIVE"
     QUIET = "DDA_QUIET"
@@ -21,13 +31,3 @@ class ConfigEnvVars:
     DATA = "DDA_DATA_DIR"
     CACHE = "DDA_CACHE_DIR"
     CONFIG = "DDA_CONFIG"
-
-
-class Verbosity(IntEnum):
-    SILENT = -3
-    ERROR = -2
-    WARNING = -1
-    INFO = 0
-    VERBOSE = 1
-    DEBUG = 2
-    TRACE = 3

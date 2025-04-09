@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 import click
 
-from dda.cli.base import dynamic_command
+from dda.cli.base import dynamic_command, pass_app
 from dda.cli.env.dev.utils import option_env_type
 
 if TYPE_CHECKING:
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 @option_env_type()
 @click.option("--id", "instance", default="default", help="Unique identifier for the environment")
 @click.option("--repo", "-r", help="The Datadog repository in which to enter")
-@click.pass_obj
+@pass_app
 def cmd(app: Application, *, env_type: str, instance: str, repo: str | None) -> None:
     """
     Spawn a shell within a developer environment.

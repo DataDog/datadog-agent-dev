@@ -7,6 +7,12 @@
   --md-primary-fg-color--light: #9574CD;
 }
 
+/* Brighter links for dark mode */
+[data-md-color-scheme=slate] {
+  /* https://github.com/squidfunk/mkdocs-material/blob/9.1.2/src/assets/stylesheets/main/_colors.scss#L91-L92 */
+  --md-typeset-a-color: var(--md-primary-fg-color--light);
+}
+
 /* FiraCode https://github.com/tonsky/FiraCode */
 code { font-family: 'Fira Code', monospace; }
 @supports (font-variation-settings: normal) {
@@ -17,6 +23,22 @@ code { font-family: 'Fira Code', monospace; }
 .md-typeset h5 {
   color: var(--md-default-fg-color);
   text-transform: none;
+}
+
+/* Fancier color for operators such as * and |. */
+.doc-signature .o {
+  color: var(--md-code-hl-special-color);
+}
+
+/* Fancier color for constants such as None, True, and False. */
+.doc-signature .kc {
+  color: var(--md-code-hl-constant-color);
+}
+
+/* Fancier color for built-in types (only useful when cross-references are used). */
+.doc-signature .n > a[href^="https://docs.python.org/"][href*="/functions.html#"],
+.doc-signature .n > a[href^="https://docs.python.org/"][href*="/stdtypes.html#"] {
+  color: var(--md-code-hl-constant-color);
 }
 
 /* Indentation. */

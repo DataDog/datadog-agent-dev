@@ -13,17 +13,21 @@ if TYPE_CHECKING:
 
 
 class Tools:
+    """
+    This is available as the [`Application.tools`][dda.cli.application.Application.tools] property.
+    """
+
     def __init__(self, app: Application) -> None:
         self.__app = app
-
-    @cached_property
-    def uv(self) -> UV:
-        from dda.tools.uv import UV
-
-        return UV(self.__app)
 
     @cached_property
     def docker(self) -> Docker:
         from dda.tools.docker import Docker
 
         return Docker(self.__app)
+
+    @cached_property
+    def uv(self) -> UV:
+        from dda.tools.uv import UV
+
+        return UV(self.__app)

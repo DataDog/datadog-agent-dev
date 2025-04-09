@@ -5,10 +5,12 @@ from __future__ import annotations
 
 import os
 import subprocess
+from functools import cache
 
 from markdown.preprocessors import Preprocessor
 
 
+@cache
 def variable_replacements():
     return {
         f"<<<{variable}>>>": replacement

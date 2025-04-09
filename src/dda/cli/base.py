@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any
 
 import rich_click as click
 from click.exceptions import Exit, UsageError
+from rich_click.rich_help_formatter import RichHelpFormatter
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -20,7 +21,23 @@ if TYPE_CHECKING:
     from dda.cli.application import Application
 
 
+def _building_docs() -> bool:
+    return os.environ.get("DDA_BUILDING_DOCS") == "true"
+
+
+class DocumentingHelpFormatter(RichHelpFormatter):
+    def getvalue(self) -> str:
+        # https://github.com/ewels/rich-click/pull/230
+        if self.console.record:
+            return self.console.export_text()
+
+        return super().getvalue()
+
+
 class DynamicContext(click.RichContext):
+    formatter_class = DocumentingHelpFormatter
+    export_console_as = "html" if _building_docs() else None
+
     @cached_property
     def allow_external_plugins(self) -> bool:
         command: DynamicGroup = self.command  # type: ignore[assignment]
@@ -224,7 +241,7 @@ class DynamicGroup(click.RichGroup):
             if not entry.startswith(("_", ".")) and os.path.isfile(os.path.join(search_path, entry, "__init__.py"))
         )
 
-        if ctx.allow_external_plugins:
+        if not _building_docs() and ctx.allow_external_plugins:
             commands.extend(ctx.external_plugins)
 
         self.__subcommand_cache = sorted(command for command in commands if self._subcommand_allowed(command))
@@ -239,10 +256,11 @@ class DynamicGroup(click.RichGroup):
             cmd_path = os.path.join(search_path, cmd_name, "__init__.py")
             if os.path.isfile(cmd_path):
                 command = self._lazy_load(cmd_name, cmd_path)
+                command.name = cmd_name
                 command.set_dynamic_path_id(i)
                 return command
 
-        if cmd_name in ctx.external_plugins:
+        if not _building_docs() and cmd_name in ctx.external_plugins:
             return _get_external_plugin_callback(cmd_name, ctx.external_plugins[cmd_name])
 
         return command
@@ -257,7 +275,7 @@ class DynamicGroup(click.RichGroup):
             callback = callback.__wrapped__
 
         search_paths = [os.getcwd() if callback is None else os.path.dirname(callback.__code__.co_filename)]
-        if self.__search_path_finder is not None:
+        if not _building_docs() and self.__search_path_finder is not None:
             search_paths.extend(self.__search_path_finder())
 
         return dict(enumerate(search_paths))
@@ -371,3 +389,4 @@ def _get_external_plugin_callback(cmd_name: str, executable: str) -> DynamicComm
 
 dynamic_command = partial(click.command, cls=DynamicCommand)
 dynamic_group = partial(click.group, cls=DynamicGroup)
+pass_app = click.pass_obj
