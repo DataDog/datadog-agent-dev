@@ -21,6 +21,31 @@ if TYPE_CHECKING:
 
 
 class Application(Terminal):
+    """
+    This class is never imported directly.
+    Instead, use the `dda.cli.base.pass_app` decorator to pass an instance of this class to your command.
+
+    ```python
+    from __future__ import annotations
+
+    from typing import TYPE_CHECKING
+
+    from dda.cli.base import dynamic_command, pass_app
+
+    if TYPE_CHECKING:
+        from dda.cli.application import Application
+
+
+    @dynamic_command(short_help="Some command")
+    @pass_app
+    def cmd(app: Application) -> None:
+        \"""
+        Long description of the command.
+        \"""
+        app.display_waiting("Running some command")
+    ```
+    """
+
     def __init__(self, *, terminator: Callable[[int], NoReturn], config_file: ConfigFile, **kwargs: Any) -> None:
         super().__init__(config=config_file.model.terminal, **kwargs)
 
@@ -28,6 +53,14 @@ class Application(Terminal):
         self.__config_file = config_file
 
     def abort(self, text: str = "", code: int = 1) -> NoReturn:
+        """
+        Gracefully terminate the application with an optional
+        [error message][dda.cli.application.Application.display_critical].
+
+        Parameters:
+            text: The error message to display.
+            code: The exit code to use.
+        """
         if text:
             self.display_critical(text)
 

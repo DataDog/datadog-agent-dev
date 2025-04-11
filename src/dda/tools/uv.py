@@ -16,6 +16,16 @@ if TYPE_CHECKING:
 
 
 class UV(Tool):
+    """
+    This will use the UV executable that comes with `dda`.
+
+    Example usage:
+
+    ```python
+    app.tools.uv.run(["pip", "tree"])
+    ```
+    """
+
     def format_command(self, command: list[str]) -> list[str]:
         return [self.path, *command]
 

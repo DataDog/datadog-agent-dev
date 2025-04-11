@@ -21,6 +21,11 @@ def _default_orgs() -> dict[str, OrgConfig]:
 
 
 class RootConfig(Struct, frozen=True, omit_defaults=True):
+    """
+    The root configuration for the application. This is available as the
+    [`Application.config`][dda.cli.application.Application.config] property.
+    """
+
     orgs: dict[str, OrgConfig] = field(default_factory=_default_orgs)
     env: EnvConfig = field(default_factory=EnvConfig)
     envs: dict[str, dict[str, Any]] = {}

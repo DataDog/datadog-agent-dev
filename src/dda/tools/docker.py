@@ -9,6 +9,17 @@ from dda.tools.base import Tool
 
 
 class Docker(Tool):
+    """
+    If `docker` is not on the PATH, this will try to use `podman` instead. Additionally, Docker CLI hints are disabled
+    to have less verbosity and a more consistent experience across different Docker-compatible tools.
+
+    Example usage:
+
+    ```python
+    app.tools.docker.run(["build", ".", "--tag", "my-image"])
+    ```
+    """
+
     def format_command(self, command: list[str]) -> list[str]:
         return [self.path, *command]
 

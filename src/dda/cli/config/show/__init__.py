@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 import click
 
-from dda.cli.base import dynamic_command
+from dda.cli.base import dynamic_command, pass_app
 
 if TYPE_CHECKING:
     from dda.cli.application import Application
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 @dynamic_command(short_help="Render the contents of the config file")
 @click.option("--all", "-a", "all_keys", is_flag=True, help="Do not scrub secret fields")
-@click.pass_obj
+@pass_app
 def cmd(app: Application, *, all_keys: bool) -> None:
     """Render the contents of the config file."""
     text = app.config_file.read() if all_keys else app.config_file.read_scrubbed()

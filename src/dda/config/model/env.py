@@ -9,6 +9,17 @@ from dda.env.dev import DEFAULT_DEV_ENV
 
 
 class DevEnvConfig(Struct, frozen=True):
+    """
+    /// tab | :octicons-file-code-16: config.toml
+    ```toml
+    [env.dev]
+    default-type = "linux-container"
+    clone-repos = false
+    universal-shell = false
+    ```
+    ///
+    """
+
     default_type: str = field(name="default-type", default=DEFAULT_DEV_ENV)
     clone_repos: bool = field(name="clone-repos", default=False)
     universal_shell: bool = field(name="universal-shell", default=False)

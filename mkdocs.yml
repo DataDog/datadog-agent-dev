@@ -39,6 +39,7 @@ theme:
   - content.tooltips
   - navigation.expand
   - navigation.footer
+  - navigation.indexes
   - navigation.instant
   - navigation.sections
   - navigation.tabs
@@ -46,8 +47,31 @@ theme:
 
 nav:
 - Home:
-  - About: index.md
+  - index.md
   - Install: install.md
+- How-to:
+  - Processes:
+    - Run: how-to/process/run.md
+    - Tools: how-to/process/tools.md
+  - Extend:
+    - Local commands: how-to/extend/local.md
+    - Plugins: how-to/extend/plugin.md
+- Reference:
+  - CLI:
+    - reference/cli/index.md
+    - Commands: reference/cli/commands.md
+  - API:
+    - Application: reference/api/app.md
+    - Process: reference/api/process.md
+    - Tools: reference/api/tools.md
+    - Filesystem: reference/api/fs.md
+    - Config: reference/api/config.md
+    - Constants: reference/api/constants.md
+  - Interface:
+    - Tool: reference/interface/tool.md
+
+watch:
+- src/dda
 
 hooks:
 - docs/.hooks/plugin_register.py
@@ -78,20 +102,29 @@ plugins:
           show_root_heading: true
           show_source: false
           show_symbol_type_toc: true
+          show_symbol_type_heading: true
+          # Members
+          members_order: source
+          show_labels: false
           # Docstrings
+          docstring_style: google
           show_if_no_docstring: true
           # Signatures/annotations
           show_signature_annotations: true
           signature_crossrefs: true
+          separate_signature: true
+          line_length: 70
           # Other
           show_bases: false
         inventories:
         - https://docs.python.org/3/objects.inv
+        - https://click.palletsprojects.com/en/8.1.x/objects.inv
+        - https://rich.readthedocs.io/en/stable/objects.inv
+        - https://jcristharif.com/msgspec/objects.inv
 
 markdown_extensions:
 # Built-in
 - markdown.extensions.abbr:
-- markdown.extensions.admonition:
 - markdown.extensions.attr_list:
 - markdown.extensions.footnotes:
 - markdown.extensions.md_in_html:
@@ -100,9 +133,11 @@ markdown_extensions:
 - markdown.extensions.toc:
     permalink: true
 # Extra
+- mkdocs-click:
 - pymdownx.arithmatex:
 - pymdownx.betterem:
     smart_enable: all
+- pymdownx.blocks.admonition:
 - pymdownx.blocks.tab:
     alternate_style: true
     slugify: !!python/object/apply:pymdownx.slugs.slugify

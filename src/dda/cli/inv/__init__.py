@@ -83,7 +83,7 @@ def cmd(
     if no_dynamic_deps:
         import sys
 
-        app.subprocess.exit_with_command([sys.executable, "-m", "invoke", *args])
+        app.subprocess.exit_with([sys.executable, "-m", "invoke", *args])
 
     venv_path = app.config.storage.join("venvs", "legacy").data
     with app.tools.uv.virtual_env(venv_path) as venv:
@@ -95,4 +95,4 @@ def cmd(
         if extra_dependencies:
             ensure_deps_installed(list(extra_dependencies), app=app, sys_path=venv.get_sys_path(app))
 
-        app.subprocess.exit_with_command(["python", "-m", "invoke", *args])
+        app.subprocess.exit_with(["python", "-m", "invoke", *args])

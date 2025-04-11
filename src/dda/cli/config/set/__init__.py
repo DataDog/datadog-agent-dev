@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 
 import click
 
-from dda.cli.base import dynamic_command
+from dda.cli.base import dynamic_command, pass_app
 
 if TYPE_CHECKING:
     from dda.cli.application import Application
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 @dynamic_command(short_help="Set the value of config keys")
 @click.argument("key")
 @click.argument("value", required=False)
-@click.pass_obj
+@pass_app
 def cmd(app: Application, key: str, value: str | None) -> None:
     """
     Set the value of config keys. If the value is omitted, you will

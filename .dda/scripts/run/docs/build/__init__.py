@@ -8,18 +8,19 @@ from typing import TYPE_CHECKING
 
 import click
 
-from dda.cli.base import dynamic_command
+from dda.cli.base import dynamic_command, pass_app
 
 if TYPE_CHECKING:
     from dda.cli.application import Application
 
 
 @dynamic_command(short_help="Build documentation", features=["self-dev"])
+@click.argument("args", nargs=-1)
 @click.option("--check", is_flag=True, help="Ensure links are valid")
-@click.pass_obj
-def cmd(app: Application, *, check: bool) -> None:
+@pass_app
+def cmd(app: Application, *, args: tuple[str, ...], check: bool) -> None:
     """
     Build documentation.
     """
     script = "build-check" if check else "build"
-    app.subprocess.exit_with_command([sys.executable, "-m", "hatch", "run", f"docs:{script}"])
+    app.subprocess.exit_with([sys.executable, "-m", "hatch", "run", f"docs:{script}", *args])

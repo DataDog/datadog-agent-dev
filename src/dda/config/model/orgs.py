@@ -9,6 +9,19 @@ from msgspec import Struct
 
 
 class OrgConfig(Struct, frozen=True, omit_defaults=True):
+    """
+    /// tab | :octicons-file-code-16: config.toml
+    ```toml
+    [orgs.default]
+    api_key = "*****"
+    app_key = "*****"
+    site = "datadoghq.com"
+    dd_url = "https://app.datadoghq.com"
+    logs_url = ""
+    ```
+    ///
+    """
+
     api_key: str = environ.get("DD_API_KEY", "")
     app_key: str = environ.get("DD_APP_KEY", "")
     site: str = environ.get("DD_SITE", "datadoghq.com")

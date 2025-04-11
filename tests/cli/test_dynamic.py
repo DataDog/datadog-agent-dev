@@ -23,10 +23,10 @@ def test_local_command(dda, helpers, temp_dir):
         helpers.dedent(
             """
             import click
-            from dda.cli.base import dynamic_command
+            from dda.cli.base import dynamic_command, pass_app
 
             @dynamic_command()
-            @click.pass_obj
+            @pass_app
             def cmd(app):
                 from _utils import foo
 

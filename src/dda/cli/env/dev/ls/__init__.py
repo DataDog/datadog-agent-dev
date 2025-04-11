@@ -5,16 +5,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import click
-
-from dda.cli.base import dynamic_command
+from dda.cli.base import dynamic_command, pass_app
 
 if TYPE_CHECKING:
     from dda.cli.application import Application
 
 
 @dynamic_command(short_help="List the available developer environments")
-@click.pass_obj
+@pass_app
 def cmd(app: Application) -> None:
     """
     List the available developer environments.

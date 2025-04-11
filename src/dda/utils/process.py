@@ -17,17 +17,31 @@ if TYPE_CHECKING:
 
 
 class SubprocessRunner:
+    """
+    A class for managing the execution of external commands. This is available as the
+    [`Application.subprocess`][dda.cli.application.Application.subprocess] property.
+    """
+
     def __init__(self, app: Application) -> None:
         self.__app = app
 
-    def wait(self, command: list[str] | str, *, message: str = "", **kwargs: Any) -> None:
-        if self.__app.config.terminal.verbosity >= 1:
-            self.run(command, **kwargs)
-        else:
-            with self.__app.status(self.__app.style_waiting(message or f"Running: {command}")):
-                self.capture(command, **kwargs)
-
     def run(self, command: list[str] | str, **kwargs: Any) -> subprocess.CompletedProcess:
+        """
+        Run a command and wait for it to complete.
+
+        The `check` keyword argument defaults to `True`. When set to `True` and the command exits with a non-zero exit
+        code, the application will [abort][dda.cli.application.Application.abort] using the command's exit code rather
+        than raising an exception.
+
+        Parameters:
+            command: The command to run.
+
+        Returns:
+            The completed process.
+
+        Other parameters:
+            **kwargs: Additional keyword arguments to pass to [`subprocess.run`][subprocess.run].
+        """
         import subprocess
 
         command, kwargs = self.__sanitize_arguments(command, **kwargs)
@@ -48,6 +62,20 @@ class SubprocessRunner:
         return process
 
     def capture(self, command: list[str] | str, *, cross_streams: bool = True, **kwargs: Any) -> str:
+        """
+        Run a command and capture its output.
+
+        Parameters:
+            command: The command to run.
+            cross_streams: Whether to merge the command's standard error stream into its standard output stream.
+
+        Returns:
+            The command's standard output.
+
+        Other parameters:
+            **kwargs: Additional keyword arguments to pass to the [`run`][dda.utils.process.SubprocessRunner.run]
+                method.
+        """
         import subprocess
 
         kwargs.setdefault("encoding", "utf-8")
@@ -55,16 +83,57 @@ class SubprocessRunner:
         kwargs["stderr"] = subprocess.STDOUT if cross_streams else subprocess.PIPE
         return self.run(command, **kwargs).stdout
 
-    def exit_with_command(self, command: list[str]) -> NoReturn:
-        process = self.run(command, check=False)
+    def wait(self, command: list[str] | str, *, message: str = "", **kwargs: Any) -> None:
+        """
+        Run a command and wait for it to complete. By default, the command output is hidden but will be displayed if
+        the configured verbosity level is at least [`Verbosity.VERBOSE`][dda.config.constants.Verbosity.VERBOSE]. Under
+        that circumstance, this method is a mere pass-through to the [`run`][dda.utils.process.SubprocessRunner.run]
+        method.
+
+        Parameters:
+            command: The command to run.
+            message: The message to display while the command is running. Has no effect if the verbosity level is
+                less than [`Verbosity.VERBOSE`][dda.config.constants.Verbosity.VERBOSE].
+
+        Other parameters:
+            **kwargs: Additional keyword arguments to pass to the [`run`][dda.utils.process.SubprocessRunner.run]
+                or [`capture`][dda.utils.process.SubprocessRunner.capture] methods.
+        """
+        if self.__app.config.terminal.verbosity >= 1:
+            self.run(command, **kwargs)
+        else:
+            with self.__app.status(self.__app.style_waiting(message or f"Running: {command}")):
+                self.capture(command, **kwargs)
+
+    def exit_with(self, command: list[str], **kwargs: Any) -> NoReturn:
+        """
+        Run a command and [abort][dda.cli.application.Application.abort] with the command's exit code.
+
+        Parameters:
+            command: The command to run.
+
+        Other parameters:
+            **kwargs: Additional keyword arguments to pass to the [`run`][dda.utils.process.SubprocessRunner.run]
+                method.
+        """
+        process = self.run(command, check=False, **kwargs)
         self.__app.abort(code=process.returncode)
 
     if sys.platform == "win32":
 
         def replace_current_process(self, command: list[str]) -> NoReturn:
-            self.exit_with_command(command)
+            self.exit_with(command)
 
         def spawn_daemon(self, command: list[str] | str, **kwargs: Any) -> None:
+            """
+            Spawn a daemon process that is detached from the current process.
+
+            Parameters:
+                command: The command to run.
+
+            Other parameters:
+                **kwargs: Additional keyword arguments to pass to the [`Popen`][subprocess.Popen] constructor.
+            """
             import subprocess
 
             kwargs["creationflags"] = (
@@ -83,6 +152,15 @@ class SubprocessRunner:
             os.execvp(command[0], command)  # noqa: S606
 
         def spawn_daemon(self, command: list[str] | str, **kwargs: Any) -> None:
+            """
+            Spawn a daemon process that is detached from the current process.
+
+            Parameters:
+                command: The command to run.
+
+            Other parameters:
+                **kwargs: Additional keyword arguments to pass to the [`Popen`][subprocess.Popen] constructor.
+            """
             import subprocess
 
             kwargs["start_new_session"] = True
@@ -119,6 +197,39 @@ class SubprocessRunner:
 
 
 class EnvVars(dict):
+    """
+    This class is a snapshot of the current process' environment variables at the time of instantiation.
+
+    Setting environment variables for [subprocesses][dda.utils.process.SubprocessRunner] becomes easy, rather than
+    having to manually make a copy of the current environment variables and updating it:
+
+    ```python
+    app.subprocess.run([...], env=EnvVars({"FOO": "bar"}))
+    ```
+
+    Instances may also be used as a context manager to temporarily update [`os.environ`][os.environ] for the current
+    process:
+
+    ```python
+    with EnvVars({"FOO": "bar"}):
+        ...
+    ```
+
+    /// admonition
+        type: warning
+
+    It's undesirable to persist instances for long periods of time because the environment variables may change
+    during the lifetime of the instance.
+    ///
+
+    Parameters:
+        env_vars: Additional environment variables to include in the snapshot. These override existing environment
+            variables and are unaffected by the `include` and `exclude` filtering parameters.
+        include: A list of [glob patterns][fnmatch.fnmatch] used to include environment variables in the snapshot.
+        exclude: A list of [glob patterns][fnmatch.fnmatch] used to exclude environment variables from the snapshot.
+            This takes precedence over the `include` parameter.
+    """
+
     def __init__(
         self,
         env_vars: dict[str, str] | None = None,

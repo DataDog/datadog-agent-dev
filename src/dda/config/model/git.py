@@ -35,6 +35,16 @@ def default_user_email() -> str:
 
 
 class GitUser(Struct, frozen=True):
+    """
+    /// tab | :octicons-file-code-16: config.toml
+    ```toml
+    [git.user]
+    name = "U.N. Owen"
+    email = "void@some.where"
+    ```
+    ///
+    """
+
     name: str = field(default_factory=default_user_name)
     email: str = field(default_factory=default_user_email)
 

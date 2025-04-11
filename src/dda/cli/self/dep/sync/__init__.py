@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 import click
 
-from dda.cli.base import dynamic_command, ensure_features_installed
+from dda.cli.base import dynamic_command, ensure_features_installed, pass_app
 
 if TYPE_CHECKING:
     from dda.cli.application import Application
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 @dynamic_command(short_help="Synchronize dependencies")
 @click.option("-f", "--feature", "features", multiple=True, help="Feature to synchronize (multiple allowed)")
-@click.pass_obj
+@pass_app
 def cmd(app: Application, *, features: tuple[str, ...]) -> None:
     """
     Synchronize dependencies.
