@@ -8,4 +8,56 @@
          <loc>https://datadoghq.dev/datadog-agent-dev/install/</loc>
          <lastmod>2020-02-02</lastmod>
     </url>
+    <url>
+         <loc>https://datadoghq.dev/datadog-agent-dev/how-to/extend/local/</loc>
+         <lastmod>2020-02-02</lastmod>
+    </url>
+    <url>
+         <loc>https://datadoghq.dev/datadog-agent-dev/how-to/extend/plugin/</loc>
+         <lastmod>2020-02-02</lastmod>
+    </url>
+    <url>
+         <loc>https://datadoghq.dev/datadog-agent-dev/how-to/process/run/</loc>
+         <lastmod>2020-02-02</lastmod>
+    </url>
+    <url>
+         <loc>https://datadoghq.dev/datadog-agent-dev/how-to/process/tools/</loc>
+         <lastmod>2020-02-02</lastmod>
+    </url>
+    <url>
+         <loc>https://datadoghq.dev/datadog-agent-dev/reference/api/app/</loc>
+         <lastmod>2020-02-02</lastmod>
+    </url>
+    <url>
+         <loc>https://datadoghq.dev/datadog-agent-dev/reference/api/config/</loc>
+         <lastmod>2020-02-02</lastmod>
+    </url>
+    <url>
+         <loc>https://datadoghq.dev/datadog-agent-dev/reference/api/constants/</loc>
+         <lastmod>2020-02-02</lastmod>
+    </url>
+    <url>
+         <loc>https://datadoghq.dev/datadog-agent-dev/reference/api/fs/</loc>
+         <lastmod>2020-02-02</lastmod>
+    </url>
+    <url>
+         <loc>https://datadoghq.dev/datadog-agent-dev/reference/api/process/</loc>
+         <lastmod>2020-02-02</lastmod>
+    </url>
+    <url>
+         <loc>https://datadoghq.dev/datadog-agent-dev/reference/api/tools/</loc>
+         <lastmod>2020-02-02</lastmod>
+    </url>
+    <url>
+         <loc>https://datadoghq.dev/datadog-agent-dev/reference/cli/</loc>
+         <lastmod>2020-02-02</lastmod>
+    </url>
+    <url>
+         <loc>https://datadoghq.dev/datadog-agent-dev/reference/cli/commands/</loc>
+         <lastmod>2020-02-02</lastmod>
+    </url>
+    <url>
+         <loc>https://datadoghq.dev/datadog-agent-dev/reference/interface/tool/</loc>
+         <lastmod>2020-02-02</lastmod>
+    </url>
 </urlset>
