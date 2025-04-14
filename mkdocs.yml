@@ -56,11 +56,15 @@ nav:
   - Extend:
     - Local commands: how-to/extend/local.md
     - Plugins: how-to/extend/plugin.md
+- Tutorials:
+  - CLI:
+    - Creating a command: tutorials/cli/create-command.md
 - Reference:
   - CLI:
     - reference/cli/index.md
     - Commands: reference/cli/commands.md
   - API:
+    - Command: reference/api/command.md
     - Application: reference/api/app.md
     - Process: reference/api/process.md
     - Tools: reference/api/tools.md
@@ -69,6 +73,10 @@ nav:
     - Constants: reference/api/constants.md
   - Interface:
     - Tool: reference/interface/tool.md
+    - Environments:
+      - Status: reference/interface/env/status.md
+      - Types:
+        - Developer: reference/interface/env/types/dev.md
 
 watch:
 - src/dda
@@ -152,9 +160,10 @@ markdown_extensions:
     emoji_index: !!python/name:material.extensions.emoji.twemoji
     emoji_generator: !!python/name:material.extensions.emoji.to_svg
 - pymdownx.highlight:
-    guess_lang: false
+    anchor_linenums: true
+    line_spans: __span
     linenums_style: pymdownx-inline
-    use_pygments: true
+    pygments_lang_class: true
 - pymdownx.inlinehilite:
 - pymdownx.keys:
 - pymdownx.magiclink:

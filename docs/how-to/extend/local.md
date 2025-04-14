@@ -4,8 +4,6 @@
 
 The CLI dynamically discovers commands within the current directory under `.dda/scripts`. Most commonly, there is only a single `run` command group defined here that contains all the commands.
 
-Every command and command group is defined as a Python package with an `__init__.py` file and a function `cmd` that defines the command or command group.
-
 For example, if you wanted to add a `dda run foo bar` command, you could add the following files:
 
 ```
@@ -18,41 +16,36 @@ For example, if you wanted to add a `dda run foo bar` command, you could add the
 The `.dda/scripts/run/foo/__init__.py` file might define the following command group:
 
 ```python
-from __future__ import annotations
-
 from dda.cli.base import dynamic_group
 
 
-@dynamic_group(
-    short_help="Foo commands",
-)
+@dynamic_group(short_help="Foo commands")
 def cmd() -> None:
-    pass
+    """
+    Long description of the `dda run foo` command group.
+    """
 ```
 
 The `.dda/scripts/run/foo/bar/__init__.py` file might define the following command:
 
 ```python
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
-
-import click
-
 from dda.cli.base import dynamic_command, pass_app
-
-if TYPE_CHECKING:
-    from dda.cli.application import Application
 
 
 @dynamic_command(short_help="Bar command")
 @pass_app
-def cmd(app: Application) -> None:
+def cmd(app) -> None:
     """
-    Long description of the command.
+    Long description of the `dda run foo bar` command.
     """
     app.display("Running bar command")
 ```
+
+/// admonition
+    type: tip
+
+See [the tutorial](../../tutorials/cli/create-command.md) for more information about creating commands.
+///
 
 ## Importing utilities
 

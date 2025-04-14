@@ -77,7 +77,7 @@ class DynamicContext(click.RichContext):
         new_search_paths = {}
         parent_cmd_name = self.command_path.split()[-1]
         for i, search_path in parent.search_paths.items():
-            group_dir = os.path.join(search_path, parent_cmd_name)
+            group_dir = os.path.join(search_path, _search_path_name(parent_cmd_name))
             cmd_path = os.path.join(group_dir, "__init__.py")
             if os.path.isfile(cmd_path):
                 new_search_paths[i] = group_dir
@@ -115,6 +115,24 @@ class DynamicContext(click.RichContext):
 
 
 class DynamicCommand(click.RichCommand):
+    """
+    A subclass of the [`Command`][click.Command] class provided by [rich-click](https://github.com/ewels/rich-click)
+    that allows for dynamic help text and dependency management.
+
+    Parameters:
+        features: A list of
+            [dependency groups](https://packaging.python.org/en/latest/specifications/dependency-groups/) that must be
+            satisfied before the command callback can be invoked. These are defined in the
+            [`pyproject.toml`](https://github.com/DataDog/datadog-agent-dev/blob/main/pyproject.toml) file.
+        dependencies: An arbitrary list of
+            [dependencies](https://packaging.python.org/en/latest/specifications/dependency-specifiers/) that must be
+            satisfied before the command callback can be invoked.
+
+    Other parameters:
+        *args: Additional positional arguments to pass to the [`Command`][click.Command] constructor.
+        **kwargs: Additional keyword arguments to pass to the [`Command`][click.Command] constructor.
+    """
+
     context_class = DynamicContext
 
     def __init__(
@@ -202,6 +220,22 @@ class DynamicCommand(click.RichCommand):
 
 
 class DynamicGroup(click.RichGroup):
+    """
+    A subclass of the [`Group`][click.Group] class provided by [rich-click](https://github.com/ewels/rich-click)
+    that allows for dynamic loading of subcommands.
+
+    Parameters:
+        allow_external_plugins: Whether to allow external plugins to be loaded. The default is taken from the
+            equivalent property of the parent group.
+        subcommand_filter: A function that takes a subcommand name and returns a boolean indicating whether the
+            subcommand should be included in the list of subcommands.
+        search_path_finder: A function that returns a list of directories to search for subcommands.
+
+    Other parameters:
+        *args: Additional positional arguments to pass to the [`Group`][click.Group] constructor.
+        **kwargs: Additional keyword arguments to pass to the [`Group`][click.Group] constructor.
+    """
+
     context_class = DynamicContext
     command_class = DynamicCommand
 
@@ -235,12 +269,13 @@ class DynamicGroup(click.RichGroup):
 
         commands = super().list_commands(ctx)
         commands.extend(
-            entry
+            _normalize_cmd_name(entry.name)
             for search_path in ctx.search_paths.values()
-            for entry in os.listdir(search_path)
-            if not entry.startswith(("_", ".")) and os.path.isfile(os.path.join(search_path, entry, "__init__.py"))
+            for entry in os.scandir(search_path)
+            if not entry.name.startswith(("_", "."))
+            and "-" not in entry.name
+            and os.path.isfile(os.path.join(entry.path, "__init__.py"))
         )
-
         if not _building_docs() and ctx.allow_external_plugins:
             commands.extend(ctx.external_plugins)
 
@@ -249,11 +284,19 @@ class DynamicGroup(click.RichGroup):
 
     def get_command(self, ctx: DynamicContext, cmd_name: str) -> DynamicCommand | DynamicGroup | None:  # type: ignore[override]
         command: DynamicCommand | DynamicGroup | None = super().get_command(ctx, cmd_name)  # type: ignore[assignment]
-        if command is not None or not self._subcommand_allowed(cmd_name):
+        if command is not None:
+            return command
+
+        normalized_cmd_name = _normalize_cmd_name(cmd_name)
+        if cmd_name != normalized_cmd_name:
+            return None
+
+        cmd_name = normalized_cmd_name
+        if not self._subcommand_allowed(cmd_name):
             return command
 
         for i, search_path in ctx.search_paths.items():
-            cmd_path = os.path.join(search_path, cmd_name, "__init__.py")
+            cmd_path = os.path.join(search_path, _search_path_name(cmd_name), "__init__.py")
             if os.path.isfile(cmd_path):
                 command = self._lazy_load(cmd_name, cmd_path)
                 command.name = cmd_name
@@ -295,6 +338,14 @@ class DynamicGroup(click.RichGroup):
             raise TypeError(message)
 
         return cmd_object
+
+
+def _normalize_cmd_name(cmd_name: str) -> str:
+    return cmd_name.replace("_", "-")
+
+
+def _search_path_name(cmd_name: str) -> str:
+    return cmd_name.replace("-", "_")
 
 
 def ensure_deps_installed(
@@ -388,5 +439,50 @@ def _get_external_plugin_callback(cmd_name: str, executable: str) -> DynamicComm
 
 
 dynamic_command = partial(click.command, cls=DynamicCommand)
+"""
+A decorator wrapping [`click.command`][click.command] that configures a [`DynamicCommand`][dda.cli.base.DynamicCommand]. Example:
+
+```python
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from dda.cli.base import dynamic_command, pass_app
+
+if TYPE_CHECKING:
+    from dda.cli.application import Application
+
+
+@dynamic_command(short_help="Command")
+@pass_app
+def cmd(app: Application) -> None:
+    \"""
+    Long description of the command.
+    \"""
+    app.display("Running command")
+```
+"""
 dynamic_group = partial(click.group, cls=DynamicGroup)
+"""
+A decorator wrapping [`click.group`][click.group] that configures a [`DynamicGroup`][dda.cli.base.DynamicGroup]. Example:
+
+```python
+from __future__ import annotations
+
+from dda.cli.base import dynamic_group
+
+
+@dynamic_group(
+    short_help="Command group",
+)
+def cmd() -> None:
+    \"""
+    Long description of the command group.
+    \"""
+```
+"""
 pass_app = click.pass_obj
+"""
+A partial function that returns a decorator for passing an [`Application`][dda.cli.application.Application] instance
+to a command callback.
+"""

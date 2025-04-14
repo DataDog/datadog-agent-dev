@@ -19,5 +19,9 @@ class EnvironmentState(StrEnum):
 
 
 class EnvironmentStatus(Struct, frozen=True, forbid_unknown_fields=True):
+    """
+    This class represents the status of an environment.
+    """
+
     state: EnvironmentState
     info: str = ""

@@ -6,8 +6,11 @@ from __future__ import annotations
 import os
 import subprocess
 from functools import cache
+from pathlib import Path
 
 from markdown.preprocessors import Preprocessor
+from rich.console import Console
+from rich.tree import Tree
 
 
 @cache
@@ -17,6 +20,7 @@ def variable_replacements():
         for variable, replacement in (
             # Current version
             ("DDA_VERSION", get_dda_version()),
+            ("DDA_ROOT_TREE", get_dda_root_tree()),
         )
     }
 
@@ -38,6 +42,20 @@ def get_dda_version():
         patch -= 1
 
     return f"{major}.{minor}.{patch}"
+
+
+def get_dda_root_tree():
+    relative_path = "src/dda/cli"
+    tree = Tree(relative_path)
+    for path in Path(relative_path).iterdir():
+        if path.joinpath("__init__.py").is_file():
+            tree.add(path.name.replace("_", "-"))
+
+    console = Console()
+    with console.capture() as capture:
+        console.print(tree)
+
+    return capture.get().strip()
 
 
 class VariableInjectionPreprocessor(Preprocessor):
