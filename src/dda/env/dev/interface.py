@@ -75,19 +75,30 @@ class DeveloperEnvironmentInterface(ABC, Generic[ConfigT]):
     @abstractmethod
     def start(self) -> None:
         """
-        This method starts the developer environment. If this method returns early, the `status`
-        method should contain information about the startup progress.
+        This method starts the developer environment. If this method returns early, the environment's
+        [status][dda.env.dev.interface.DeveloperEnvironmentInterface.status] should contain
+        information about the startup progress.
 
-        This method will only be called if the environment is stopped or nonexistent.
+        This method will only be called if the environment's
+        [status][dda.env.dev.interface.DeveloperEnvironmentInterface.status] is
+        [stopped][dda.env.models.EnvironmentState.STOPPED] or
+        [nonexistent][dda.env.models.EnvironmentState.NONEXISTENT].
+
+        Users trigger this method by running the [`env dev start`](../../../cli/commands.md#dda-env-dev-start) command.
         """
 
     @abstractmethod
     def stop(self) -> None:
         """
-        This method stops the developer environment. If this method returns early, the `status`
-        method should contain information about the shutdown progress.
+        This method stops the developer environment. If this method returns early, the
+        environment's [status][dda.env.dev.interface.DeveloperEnvironmentInterface.status]
+        should contain information about the shutdown progress.
 
-        This method will only be called if the environment is started.
+        This method will only be called if the environment's
+        [status][dda.env.dev.interface.DeveloperEnvironmentInterface.status] is
+        [started][dda.env.models.EnvironmentState.STARTED].
+
+        Users trigger this method by running the [`env dev stop`](../../../cli/commands.md#dda-env-dev-stop) command.
         """
 
     @abstractmethod
@@ -95,7 +106,14 @@ class DeveloperEnvironmentInterface(ABC, Generic[ConfigT]):
         """
         This method removes the developer environment and all associated state.
 
-        This method will only be called if the environment is stopped or in an error state.
+        This method will only be called if the environment's
+        [status][dda.env.dev.interface.DeveloperEnvironmentInterface.status] is
+        [stopped][dda.env.models.EnvironmentState.STOPPED] or in an
+        [error][dda.env.models.EnvironmentState.ERROR] state.
+
+        Users trigger this method by running the [`env dev remove`](../../../cli/commands.md#dda-env-dev-remove)
+        command or with the `-r`/`--remove` flag of the [`env dev stop`](../../../cli/commands.md#dda-env-dev-stop)
+        command.
         """
 
     @abstractmethod
@@ -108,18 +126,37 @@ class DeveloperEnvironmentInterface(ABC, Generic[ConfigT]):
     def code(self, *, repo: str | None = None) -> None:
         """
         This method opens the developer environment's code in the configured editor.
+
+        Users trigger this method by running the [`env dev code`](../../../cli/commands.md#dda-env-dev-code) command.
+
+        Parameters:
+            repo: The repository to open the code for, or `None` to open the code for the first
+                [configured repository][dda.env.dev.interface.DeveloperEnvironmentConfig.repos].
         """
 
     @abstractmethod
     def run_command(self, command: list[str], *, repo: str | None = None) -> None:
         """
         This method runs a command inside the developer environment.
+
+        Users trigger this method by running the [`env dev run`](../../../cli/commands.md#dda-env-dev-run) command.
+
+        Parameters:
+            command: The command to run inside the developer environment.
+            repo: The repository to run the command for, or `None` to run the command for the first
+                [configured repository][dda.env.dev.interface.DeveloperEnvironmentConfig.repos].
         """
 
     @abstractmethod
     def launch_shell(self, *, repo: str | None = None) -> NoReturn:
         """
         This method starts an interactive shell inside the developer environment.
+
+        Users trigger this method by running the [`env dev shell`](../../../cli/commands.md#dda-env-dev-shell) command.
+
+        Parameters:
+            repo: The repository to run the shell for, or `None` to run the shell for the first
+                [configured repository][dda.env.dev.interface.DeveloperEnvironmentConfig.repos].
         """
 
     def launch_gui(self) -> NoReturn:
@@ -130,42 +167,75 @@ class DeveloperEnvironmentInterface(ABC, Generic[ConfigT]):
 
     @property
     def app(self) -> Application:
+        """
+        The [`Application`][dda.cli.application.Application] instance.
+        """
         return self.__app
 
     @property
     def name(self) -> str:
+        """
+        The name of the environment type e.g. `linux-container`.
+        """
         return self.__name
 
     @property
     def instance(self) -> str:
+        """
+        The instance of the environment e.g. `default`.
+        """
         return self.__instance
 
     @cached_property
     def storage_dirs(self) -> StorageDirs:
+        """
+        The storage directories for the environment.
+        """
         return self.app.config.storage.join("env", "dev", self.name, self.instance)
 
     @cached_property
     def config(self) -> ConfigT:
+        """
+        The user-defined configuration as an instance of the
+        [`DeveloperEnvironmentConfig`][dda.env.dev.interface.DeveloperEnvironmentConfig] class, or subclass thereof.
+        """
         return self.__load_config() if self.__config is None else self.__config
 
     @classmethod
     def config_class(cls) -> type[DeveloperEnvironmentConfig]:
+        """
+        The [`DeveloperEnvironmentConfig`][dda.env.dev.interface.DeveloperEnvironmentConfig] class, or subclass thereof,
+        that is used to configure the environment.
+        """
         return DeveloperEnvironmentConfig
 
     @cached_property
     def config_file(self) -> Path:
+        """
+        The path to the JSON file that is used to persist the environment's configuration until the environment
+        is [removed][dda.env.dev.interface.DeveloperEnvironmentInterface.remove].
+        """
         return self.storage_dirs.data.joinpath("config.json")
 
     @cached_property
     def shared_dir(self) -> Path:
+        """
+        The path to the directory that is used to share data between the host and the environment.
+        """
         return self.storage_dirs.data.joinpath(".shared")
 
     @cached_property
     def global_shared_dir(self) -> Path:
+        """
+        The path to the directory that is used to share data between all environments.
+        """
         return self.storage_dirs.data.parent.joinpath(".shared")
 
     @cached_property
     def default_repo(self) -> str:
+        """
+        The default repository to work on.
+        """
         return self.config.repos[0].split("@")[0]
 
     def save_config(self) -> None:
