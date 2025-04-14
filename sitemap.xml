@@ -29,6 +29,10 @@
          <lastmod>2020-02-02</lastmod>
     </url>
     <url>
+         <loc>https://datadoghq.dev/datadog-agent-dev/reference/api/command/</loc>
+         <lastmod>2020-02-02</lastmod>
+    </url>
+    <url>
          <loc>https://datadoghq.dev/datadog-agent-dev/reference/api/config/</loc>
          <lastmod>2020-02-02</lastmod>
     </url>
@@ -58,6 +62,18 @@
     </url>
     <url>
          <loc>https://datadoghq.dev/datadog-agent-dev/reference/interface/tool/</loc>
+         <lastmod>2020-02-02</lastmod>
+    </url>
+    <url>
+         <loc>https://datadoghq.dev/datadog-agent-dev/reference/interface/env/status/</loc>
+         <lastmod>2020-02-02</lastmod>
+    </url>
+    <url>
+         <loc>https://datadoghq.dev/datadog-agent-dev/reference/interface/env/types/dev/</loc>
+         <lastmod>2020-02-02</lastmod>
+    </url>
+    <url>
+         <loc>https://datadoghq.dev/datadog-agent-dev/tutorials/cli/create-command/</loc>
          <lastmod>2020-02-02</lastmod>
     </url>
 </urlset>
