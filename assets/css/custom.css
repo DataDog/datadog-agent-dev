@@ -25,6 +25,11 @@ code { font-family: 'Fira Code', monospace; }
   text-transform: none;
 }
 
+/* https://github.com/squidfunk/mkdocs-material/discussions/6909#discussioncomment-8788221 */
+.md-typeset ol ol, .md-typeset ul ol {
+  list-style-type: decimal;
+}
+
 /* Fancier color for operators such as * and |. */
 .doc-signature .o {
   color: var(--md-code-hl-special-color);
