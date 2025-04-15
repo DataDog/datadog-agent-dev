@@ -183,13 +183,20 @@ class DynamicCommand(click.RichCommand):
                 root_ctx = parent
 
             search_path = root_ctx.search_paths[self.dynamic_path_id]
-            sys.path.insert(0, search_path)
+            # Directory alongside the top-level search path
+            pythonpath = os.path.join(os.path.dirname(search_path), "pythonpath")
+            if os.path.isdir(pythonpath):
+                from dda.utils.process import EnvVars
 
-        try:
-            return super().invoke(ctx)
-        finally:
-            if self.dynamic_path_id != 0:
-                sys.path.pop(0)
+                sys.path.insert(0, pythonpath)
+                try:
+                    # The environment variable is required to influence subprocesses
+                    with EnvVars({"PYTHONPATH": pythonpath}):
+                        return super().invoke(ctx)
+                finally:
+                    sys.path.pop(0)
+
+        return super().invoke(ctx)
 
     def get_help_option(self, ctx: DynamicContext) -> click.Option | None:  # type: ignore[override]
         if self.__help_option is not None:
@@ -272,9 +279,7 @@ class DynamicGroup(click.RichGroup):
             _normalize_cmd_name(entry.name)
             for search_path in ctx.search_paths.values()
             for entry in os.scandir(search_path)
-            if not entry.name.startswith(("_", "."))
-            and "-" not in entry.name
-            and os.path.isfile(os.path.join(entry.path, "__init__.py"))
+            if "-" not in entry.name and os.path.isfile(os.path.join(entry.path, "__init__.py"))
         )
         if not _building_docs() and ctx.allow_external_plugins:
             commands.extend(ctx.external_plugins)

@@ -2,19 +2,20 @@
 
 -----
 
-The CLI dynamically discovers commands within the current directory under `.dda/scripts`. Most commonly, there is only a single `run` command group defined here that contains all the commands.
+The CLI dynamically discovers commands within the current directory under `.dda/extend/commands`. Most commonly, there is only a single `run` command group defined here that contains all the commands.
 
 For example, if you wanted to add a `dda run foo bar` command, you could add the following files:
 
 ```
-.dda/scripts/run/foo/
+.dda/extend/commands/run/foo/
 ├── __init__.py
 └── bar
     └── __init__.py
 ```
 
-The `.dda/scripts/run/foo/__init__.py` file might define the following command group:
+The `foo` command group might look like this:
 
+/// tab | :octicons-file-code-16: .dda/extend/commands/run/foo/\_\_init\_\_.py
 ```python
 from dda.cli.base import dynamic_group
 
@@ -25,9 +26,11 @@ def cmd() -> None:
     Long description of the `dda run foo` command group.
     """
 ```
+///
 
-The `.dda/scripts/run/foo/bar/__init__.py` file might define the following command:
+The `bar` command might look like this:
 
+/// tab | :octicons-file-code-16: .dda/extend/commands/run/foo/bar/\_\_init\_\_.py
 ```python
 from dda.cli.base import dynamic_command, pass_app
 
@@ -40,6 +43,7 @@ def cmd(app) -> None:
     """
     app.display("Running bar command")
 ```
+///
 
 /// tip
 See [the tutorial](../../tutorials/cli/create-command.md) for more information about creating commands.
@@ -47,17 +51,17 @@ See [the tutorial](../../tutorials/cli/create-command.md) for more information a
 
 ## Importing utilities
 
-Any directory starting with `_` will not be considered a command or command group. The `.dda/scripts` directory is added to the Python path, so you can import such private modules. For example, if you have the following structure:
+The `.dda/extend/pythonpath` directory is added to the Python search path. For example, if you have the following structure:
 
 ```
-.dda/scripts/
-└── _utils/
+.dda/extend/pythonpath/
+└── utils/
     ├── __init__.py
     └── foo.py
 ```
 
-You can import the `foo` module like this:
+Commands can import the `foo` module like this:
 
 ```python
-from _utils import foo
+from utils import foo
 ```
