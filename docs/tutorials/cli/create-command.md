@@ -33,9 +33,7 @@ def cmd() -> None:
 ```
 ///
 
-/// admonition
-    type: note
-
+/// note
 Directory names containing multiple words must be separated by underscores. For example, the `agent-release` command group is located in the `src/dda/cli/agent_release` directory.
 ///
 

@@ -69,6 +69,8 @@ nav:
     - Process: reference/api/process.md
     - Tools: reference/api/tools.md
     - Filesystem: reference/api/fs.md
+    - Retries: reference/api/retry.md
+    - CI: reference/api/ci.md
     - Config: reference/api/config.md
     - Constants: reference/api/constants.md
   - Interface:
@@ -77,6 +79,9 @@ nav:
       - Status: reference/interface/env/status.md
       - Types:
         - Developer: reference/interface/env/types/dev.md
+- Guidelines:
+  - CLI: guidelines/cli.md
+  - Documentation: guidelines/docs.md
 
 watch:
 - src/dda
@@ -146,6 +151,47 @@ markdown_extensions:
 - pymdownx.betterem:
     smart_enable: all
 - pymdownx.blocks.admonition:
+    # https://squidfunk.github.io/mkdocs-material/reference/admonitions/#supported-types
+    types:
+    - abstract
+    - bug
+    - danger
+    - example
+    - failure
+    - info
+    - note
+    - question
+    - quote
+    - success
+    - tip
+    - warning
+- pymdownx.blocks.details:
+    # Same as admonition types except prefixed by `details-`
+    types:
+    - name: details-abstract
+      class: abstract
+    - name: details-bug
+      class: bug
+    - name: details-danger
+      class: danger
+    - name: details-example
+      class: example
+    - name: details-failure
+      class: failure
+    - name: details-info
+      class: info
+    - name: details-note
+      class: note
+    - name: details-question
+      class: question
+    - name: details-quote
+      class: quote
+    - name: details-success
+      class: success
+    - name: details-tip
+      class: tip
+    - name: details-warning
+      class: warning
 - pymdownx.blocks.tab:
     alternate_style: true
     slugify: !!python/object/apply:pymdownx.slugs.slugify

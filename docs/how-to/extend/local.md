@@ -41,9 +41,7 @@ def cmd(app) -> None:
     app.display("Running bar command")
 ```
 
-/// admonition
-    type: tip
-
+/// tip
 See [the tutorial](../../tutorials/cli/create-command.md) for more information about creating commands.
 ///
 

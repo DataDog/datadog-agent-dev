@@ -47,7 +47,7 @@ def get_dda_version():
 def get_dda_root_tree():
     relative_path = "src/dda/cli"
     tree = Tree(relative_path)
-    for path in Path(relative_path).iterdir():
+    for path in sorted(Path(relative_path).iterdir(), key=lambda p: p.name.casefold()):
         if path.joinpath("__init__.py").is_file():
             tree.add(path.name.replace("_", "-"))
 

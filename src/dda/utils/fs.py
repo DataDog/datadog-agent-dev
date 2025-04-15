@@ -34,9 +34,7 @@ class Path(pathlib.Path):
         Returns a SHA-256 hashed, URL-safe base64 encoded representation of the current path. This is useful
         on case-insensitive filesystems to identify paths that are the same.
 
-        /// admonition | Caveat
-            type: info
-
+        /// info | Caveat
         This identifier considers the filesystem to be case-insensitive on macOS. Although that is not a
         technical guarantee, it is in practice true.
         ///
