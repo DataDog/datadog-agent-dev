@@ -215,9 +215,7 @@ class EnvVars(dict):
         ...
     ```
 
-    /// admonition
-        type: warning
-
+    /// warning
     It's undesirable to persist instances for long periods of time because the environment variables may change
     during the lifetime of the instance.
     ///
