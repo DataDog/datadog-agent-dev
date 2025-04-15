@@ -5,21 +5,12 @@ from __future__ import annotations
 
 
 def test_local_command(dda, helpers, temp_dir):
-    scripts_dir = temp_dir / ".dda" / "scripts"
-    scripts_dir.ensure_dir()
-    scripts_dir.joinpath("_utils").ensure_dir()
-    scripts_dir.joinpath("_utils", "__init__.py").touch()
-    scripts_dir.joinpath("_utils", "foo.py").write_text(
-        helpers.dedent(
-            """
-            bar = "baz"
-            """
-        )
-    )
-    scripts_dir.joinpath("config").ensure_dir()
-    scripts_dir.joinpath("config", "__init__.py").touch()
-    scripts_dir.joinpath("config", "foo").ensure_dir()
-    scripts_dir.joinpath("config", "foo", "__init__.py").write_text(
+    commands_dir = temp_dir / ".dda" / "extend" / "commands"
+    commands_dir.ensure_dir()
+    commands_dir.joinpath("config").ensure_dir()
+    commands_dir.joinpath("config", "__init__.py").touch()
+    commands_dir.joinpath("config", "foo").ensure_dir()
+    commands_dir.joinpath("config", "foo", "__init__.py").write_text(
         helpers.dedent(
             """
             import click
@@ -28,9 +19,20 @@ def test_local_command(dda, helpers, temp_dir):
             @dynamic_command()
             @pass_app
             def cmd(app):
-                from _utils import foo
+                from utils import foo
 
                 app.display(f"{foo.bar=}")
+            """
+        )
+    )
+    pythonpath = commands_dir.parent / "pythonpath"
+    pythonpath.ensure_dir()
+    pythonpath.joinpath("utils").ensure_dir()
+    pythonpath.joinpath("utils", "__init__.py").touch()
+    pythonpath.joinpath("utils", "foo.py").write_text(
+        helpers.dedent(
+            """
+            bar = "baz"
             """
         )
     )

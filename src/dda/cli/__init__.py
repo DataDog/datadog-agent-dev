@@ -20,9 +20,9 @@ from dda.config.constants import AppEnvVars, ConfigEnvVars
 def search_path_finder() -> list[str]:
     search_paths = []
 
-    scripts_dir = os.path.join(os.getcwd(), ".dda", "scripts")
-    if os.path.isdir(scripts_dir):
-        search_paths.append(scripts_dir)
+    commands_dir = os.path.join(os.getcwd(), ".dda", "extend", "commands")
+    if os.path.isdir(commands_dir):
+        search_paths.append(commands_dir)
 
     return search_paths
 

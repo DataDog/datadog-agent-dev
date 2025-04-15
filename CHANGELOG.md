@@ -8,6 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+***Changed:***
+
+- The paths used to search for local commands are no longer added to the Python search path and instead a sibling directory `pythonpath` is used
+
+***Fixed:***
+
+- Properly persist Python search path modifications for local commands when using subprocesses
+
 ## 0.9.0 - 2025-04-02
 
 ***Added:***
