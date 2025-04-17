@@ -47,3 +47,25 @@ class TestLinux:
     def test_default_shell(self):
         expected_shell = os.environ.get("SHELL", "bash")
         assert platform.DEFAULT_SHELL == expected_shell  # noqa: SIM300
+
+
+class TestMachineId:
+    def test_platform_specific(self):
+        machine_id = str(platform.get_machine_id())
+        assert str(platform.get_machine_id()) == machine_id
+
+        parts = machine_id.split("-")
+        lengths = list(map(len, parts))
+        assert lengths == [8, 4, 4, 4, 12]
+
+    def test_fallback(self, mocker):
+        mocker.patch("dda.utils.platform.__get_machine_id", return_value=None)
+
+        platform.get_machine_id.cache_clear()
+        machine_id = str(platform.get_machine_id())
+        platform.get_machine_id.cache_clear()
+        assert str(platform.get_machine_id()) == machine_id
+
+        parts = machine_id.split("-")
+        lengths = list(map(len, parts))
+        assert lengths == [8, 4, 4, 4, 12]

@@ -12,6 +12,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 - The paths used to search for local commands are no longer added to the Python search path and instead a sibling directory `pythonpath` is used
 
+***Added:***
+
+- Add `dda.utils.platform.get_machine_id` function
+
 ***Fixed:***
 
 - Properly persist Python search path modifications for local commands when using subprocesses
