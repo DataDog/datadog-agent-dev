@@ -67,9 +67,10 @@ nav:
     - Command: reference/api/command.md
     - Application: reference/api/app.md
     - Process: reference/api/process.md
-    - Tools: reference/api/tools.md
     - Filesystem: reference/api/fs.md
+    - Platform: reference/api/platform.md
     - Retries: reference/api/retry.md
+    - Tools: reference/api/tools.md
     - CI: reference/api/ci.md
     - Config: reference/api/config.md
     - Constants: reference/api/constants.md
