@@ -79,6 +79,8 @@ def cmd(
             features.append("legacy-test-infra-definitions")
         elif task.startswith("system-probe."):
             features.append("legacy-btf-gen")
+        elif task.startswith("kmt."):
+            features.append("legacy-kernel-matrix-testing")
 
     if no_dynamic_deps:
         import sys
