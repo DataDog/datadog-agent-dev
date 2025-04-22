@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+***Fixed:***
+
+- Only show the help text of the `inv` command when no arguments are provided
+
 ## 0.10.0 - 2025-04-22
 
 ***Changed:***

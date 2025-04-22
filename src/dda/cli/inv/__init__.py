@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     short_help="Invoke a local task",
     context_settings={"help_option_names": [], "ignore_unknown_options": True},
 )
-@click.argument("args", nargs=-1)
+@click.argument("args", nargs=-1, required=False)
 @click.option(
     "--feat",
     "extra_features",
@@ -43,13 +43,6 @@ After a dependency is installed once, it will always be available.
     is_flag=True,
     help="Assume required dependencies are already installed",
 )
-@click.option(
-    "-h",
-    "--help",
-    "show_help",
-    is_flag=True,
-    help="Show this help message and exit.",
-)
 @click.pass_context
 def cmd(
     ctx: click.Context,
@@ -58,7 +51,6 @@ def cmd(
     extra_features: tuple[str, ...],
     extra_dependencies: tuple[str, ...],
     no_dynamic_deps: bool,
-    show_help: bool,
 ) -> None:
     """
     Invoke a local task.
@@ -67,7 +59,7 @@ def cmd(
 
     app: Application = ctx.obj
 
-    if show_help:
+    if not args:
         app.display(ctx.get_help())
         return
 
