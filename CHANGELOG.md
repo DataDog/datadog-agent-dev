@@ -15,10 +15,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ***Added:***
 
 - Add `dda.utils.platform.get_machine_id` function
+- Add `dda.utils.date` utilities
+- Add `dda.utils.network.http` utilities
+- Add proper backoff for the retry utilities
+- Add `binary` and `rich` to the global legacy dependencies used for the `inv` command
 
 ***Fixed:***
 
 - Properly persist Python search path modifications for local commands when using subprocesses
+- Fixed locally running config restoration tests when telemetry is enabled
 
 ## 0.9.0 - 2025-04-02
 

@@ -9,6 +9,7 @@
       - abort
       - config
       - subprocess
+      - http
       - tools
       - display
       - display_critical

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 from time import perf_counter_ns
+from typing import TYPE_CHECKING
 
 START_TIME = perf_counter_ns()
 
@@ -16,6 +17,9 @@ from dda._version import __version__
 from dda.cli.base import dynamic_group
 from dda.config.constants import AppEnvVars, ConfigEnvVars
 
+if TYPE_CHECKING:
+    from dda.config.file import ConfigFile
+
 
 def search_path_finder() -> list[str]:
     search_paths = []
@@ -25,6 +29,30 @@ def search_path_finder() -> list[str]:
         search_paths.append(commands_dir)
 
     return search_paths
+
+
+def set_default_config(
+    config: ConfigFile,
+    *,
+    verbose: int | None,
+    quiet: int | None,
+    data_dir: str | None,
+    cache_dir: str | None,
+) -> None:
+    if verbose is not None or quiet is not None:
+        verbosity = 0
+        if verbose is not None:
+            verbosity += verbose
+        if quiet is not None:
+            verbosity -= quiet
+
+        config.data.setdefault("terminal", {})["verbosity"] = verbosity
+
+    if data_dir is not None:
+        config.data.setdefault("storage", {})["data"] = data_dir
+
+    if cache_dir is not None:
+        config.data.setdefault("storage", {})["cache"] = cache_dir
 
 
 @dynamic_group(
@@ -123,20 +151,7 @@ def dda(
     if not config.path.is_file():
         config.restore()
 
-    if verbose is not None or quiet is not None:
-        verbosity = 0
-        if verbose is not None:
-            verbosity += verbose
-        if quiet is not None:
-            verbosity -= quiet
-
-        config.data.setdefault("terminal", {})["verbosity"] = verbosity
-
-    if data_dir is not None:
-        config.data.setdefault("storage", {})["data"] = data_dir
-
-    if cache_dir is not None:
-        config.data.setdefault("storage", {})["cache"] = cache_dir
+    set_default_config(config, verbose=verbose, quiet=quiet, data_dir=data_dir, cache_dir=cache_dir)
 
     if color is None:
         if os.environ.get(AppEnvVars.NO_COLOR) == "1":
@@ -153,6 +168,7 @@ def dda(
         # Allow the user to modify the config if it's invalid
         if ctx.invoked_subcommand == "config":
             config.data.clear()
+            set_default_config(config, verbose=verbose, quiet=quiet, data_dir=data_dir, cache_dir=cache_dir)
         else:
             ctx.fail(f"Error loading config: {config.path}\n{e}")
 
