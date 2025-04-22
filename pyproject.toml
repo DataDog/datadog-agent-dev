@@ -140,7 +140,7 @@ legacy-tasks = [
     { include-group = "legacy-release" },
     "binary==1.0.1",
     "debugpy==1.8.2",
-    "rich==14.0.0",
+    "rich==13.9.4",
     "watchdog==6.0.0",
 ]
 # https://github.com/DataDog/datadog-agent/blob/main/tasks/requirements_docs.txt
