@@ -30,15 +30,17 @@ dependencies = [
   "click~=8.1",
   "dep-sync~=0.1",
   "find-exe~=0.1",
+  "httpx[http2]~=0.28.1",
   "keyring~=25.6.0",
   "msgspec~=0.18",
   "msgspec-click~=0.2",
   "packaging",
   "platformdirs~=4.2",
   "psutil~=7.0",
-  "rich~=13.7",
+  "rich~=14.0",
   "rich-click~=1.8",
   "tomlkit~=0.13",
+  "truststore~=0.10.1",
   # https://peps.python.org/pep-0696/
   "typing-extensions>=4.6.0; python_version < '3.13'",
   "uv~=0.5.20",
@@ -49,7 +51,7 @@ self-dev = [
     "hatch",
 ]
 http = [
-    "httpx",
+    "httpx[zstd]",
 ]
 github = [
     "pygithub",
@@ -140,7 +142,7 @@ legacy-tasks = [
     { include-group = "legacy-release" },
     "binary==1.0.1",
     "debugpy==1.8.2",
-    "rich==13.9.4",
+    "rich==14.0.0",
     "watchdog==6.0.0",
 ]
 # https://github.com/DataDog/datadog-agent/blob/main/tasks/requirements_docs.txt

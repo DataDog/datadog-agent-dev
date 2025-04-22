@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from dda.config.model import RootConfig
     from dda.telemetry.manager import TelemetryManager
     from dda.tools import Tools
+    from dda.utils.network.http.manager import HTTPClientManager
     from dda.utils.process import SubprocessRunner
 
 
@@ -79,6 +80,12 @@ class Application(Terminal):
         from dda.utils.process import SubprocessRunner
 
         return SubprocessRunner(self)
+
+    @cached_property
+    def http(self) -> HTTPClientManager:
+        from dda.utils.network.http.manager import HTTPClientManager
+
+        return HTTPClientManager(self)
 
     @cached_property
     def tools(self) -> Tools:
