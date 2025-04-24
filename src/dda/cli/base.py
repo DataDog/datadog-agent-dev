@@ -38,6 +38,11 @@ class DynamicContext(click.RichContext):
     formatter_class = DocumentingHelpFormatter
     export_console_as = "html" if _building_docs() else None
 
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+
+        self.deepest_command_path: str | None = None
+
     @cached_property
     def allow_external_plugins(self) -> bool:
         command: DynamicGroup = self.command  # type: ignore[assignment]
@@ -96,8 +101,19 @@ class DynamicContext(click.RichContext):
     def __exit__(
         self, exc_type: type[BaseException] | None, exc_value: BaseException | None, tb: TracebackType | None
     ) -> None:
+        command_depth = len(self.command_path.split())
+        root_ctx = self._get_root_ctx()
+        if root_ctx.deepest_command_path is None or command_depth > len(root_ctx.deepest_command_path.split()):
+            root_ctx.deepest_command_path = self.command_path
+
         app: Application | None = self.obj
-        if app is not None and self._depth == 1:
+        if (
+            # The application may not be set if an error occurred very early
+            app is not None
+            # The proper exit code only manifests when the top level context exits
+            and command_depth == 1
+            and self._depth == 1
+        ):
             # https://github.com/pallets/click/blob/8.1.8/src/click/exceptions.py#L296
             if isinstance(exc_value, Exit):
                 exit_code = exc_value.exit_code
@@ -108,10 +124,27 @@ class DynamicContext(click.RichContext):
             else:
                 exit_code = 1
 
-            app.telemetry.submit_data("exit_code", str(exit_code))
-            app.telemetry.submit_data("end_time", str(perf_counter_ns()))
+            from dda.cli import START_TIME
+            from dda.utils.platform import join_command_args
+
+            command = join_command_args(sys.argv[1:])
+            elapsed_time = (perf_counter_ns() - START_TIME) / 1_000_000_000
+            app.telemetry.log.write({
+                "message": f"{command} (code: {exit_code}, duration: {elapsed_time:.2f} seconds)",
+                "level": "info" if exit_code == 0 else "warn" if exit_code == 2 else "error",  # noqa: PLR2004
+                "ddtags": "cli:dda",
+                "exit_code": str(exit_code),
+                "duration": str(elapsed_time),
+            })
 
         super().__exit__(exc_type, exc_value, tb)
+
+    def _get_root_ctx(self) -> DynamicContext:
+        ctx = self
+        while ctx.parent is not None:
+            ctx = ctx.parent  # type: ignore[assignment]
+
+        return ctx
 
 
 class DynamicCommand(click.RichCommand):

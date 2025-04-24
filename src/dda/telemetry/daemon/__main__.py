@@ -3,22 +3,24 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
+import asyncio
+import json
 import logging
 import os
-from ast import literal_eval
+from contextlib import ExitStack
+from typing import TYPE_CHECKING, Any
 
 import psutil
-from datadog_api_client import ApiClient, Configuration
-from datadog_api_client.v2.api.logs_api import LogsApi
-from datadog_api_client.v2.model.http_log import HTTPLog
-from datadog_api_client.v2.model.http_log_item import HTTPLogItem
-from msgspec import ValidationError, convert
+import watchfiles
 
 from dda.telemetry.constants import DaemonEnvVars
-from dda.telemetry.model import TelemetryData
 from dda.telemetry.secrets import fetch_api_key, read_api_key, save_api_key
 from dda.utils.fs import Path
-from dda.utils.platform import join_command_args
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
+
+    from dda.telemetry.daemon.base import TelemetryClient
 
 COMMAND_PID = int(os.environ[DaemonEnvVars.COMMAND_PID])
 WRITE_DIR = Path(os.environ[DaemonEnvVars.WRITE_DIR])
@@ -31,22 +33,78 @@ logging.basicConfig(
 )
 
 
-def get_log_level(exit_code: int) -> str:
-    if exit_code == 0:
-        return "info"
+def get_client(id: str, **kwargs: Any) -> TelemetryClient:  # noqa: A002
+    if id == "log":
+        from dda.telemetry.daemon.log import LogTelemetryClient
 
-    # https://github.com/pallets/click/blob/8.1.8/src/click/exceptions.py#L64
-    if exit_code == 2:  # noqa: PLR2004
-        return "warn"
+        return LogTelemetryClient(**kwargs)
 
-    return "error"
-
-
-def nano_to_seconds(nano: int) -> float:
-    return nano / 1_000_000_000
+    message = f"Unknown client ID: {id}"
+    raise ValueError(message)
 
 
-def main() -> None:
+async def watch_events(stop_event: asyncio.Event) -> AsyncIterator[Path]:
+    # Use as an ordered set
+    existing_files = dict.fromkeys(os.listdir(WRITE_DIR))
+    try:
+        async for changes in watchfiles.awatch(
+            WRITE_DIR,
+            stop_event=stop_event,
+            recursive=False,
+            rust_timeout=0,
+            watch_filter=lambda c, p: (
+                # Only filter the final atomically written file
+                c == watchfiles.Change.added
+                and not (fn := os.path.basename(p)).startswith("tmp")
+                # ... and ignore files that were created before watching
+                and fn not in existing_files
+            ),
+        ):
+            if existing_files:
+                for filename in existing_files:
+                    yield WRITE_DIR / filename
+
+                existing_files.clear()
+
+            for file_change in changes:
+                _, full_path = file_change
+                yield Path(full_path)
+    except Exception:
+        logging.exception("Error watching for changes")
+
+    if existing_files:
+        for filename in existing_files:
+            yield WRITE_DIR / filename
+
+
+async def process_changes(stop_event: asyncio.Event, **kwargs: Any) -> None:
+    with ExitStack() as stack:
+        clients: dict[str, TelemetryClient] = {}
+        async for path in watch_events(stop_event):
+            client_id = path.name.split("_")[0]
+            if (client := clients.get(client_id)) is None:
+                try:
+                    client = get_client(client_id, **kwargs)
+                    stack.enter_context(client)
+                except Exception:
+                    logging.exception("Failed to set up client: %s", client_id)
+                    continue
+
+                clients[client_id] = client
+
+            try:
+                data = json.loads(path.read_text(encoding="utf-8"))
+            except Exception:
+                logging.exception("Failed to parse file: %s", path)
+                continue
+
+            try:
+                client.send(data)
+            except Exception:
+                logging.exception("Failed to send data to client: %s", client_id)
+
+
+async def main() -> None:
     logging.info("Getting API key from keyring")
     try:
         api_key = read_api_key()
@@ -69,6 +127,9 @@ def main() -> None:
         except Exception:
             logging.exception("Failed to save API key to keyring")
 
+    stop_event = asyncio.Event()
+    task = asyncio.create_task(process_changes(stop_event, api_key=api_key))
+
     try:
         process = psutil.Process(COMMAND_PID)
     except Exception:  # noqa: BLE001
@@ -76,49 +137,14 @@ def main() -> None:
     else:
         if process.create_time() < psutil.Process().create_time():
             logging.info("Waiting for command to finish")
-            process.wait()
+            await asyncio.to_thread(process.wait)
         else:
             logging.info("Command PID reused, assuming command has finished")
 
-    data = {}
-    for path in WRITE_DIR.iterdir():
-        key = path.name
-        value = path.read_text(encoding="utf-8").strip()
-        data[key] = value
-
-    try:
-        telemetry_data = convert(data, TelemetryData, strict=False)
-    except ValidationError:
-        logging.exception("Failed to convert telemetry data")
-        return
-
-    command = join_command_args(literal_eval(telemetry_data.command))
-    elapsed_time = nano_to_seconds(telemetry_data.end_time - telemetry_data.start_time)
-    log_data = {
-        "message": f"{command} (code: {telemetry_data.exit_code}, duration: {elapsed_time:.2f} seconds)",
-        "level": get_log_level(telemetry_data.exit_code),
-        "service": "cli-dda",
-        "ddtags": "cli:dda",
-        "exit_code": str(telemetry_data.exit_code),
-        "duration": str(elapsed_time),
-    }
-
-    try:
-        log_item = HTTPLogItem(**log_data)
-    except Exception:
-        logging.exception("Failed to create HTTPLogItem")
-        return
-
-    config = Configuration(api_key={"apiKeyAuth": api_key})
-    with ApiClient(config) as api_client:
-        api_instance = LogsApi(api_client)
-        try:
-            api_instance.submit_log(body=HTTPLog(value=[log_item]))
-        except Exception:
-            logging.exception("Failed to submit log item")
-        else:
-            logging.info("Submitted log item: %s", log_data)
+    await asyncio.sleep(2)
+    stop_event.set()
+    await task
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
