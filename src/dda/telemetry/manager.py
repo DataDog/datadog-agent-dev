@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from dda.cli.application import Application
+    from dda.telemetry.writers.log import LogTelemetryWriter
     from dda.utils.fs import Path
 
 
@@ -17,14 +18,15 @@ class TelemetryManager:
 
         self.__started = False
 
-    def submit_data(self, key: str, value: str) -> None:
-        if not self.__enabled:
-            return
+    @cached_property
+    def log(self) -> LogTelemetryWriter:
+        from dda.telemetry.writers.log import LogTelemetryWriter
 
-        if not self.__started:
+        return LogTelemetryWriter(path=self.__write_dir, enabled=self.__enabled)
+
+    def watch(self) -> None:
+        if self.__enabled and not self.__started:
             self.__start_daemon()
-
-        self.__write_dir.joinpath(key).write_text(value, encoding="utf-8")
 
     def consent(self) -> None:
         self.__consent_file.parent.ensure_dir()

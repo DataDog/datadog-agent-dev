@@ -44,6 +44,7 @@ dependencies = [
   # https://peps.python.org/pep-0696/
   "typing-extensions>=4.6.0; python_version < '3.13'",
   "uv~=0.5.20",
+  "watchfiles~=1.0.5",
 ]
 
 [dependency-groups]

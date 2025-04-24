@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING
 START_TIME = perf_counter_ns()
 
 import os
-import sys
 
 import rich_click as click
 
@@ -186,8 +185,7 @@ def dda(
         else:
             app.telemetry.dissent()
 
-    app.telemetry.submit_data("start_time", str(START_TIME))
-    app.telemetry.submit_data("command", str(sys.argv[1:]))
+    app.telemetry.watch()
 
     if not ctx.invoked_subcommand:
         app.output(ctx.get_help())
