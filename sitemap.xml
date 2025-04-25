@@ -73,6 +73,10 @@
          <lastmod>2020-02-02</lastmod>
     </url>
     <url>
+         <loc>https://datadoghq.dev/datadog-agent-dev/reference/api/telemetry/</loc>
+         <lastmod>2020-02-02</lastmod>
+    </url>
+    <url>
          <loc>https://datadoghq.dev/datadog-agent-dev/reference/api/tools/</loc>
          <lastmod>2020-02-02</lastmod>
     </url>
