@@ -34,6 +34,11 @@ logging.basicConfig(
 
 
 def get_client(id: str, **kwargs: Any) -> TelemetryClient:  # noqa: A002
+    if id == "trace":
+        from dda.telemetry.daemon.trace import TraceTelemetryClient
+
+        return TraceTelemetryClient(**kwargs)
+
     if id == "log":
         from dda.telemetry.daemon.log import LogTelemetryClient
 

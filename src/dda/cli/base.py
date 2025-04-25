@@ -124,17 +124,18 @@ class DynamicContext(click.RichContext):
             else:
                 exit_code = 1
 
-            from dda.cli import START_TIME
+            from dda.cli import START_TIME, START_TIMESTAMP
             from dda.utils.platform import join_command_args
 
-            command = join_command_args(sys.argv[1:])
-            elapsed_time = (perf_counter_ns() - START_TIME) / 1_000_000_000
-            app.telemetry.log.write({
-                "message": f"{command} (code: {exit_code}, duration: {elapsed_time:.2f} seconds)",
-                "level": "info" if exit_code == 0 else "warn" if exit_code == 2 else "error",  # noqa: PLR2004
-                "ddtags": "cli:dda",
-                "exit_code": str(exit_code),
-                "duration": str(elapsed_time),
+            app.telemetry.trace.span({
+                "resource": " ".join(root_ctx.deepest_command_path.split()[1:]) or " ",
+                "start": START_TIMESTAMP,
+                "duration": perf_counter_ns() - START_TIME,
+                "error": 0 if exit_code == 0 else 1,
+                "meta": {
+                    "cli.command": join_command_args(sys.argv[1:]),
+                    "cli.exit_code": str(exit_code),
+                },
             })
 
         super().__exit__(exc_type, exc_value, tb)

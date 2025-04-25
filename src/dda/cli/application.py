@@ -94,15 +94,15 @@ class Application(Terminal):
         return Tools(self)
 
     @cached_property
+    def telemetry(self) -> TelemetryManager:
+        from dda.telemetry.manager import TelemetryManager
+
+        return TelemetryManager(self)
+
+    @cached_property
     def dynamic_deps_allowed(self) -> bool:
         return os.getenv(AppEnvVars.NO_DYNAMIC_DEPS) not in {"1", "true"}
 
     @cached_property
     def managed_installation(self) -> bool:
         return os.getenv("PYAPP") is not None
-
-    @cached_property
-    def telemetry(self) -> TelemetryManager:
-        from dda.telemetry.manager import TelemetryManager
-
-        return TelemetryManager(self)

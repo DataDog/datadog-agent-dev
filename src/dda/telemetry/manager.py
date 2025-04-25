@@ -9,10 +9,16 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from dda.cli.application import Application
     from dda.telemetry.writers.log import LogTelemetryWriter
+    from dda.telemetry.writers.trace import TraceTelemetryWriter
     from dda.utils.fs import Path
 
 
 class TelemetryManager:
+    """
+    A class for sending various forms of telemetry. This is available as the
+    [`Application.telemetry`][dda.cli.application.Application.telemetry] property.
+    """
+
     def __init__(self, app: Application) -> None:
         self.__app = app
 
@@ -23,6 +29,12 @@ class TelemetryManager:
         from dda.telemetry.writers.log import LogTelemetryWriter
 
         return LogTelemetryWriter(path=self.__write_dir, enabled=self.__enabled)
+
+    @cached_property
+    def trace(self) -> TraceTelemetryWriter:
+        from dda.telemetry.writers.trace import TraceTelemetryWriter
+
+        return TraceTelemetryWriter(path=self.__write_dir, enabled=self.__enabled)
 
     def watch(self) -> None:
         if self.__enabled and not self.__started:

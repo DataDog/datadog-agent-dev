@@ -21,7 +21,7 @@ class TelemetryWriter:
         self.__path = path
         self.__enabled = enabled
 
-    def write(self, data: dict[str, Any]) -> None:
+    def _write(self, data: dict[str, Any]) -> None:
         if not self.__enabled:
             return
 
