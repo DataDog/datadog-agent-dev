@@ -11,6 +11,7 @@
       - subprocess
       - http
       - tools
+      - telemetry
       - display
       - display_critical
       - display_error

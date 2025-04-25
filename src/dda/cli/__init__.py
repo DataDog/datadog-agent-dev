@@ -3,10 +3,11 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
-from time import perf_counter_ns
+from time import perf_counter_ns, time_ns
 from typing import TYPE_CHECKING
 
 START_TIME = perf_counter_ns()
+START_TIMESTAMP = time_ns()
 
 import os
 

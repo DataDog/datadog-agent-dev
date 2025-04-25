@@ -38,9 +38,9 @@ class LogTelemetryClient(TelemetryClient):
         try:
             self.__api.submit_log(body=HTTPLog(value=[log_item]))
         except Exception:
-            logging.exception("Failed to submit log item")
+            logging.exception("Failed to submit log")
         else:
-            logging.info("Submitted log item: %s", data)
+            logging.info("Submitted log: %s", data)
 
     def __enter__(self) -> Self:
         self.__client.__enter__()
