@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+***Fixed:***
+
+- Properly apply Python path modifications when loading dynamic commands
+
 ## 0.11.0 - 2025-04-25
 
 ***Added:***

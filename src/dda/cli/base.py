@@ -5,17 +5,18 @@ from __future__ import annotations
 
 import os
 import sys
+from contextlib import contextmanager
 from functools import cached_property, partial
 from importlib.util import module_from_spec, spec_from_file_location
 from time import perf_counter_ns
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import rich_click as click
 from click.exceptions import Exit, UsageError
 from rich_click.rich_help_formatter import RichHelpFormatter
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Generator
     from types import TracebackType
 
     from dda.cli.application import Application
@@ -102,7 +103,7 @@ class DynamicContext(click.RichContext):
         self, exc_type: type[BaseException] | None, exc_value: BaseException | None, tb: TracebackType | None
     ) -> None:
         command_depth = len(self.command_path.split())
-        root_ctx = self._get_root_ctx()
+        root_ctx = _get_root_ctx(self)
         if root_ctx.deepest_command_path is None or command_depth > len(root_ctx.deepest_command_path.split()):
             root_ctx.deepest_command_path = self.command_path
 
@@ -139,13 +140,6 @@ class DynamicContext(click.RichContext):
             })
 
         super().__exit__(exc_type, exc_value, tb)
-
-    def _get_root_ctx(self) -> DynamicContext:
-        ctx = self
-        while ctx.parent is not None:
-            ctx = ctx.parent  # type: ignore[assignment]
-
-        return ctx
 
 
 class DynamicCommand(click.RichCommand):
@@ -211,24 +205,16 @@ class DynamicCommand(click.RichCommand):
 
         # Only add dynamic command paths to Python's search path, the first one is always the root command group
         if self.dynamic_path_id != 0:
-            root_ctx = ctx
-            while root_ctx.parent is not None:
-                parent: DynamicContext = root_ctx.parent  # type: ignore[assignment]
-                root_ctx = parent
-
+            root_ctx = _get_root_ctx(ctx)
             search_path = root_ctx.search_paths[self.dynamic_path_id]
-            # Directory alongside the top-level search path
-            pythonpath = os.path.join(os.path.dirname(search_path), "pythonpath")
-            if os.path.isdir(pythonpath):
-                from dda.utils.process import EnvVars
+            pythonpath = _get_pythonpath(search_path)
+            with _apply_pythonpath(pythonpath) as applied:
+                if applied:
+                    from dda.utils.process import EnvVars
 
-                sys.path.insert(0, pythonpath)
-                try:
                     # The environment variable is required to influence subprocesses
                     with EnvVars({"PYTHONPATH": pythonpath}):
                         return super().invoke(ctx)
-                finally:
-                    sys.path.pop(0)
 
         return super().invoke(ctx)
 
@@ -334,10 +320,17 @@ class DynamicGroup(click.RichGroup):
         if not self._subcommand_allowed(cmd_name):
             return command
 
+        root_ctx = _get_root_ctx(ctx)
         for i, search_path in ctx.search_paths.items():
             cmd_path = os.path.join(search_path, _search_path_name(cmd_name), "__init__.py")
             if os.path.isfile(cmd_path):
-                command = self._lazy_load(cmd_name, cmd_path)
+                if i == 0:
+                    command = self._lazy_load(cmd_name, cmd_path)
+                else:
+                    pythonpath = _get_pythonpath(root_ctx.search_paths[i])
+                    with _apply_pythonpath(pythonpath):
+                        command = self._lazy_load(cmd_name, cmd_path)
+
                 command.name = cmd_name
                 command.set_dynamic_path_id(i)
                 return command
@@ -458,6 +451,30 @@ def ensure_features_installed(
         env_vars.pop("VIRTUAL_ENV", None)
 
         app.tools.uv.wait(command, message="Synchronizing dependencies", cwd=str(temp_dir), env=env_vars)
+
+
+def _get_root_ctx(ctx: click.Context) -> DynamicContext:
+    while ctx.parent is not None:
+        ctx = ctx.parent
+
+    return cast(DynamicContext, ctx)
+
+
+def _get_pythonpath(root_search_path: str) -> str:
+    # Directory alongside the top-level search path
+    return os.path.join(os.path.dirname(root_search_path), "pythonpath")
+
+
+@contextmanager
+def _apply_pythonpath(pythonpath: str) -> Generator[bool, None, None]:
+    if os.path.isdir(pythonpath):
+        sys.path.insert(0, pythonpath)
+        try:
+            yield True
+        finally:
+            sys.path.pop(0)
+    else:
+        yield False
 
 
 def _get_external_plugin_callback(cmd_name: str, executable: str) -> DynamicCommand:
