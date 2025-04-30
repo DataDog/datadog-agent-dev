@@ -8,6 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+***Changed:***
+
+- The `app.subprocess.run` method now uses a pseudo-terminal in order to capture output from subprocesses while displaying it. A new `app.subprocess.attach` method is available which retains the original behavior and should be preferred when subprocesses require user interaction.
+- The `app.subprocess.run` method now returns an integer representing the exit code of the completed subprocess call
+
+***Added:***
+
+- Automatically send telemetry for failed subprocesses
+- Add `app.subprocess.redirect` method for redirecting the output of a command to a file-like object
+
 ***Fixed:***
 
 - Properly apply Python path modifications when loading dynamic commands

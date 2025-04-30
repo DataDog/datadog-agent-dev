@@ -24,6 +24,13 @@ class TelemetryManager:
 
         self.__started = False
 
+    @property
+    def enabled(self) -> bool:
+        """
+        Whether the user has consented to telemetry.
+        """
+        return self.__enabled
+
     @cached_property
     def log(self) -> LogTelemetryWriter:
         from dda.telemetry.writers.log import LogTelemetryWriter
