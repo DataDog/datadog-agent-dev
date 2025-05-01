@@ -111,32 +111,47 @@ class DynamicContext(click.RichContext):
         if (
             # The application may not be set if an error occurred very early
             app is not None
+            and app.telemetry.enabled
             # The proper exit code only manifests when the top level context exits
             and command_depth == 1
             and self._depth == 1
         ):
-            # https://github.com/pallets/click/blob/8.1.8/src/click/exceptions.py#L296
             if isinstance(exc_value, Exit):
+                # https://github.com/pallets/click/blob/8.1.8/src/click/exceptions.py#L296
                 exit_code = exc_value.exit_code
-            # https://github.com/pallets/click/blob/8.1.8/src/click/exceptions.py#L64
             elif isinstance(exc_value, UsageError):
+                # https://github.com/pallets/click/blob/8.1.8/src/click/exceptions.py#L64
                 exit_code = 2
-            # https://github.com/pallets/click/blob/8.1.8/src/click/exceptions.py#L29
+            elif isinstance(exc_value, KeyboardInterrupt):
+                # Use the non-Windows default value for consistency
+                # https://www.redhat.com/en/blog/exit-codes-demystified
+                # https://github.com/python/cpython/blob/3.13/Modules/main.c#L731-L754
+                exit_code = 130
             else:
+                import traceback
+
+                # https://github.com/pallets/click/blob/8.1.8/src/click/exceptions.py#L29
                 exit_code = 1
+                app.last_error = traceback.format_exc()
 
             from dda.cli import START_TIME, START_TIMESTAMP
             from dda.utils.platform import join_command_args
+
+            metadata = {
+                "cli.command": join_command_args(sys.argv[1:]),
+                "cli.exit_code": str(exit_code),
+            }
+            if last_error := app.last_error.strip():
+                # Payload limit is 5MB so we truncate the error message to a little bit less than that
+                message_max_length = int(1024 * 1024 * 4.5)
+                metadata["error.message"] = last_error[-message_max_length:]
 
             app.telemetry.trace.span({
                 "resource": " ".join(root_ctx.deepest_command_path.split()[1:]) or " ",
                 "start": START_TIMESTAMP,
                 "duration": perf_counter_ns() - START_TIME,
                 "error": 0 if exit_code == 0 else 1,
-                "meta": {
-                    "cli.command": join_command_args(sys.argv[1:]),
-                    "cli.exit_code": str(exit_code),
-                },
+                "meta": metadata,
             })
 
         super().__exit__(exc_type, exc_value, tb)

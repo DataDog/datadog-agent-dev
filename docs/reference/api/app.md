@@ -12,6 +12,7 @@
       - http
       - tools
       - telemetry
+      - last_error
       - display
       - display_critical
       - display_error

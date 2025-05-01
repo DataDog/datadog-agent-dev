@@ -8,7 +8,9 @@
       - run
       - capture
       - wait
+      - redirect
       - exit_with
+      - attach
       - spawn_daemon
 
 ::: dda.utils.process.EnvVars

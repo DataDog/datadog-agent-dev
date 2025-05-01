@@ -357,6 +357,7 @@ dependencies = [
     { name = "packaging" },
     { name = "platformdirs" },
     { name = "psutil" },
+    { name = "pywinpty", marker = "sys_platform == 'win32'" },
     { name = "rich" },
     { name = "rich-click" },
     { name = "tomlkit" },
@@ -551,6 +552,7 @@ requires-dist = [
     { name = "packaging" },
     { name = "platformdirs", specifier = "~=4.2" },
     { name = "psutil", specifier = "~=7.0" },
+    { name = "pywinpty", marker = "sys_platform == 'win32'", specifier = "~=2.0.15" },
     { name = "rich", specifier = "~=14.0" },
     { name = "rich-click", specifier = "~=1.8" },
     { name = "tomlkit", specifier = "~=0.13" },
@@ -1852,6 +1854,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/85/9f/01a1a99704853cb63f253eea009390c88e7131c67e66a0a02099a8c917cb/pywin32-ctypes-0.2.3.tar.gz", hash = "sha256:d162dc04946d704503b2edc4d55f3dba5c1d539ead017afa00142c38b9885755", size = 29471 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/de/3d/8161f7711c017e01ac9f008dfddd9410dff3674334c233bde66e7ba65bbf/pywin32_ctypes-0.2.3-py3-none-any.whl", hash = "sha256:8a1513379d709975552d202d942d9837758905c8d01eb82b8bcc30918929e7b8", size = 30756 },
+]
+
+[[package]]
+name = "pywinpty"
+version = "2.0.15"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/2d/7c/917f9c4681bb8d34bfbe0b79d36bbcd902651aeab48790df3d30ba0202fb/pywinpty-2.0.15.tar.gz", hash = "sha256:312cf39153a8736c617d45ce8b6ad6cd2107de121df91c455b10ce6bba7a39b2", size = 29017 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/88/e5/9714def18c3a411809771a3fbcec70bffa764b9675afb00048a620fca604/pywinpty-2.0.15-cp312-cp312-win_amd64.whl", hash = "sha256:83a8f20b430bbc5d8957249f875341a60219a4e971580f2ba694fbfb54a45ebc", size = 1405243 },
 ]
 
 [[package]]

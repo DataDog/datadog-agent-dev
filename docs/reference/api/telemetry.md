@@ -5,6 +5,7 @@
 ::: dda.telemetry.manager.TelemetryManager
     options:
       members:
+      - enabled
       - log
       - trace
 
