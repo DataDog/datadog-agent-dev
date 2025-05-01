@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 - Automatically send telemetry for failed subprocesses
 - Add `app.subprocess.redirect` method for redirecting the output of a command to a file-like object
+- Update dependencies
 
 ***Fixed:***
 
