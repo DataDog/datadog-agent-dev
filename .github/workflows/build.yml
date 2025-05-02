@@ -45,7 +45,7 @@ jobs:
         python-version-file: pyproject.toml
 
     - name: Install UV
-      uses: astral-sh/setup-uv@v5
+      uses: astral-sh/setup-uv@v6
 
     - name: Install tools
       run: uv pip install --system hatch .
@@ -161,7 +161,7 @@ jobs:
         python-version-file: pyproject.toml
 
     - name: Install UV
-      uses: astral-sh/setup-uv@v5
+      uses: astral-sh/setup-uv@v6
 
     - name: Install Hatch
       run: |-
@@ -290,7 +290,7 @@ jobs:
         python-version-file: pyproject.toml
 
     - name: Install UV
-      uses: astral-sh/setup-uv@v5
+      uses: astral-sh/setup-uv@v6
 
     - name: Install PyOxidizer ${{ env.PYOXIDIZER_VERSION }}
       run: uv pip install --system pyoxidizer==${{ env.PYOXIDIZER_VERSION }}
@@ -376,7 +376,7 @@ jobs:
         python-version-file: pyproject.toml
 
     - name: Install UV
-      uses: astral-sh/setup-uv@v5
+      uses: astral-sh/setup-uv@v6
 
     - name: Install PyOxidizer ${{ env.PYOXIDIZER_VERSION }}
       run: uv pip install --system pyoxidizer==${{ env.PYOXIDIZER_VERSION }}
