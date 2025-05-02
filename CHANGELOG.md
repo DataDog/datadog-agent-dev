@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+## 0.12.0 - 2025-05-01
+
 ***Changed:***
 
 - The `app.subprocess.run` method now uses a pseudo-terminal in order to capture output from subprocesses while displaying it. A new `app.subprocess.attach` method is available which retains the original behavior and should be preferred when subprocesses require user interaction.
