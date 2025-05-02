@@ -248,9 +248,10 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         ssh_command.append(self.shell.format_command(command, cwd=cwd))
         return ssh_command
 
-    def check_readiness(self) -> bool:
+    def check_readiness(self) -> None:
         output = self.docker.capture(["logs", self.container_name])
-        return "Server listening on :: port 22" in output
+        if "Server listening on :: port 22" not in output:
+            raise RuntimeError
 
     def ssh_base_command(self) -> list[str]:
         from dda.utils.ssh import ssh_base_command

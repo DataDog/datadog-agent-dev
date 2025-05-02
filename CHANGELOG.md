@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+***Fixed:***
+
+- Fix the `env dev start` command when using the `linux-container` developer environment type
+- Fix the `check` parameter of the `app.subprocess.capture` method
+
 ## 0.12.0 - 2025-05-01
 
 ***Changed:***

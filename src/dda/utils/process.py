@@ -181,6 +181,7 @@ class SubprocessRunner:
 
         kwargs["stdout"] = subprocess.PIPE
         kwargs["stderr"] = subprocess.STDOUT if cross_streams else subprocess.PIPE
+        kwargs["check"] = check
         kwargs["encoding"] = encoding
         if cwd is not None:
             kwargs["cwd"] = str(cwd)
