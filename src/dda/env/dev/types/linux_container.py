@@ -204,7 +204,8 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         self.ensure_ssh_config()
         ssh_command = self.ssh_base_command()
         ssh_command.append(self.shell.get_login_command(cwd=self.repo_path(repo)))
-        self.app.subprocess.exit_with(ssh_command)
+        process = self.app.subprocess.attach(ssh_command, check=False)
+        self.app.abort(code=process.returncode)
 
     def code(self, *, repo: str | None = None) -> None:
         self.ensure_ssh_config()

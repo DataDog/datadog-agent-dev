@@ -609,15 +609,18 @@ class TestRemove:
 
 
 class TestShell:
-    def test_default(self, dda, mocker):
-        mocker.patch(
+    def test_default(self, dda, helpers, mocker):
+        with helpers.hybrid_patch(
             "subprocess.run",
-            return_value=CompletedProcess([], returncode=0, stdout=json.dumps([{"State": {"Status": "running"}}])),
-        )
-        write_server_config = mocker.patch("dda.utils.ssh.write_server_config")
-        exit_with = mocker.patch("dda.utils.process.SubprocessRunner.exit_with")
+            return_values={
+                # Stop command checks the status
+                1: CompletedProcess([], returncode=0, stdout=json.dumps([{"State": {"Status": "running"}}])),
+                # Capture ssh command
+            },
+        ) as calls:
+            write_server_config = mocker.patch("dda.utils.ssh.write_server_config")
 
-        result = dda("env", "dev", "shell")
+            result = dda("env", "dev", "shell")
 
         assert result.exit_code == 0, result.output
         assert not result.output
@@ -630,17 +633,24 @@ class TestShell:
                 "UserKnownHostsFile": "/dev/null",
             },
         )
-        exit_with.assert_called_once_with([
-            "ssh",
-            "-A",
-            "-q",
-            "-t",
-            "-p",
-            "59730",
-            "root@localhost",
-            "--",
-            "cd /root/repos/datadog-agent && zsh -l -i",
-        ])
+        assert calls == [
+            (
+                (
+                    [
+                        helpers.locate("ssh"),
+                        "-A",
+                        "-q",
+                        "-t",
+                        "-p",
+                        "59730",
+                        "root@localhost",
+                        "--",
+                        "cd /root/repos/datadog-agent && zsh -l -i",
+                    ],
+                ),
+                {},
+            ),
+        ]
 
 
 class TestRun:
