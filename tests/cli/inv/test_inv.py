@@ -32,10 +32,11 @@ def test_default(dda, helpers, temp_dir, uv_on_path, mocker):
         """
     )
 
+    expected_path = str(uv_on_path.with_stem(f"{uv_on_path.stem}-{uv_on_path.id}"))
     assert subprocess_run.call_args_list == [
         mock.call(
             [
-                uv_on_path,
+                expected_path,
                 "venv",
                 str(temp_dir / "data" / "venvs" / "legacy"),
                 "--seed",
@@ -48,7 +49,7 @@ def test_default(dda, helpers, temp_dir, uv_on_path, mocker):
         ),
         mock.call(
             [
-                uv_on_path,
+                expected_path,
                 "sync",
                 "--frozen",
                 "--no-install-project",

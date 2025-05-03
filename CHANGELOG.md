@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ***Fixed:***
 
 - Fix the `env dev shell` command when using the `linux-container` developer environment type
+- Prevent issues on Windows when using the `uv` dependency to upgrade itself
 
 ## 0.12.1 - 2025-05-02
 
