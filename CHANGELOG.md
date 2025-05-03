@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+***Fixed:***
+
+- Fix the `env dev shell` command when using the `linux-container` developer environment type
+
 ## 0.12.1 - 2025-05-02
 
 ***Fixed:***
