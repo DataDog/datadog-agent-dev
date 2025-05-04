@@ -84,6 +84,29 @@ f.write_text("foo")
         assert output_file.is_file()
         assert output_file.read_text() == "foo"
 
+    def test_run_reverse_interactivity(self, app, mocker, tmp_path):
+        if app.console.is_interactive:
+            from dda.utils.platform._pty.mock import PtySession
+        elif sys.platform == "win32":
+            from dda.utils.platform._pty.windows import PtySession
+        else:
+            from dda.utils.platform._pty.unix import PtySession  # noqa: PLC2701
+
+        mocker.patch("dda.utils.platform._pty.session.PtySession", PtySession)
+
+        script = f"""\
+from pathlib import Path
+
+f = Path({str(tmp_path)!r}, "output.txt")
+f.write_text("foo")
+"""
+        output_file = tmp_path / "output.txt"
+        assert not output_file.exists()
+
+        app.subprocess.run([sys.executable, "-c", script])
+        assert output_file.is_file()
+        assert output_file.read_text() == "foo"
+
     def test_attach(self, app, tmp_path):
         script = f"""\
 from pathlib import Path
