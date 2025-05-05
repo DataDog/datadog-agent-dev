@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ***Fixed:***
 
 - Most `app.subprocess` methods no longer force the use of a pseudo-terminal when the parent process is not interactive
+- Update dependencies to remove spurious warnings on newer versions of Python
 
 ## 0.12.2 - 2025-05-03
 
