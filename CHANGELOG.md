@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+## 0.12.3 - 2025-05-04
+
 ***Fixed:***
 
 - Most `app.subprocess` methods no longer force the use of a pseudo-terminal when the parent process is not interactive
