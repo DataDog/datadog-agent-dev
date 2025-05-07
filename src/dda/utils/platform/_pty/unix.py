@@ -43,7 +43,6 @@ class PtySession(PtySessionInterface):
             [self.executable, *self.args],
             cwd=self.cwd,
             env=self.env,
-            stdin=subprocess.DEVNULL,
             stdout=child_fd,
             stderr=child_fd,
             start_new_session=True,

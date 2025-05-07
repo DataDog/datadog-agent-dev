@@ -39,8 +39,8 @@ class SubprocessRunner:
         Run a command and wait for it to complete.
 
         /// warning
-        Programs that require user interaction should use the [`attach`][dda.utils.process.SubprocessRunner.attach]
-        method instead.
+        On Windows, programs that require user interaction should use the
+        [`attach`][dda.utils.process.SubprocessRunner.attach] method instead.
         ///
 
         Parameters:

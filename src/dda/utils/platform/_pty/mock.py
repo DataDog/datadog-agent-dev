@@ -31,7 +31,6 @@ class PtySession(PtySessionInterface):
             cwd=self.cwd,
             env=self.env,
             encoding=self.encoding,
-            stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             bufsize=1,
