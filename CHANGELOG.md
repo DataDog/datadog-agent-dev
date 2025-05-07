@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+## 0.12.4 - 2025-05-07
+
 ***Fixed:***
 
 - Allow user input on non-Windows platforms for `app.subprocess` methods that use a pseudo-terminal
