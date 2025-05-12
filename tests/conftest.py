@@ -126,8 +126,8 @@ def default_cache_dir() -> Path:
 
 
 @pytest.fixture(scope="session")
-def uv_on_path():
-    return shutil.which("uv")
+def uv_on_path() -> Path:
+    return Path(shutil.which("uv"))
 
 
 def pytest_runtest_setup(item):

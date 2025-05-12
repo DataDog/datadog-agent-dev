@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from dda.config.model import RootConfig
     from dda.telemetry.manager import TelemetryManager
     from dda.tools import Tools
+    from dda.utils.network.http.manager import HTTPClientManager
     from dda.utils.process import SubprocessRunner
 
 
@@ -55,16 +56,35 @@ class Application(Terminal):
     def abort(self, text: str = "", code: int = 1) -> NoReturn:
         """
         Gracefully terminate the application with an optional
-        [error message][dda.cli.application.Application.display_critical].
+        [error message][dda.cli.application.Application.display_critical]. The message is
+        appended to the [last error message][dda.cli.application.Application.last_error].
 
         Parameters:
             text: The error message to display.
             code: The exit code to use.
         """
         if text:
+            self.last_error += text
             self.display_critical(text)
 
         self.__terminator(code)
+
+    @cached_property
+    def last_error(self) -> str:
+        """
+        The last recorded error message which will be collected as telemetry. This can be overwritten like so:
+
+        ```python
+        app.last_error = "An error occurred"
+        ```
+
+        Alternatively, you can append to it:
+
+        ```python
+        app.last_error += "\\nExtra information or context"
+        ```
+        """
+        return ""
 
     @cached_property
     def config_file(self) -> ConfigFile:
@@ -81,10 +101,22 @@ class Application(Terminal):
         return SubprocessRunner(self)
 
     @cached_property
+    def http(self) -> HTTPClientManager:
+        from dda.utils.network.http.manager import HTTPClientManager
+
+        return HTTPClientManager(self)
+
+    @cached_property
     def tools(self) -> Tools:
         from dda.tools import Tools
 
         return Tools(self)
+
+    @cached_property
+    def telemetry(self) -> TelemetryManager:
+        from dda.telemetry.manager import TelemetryManager
+
+        return TelemetryManager(self)
 
     @cached_property
     def dynamic_deps_allowed(self) -> bool:
@@ -93,9 +125,3 @@ class Application(Terminal):
     @cached_property
     def managed_installation(self) -> bool:
         return os.getenv("PYAPP") is not None
-
-    @cached_property
-    def telemetry(self) -> TelemetryManager:
-        from dda.telemetry.manager import TelemetryManager
-
-        return TelemetryManager(self)

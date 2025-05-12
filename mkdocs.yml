@@ -68,12 +68,16 @@ nav:
     - Application: reference/api/app.md
     - Process: reference/api/process.md
     - Filesystem: reference/api/fs.md
-    - Platform: reference/api/platform.md
+    - Network:
+      - HTTP: reference/api/network/http.md
     - Retries: reference/api/retry.md
+    - Platform: reference/api/platform.md
+    - Date: reference/api/date.md
     - Tools: reference/api/tools.md
     - CI: reference/api/ci.md
     - Config: reference/api/config.md
     - Constants: reference/api/constants.md
+    - Telemetry: reference/api/telemetry.md
   - Interface:
     - Tool: reference/interface/tool.md
     - Environments:

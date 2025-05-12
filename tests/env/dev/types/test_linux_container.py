@@ -609,65 +609,18 @@ class TestRemove:
 
 
 class TestShell:
-    def test_default(self, dda, mocker):
-        mocker.patch(
-            "subprocess.run",
-            return_value=CompletedProcess([], returncode=0, stdout=json.dumps([{"State": {"Status": "running"}}])),
-        )
-        write_server_config = mocker.patch("dda.utils.ssh.write_server_config")
-        exit_with = mocker.patch("dda.utils.process.SubprocessRunner.exit_with")
-
-        result = dda("env", "dev", "shell")
-
-        assert result.exit_code == 0, result.output
-        assert not result.output
-
-        write_server_config.assert_called_once_with(
-            "localhost",
-            {
-                "StrictHostKeyChecking": "no",
-                "ForwardAgent": "yes",
-                "UserKnownHostsFile": "/dev/null",
-            },
-        )
-        exit_with.assert_called_once_with([
-            "ssh",
-            "-A",
-            "-q",
-            "-t",
-            "-p",
-            "59730",
-            "root@localhost",
-            "--",
-            "cd /root/repos/datadog-agent && zsh -l -i",
-        ])
-
-
-class TestRun:
-    def test_nonexistent(self, dda, helpers, mocker):
-        mocker.patch("subprocess.run", return_value=CompletedProcess([], returncode=0, stdout="{}"))
-
-        result = dda("env", "dev", "run", "echo", "foo")
-
-        assert result.exit_code == 1, result.output
-        assert result.output == helpers.dedent(
-            """
-            Developer environment `linux-container` is in state `nonexistent`, must be `started`
-            """
-        )
-
     def test_default(self, dda, helpers, mocker):
-        write_server_config = mocker.patch("dda.utils.ssh.write_server_config")
-
         with helpers.hybrid_patch(
             "subprocess.run",
             return_values={
                 # Stop command checks the status
                 1: CompletedProcess([], returncode=0, stdout=json.dumps([{"State": {"Status": "running"}}])),
-                # Capture command run
+                # Capture ssh command
             },
         ) as calls:
-            result = dda("env", "dev", "run", "echo", "foo")
+            write_server_config = mocker.patch("dda.utils.ssh.write_server_config")
+
+            result = dda("env", "dev", "shell")
 
         assert result.exit_code == 0, result.output
         assert not result.output
@@ -692,12 +645,64 @@ class TestRun:
                         "59730",
                         "root@localhost",
                         "--",
-                        "cd /root/repos/datadog-agent && echo foo",
+                        "cd /root/repos/datadog-agent && zsh -l -i",
                     ],
                 ),
                 {},
             ),
         ]
+
+
+class TestRun:
+    def test_nonexistent(self, dda, helpers, mocker):
+        mocker.patch("subprocess.run", return_value=CompletedProcess([], returncode=0, stdout="{}"))
+
+        result = dda("env", "dev", "run", "echo", "foo")
+
+        assert result.exit_code == 1, result.output
+        assert result.output == helpers.dedent(
+            """
+            Developer environment `linux-container` is in state `nonexistent`, must be `started`
+            """
+        )
+
+    def test_default(self, dda, helpers, mocker):
+        write_server_config = mocker.patch("dda.utils.ssh.write_server_config")
+        run = mocker.patch("dda.utils.process.SubprocessRunner.run")
+
+        with helpers.hybrid_patch(
+            "subprocess.run",
+            return_values={
+                # Stop command checks the status
+                1: CompletedProcess([], returncode=0, stdout=json.dumps([{"State": {"Status": "running"}}])),
+            },
+        ):
+            result = dda("env", "dev", "run", "echo", "foo")
+
+        assert result.exit_code == 0, result.output
+        assert not result.output
+
+        write_server_config.assert_called_once_with(
+            "localhost",
+            {
+                "StrictHostKeyChecking": "no",
+                "ForwardAgent": "yes",
+                "UserKnownHostsFile": "/dev/null",
+            },
+        )
+        run.assert_called_once_with(
+            [
+                "ssh",
+                "-A",
+                "-q",
+                "-t",
+                "-p",
+                "59730",
+                "root@localhost",
+                "--",
+                "cd /root/repos/datadog-agent && echo foo",
+            ],
+        )
 
 
 class TestCode:
@@ -715,15 +720,15 @@ class TestCode:
 
     def test_default(self, dda, helpers, mocker):
         write_server_config = mocker.patch("dda.utils.ssh.write_server_config")
+        run = mocker.patch("dda.utils.process.SubprocessRunner.run")
 
         with helpers.hybrid_patch(
             "subprocess.run",
             return_values={
                 # Stop command checks the status
                 1: CompletedProcess([], returncode=0, stdout=json.dumps([{"State": {"Status": "running"}}])),
-                # Capture VS Code run
             },
-        ) as calls:
+        ):
             result = dda("env", "dev", "code")
 
         assert result.exit_code == 0, result.output
@@ -737,16 +742,11 @@ class TestCode:
                 "UserKnownHostsFile": "/dev/null",
             },
         )
-        assert calls == [
-            (
-                (
-                    [
-                        helpers.locate("code"),
-                        "--remote",
-                        "ssh-remote+root@localhost:59730",
-                        "/root/repos/datadog-agent",
-                    ],
-                ),
-                {},
-            ),
-        ]
+        run.assert_called_once_with(
+            [
+                "code",
+                "--remote",
+                "ssh-remote+root@localhost:59730",
+                "/root/repos/datadog-agent",
+            ],
+        )

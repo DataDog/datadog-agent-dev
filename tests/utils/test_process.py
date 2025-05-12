@@ -6,6 +6,8 @@ from __future__ import annotations
 import os
 import sys
 
+import pytest
+
 from dda.utils.process import EnvVars
 
 
@@ -82,6 +84,43 @@ f.write_text("foo")
         assert output_file.is_file()
         assert output_file.read_text() == "foo"
 
+    def test_run_reverse_interactivity(self, app, mocker, tmp_path):
+        if app.console.is_interactive:
+            from dda.utils.platform._pty.mock import PtySession
+        elif sys.platform == "win32":
+            from dda.utils.platform._pty.windows import PtySession
+        else:
+            from dda.utils.platform._pty.unix import PtySession  # noqa: PLC2701
+
+        mocker.patch("dda.utils.platform._pty.session.PtySession", PtySession)
+
+        script = f"""\
+from pathlib import Path
+
+f = Path({str(tmp_path)!r}, "output.txt")
+f.write_text("foo")
+"""
+        output_file = tmp_path / "output.txt"
+        assert not output_file.exists()
+
+        app.subprocess.run([sys.executable, "-c", script])
+        assert output_file.is_file()
+        assert output_file.read_text() == "foo"
+
+    def test_attach(self, app, tmp_path):
+        script = f"""\
+from pathlib import Path
+
+f = Path({str(tmp_path)!r}, "output.txt")
+f.write_text("foo")
+"""
+        output_file = tmp_path / "output.txt"
+        assert not output_file.exists()
+
+        app.subprocess.attach([sys.executable, "-c", script])
+        assert output_file.is_file()
+        assert output_file.read_text() == "foo"
+
     def test_capture_cross_streams(self, app):
         script = """\
 import sys
@@ -104,7 +143,7 @@ print("baz", file=sys.stdout, flush=True, end="")
         output = app.subprocess.capture([sys.executable, "-c", script], cross_streams=False)
         assert output == "foobaz"
 
-    def test_capture_no_encoding(self, app):
+    def test_capture_show(self, app):
         script = """\
 import sys
 
@@ -112,5 +151,27 @@ print("foo", file=sys.stdout, flush=True, end="")
 print("bar", file=sys.stderr, flush=True, end="")
 print("baz", file=sys.stdout, flush=True, end="")
 """
-        output = app.subprocess.capture([sys.executable, "-c", script], encoding=None)
-        assert output == b"foobarbaz"
+        output = app.subprocess.capture([sys.executable, "-c", script], show=True)
+        assert output == "foobarbaz"
+
+    def test_capture_show_keyword_arguments(self, app):
+        with pytest.raises(
+            RuntimeError,
+            match="Arbitrary keyword arguments are not supported when concurrently showing output: {'foo': 'bar'}",
+        ):
+            app.subprocess.capture([], show=True, foo="bar")
+
+    def test_redirect(self, app, tmp_path):
+        script = """\
+import sys
+
+print("foo", file=sys.stdout, flush=True, end="")
+print("bar", file=sys.stderr, flush=True, end="")
+print("baz", file=sys.stdout, flush=True, end="")
+"""
+        output_file = tmp_path / "output.txt"
+        with open(output_file, "wb") as stream:
+            app.subprocess.redirect([sys.executable, "-c", script], stream=stream)
+
+        assert output_file.is_file()
+        assert output_file.read_bytes() == b"foobarbaz"

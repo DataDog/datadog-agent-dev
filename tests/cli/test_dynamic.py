@@ -16,12 +16,15 @@ def test_local_command(dda, helpers, temp_dir):
             import click
             from dda.cli.base import dynamic_command, pass_app
 
+            from utils import bar
+
             @dynamic_command()
             @pass_app
             def cmd(app):
                 from utils import foo
 
                 app.display(f"{foo.bar=}")
+                app.display(f"{bar.baz=}")
             """
         )
     )
@@ -29,6 +32,13 @@ def test_local_command(dda, helpers, temp_dir):
     pythonpath.ensure_dir()
     pythonpath.joinpath("utils").ensure_dir()
     pythonpath.joinpath("utils", "__init__.py").touch()
+    pythonpath.joinpath("utils", "bar.py").write_text(
+        helpers.dedent(
+            """
+            baz = "qux"
+            """
+        )
+    )
     pythonpath.joinpath("utils", "foo.py").write_text(
         helpers.dedent(
             """
@@ -44,6 +54,7 @@ def test_local_command(dda, helpers, temp_dir):
     assert result.output == helpers.dedent(
         """
         foo.bar='baz'
+        bar.baz='qux'
         """
     )
 

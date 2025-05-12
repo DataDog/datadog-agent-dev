@@ -8,23 +8,44 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from dda.cli.application import Application
+    from dda.telemetry.writers.log import LogTelemetryWriter
+    from dda.telemetry.writers.trace import TraceTelemetryWriter
     from dda.utils.fs import Path
 
 
 class TelemetryManager:
+    """
+    A class for sending various forms of telemetry. This is available as the
+    [`Application.telemetry`][dda.cli.application.Application.telemetry] property.
+    """
+
     def __init__(self, app: Application) -> None:
         self.__app = app
 
         self.__started = False
 
-    def submit_data(self, key: str, value: str) -> None:
-        if not self.__enabled:
-            return
+    @property
+    def enabled(self) -> bool:
+        """
+        Whether the user has consented to telemetry.
+        """
+        return self.__enabled
 
-        if not self.__started:
+    @cached_property
+    def log(self) -> LogTelemetryWriter:
+        from dda.telemetry.writers.log import LogTelemetryWriter
+
+        return LogTelemetryWriter(path=self.__write_dir, enabled=self.__enabled)
+
+    @cached_property
+    def trace(self) -> TraceTelemetryWriter:
+        from dda.telemetry.writers.trace import TraceTelemetryWriter
+
+        return TraceTelemetryWriter(path=self.__write_dir, enabled=self.__enabled)
+
+    def watch(self) -> None:
+        if self.__enabled and not self.__started:
             self.__start_daemon()
-
-        self.__write_dir.joinpath(key).write_text(value, encoding="utf-8")
 
     def consent(self) -> None:
         self.__consent_file.parent.ensure_dir()

@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import os
 import sys
-from typing import TYPE_CHECKING, Any, NoReturn
+from typing import TYPE_CHECKING, Any, BinaryIO, NoReturn
 
 from dda.utils.platform import PLATFORM_ID
 
@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from types import TracebackType
 
     from dda.cli.application import Application
+    from dda.utils.fs import Path
 
 
 class SubprocessRunner:
@@ -25,13 +26,52 @@ class SubprocessRunner:
     def __init__(self, app: Application) -> None:
         self.__app = app
 
-    def run(self, command: list[str] | str, **kwargs: Any) -> subprocess.CompletedProcess:
+    def run(
+        self,
+        command: list[str],
+        *,
+        check: bool = True,
+        env: dict[str, str] | None = None,
+        cwd: str | Path | None = None,
+        encoding: str = "utf-8",
+    ) -> int:
         """
         Run a command and wait for it to complete.
+
+        /// warning
+        On Windows, programs that require user interaction should use the
+        [`attach`][dda.utils.process.SubprocessRunner.attach] method instead.
+        ///
+
+        Parameters:
+            command: The command to run.
+            check: Whether to abort the application if the command exits with a non-zero exit code.
+            env: The environment variables to include in the command's environment.
+            cwd: The working directory in which to run the command.
+            encoding: The encoding used to decode the command's output.
+
+        Returns:
+            The command's exit code.
+        """
+        exit_code, _ = self.__run(command, env=env, cwd=cwd, encoding=encoding, check=check, capture=False)
+        if check and exit_code:
+            self.__app.abort(f"Command failed with exit code {exit_code}: {command}")
+
+        return exit_code
+
+    def attach(self, command: list[str] | str, **kwargs: Any) -> subprocess.CompletedProcess:
+        """
+        Run a command and wait for it to complete. By default, the command inherits the current process's standard
+        input, output, and error streams.
 
         The `check` keyword argument defaults to `True`. When set to `True` and the command exits with a non-zero exit
         code, the application will [abort][dda.cli.application.Application.abort] using the command's exit code rather
         than raising an exception.
+
+        /// warning
+        This method does not support sending telemetry upon errors and should only be preferred over
+        [`run`][dda.utils.process.SubprocessRunner.run] when the command requires user interaction.
+        ///
 
         Parameters:
             command: The command to run.
@@ -61,29 +101,105 @@ class SubprocessRunner:
 
         return process
 
-    def capture(self, command: list[str] | str, *, cross_streams: bool = True, **kwargs: Any) -> str:
+    def redirect(
+        self,
+        command: list[str] | str,
+        *,
+        stream: BinaryIO,
+        cross_streams: bool = True,
+        **kwargs: Any,
+    ) -> subprocess.CompletedProcess:
+        """
+        Redirect the output of a command to a binary writable file-like object. Example usage:
+
+        ```python
+        with open("latest.zip", "wb") as stream:
+            app.subprocess.redirect(
+                ["git", "archive", "--format=zip", "HEAD"],
+                stream=stream,
+            )
+        ```
+
+        Parameters:
+            command: The command to run.
+            stream: The binary stream with which to redirect the command's output.
+
+        Returns:
+            The completed process.
+
+        Other parameters:
+            **kwargs: Additional keyword arguments to pass to the [`attach`][dda.utils.process.SubprocessRunner.attach]
+                method.
+        """
+        import subprocess
+
+        kwargs["stdout"] = stream
+        kwargs["stderr"] = stream if cross_streams else subprocess.PIPE
+        kwargs["encoding"] = None
+        return self.attach(command, **kwargs)
+
+    def capture(
+        self,
+        command: list[str],
+        *,
+        cross_streams: bool = True,
+        show: bool = False,
+        check: bool = True,
+        env: dict[str, str] | None = None,
+        cwd: str | Path | None = None,
+        encoding: str = "utf-8",
+        **kwargs: Any,
+    ) -> str:
         """
         Run a command and capture its output.
 
         Parameters:
             command: The command to run.
             cross_streams: Whether to merge the command's standard error stream into its standard output stream.
+            show: Whether to display the command's output while capturing it.
+            check: Whether to abort the application if the command exits with a non-zero exit code.
+            env: The environment variables to include in the command's environment.
+            cwd: The working directory in which to run the command.
+            encoding: The encoding used to decode the command's output.
 
         Returns:
             The command's standard output.
 
         Other parameters:
-            **kwargs: Additional keyword arguments to pass to the [`run`][dda.utils.process.SubprocessRunner.run]
-                method.
+            **kwargs: Additional keyword arguments to pass to the [`attach`][dda.utils.process.SubprocessRunner.attach]
+                method when `show` is `False`.
         """
+        if show:
+            if kwargs:
+                message = f"Arbitrary keyword arguments are not supported when concurrently showing output: {kwargs}"
+                raise RuntimeError(message)
+
+            _, output = self.__run(command, env=env, cwd=cwd, encoding=encoding, check=check, capture=True)
+            return output
+
         import subprocess
 
-        kwargs.setdefault("encoding", "utf-8")
         kwargs["stdout"] = subprocess.PIPE
         kwargs["stderr"] = subprocess.STDOUT if cross_streams else subprocess.PIPE
-        return self.run(command, **kwargs).stdout
+        kwargs["check"] = check
+        kwargs["encoding"] = encoding
+        if cwd is not None:
+            kwargs["cwd"] = str(cwd)
+        if env is not None:
+            kwargs["env"] = env
 
-    def wait(self, command: list[str] | str, *, message: str = "", **kwargs: Any) -> None:
+        return self.attach(command, **kwargs).stdout
+
+    def wait(
+        self,
+        command: list[str],
+        *,
+        message: str = "",
+        check: bool = True,
+        env: dict[str, str] | None = None,
+        cwd: str | Path | None = None,
+        encoding: str = "utf-8",
+    ) -> None:
         """
         Run a command and wait for it to complete. By default, the command output is hidden but will be displayed if
         the configured verbosity level is at least [`Verbosity.VERBOSE`][dda.config.constants.Verbosity.VERBOSE]. Under
@@ -94,30 +210,90 @@ class SubprocessRunner:
             command: The command to run.
             message: The message to display while the command is running. Has no effect if the verbosity level is
                 less than [`Verbosity.VERBOSE`][dda.config.constants.Verbosity.VERBOSE].
-
-        Other parameters:
-            **kwargs: Additional keyword arguments to pass to the [`run`][dda.utils.process.SubprocessRunner.run]
-                or [`capture`][dda.utils.process.SubprocessRunner.capture] methods.
+            check: Whether to abort the application if the command exits with a non-zero exit code.
+            env: The environment variables to include in the command's environment.
+            cwd: The working directory in which to run the command.
+            encoding: The encoding used to decode the command's output.
         """
         if self.__app.config.terminal.verbosity >= 1:
-            self.run(command, **kwargs)
+            self.run(command, check=check, env=env, cwd=cwd, encoding=encoding)
         else:
             with self.__app.status(self.__app.style_waiting(message or f"Running: {command}")):
-                self.capture(command, **kwargs)
+                self.capture(command, check=check, env=env, cwd=cwd, encoding=encoding)
 
-    def exit_with(self, command: list[str], **kwargs: Any) -> NoReturn:
+    def exit_with(
+        self,
+        command: list[str],
+        *,
+        env: dict[str, str] | None = None,
+        cwd: str | Path | None = None,
+        encoding: str = "utf-8",
+    ) -> NoReturn:
         """
         Run a command and [abort][dda.cli.application.Application.abort] with the command's exit code.
 
         Parameters:
             command: The command to run.
-
-        Other parameters:
-            **kwargs: Additional keyword arguments to pass to the [`run`][dda.utils.process.SubprocessRunner.run]
-                method.
+            cwd: The working directory in which to run the command.
+            env: The environment variables to include in the command's environment.
+            encoding: The encoding used to decode the command's output.
         """
-        process = self.run(command, check=False, **kwargs)
-        self.__app.abort(code=process.returncode)
+        exit_code, _ = self.__run(command, env=env, cwd=cwd, encoding=encoding, check=False, capture=False)
+        self.__app.abort(code=exit_code)
+
+    def __run(
+        self,
+        command: list[str],
+        *,
+        env: dict[str, str] | None,
+        cwd: str | Path | None,
+        encoding: str,
+        check: bool,
+        capture: bool,
+    ) -> tuple[int, str]:
+        import tempfile
+        import threading
+
+        from dda.utils.platform._pty.session import PtySession
+
+        try:
+            pty = PtySession(command, env=env, cwd=cwd, encoding=encoding)
+        except Exception as error:  # noqa: BLE001
+            self.__app.abort(str(error))
+
+        with tempfile.SpooledTemporaryFile(mode="w+", encoding=encoding, newline="") as out, pty:
+            event = threading.Event()
+            thread = threading.Thread(target=pty.capture, args=([sys.stdout, out], event), daemon=True)
+            thread.start()
+            interrupted = False
+            try:
+                pty.wait()
+            except KeyboardInterrupt:
+                interrupted = True
+                pty.terminate()
+                raise
+            finally:
+                event.set()
+                thread.join()
+
+                if (exit_code := pty.get_exit_code()) is None:
+                    exit_code = 1
+
+                ack_error = check and exit_code
+                if ack_error or capture:
+                    from dda.utils.terminal import remove_ansi
+
+                    out.seek(0)
+                    output = out.read()
+                    output = remove_ansi(output)
+                    if ack_error:
+                        self.__app.last_error = output
+                        if interrupted:
+                            self.__app.last_error += f"\nCommand interrupted: {command}"
+                else:
+                    output = ""
+
+        return exit_code, output
 
     if sys.platform == "win32":
 

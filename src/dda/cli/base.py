@@ -5,17 +5,18 @@ from __future__ import annotations
 
 import os
 import sys
+from contextlib import contextmanager
 from functools import cached_property, partial
 from importlib.util import module_from_spec, spec_from_file_location
 from time import perf_counter_ns
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import rich_click as click
 from click.exceptions import Exit, UsageError
 from rich_click.rich_help_formatter import RichHelpFormatter
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Generator
     from types import TracebackType
 
     from dda.cli.application import Application
@@ -37,6 +38,11 @@ class DocumentingHelpFormatter(RichHelpFormatter):
 class DynamicContext(click.RichContext):
     formatter_class = DocumentingHelpFormatter
     export_console_as = "html" if _building_docs() else None
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+
+        self.deepest_command_path: str | None = None
 
     @cached_property
     def allow_external_plugins(self) -> bool:
@@ -96,20 +102,57 @@ class DynamicContext(click.RichContext):
     def __exit__(
         self, exc_type: type[BaseException] | None, exc_value: BaseException | None, tb: TracebackType | None
     ) -> None:
-        app: Application | None = self.obj
-        if app is not None and self._depth == 1:
-            # https://github.com/pallets/click/blob/8.1.8/src/click/exceptions.py#L296
-            if isinstance(exc_value, Exit):
-                exit_code = exc_value.exit_code
-            # https://github.com/pallets/click/blob/8.1.8/src/click/exceptions.py#L64
-            elif isinstance(exc_value, UsageError):
-                exit_code = 2
-            # https://github.com/pallets/click/blob/8.1.8/src/click/exceptions.py#L29
-            else:
-                exit_code = 1
+        command_depth = len(self.command_path.split())
+        root_ctx = _get_root_ctx(self)
+        if root_ctx.deepest_command_path is None or command_depth > len(root_ctx.deepest_command_path.split()):
+            root_ctx.deepest_command_path = self.command_path
 
-            app.telemetry.submit_data("exit_code", str(exit_code))
-            app.telemetry.submit_data("end_time", str(perf_counter_ns()))
+        app: Application | None = self.obj
+        if (
+            # The application may not be set if an error occurred very early
+            app is not None
+            and app.telemetry.enabled
+            # The proper exit code only manifests when the top level context exits
+            and command_depth == 1
+            and self._depth == 1
+        ):
+            if isinstance(exc_value, Exit):
+                # https://github.com/pallets/click/blob/8.1.8/src/click/exceptions.py#L296
+                exit_code = exc_value.exit_code
+            elif isinstance(exc_value, UsageError):
+                # https://github.com/pallets/click/blob/8.1.8/src/click/exceptions.py#L64
+                exit_code = 2
+            elif isinstance(exc_value, KeyboardInterrupt):
+                # Use the non-Windows default value for consistency
+                # https://www.redhat.com/en/blog/exit-codes-demystified
+                # https://github.com/python/cpython/blob/3.13/Modules/main.c#L731-L754
+                exit_code = 130
+            else:
+                import traceback
+
+                # https://github.com/pallets/click/blob/8.1.8/src/click/exceptions.py#L29
+                exit_code = 1
+                app.last_error = traceback.format_exc()
+
+            from dda.cli import START_TIME, START_TIMESTAMP
+            from dda.utils.platform import join_command_args
+
+            metadata = {
+                "cli.command": join_command_args(sys.argv[1:]),
+                "cli.exit_code": str(exit_code),
+            }
+            if last_error := app.last_error.strip():
+                # Payload limit is 5MB so we truncate the error message to a little bit less than that
+                message_max_length = int(1024 * 1024 * 4.5)
+                metadata["error.message"] = last_error[-message_max_length:]
+
+            app.telemetry.trace.span({
+                "resource": " ".join(root_ctx.deepest_command_path.split()[1:]) or " ",
+                "start": START_TIMESTAMP,
+                "duration": perf_counter_ns() - START_TIME,
+                "error": 0 if exit_code == 0 else 1,
+                "meta": metadata,
+            })
 
         super().__exit__(exc_type, exc_value, tb)
 
@@ -177,24 +220,16 @@ class DynamicCommand(click.RichCommand):
 
         # Only add dynamic command paths to Python's search path, the first one is always the root command group
         if self.dynamic_path_id != 0:
-            root_ctx = ctx
-            while root_ctx.parent is not None:
-                parent: DynamicContext = root_ctx.parent  # type: ignore[assignment]
-                root_ctx = parent
-
+            root_ctx = _get_root_ctx(ctx)
             search_path = root_ctx.search_paths[self.dynamic_path_id]
-            # Directory alongside the top-level search path
-            pythonpath = os.path.join(os.path.dirname(search_path), "pythonpath")
-            if os.path.isdir(pythonpath):
-                from dda.utils.process import EnvVars
+            pythonpath = _get_pythonpath(search_path)
+            with _apply_pythonpath(pythonpath) as applied:
+                if applied:
+                    from dda.utils.process import EnvVars
 
-                sys.path.insert(0, pythonpath)
-                try:
                     # The environment variable is required to influence subprocesses
                     with EnvVars({"PYTHONPATH": pythonpath}):
                         return super().invoke(ctx)
-                finally:
-                    sys.path.pop(0)
 
         return super().invoke(ctx)
 
@@ -300,10 +335,17 @@ class DynamicGroup(click.RichGroup):
         if not self._subcommand_allowed(cmd_name):
             return command
 
+        root_ctx = _get_root_ctx(ctx)
         for i, search_path in ctx.search_paths.items():
             cmd_path = os.path.join(search_path, _search_path_name(cmd_name), "__init__.py")
             if os.path.isfile(cmd_path):
-                command = self._lazy_load(cmd_name, cmd_path)
+                if i == 0:
+                    command = self._lazy_load(cmd_name, cmd_path)
+                else:
+                    pythonpath = _get_pythonpath(root_ctx.search_paths[i])
+                    with _apply_pythonpath(pythonpath):
+                        command = self._lazy_load(cmd_name, cmd_path)
+
                 command.name = cmd_name
                 command.set_dynamic_path_id(i)
                 return command
@@ -424,6 +466,30 @@ def ensure_features_installed(
         env_vars.pop("VIRTUAL_ENV", None)
 
         app.tools.uv.wait(command, message="Synchronizing dependencies", cwd=str(temp_dir), env=env_vars)
+
+
+def _get_root_ctx(ctx: click.Context) -> DynamicContext:
+    while ctx.parent is not None:
+        ctx = ctx.parent
+
+    return cast(DynamicContext, ctx)
+
+
+def _get_pythonpath(root_search_path: str) -> str:
+    # Directory alongside the top-level search path
+    return os.path.join(os.path.dirname(root_search_path), "pythonpath")
+
+
+@contextmanager
+def _apply_pythonpath(pythonpath: str) -> Generator[bool, None, None]:
+    if os.path.isdir(pythonpath):
+        sys.path.insert(0, pythonpath)
+        try:
+            yield True
+        finally:
+            sys.path.pop(0)
+    else:
+        yield False
 
 
 def _get_external_plugin_callback(cmd_name: str, executable: str) -> DynamicCommand:

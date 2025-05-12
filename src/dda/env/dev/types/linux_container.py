@@ -142,7 +142,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             )
 
             with self.app.status(self.app.style_waiting(f"Waiting for container: {self.container_name}")):
-                wait_for(self.check_readiness, timeout=30, wait=0.3)
+                wait_for(self.check_readiness, timeout=30, interval=0.3)
 
             self.ensure_ssh_config()
 
@@ -204,7 +204,8 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         self.ensure_ssh_config()
         ssh_command = self.ssh_base_command()
         ssh_command.append(self.shell.get_login_command(cwd=self.repo_path(repo)))
-        self.app.subprocess.exit_with(ssh_command)
+        process = self.app.subprocess.attach(ssh_command, check=False)
+        self.app.abort(code=process.returncode)
 
     def code(self, *, repo: str | None = None) -> None:
         self.ensure_ssh_config()
@@ -248,9 +249,10 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         ssh_command.append(self.shell.format_command(command, cwd=cwd))
         return ssh_command
 
-    def check_readiness(self) -> bool:
+    def check_readiness(self) -> None:
         output = self.docker.capture(["logs", self.container_name])
-        return "Server listening on :: port 22" in output
+        if "Server listening on :: port 22" not in output:
+            raise RuntimeError
 
     def ssh_base_command(self) -> list[str]:
         from dda.utils.ssh import ssh_base_command

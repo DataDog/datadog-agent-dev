@@ -8,6 +8,64 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+## 0.12.4 - 2025-05-07
+
+***Fixed:***
+
+- Allow user input on non-Windows platforms for `app.subprocess` methods that use a pseudo-terminal
+
+## 0.12.3 - 2025-05-04
+
+***Fixed:***
+
+- Most `app.subprocess` methods no longer force the use of a pseudo-terminal when the parent process is not interactive
+- Update dependencies to remove spurious warnings on newer versions of Python
+
+## 0.12.2 - 2025-05-03
+
+***Fixed:***
+
+- Fix the `env dev shell` command when using the `linux-container` developer environment type
+- Prevent issues on Windows when using the `uv` dependency to upgrade itself
+
+## 0.12.1 - 2025-05-02
+
+***Fixed:***
+
+- Fix the `env dev start` command when using the `linux-container` developer environment type
+- Fix the `check` parameter of the `app.subprocess.capture` method
+
+## 0.12.0 - 2025-05-01
+
+***Changed:***
+
+- The `app.subprocess.run` method now uses a pseudo-terminal in order to capture output from subprocesses while displaying it. A new `app.subprocess.attach` method is available which retains the original behavior and should be preferred when subprocesses require user interaction.
+- The `app.subprocess.run` method now returns an integer representing the exit code of the completed subprocess call
+
+***Added:***
+
+- Automatically send telemetry for failed subprocesses
+- Add `app.subprocess.redirect` method for redirecting the output of a command to a file-like object
+- Update dependencies
+
+***Fixed:***
+
+- Properly apply Python path modifications when loading dynamic commands
+
+## 0.11.0 - 2025-04-25
+
+***Added:***
+
+- Switch to traces for telemetry
+
+## 0.10.1 - 2025-04-22
+
+***Fixed:***
+
+- Only show the help text of the `inv` command when no arguments are provided
+
+## 0.10.0 - 2025-04-22
+
 ***Changed:***
 
 - The paths used to search for local commands are no longer added to the Python search path and instead a sibling directory `pythonpath` is used
@@ -15,10 +73,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ***Added:***
 
 - Add `dda.utils.platform.get_machine_id` function
+- Add `dda.utils.date` utilities
+- Add `dda.utils.network.http` utilities
+- Add proper backoff for the retry utilities
+- Add `binary` and `rich` to the global legacy dependencies used for the `inv` command
 
 ***Fixed:***
 
 - Properly persist Python search path modifications for local commands when using subprocesses
+- Fixed locally running config restoration tests when telemetry is enabled
 
 ## 0.9.0 - 2025-04-02
 
