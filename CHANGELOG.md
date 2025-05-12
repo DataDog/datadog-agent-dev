@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+## 0.12.5 - 2025-05-12
+
 ***Fixed:***
 
 - Fix the `inv` command when legacy tasks require user input
