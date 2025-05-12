@@ -45,7 +45,6 @@ class PtySession(PtySessionInterface):
             env=self.env,
             stdout=child_fd,
             stderr=child_fd,
-            start_new_session=True,
             pass_fds=(child_fd,),
         )
         os.close(child_fd)
@@ -70,7 +69,13 @@ class PtySession(PtySessionInterface):
                         for w in writers:
                             w.write(tail)
                             w.flush()
-
+                break
+            except KeyboardInterrupt:
+                tail = self.decoder.decode(b"", final=True)
+                if tail:
+                    for w in writers:
+                        w.write(tail)
+                        w.flush()
                 break
 
             if not output:
