@@ -201,6 +201,11 @@ legacy-test-infra-definitions = [
     "termcolor==2.5.0",
 ]
 
+google-client-api = [
+    "google-api-python-client==2.160.0",
+    "oauth2client==4.1.3",
+]
+
 [project.urls]
 Homepage = "https://github.com/DataDog/datadog-agent-dev"
 Documentation = "https://datadoghq.dev/datadog-agent/setup/"
