@@ -42,11 +42,14 @@ def derive_dynamic_ssh_port(key: str) -> int:
     return repo_id % (max_port - min_port) + min_port
 
 
-def write_server_config(hostname: str, options: dict[str, str]) -> None:
+def write_server_config(hostname: str, options: dict[str, str | list[str]]) -> None:
     config_file = ssh_config_dir() / RELATIVE_CONFIG_DIR / hostname
     lines = [f"Host {hostname}"]
     for key, value in options.items():
-        lines.append(f"    {key} {value}")
+        if isinstance(value, list):
+            lines.extend(f"    {key} {v}" for v in value)
+        else:
+            lines.append(f"    {key} {value}")
 
     lines.append("")
     config_file.parent.ensure_dir()

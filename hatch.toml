@@ -7,7 +7,7 @@ dependencies = ["ruff==0.9.9"]
 
 [envs.hatch-test]
 extra-dependencies = [
-  "pyfakefs",
+  "pyfakefs>=5.8.0",
 ]
 
 [envs.types]

@@ -8,5 +8,12 @@ def ensure_ssh_config(hostname: str) -> None:
     from dda.utils.ssh import write_server_config
 
     return write_server_config(
-        hostname, {"StrictHostKeyChecking": "no", "ForwardAgent": "yes", "UserKnownHostsFile": "/dev/null"}
+        hostname,
+        {
+            "StrictHostKeyChecking": "no",
+            "ForwardAgent": "yes",
+            "UserKnownHostsFile": "/dev/null",
+            # Prevent passing local config, only supported on OpenSSH 8.7+ https://www.openssh.com/txt/release-8.7
+            "SetEnv": ["TERM=xterm-256color"],
+        },
     )
