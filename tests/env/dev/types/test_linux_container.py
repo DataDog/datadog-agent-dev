@@ -34,6 +34,18 @@ def get_starship_mount(shared_dir: Path) -> list[str]:
     return ["-v", f"{shared_dir / 'shell' / 'starship.toml'}:/root/.shared/shell/starship.toml"]
 
 
+def assert_ssh_config_written(method, hostname):
+    method.assert_called_once_with(
+        hostname,
+        {
+            "StrictHostKeyChecking": "no",
+            "ForwardAgent": "yes",
+            "UserKnownHostsFile": "/dev/null",
+            "SetEnv": ["TERM=xterm-256color"],
+        },
+    )
+
+
 def test_default_config(app):
     container = LinuxContainer(app=app, name="linux-container", instance="default")
 
@@ -140,14 +152,7 @@ class TestStart:
             """
         )
 
-        write_server_config.assert_called_once_with(
-            "localhost",
-            {
-                "StrictHostKeyChecking": "no",
-                "ForwardAgent": "yes",
-                "UserKnownHostsFile": "/dev/null",
-            },
-        )
+        assert_ssh_config_written(write_server_config, "localhost")
 
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / ".shared"
         starship_mount = get_starship_mount(shared_dir)
@@ -212,14 +217,7 @@ class TestStart:
             """
         )
 
-        write_server_config.assert_called_once_with(
-            "localhost",
-            {
-                "StrictHostKeyChecking": "no",
-                "ForwardAgent": "yes",
-                "UserKnownHostsFile": "/dev/null",
-            },
-        )
+        assert_ssh_config_written(write_server_config, "localhost")
 
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / ".shared"
         starship_mount = get_starship_mount(shared_dir)
@@ -302,14 +300,7 @@ class TestStart:
             """
         )
 
-        write_server_config.assert_called_once_with(
-            "localhost",
-            {
-                "StrictHostKeyChecking": "no",
-                "ForwardAgent": "yes",
-                "UserKnownHostsFile": "/dev/null",
-            },
-        )
+        assert_ssh_config_written(write_server_config, "localhost")
 
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / ".shared"
         starship_mount = get_starship_mount(shared_dir)
@@ -378,14 +369,7 @@ class TestStart:
             """
         )
 
-        write_server_config.assert_called_once_with(
-            "localhost",
-            {
-                "StrictHostKeyChecking": "no",
-                "ForwardAgent": "yes",
-                "UserKnownHostsFile": "/dev/null",
-            },
-        )
+        assert_ssh_config_written(write_server_config, "localhost")
 
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / ".shared"
         starship_mount = get_starship_mount(shared_dir)
@@ -453,14 +437,7 @@ class TestStart:
             """
         )
 
-        write_server_config.assert_called_once_with(
-            "localhost",
-            {
-                "StrictHostKeyChecking": "no",
-                "ForwardAgent": "yes",
-                "UserKnownHostsFile": "/dev/null",
-            },
-        )
+        assert_ssh_config_written(write_server_config, "localhost")
 
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / ".shared"
         starship_mount = get_starship_mount(shared_dir)
@@ -625,14 +602,7 @@ class TestShell:
         assert result.exit_code == 0, result.output
         assert not result.output
 
-        write_server_config.assert_called_once_with(
-            "localhost",
-            {
-                "StrictHostKeyChecking": "no",
-                "ForwardAgent": "yes",
-                "UserKnownHostsFile": "/dev/null",
-            },
-        )
+        assert_ssh_config_written(write_server_config, "localhost")
         assert calls == [
             (
                 (
@@ -682,14 +652,7 @@ class TestRun:
         assert result.exit_code == 0, result.output
         assert not result.output
 
-        write_server_config.assert_called_once_with(
-            "localhost",
-            {
-                "StrictHostKeyChecking": "no",
-                "ForwardAgent": "yes",
-                "UserKnownHostsFile": "/dev/null",
-            },
-        )
+        assert_ssh_config_written(write_server_config, "localhost")
         run.assert_called_once_with(
             [
                 "ssh",
@@ -734,14 +697,7 @@ class TestCode:
         assert result.exit_code == 0, result.output
         assert not result.output
 
-        write_server_config.assert_called_once_with(
-            "localhost",
-            {
-                "StrictHostKeyChecking": "no",
-                "ForwardAgent": "yes",
-                "UserKnownHostsFile": "/dev/null",
-            },
-        )
+        assert_ssh_config_written(write_server_config, "localhost")
         run.assert_called_once_with(
             [
                 "code",
