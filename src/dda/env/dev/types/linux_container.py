@@ -85,6 +85,12 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             self.docker.wait(["start", self.container_name], message=f"Starting container: {self.container_name}")
         else:
             from dda.config.constants import AppEnvVars
+            from dda.utils._git import (
+                GIT_AUTHOR_EMAIL_ENV_VAR,
+                GIT_AUTHOR_NAME_ENV_VAR,
+                get_git_author_email,
+                get_git_author_name,
+            )
             from dda.utils.process import EnvVars
             from dda.utils.retry import wait_for
 
@@ -108,6 +114,10 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 "DD_SHELL",
                 "-e",
                 AppEnvVars.TELEMETRY_API_KEY,
+                "-e",
+                GIT_AUTHOR_NAME_ENV_VAR,
+                "-e",
+                GIT_AUTHOR_EMAIL_ENV_VAR,
             ]
             if self.config.arch is not None:
                 command.extend(("--platform", f"linux/{self.config.arch}"))
@@ -134,6 +144,12 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             env["DD_SHELL"] = self.config.shell
             if self.app.telemetry.api_key is not None:
                 env[AppEnvVars.TELEMETRY_API_KEY] = self.app.telemetry.api_key
+
+            if git_user := (self.app.config.git.user.name or get_git_author_name()):
+                env[GIT_AUTHOR_NAME_ENV_VAR] = git_user
+
+            if git_email := (self.app.config.git.user.email or get_git_author_email()):
+                env[GIT_AUTHOR_EMAIL_ENV_VAR] = git_email
 
             self.docker.wait(
                 command,
