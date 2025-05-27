@@ -110,6 +110,8 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 self.container_name,
                 "-p",
                 f"{self.ssh_port}:22",
+                "-v",
+                "/var/run/docker.sock:/var/run/docker.sock",
                 "-e",
                 "DD_SHELL",
                 "-e",

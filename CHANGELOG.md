@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ***Added:***
 
 - Pass local Git author details to developer environments
+- Mount the Docker socket in the `linux-container` developer environment type
 
 ***Fixed:***
 
