@@ -491,6 +491,9 @@ legacy-release = [
     { name = "reno" },
     { name = "yattag" },
 ]
+legacy-static-quality-gates = [
+    { name = "binary" },
+]
 legacy-tasks = [
     { name = "atlassian-python-api" },
     { name = "awscli" },
@@ -680,6 +683,7 @@ legacy-release = [
     { name = "reno", specifier = "==3.5.0" },
     { name = "yattag", specifier = "==1.15.2" },
 ]
+legacy-static-quality-gates = [{ name = "binary", specifier = "==1.0.1" }]
 legacy-tasks = [
     { name = "atlassian-python-api", specifier = "==3.41.3" },
     { name = "awscli", specifier = "==1.40.7" },
