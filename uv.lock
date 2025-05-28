@@ -378,15 +378,15 @@ dependencies = [
 ]
 
 [package.dev-dependencies]
+gcp = [
+    { name = "google-api-python-client" },
+    { name = "oauth2client" },
+]
 github = [
     { name = "pygithub" },
 ]
 gitlab = [
     { name = "python-gitlab" },
-]
-google-client-api = [
-    { name = "google-api-python-client" },
-    { name = "oauth2client" },
 ]
 http = [
     { name = "httpx", extra = ["zstd"] },
@@ -578,12 +578,12 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-github = [{ name = "pygithub" }]
-gitlab = [{ name = "python-gitlab" }]
-google-client-api = [
+gcp = [
     { name = "google-api-python-client", specifier = "==2.160.0" },
     { name = "oauth2client", specifier = "==4.1.3" },
 ]
+github = [{ name = "pygithub" }]
+gitlab = [{ name = "python-gitlab" }]
 http = [{ name = "httpx", extras = ["zstd"] }]
 legacy-agent-deploy = [
     { name = "azure-identity", specifier = "==1.14.1" },
