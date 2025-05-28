@@ -74,9 +74,9 @@ install_dda() {
 fallback_install_dda() {
   echo -e "${PURPLE}Installing dda ${DDA_INSTALL_VERSION}${RESET}"
   if [[ "${DDA_INSTALL_VERSION}" == "latest" ]]; then
-    pipx install --pip-args=--upgrade datadog-agent-dev
+    pipx install --pip-args=--upgrade dda
   else
-    pipx install "datadog-agent-dev==${DDA_INSTALL_VERSION}"
+    pipx install "dda==${DDA_INSTALL_VERSION}"
   fi
 
   dda --version
@@ -86,7 +86,7 @@ fallback_install_dda() {
 if [[ "${TARGET_PLATFORM}" == "linux" ]]; then
   if [[ "${TARGET_ARCH}" == "x64" ]]; then
     install_dda "dda-x86_64-unknown-linux-gnu.tar.gz"
-  elif [[ "${TARGET_ARCH}" == "ARM64" ]]; then
+  elif [[ "${TARGET_ARCH}" == "arm64" ]]; then
     install_dda "dda-aarch64-unknown-linux-gnu.tar.gz"
   else
     fallback_install_dda
