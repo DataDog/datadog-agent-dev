@@ -202,7 +202,7 @@ legacy-test-infra-definitions = [
 ]
 
 legacy-static-quality-gates = [
-    "binary==1.0.1"
+    "binary==1.0.1",
 ]
 
 google-client-api = [
