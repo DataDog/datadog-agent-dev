@@ -30,7 +30,7 @@ install_features() {
     # Temporarily change IFS to space just for this loop
     IFS=' ' read -ra features <<< "$FEATURES"
     ARGS=()
-    for feature in features; do
+    for feature in $features; do
       ARGS+=("-f" "$feature")
     done
 
