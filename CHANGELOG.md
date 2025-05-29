@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+***Added:***
+
+- Add `app.tools.go` tool for calling `go` commands with the proper version
+
 ## 0.13.1 - 2025-05-28
 
 ***Fixed:***

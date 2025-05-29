@@ -6,9 +6,14 @@
     options:
       members:
       - docker
+      - go
       - uv
 
 ::: dda.tools.docker.Docker
+    options:
+      members: []
+
+::: dda.tools.go.Go
     options:
       members: []
 
