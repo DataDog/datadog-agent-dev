@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from dda.cli.application import Application
     from dda.tools.docker import Docker
+    from dda.tools.go import Go
     from dda.tools.uv import UV
 
 
@@ -25,6 +26,12 @@ class Tools:
         from dda.tools.docker import Docker
 
         return Docker(self.__app)
+
+    @cached_property
+    def go(self) -> Go:
+        from dda.tools.go import Go
+
+        return Go(self.__app)
 
     @cached_property
     def uv(self) -> UV:
