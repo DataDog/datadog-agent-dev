@@ -148,8 +148,21 @@ class DynamicContext(click.RichContext):
                 message_max_length = int(1024 * 1024 * 4.5)
                 metadata["error.message"] = last_error[-message_max_length:]
 
+            resource = " ".join(root_ctx.deepest_command_path.split()[1:])
+            if resource == "inv":
+                command_parts: list[str] = []
+                for arg in sys.argv[1:]:
+                    if len(command_parts) == 1 and arg in {"--", "-e", "--echo"}:
+                        continue
+                    if arg.startswith("-"):
+                        break
+
+                    command_parts.append(arg)
+                resource = " ".join(command_parts)
+
             app.telemetry.trace.span({
-                "resource": " ".join(root_ctx.deepest_command_path.split()[1:]) or " ",
+                # Ensure the resource is not empty in the case of help text to prevent the UI default
+                "resource": resource or " ",
                 "start": START_TIMESTAMP,
                 "duration": perf_counter_ns() - START_TIME,
                 "error": 0 if exit_code == 0 else 1,
