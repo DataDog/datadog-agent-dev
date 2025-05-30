@@ -150,10 +150,12 @@ class DynamicContext(click.RichContext):
 
             resource = " ".join(root_ctx.deepest_command_path.split()[1:])
             if resource == "inv":
+                # Accumulate leading non-flag arguments to the resource
                 command_parts: list[str] = []
                 for arg in sys.argv[1:]:
                     if len(command_parts) == 1 and arg in {"--", "-e", "--echo"}:
                         continue
+                    # A real flag
                     if arg.startswith("-"):
                         break
 
