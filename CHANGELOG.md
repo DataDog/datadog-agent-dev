@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ***Added:***
 
 - Add `app.tools.go` tool for calling `go` commands with the proper version
+- Add Git author details to telemetry
 
 ## 0.13.1 - 2025-05-28
 

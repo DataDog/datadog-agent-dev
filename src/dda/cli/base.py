@@ -140,6 +140,8 @@ class DynamicContext(click.RichContext):
             metadata = {
                 "cli.command": join_command_args(sys.argv[1:]),
                 "cli.exit_code": str(exit_code),
+                "git.author.name": app.config.git.user.name,
+                "git.author.email": app.config.git.user.email,
             }
             if last_error := app.last_error.strip():
                 # Payload limit is 5MB so we truncate the error message to a little bit less than that
