@@ -66,6 +66,12 @@ class PtySession(PtySessionInterface):
                     writer.flush()
             except winpty.WinptyError:
                 if self.pty.iseof():
+                    # TODO: Remove this once the issue is fixed
+                    # https://github.com/andfoy/pywinpty/issues/490
+                    for writer in writers:
+                        # Reset the terminal
+                        writer.write("\x1b[?1004l\x1b[?9001l\x1b[?25h")
+                        writer.flush()
                     break
 
                 continue
