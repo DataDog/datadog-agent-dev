@@ -61,23 +61,6 @@ wheels = [
 ]
 
 [[package]]
-name = "awscli"
-version = "1.40.7"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "botocore" },
-    { name = "colorama" },
-    { name = "docutils" },
-    { name = "pyyaml" },
-    { name = "rsa" },
-    { name = "s3transfer" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/72/8f/a698d891e9fc39c6d77f1f52f57971559ae3e38db08ed38bf16384e7694d/awscli-1.40.7.tar.gz", hash = "sha256:d9f3660fb4e373eb18b0992a7107c5f767ad6d84b0078b765070cc98dfcbf8f6", size = 1890879, upload-time = "2025-05-03T00:18:40.214Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/c2/cf/aabb1c1055cc21ae655e4b92b22dab5940fdcf4c6c88921c3108f299643a/awscli-1.40.7-py3-none-any.whl", hash = "sha256:1e1bb8bc2217e5e4d155a362193736fa83ad5ad7bb6b66ec3277d310f4755263", size = 4662993, upload-time = "2025-05-03T00:18:36.515Z" },
-]
-
-[[package]]
 name = "azure-common"
 version = "1.1.28"
 source = { registry = "https://pypi.org/simple" }
@@ -398,14 +381,7 @@ legacy-agent-deploy = [
     { name = "setuptools" },
     { name = "virtualenv" },
 ]
-legacy-btf-gen = [
-    { name = "awscli" },
-    { name = "invoke" },
-    { name = "python-gitlab" },
-    { name = "requests" },
-]
 legacy-build = [
-    { name = "awscli" },
     { name = "boto3" },
     { name = "codeowners" },
     { name = "datadog-api-client" },
@@ -429,9 +405,6 @@ legacy-build = [
     { name = "types-tabulate" },
     { name = "types-toml" },
     { name = "vulture" },
-]
-legacy-circleci = [
-    { name = "wheel" },
 ]
 legacy-constraints = [
     { name = "azure-identity" },
@@ -496,7 +469,6 @@ legacy-static-quality-gates = [
 ]
 legacy-tasks = [
     { name = "atlassian-python-api" },
-    { name = "awscli" },
     { name = "beautifulsoup4" },
     { name = "binary" },
     { name = "boto3" },
@@ -592,14 +564,7 @@ legacy-agent-deploy = [
     { name = "setuptools", specifier = "==75.8.2" },
     { name = "virtualenv", specifier = "==20.29.3" },
 ]
-legacy-btf-gen = [
-    { name = "awscli", specifier = "==1.40.7" },
-    { name = "invoke", specifier = "==2.2.0" },
-    { name = "python-gitlab", specifier = "==4.4.0" },
-    { name = "requests", specifier = "==2.32.3" },
-]
 legacy-build = [
-    { name = "awscli", specifier = "==1.40.7" },
     { name = "boto3", specifier = "==1.38.8" },
     { name = "codeowners", specifier = "==0.6.0" },
     { name = "datadog-api-client", specifier = "==2.34.0" },
@@ -624,7 +589,6 @@ legacy-build = [
     { name = "types-toml", specifier = "==0.10.8.20240310" },
     { name = "vulture", specifier = "==2.6" },
 ]
-legacy-circleci = [{ name = "wheel", specifier = "==0.40.0" }]
 legacy-constraints = [
     { name = "azure-identity", specifier = "==1.14.1" },
     { name = "azure-mgmt-resource", specifier = "==23.0.1" },
@@ -686,7 +650,6 @@ legacy-release = [
 legacy-static-quality-gates = [{ name = "binary", specifier = "==1.0.1" }]
 legacy-tasks = [
     { name = "atlassian-python-api", specifier = "==3.41.3" },
-    { name = "awscli", specifier = "==1.40.7" },
     { name = "beautifulsoup4", specifier = "~=4.12.3" },
     { name = "binary", specifier = "==1.0.1" },
     { name = "boto3", specifier = "==1.38.8" },
@@ -829,15 +792,6 @@ dependencies = [
     { name = "docker" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/6c/0b/3684b7e34c46045dda03b34be50392c689b23fa8788a0c0f7daf98db35d8/docker-squash-1.1.0.tar.gz", hash = "sha256:819a87bf44c575c76d8d8f15544363a7a81ca2b176d424b67b39cd2cd9acc89e", size = 25428, upload-time = "2023-05-10T12:46:34.579Z" }
-
-[[package]]
-name = "docutils"
-version = "0.19"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/6b/5c/330ea8d383eb2ce973df34d1239b3b21e91cd8c865d21ff82902d952f91f/docutils-0.19.tar.gz", hash = "sha256:33995a6753c30b7f577febfc2c50411fec6aac7f7ffeb7c4cfe5991072dcf9e6", size = 2056383, upload-time = "2022-07-05T20:17:31.045Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/93/69/e391bd51bc08ed9141ecd899a0ddb61ab6465309f1eb470905c0c8868081/docutils-0.19-py3-none-any.whl", hash = "sha256:5e1de4d849fee02c63b040a4a3fd567f4ab104defd8a5511fbbc24a8a017efbc", size = 570472, upload-time = "2022-07-05T20:17:26.388Z" },
-]
 
 [[package]]
 name = "dulwich"

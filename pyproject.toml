@@ -73,7 +73,6 @@ legacy-constraints = [
 ]
 # https://github.com/DataDog/datadog-agent-buildimages/blob/main/requirements.txt
 legacy-build = [
-    "awscli==1.40.7",
     "boto3==1.38.8",
     "codeowners==0.6.0",
     "datadog-api-client==2.34.0",
@@ -107,17 +106,6 @@ legacy-agent-deploy = [
     "pygithub==1.59.1",
     "setuptools==75.8.2",
     "virtualenv==20.29.3",
-]
-# https://github.com/DataDog/datadog-agent-buildimages/blob/main/requirements/btf-gen.txt
-legacy-btf-gen = [
-    "awscli==1.40.7",
-    "invoke==2.2.0",
-    "python-gitlab==4.4.0",
-    "requests==2.32.3",
-]
-# https://github.com/DataDog/datadog-agent-buildimages/blob/main/requirements/circleci.txt
-legacy-circleci = [
-    "wheel==0.40.0",
 ]
 # https://github.com/DataDog/datadog-agent-buildimages/blob/main/requirements/e2e.txt
 legacy-e2e = [
