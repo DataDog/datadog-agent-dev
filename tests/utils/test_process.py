@@ -89,13 +89,13 @@ f.write_text("foo")
     def test_executable_with_spaces(self, app):
         # Windows Defender executable path which contains spaces
         executable = Path("C:\\Program Files\\Windows Defender\\MpCmdRun.exe")
-        
+
         # Skip if the executable doesn't exist (some Windows versions might not have it)
         if not executable.exists():
             pytest.skip(f"Test executable not found: {executable}")
-        
+
         # Run a simple command that exits quickly (-h shows help)
-        output = app.subprocess.capture([str(executable), "-h"])
+        output = app.subprocess.capture([str(executable), "-h"], show=True)
         assert "Microsoft Antimalware Service" in output
 
     def test_run_reverse_interactivity(self, app, mocker, tmp_path):

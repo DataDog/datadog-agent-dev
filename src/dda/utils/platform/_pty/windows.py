@@ -40,7 +40,8 @@ class PtySession(PtySessionInterface):
         width, height = self.get_terminal_dimensions()
         self.pty = winpty.PTY(width, height)
         self.pty.spawn(
-            f'"{self.executable}"',
+            # Add quotes if the executable path contains spaces
+            join_command_args([self.executable]),
             cmdline=join_command_args(self.args) if self.args else None,
             cwd=self.cwd,
             env=(
