@@ -31,6 +31,7 @@ dependencies = [
   "find-exe~=0.1",
   "httpx[http2]~=0.28.1",
   "hvac~=2.3.0",
+  "jinja2~=3.1.6",
   "keyring~=25.6.0",
   "msgspec~=0.18",
   "msgspec-click~=0.2",
