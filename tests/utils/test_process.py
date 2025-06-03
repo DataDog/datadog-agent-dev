@@ -86,7 +86,7 @@ f.write_text("foo")
         assert output_file.read_text() == "foo"
 
     @pytest.mark.skipif(sys.platform != "win32", reason="Windows only test")
-    def test_executable_with_spaces(self, app):
+    def test_executable_with_spaces(self, app, temp_dir):
         # Windows Defender executable path which contains spaces
         executable = Path("C:\\Program Files\\Windows Defender\\MpCmdRun.exe")
 
@@ -94,8 +94,12 @@ f.write_text("foo")
         if not executable.exists():
             pytest.skip(f"Test executable not found: {executable}")
 
-        # Run a simple command that exits quickly (-h shows help)
-        output = app.subprocess.capture([str(executable), "-h"], show=True)
+        # Use a temporary directory to avoid strange permission errors
+        with temp_dir.as_cwd():
+            # Run a simple command that exits quickly (-h shows help)
+            # Enable replayed output so that the PTY logic is used
+            output = app.subprocess.capture([str(executable), "-h"], show=True)
+
         assert "Microsoft Antimalware Service" in output
 
     def test_run_reverse_interactivity(self, app, mocker, tmp_path):
