@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ***Fixed:***
 
 - Workaround a limitation of the PTY dependency on Windows
+- Properly handle executable paths with spaces on Windows when using a pseudo-terminal
 
 ## 0.14.0 - 2025-05-30
 
