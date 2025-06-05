@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ***Fixed:***
 
 - Fix telemetry for the `inv` command when using root `dda` flags
+- Fix dynamic dependency installation for the `inv` command for a newly deprecated feature flag
 
 ## 0.15.0 - 2025-06-03
 

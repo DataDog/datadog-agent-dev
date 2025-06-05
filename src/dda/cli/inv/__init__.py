@@ -65,12 +65,8 @@ def cmd(
 
     features = ["legacy-tasks", *extra_features]
     invoke_args = [arg for arg in args if not arg.startswith("-")]
-    if invoke_args:
-        task = invoke_args[0]
-        if Path.cwd().name == "test-infra-definitions":
-            features.append("legacy-test-infra-definitions")
-        elif task.startswith("system-probe."):
-            features.append("legacy-btf-gen")
+    if invoke_args and Path.cwd().name == "test-infra-definitions":
+        features.append("legacy-test-infra-definitions")
 
     if no_dynamic_deps:
         import sys
