@@ -150,9 +150,14 @@ class DynamicContext(click.RichContext):
 
             resource = " ".join(root_ctx.deepest_command_path.split()[1:])
             if resource == "inv":
+                try:
+                    command_start = sys.argv.index("inv")
+                except ValueError:  # no cov
+                    command_start = 1
+
                 # Accumulate leading non-flag arguments to the resource
                 command_parts: list[str] = []
-                for arg in sys.argv[1:]:
+                for arg in sys.argv[command_start:]:
                     if len(command_parts) == 1 and arg in {"--", "-e", "--echo"}:
                         continue
                     # A real flag
