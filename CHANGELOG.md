@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+## 0.15.1 - 2025-06-05
+
 ***Fixed:***
 
 - Fix telemetry for the `inv` command when using root `dda` flags
