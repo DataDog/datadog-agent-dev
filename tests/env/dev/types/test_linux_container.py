@@ -34,6 +34,27 @@ def get_starship_mount(shared_dir: Path) -> list[str]:
     return ["-v", f"{shared_dir / 'shell' / 'starship.toml'}:/root/.shared/shell/starship.toml"]
 
 
+def get_cache_volumes() -> list[str]:
+    return [
+        "--mount",
+        "type=volume,src=dda-env-dev-linux-container-go_build_cache,dst=/root/.cache/go-build",
+        "--mount",
+        "type=volume,src=dda-env-dev-linux-container-go_mod_cache,dst=/go/pkg/mod",
+        "--mount",
+        "type=volume,src=dda-env-dev-linux-container-pip_cache,dst=/root/.cache/pip",
+        "--mount",
+        "type=volume,src=dda-env-dev-linux-container-cargo_registry,dst=/root/.cargo/registry",
+        "--mount",
+        "type=volume,src=dda-env-dev-linux-container-cargo_git,dst=/root/.cargo/git",
+        "--mount",
+        "type=volume,src=dda-env-dev-linux-container-omnibus_gems,dst=/omnibus/vendor/bundle",
+        "--mount",
+        "type=volume,src=dda-env-dev-linux-container-omnibus_cache,dst=/omnibus/cache",
+        "--mount",
+        "type=volume,src=dda-env-dev-linux-container-omnibus_git_cache,dst=/tmp/omnibus-git-cache",
+    ]
+
+
 def assert_ssh_config_written(method, hostname):
     method.assert_called_once_with(
         hostname,
@@ -156,6 +177,7 @@ class TestStart:
 
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / ".shared"
         starship_mount = get_starship_mount(shared_dir)
+        cache_volumes = get_cache_volumes()
         assert calls == [
             (
                 ([helpers.locate("docker"), "pull", "datadog/agent-dev-env-linux"],),
@@ -186,6 +208,7 @@ class TestStart:
                         *starship_mount,
                         "-v",
                         f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
+                        *cache_volumes,
                         "-v",
                         f"{repo_dir}:/root/repos/datadog-agent",
                         "datadog/agent-dev-env-linux",
@@ -227,6 +250,7 @@ class TestStart:
 
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / ".shared"
         starship_mount = get_starship_mount(shared_dir)
+        cache_volumes = get_cache_volumes()
         assert calls == [
             (
                 ([helpers.locate("docker"), "pull", "datadog/agent-dev-env-linux"],),
@@ -257,6 +281,7 @@ class TestStart:
                         *starship_mount,
                         "-v",
                         f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
+                        *cache_volumes,
                         "datadog/agent-dev-env-linux",
                     ],
                 ),
@@ -316,6 +341,7 @@ class TestStart:
 
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / ".shared"
         starship_mount = get_starship_mount(shared_dir)
+        cache_volumes = get_cache_volumes()
         assert calls == [
             (
                 (
@@ -342,6 +368,7 @@ class TestStart:
                         *starship_mount,
                         "-v",
                         f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
+                        *cache_volumes,
                         "-v",
                         f"{repo_dir}:/root/repos/datadog-agent",
                         "datadog/agent-dev-env-linux",
@@ -391,6 +418,7 @@ class TestStart:
 
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / ".shared"
         starship_mount = get_starship_mount(shared_dir)
+        cache_volumes = get_cache_volumes()
         assert calls == [
             (
                 ([helpers.locate("docker"), "pull", "datadog/agent-dev-env-linux"],),
@@ -421,6 +449,7 @@ class TestStart:
                         *starship_mount,
                         "-v",
                         f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
+                        *cache_volumes,
                         "-v",
                         f"{repo1_dir}:/root/repos/datadog-agent",
                         "-v",
@@ -465,6 +494,7 @@ class TestStart:
 
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / ".shared"
         starship_mount = get_starship_mount(shared_dir)
+        cache_volumes = get_cache_volumes()
         assert calls == [
             (
                 ([helpers.locate("docker"), "pull", "datadog/agent-dev-env-linux"],),
@@ -495,6 +525,7 @@ class TestStart:
                         *starship_mount,
                         "-v",
                         f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
+                        *cache_volumes,
                         "datadog/agent-dev-env-linux",
                     ],
                 ),

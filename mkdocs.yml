@@ -76,6 +76,8 @@ nav:
     - Tools: reference/api/tools.md
     - CI: reference/api/ci.md
     - Config: reference/api/config.md
+    - Container:
+      - Model: reference/api/container/model.md
     - Constants: reference/api/constants.md
     - Telemetry: reference/api/telemetry.md
   - Interface:
