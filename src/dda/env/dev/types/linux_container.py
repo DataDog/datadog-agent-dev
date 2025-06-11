@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from dda.env.models import EnvironmentStatus
     from dda.env.shells.interface import Shell
     from dda.tools.docker import Docker
+    from dda.utils.container.model import Mount
 
 
 class LinuxContainerConfig(DeveloperEnvironmentConfig):
@@ -127,6 +128,9 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             for shared_shell_file in self.shell.collect_shared_files():
                 unix_path = shared_shell_file.relative_to(self.global_shared_dir).as_posix()
                 command.extend(("-v", f"{shared_shell_file}:{self.home_dir}/.shared/{unix_path}"))
+
+            for mount in self.cache_volumes:
+                command.extend(("--mount", mount.as_csv()))
 
             if not self.config.clone:
                 from dda.utils.fs import Path
@@ -258,6 +262,36 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         from dda.env.shells import get_shell
 
         return get_shell(self.config.shell)(self.global_shared_dir)
+
+    @cached_property
+    def cache_volumes(self) -> list[Mount]:
+        from dda.utils.container.model import Mount
+
+        return [
+            # `go env GOCACHE`
+            Mount(type="volume", path="/root/.cache/go-build", source=self.get_volume_name("go_build_cache")),
+            # `go env GOMODCACHE`
+            Mount(type="volume", path="/go/pkg/mod", source=self.get_volume_name("go_mod_cache")),
+            # `pip cache dir`
+            Mount(type="volume", path="/root/.cache/pip", source=self.get_volume_name("pip_cache")),
+            # Rust
+            Mount(type="volume", path="/root/.cargo/registry", source=self.get_volume_name("cargo_registry")),
+            Mount(type="volume", path="/root/.cargo/git", source=self.get_volume_name("cargo_git")),
+            # Omnibus
+            Mount(type="volume", path="/omnibus/vendor/bundle", source=self.get_volume_name("omnibus_gems")),
+            Mount(type="volume", path="/omnibus/cache", source=self.get_volume_name("omnibus_cache")),
+            Mount(
+                type="volume",
+                path="/tmp/omnibus-git-cache",  # noqa: S108
+                source=self.get_volume_name("omnibus_git_cache"),
+            ),
+        ]
+
+    def get_volume_name(self, key: str) -> str:
+        name = f"dda-env-dev-{self.name}-{key}"
+        if self.config.arch is not None:
+            name += f"-{self.config.arch}"
+        return name
 
     def construct_command(self, command: list[str], *, cwd: str | None = None) -> list[str]:
         if cwd is None:

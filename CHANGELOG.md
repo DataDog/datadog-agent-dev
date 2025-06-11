@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+***Added:***
+
+- Persist cache directories for the `linux-container` developer environment type
+
 ## 0.15.1 - 2025-06-05
 
 ***Fixed:***
