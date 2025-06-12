@@ -36,7 +36,7 @@ def cmd(app: Application, *, env_type: str, instance: str) -> None:
     value, unit = convert_units(size, exact=True)
     if not value:
         app.display("Empty")
-    elif unit == "B" and value < BinaryUnits.KB:
-        app.display(f"{value} B")
+    elif unit == "B":
+        app.display(f"{value} {unit}")
     else:
         app.display(f"{value:.2f} {unit}")
