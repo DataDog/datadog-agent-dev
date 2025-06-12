@@ -218,7 +218,7 @@ class SubprocessRunner:
         if self.__app.config.terminal.verbosity >= 1:
             self.run(command, check=check, env=env, cwd=cwd, encoding=encoding)
         else:
-            with self.__app.status(self.__app.style_waiting(message or f"Running: {command}")):
+            with self.__app.status(message or f"Running: {command}"):
                 self.capture(command, check=check, env=env, cwd=cwd, encoding=encoding)
 
     def exit_with(
