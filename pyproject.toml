@@ -25,6 +25,7 @@ classifiers = [
 ]
 dependencies = [
   "ada-url~=1.15.3",
+  "binary~=1.0.2",
   "click~=8.1",
   "datadog-api-client~=2.34",
   "dep-sync~=0.1",
@@ -128,7 +129,6 @@ legacy-tasks = [
     { include-group = "legacy-github" },
     { include-group = "legacy-notifications" },
     { include-group = "legacy-release" },
-    "binary==1.0.1",
     "debugpy==1.8.2",
     "rich==14.0.0",
     "watchdog==6.0.0",
@@ -187,10 +187,6 @@ legacy-test-infra-definitions = [
     "pyperclip==1.9.0",
     "pyright==1.1.391",
     "termcolor==2.5.0",
-]
-
-legacy-static-quality-gates = [
-    "binary==1.0.1",
 ]
 
 gcp = [

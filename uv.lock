@@ -147,11 +147,11 @@ wheels = [
 
 [[package]]
 name = "binary"
-version = "1.0.1"
+version = "1.0.2"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/1b/9d/45f9cb333398c46b7618a117fda38708233693740a79f2478b1234ace54a/binary-1.0.1.tar.gz", hash = "sha256:55c6ad4f6b488e2ebbc0a85e5e50a9f51a0284e99870c90aaf4be77ef33b77d1", size = 8067, upload-time = "2024-12-05T16:10:45.096Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/be/d6/6ec8a59124533f66e8873eaf6cb2ecbc75c37629aa33c80d2d6338a9eddf/binary-1.0.2.tar.gz", hash = "sha256:a6ba0af9579098b18dd2ec0b08bd409d8a5c4e5e5a301104b053ad40137264a8", size = 8180, upload-time = "2025-06-11T15:13:54.509Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/01/c6/513e20d6a1bb5435c4166e65588f93fecf5d18016fa6c4f8faa8c0f2c117/binary-1.0.1-py3-none-any.whl", hash = "sha256:e92086be2a7204dbbdf86b55d86bd27bf4c24089db866113a90811b492241544", size = 9434, upload-time = "2024-12-05T16:10:43.778Z" },
+    { url = "https://files.pythonhosted.org/packages/3d/c4/482b01ffc8a7b7a1a99497fa46d3fca315219b8ddd8f5e595044b7e0ff18/binary-1.0.2-py3-none-any.whl", hash = "sha256:e79bba085cddfb9d3beefe138464506d2ef0c0f5f68c69e27fc9f82d4ac85470", size = 9568, upload-time = "2025-06-11T15:13:52.861Z" },
 ]
 
 [[package]]
@@ -338,6 +338,7 @@ name = "dda"
 source = { editable = "." }
 dependencies = [
     { name = "ada-url" },
+    { name = "binary" },
     { name = "click" },
     { name = "datadog-api-client" },
     { name = "dep-sync" },
@@ -464,13 +465,9 @@ legacy-release = [
     { name = "reno" },
     { name = "yattag" },
 ]
-legacy-static-quality-gates = [
-    { name = "binary" },
-]
 legacy-tasks = [
     { name = "atlassian-python-api" },
     { name = "beautifulsoup4" },
-    { name = "binary" },
     { name = "boto3" },
     { name = "codeowners" },
     { name = "datadog-api-client" },
@@ -528,6 +525,7 @@ self-dev = [
 [package.metadata]
 requires-dist = [
     { name = "ada-url", specifier = "~=1.15.3" },
+    { name = "binary", specifier = "~=1.0.2" },
     { name = "click", specifier = "~=8.1" },
     { name = "datadog-api-client", specifier = "~=2.34" },
     { name = "dep-sync", specifier = "~=0.1" },
@@ -648,11 +646,9 @@ legacy-release = [
     { name = "reno", specifier = "==3.5.0" },
     { name = "yattag", specifier = "==1.15.2" },
 ]
-legacy-static-quality-gates = [{ name = "binary", specifier = "==1.0.1" }]
 legacy-tasks = [
     { name = "atlassian-python-api", specifier = "==3.41.3" },
     { name = "beautifulsoup4", specifier = "~=4.12.3" },
-    { name = "binary", specifier = "==1.0.1" },
     { name = "boto3", specifier = "==1.38.8" },
     { name = "codeowners", specifier = "==0.6.0" },
     { name = "datadog-api-client", specifier = "==2.34.0" },

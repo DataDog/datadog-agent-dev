@@ -767,3 +767,119 @@ class TestCode:
                 "/root/repos/datadog-agent",
             ],
         )
+
+
+class TestCleanCache:
+    def test_not_stopped(self, dda, helpers):
+        with helpers.hybrid_patch(
+            "subprocess.run",
+            return_values={
+                1: CompletedProcess([], returncode=0, stdout=json.dumps([{"State": {"Status": "running"}}])),
+            },
+        ):
+            result = dda("env", "dev", "cache", "clean")
+
+        assert result.exit_code == 1, result.output
+        assert result.output == helpers.dedent(
+            """
+            Cannot clean cache for developer environment `linux-container` in state `started`, must be one of: nonexistent, stopped
+            """
+        )
+
+    def test_default(self, dda, helpers, mocker):
+        with helpers.hybrid_patch(
+            "subprocess.run",
+            return_values={
+                1: CompletedProcess(
+                    [], returncode=0, stdout=json.dumps([{"State": {"Status": "exited", "ExitCode": 0}}])
+                ),
+                2: CompletedProcess([], returncode=0, stdout="foo\ndda-env-dev-linux-container-go_build_cache\nbar"),
+                # Capture volume removal
+            },
+        ) as calls:
+            result = dda("env", "dev", "cache", "clean")
+
+        assert result.exit_code == 0, result.output
+        assert result.output == helpers.dedent(
+            """
+            Cleaning cache
+            """
+        )
+
+        assert calls == [
+            (
+                ([helpers.locate("docker"), "volume", "rm", "dda-env-dev-linux-container-go_build_cache"],),
+                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT, "env": mocker.ANY},
+            ),
+        ]
+
+
+class TestCacheSize:
+    def test_default(self, dda, helpers):
+        with helpers.hybrid_patch(
+            "subprocess.run",
+            return_values={
+                1: CompletedProcess(
+                    [],
+                    returncode=0,
+                    stdout="""\
+foo 1TB
+dda-env-dev-linux-container-go_build_cache 512MB
+dda-env-dev-linux-container-go_mod_cache 1GB
+bar 1PB
+""",
+                ),
+            },
+        ):
+            result = dda("env", "dev", "cache", "size")
+
+        assert result.exit_code == 0, result.output
+        assert result.output == helpers.dedent(
+            """
+            Calculating cache size
+            1.50 GiB
+            """
+        )
+
+    def test_empty(self, dda, helpers):
+        with helpers.hybrid_patch(
+            "subprocess.run",
+            return_values={
+                1: CompletedProcess([], returncode=0, stdout="foo 1TB\nbar 1PB"),
+            },
+        ):
+            result = dda("env", "dev", "cache", "size")
+
+        assert result.exit_code == 0, result.output
+        assert result.output == helpers.dedent(
+            """
+            Calculating cache size
+            Empty
+            """
+        )
+
+    def test_bytes(self, dda, helpers):
+        with helpers.hybrid_patch(
+            "subprocess.run",
+            return_values={
+                1: CompletedProcess(
+                    [],
+                    returncode=0,
+                    stdout="""\
+foo 1TB
+dda-env-dev-linux-container-go_build_cache 1000B
+dda-env-dev-linux-container-go_mod_cache 23B
+bar 1PB
+""",
+                ),
+            },
+        ):
+            result = dda("env", "dev", "cache", "size")
+
+        assert result.exit_code == 0, result.output
+        assert result.output == helpers.dedent(
+            """
+            Calculating cache size
+            1023 B
+            """
+        )
