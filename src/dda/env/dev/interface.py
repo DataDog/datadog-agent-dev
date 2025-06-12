@@ -165,6 +165,18 @@ class DeveloperEnvironmentInterface(ABC, Generic[ConfigT]):
         """
         raise NotImplementedError
 
+    def remove_cache(self) -> None:
+        """
+        This method removes the developer environment's cache that is persisted between lifecycles.
+        """
+        raise NotImplementedError
+
+    def cache_size(self) -> int:
+        """
+        This method returns the size of the developer environment's cache in bytes.
+        """
+        raise NotImplementedError
+
     @property
     def app(self) -> Application:
         """

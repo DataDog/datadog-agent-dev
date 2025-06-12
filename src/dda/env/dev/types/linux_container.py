@@ -239,6 +239,44 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         self.ensure_ssh_config()
         self.app.subprocess.run(self.construct_command(command, cwd=self.repo_path(repo)))
 
+    def remove_cache(self) -> None:
+        volumes = set(self.cache_volume_names())
+        output = self.docker.capture(["volume", "ls", "--format", "{{.Name}}"])
+        volumes.intersection_update(output.splitlines())
+
+        if not volumes:
+            return
+
+        command = ["volume", "rm", *sorted(volumes)]
+        self.docker.wait(command, message="Removing cache")
+
+    def cache_size(self) -> int:
+        import re
+
+        from binary import BinaryUnits, convert_units
+
+        volumes = dict.fromkeys(self.cache_volume_names(), 0)
+        with self.app.status("Calculating cache size"):
+            output = self.docker.capture(
+                ["system", "df", "-v", "--format", '{{range .Volumes}}{{printf "%s %s" .Name .Size}}\n{{end}}'],
+            )
+
+        # 4B, 1.23MB, etc.
+        size_pattern = re.compile(r"([\d.]+)(\w+)")
+        for line in output.splitlines():
+            name, size = line.split()
+            if name in volumes and (match := size_pattern.match(size)) is not None:
+                value, unit = match.groups()
+                value_in_bytes = convert_units(
+                    float(value),
+                    unit=getattr(BinaryUnits, unit.upper()),
+                    to=BinaryUnits.B,
+                    exact=True,
+                )[0]
+                volumes[name] = int(value_in_bytes)
+
+        return sum(volumes.values())
+
     @cached_property
     def hostname(self) -> str:
         return "localhost"
@@ -286,6 +324,9 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 source=self.get_volume_name("omnibus_git_cache"),
             ),
         ]
+
+    def cache_volume_names(self) -> list[str]:
+        return [volume.source for volume in self.cache_volumes if volume.source is not None]
 
     def get_volume_name(self, key: str) -> str:
         name = f"dda-env-dev-{self.name}-{key}"
