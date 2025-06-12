@@ -434,7 +434,9 @@ def ensure_deps_installed(
     dep_state = dependency_state(list(map(Dependency, dependencies)), sys_path=sys_path)
     if dep_state.missing:
         command = ["pip", "install"]
-        app.display_waiting("Synchronizing dependencies")
+        if sys_path is None:
+            command.extend(("--python", sys.executable))
+
         with temp_directory() as temp_dir:
             requirements_file = temp_dir / "requirements.txt"
             requirements_file.write_text("\n".join(map(str, dep_state.missing)))
@@ -444,7 +446,7 @@ def ensure_deps_installed(
                 constraints_file.write_text("\n".join(constraints))
                 command.extend(["-c", str(constraints_file)])
 
-            app.tools.uv.run(command)
+            app.tools.uv.wait(command, message="Synchronizing dependencies")
 
 
 def ensure_features_installed(

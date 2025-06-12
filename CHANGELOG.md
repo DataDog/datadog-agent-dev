@@ -15,6 +15,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Add `env dev cache` command group
 - Use the configured waiting style for terminal statuses
 
+***Fixed:***
+
+- Fix dynamic dependency installation for non-`inv` commands
+
 ## 0.15.1 - 2025-06-05
 
 ***Fixed:***
