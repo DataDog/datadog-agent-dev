@@ -265,7 +265,7 @@ class Terminal:
         kwargs.setdefault("background_color", "default" if self.testing else None)
         self.output(Syntax(*args, **kwargs))
 
-    def status(self, *args: Any, **kwargs: Any) -> Status:
+    def status(self, text: str, **kwargs: Any) -> Status:
         """
         Display a status indicator with the
         [configured spinner][dda.config.model.terminal.TerminalStyles.spinner].
@@ -275,13 +275,13 @@ class Terminal:
         The returned object must be used as a context manager.
 
         Parameters:
-            *args: Additional arguments to pass to the [`Console.status`][rich.console.Console.status] method.
+            text: The text to display.
             **kwargs: Additional keyword arguments to pass to the [`Console.status`][rich.console.Console.status] method.
         """
         if not self.console.is_interactive:
-            self.display_waiting(*args, **kwargs)
+            self.display_waiting(text, **kwargs)
         kwargs.setdefault("spinner", self.__style_spinner)
-        return self.console.status(*args, **kwargs)
+        return self.console.status(self.style_waiting(text), **kwargs)
 
     def output(self, *args: Any, stderr: bool = False, **kwargs: Any) -> None:
         kwargs.setdefault("overflow", "ignore")

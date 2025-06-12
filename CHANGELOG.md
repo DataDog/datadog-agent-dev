@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Persist cache directories for the `linux-container` developer environment type
 - Add `clean_cache` and `cache_size` methods to the `linux-container` developer environment type
 - Add `env dev cache` command group
+- Use the configured waiting style for terminal statuses
 
 ## 0.15.1 - 2025-06-05
 

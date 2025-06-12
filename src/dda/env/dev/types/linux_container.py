@@ -163,7 +163,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 env=env,
             )
 
-            with self.app.status(self.app.style_waiting(f"Waiting for container: {self.container_name}")):
+            with self.app.status(f"Waiting for container: {self.container_name}"):
                 wait_for(self.check_readiness, timeout=30, interval=0.3)
 
             self.ensure_ssh_config()
