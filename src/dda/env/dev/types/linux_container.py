@@ -239,7 +239,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         self.ensure_ssh_config()
         self.app.subprocess.run(self.construct_command(command, cwd=self.repo_path(repo)))
 
-    def clean_cache(self) -> None:
+    def remove_cache(self) -> None:
         volumes = set(self.cache_volume_names())
         output = self.docker.capture(["volume", "ls", "--format", "{{.Name}}"])
         volumes.intersection_update(output.splitlines())
@@ -248,7 +248,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             return
 
         command = ["volume", "rm", *sorted(volumes)]
-        self.docker.wait(command, message="Cleaning cache")
+        self.docker.wait(command, message="Removing cache")
 
     def cache_size(self) -> int:
         import re

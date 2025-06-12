@@ -14,13 +14,13 @@ if TYPE_CHECKING:
     from dda.cli.application import Application
 
 
-@dynamic_command(short_help="Clean the cache")
+@dynamic_command(short_help="Remove the cache")
 @option_env_type()
 @click.option("--id", "instance", default="default", help="Unique identifier for the environment")
 @pass_app
 def cmd(app: Application, *, env_type: str, instance: str) -> None:
     """
-    Clean the cache.
+    Remove the cache.
     """
     from dda.env.dev import get_dev_env
     from dda.env.models import EnvironmentState
@@ -34,8 +34,8 @@ def cmd(app: Application, *, env_type: str, instance: str) -> None:
     transition_states = {EnvironmentState.NONEXISTENT, EnvironmentState.STOPPED}
     if status.state not in transition_states:
         app.abort(
-            f"Cannot clean cache for developer environment `{env_type}` in state `{status.state}`, must be one of: "
+            f"Cannot remove cache for developer environment `{env_type}` in state `{status.state}`, must be one of: "
             f"{', '.join(sorted(transition_states))}"
         )
 
-    env.clean_cache()
+    env.remove_cache()

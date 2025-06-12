@@ -165,9 +165,9 @@ class DeveloperEnvironmentInterface(ABC, Generic[ConfigT]):
         """
         raise NotImplementedError
 
-    def clean_cache(self) -> None:
+    def remove_cache(self) -> None:
         """
-        This method cleans up the developer environment's cache.
+        This method removes the developer environment's cache that is persisted between lifecycles.
         """
         raise NotImplementedError
 

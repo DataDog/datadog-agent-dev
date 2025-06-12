@@ -769,7 +769,7 @@ class TestCode:
         )
 
 
-class TestCleanCache:
+class TestRemoveCache:
     def test_not_stopped(self, dda, helpers):
         with helpers.hybrid_patch(
             "subprocess.run",
@@ -777,12 +777,12 @@ class TestCleanCache:
                 1: CompletedProcess([], returncode=0, stdout=json.dumps([{"State": {"Status": "running"}}])),
             },
         ):
-            result = dda("env", "dev", "cache", "clean")
+            result = dda("env", "dev", "cache", "remove")
 
         assert result.exit_code == 1, result.output
         assert result.output == helpers.dedent(
             """
-            Cannot clean cache for developer environment `linux-container` in state `started`, must be one of: nonexistent, stopped
+            Cannot remove cache for developer environment `linux-container` in state `started`, must be one of: nonexistent, stopped
             """
         )
 
@@ -797,12 +797,12 @@ class TestCleanCache:
                 # Capture volume removal
             },
         ) as calls:
-            result = dda("env", "dev", "cache", "clean")
+            result = dda("env", "dev", "cache", "remove")
 
         assert result.exit_code == 0, result.output
         assert result.output == helpers.dedent(
             """
-            Cleaning cache
+            Removing cache
             """
         )
 
