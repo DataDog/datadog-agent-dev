@@ -22,7 +22,7 @@ def cmd(app: Application, *, env_type: str, instance: str) -> None:
     """
     Show the cache size.
     """
-    from binary import BinaryUnits, convert_units
+    from binary import convert_units
 
     from dda.env.dev import get_dev_env
 
