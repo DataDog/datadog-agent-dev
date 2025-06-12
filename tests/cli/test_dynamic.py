@@ -3,6 +3,11 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
+import os
+import subprocess
+import sys
+from unittest import mock
+
 
 def test_local_command(dda, helpers, temp_dir):
     commands_dir = temp_dir / ".dda" / "extend" / "commands"
@@ -13,7 +18,6 @@ def test_local_command(dda, helpers, temp_dir):
     commands_dir.joinpath("config", "foo", "__init__.py").write_text(
         helpers.dedent(
             """
-            import click
             from dda.cli.base import dynamic_command, pass_app
 
             from utils import bar
@@ -63,3 +67,52 @@ def test_local_command(dda, helpers, temp_dir):
 
     assert result.exit_code == 0, result.output
     assert "utils" not in result.output
+
+
+def test_dependencies(dda, helpers, temp_dir, uv_on_path, mocker):
+    subprocess_run = mocker.patch("subprocess.run", return_value=subprocess.CompletedProcess([], returncode=0))
+
+    commands_dir = temp_dir / ".dda" / "extend" / "commands"
+    commands_dir.ensure_dir()
+    commands_dir.joinpath("foo").ensure_dir()
+    commands_dir.joinpath("foo", "__init__.py").write_text(
+        helpers.dedent(
+            f"""
+            from dda.cli.base import dynamic_command, pass_app
+
+            @dynamic_command(dependencies=["{os.urandom(10).hex()}"])
+            @pass_app
+            def cmd(app):
+                app.display("foo")
+            """
+        )
+    )
+
+    with temp_dir.as_cwd():
+        result = dda("foo")
+
+    assert result.exit_code == 0, result.output
+    assert result.output == helpers.dedent(
+        """
+        Synchronizing dependencies
+        foo
+        """
+    )
+
+    expected_path = str(uv_on_path.with_stem(f"{uv_on_path.stem}-{uv_on_path.id}"))
+    assert subprocess_run.call_args_list == [
+        mock.call(
+            [
+                expected_path,
+                "pip",
+                "install",
+                "--python",
+                sys.executable,
+                "-r",
+                mocker.ANY,
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            encoding="utf-8",
+        ),
+    ]
