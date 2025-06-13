@@ -52,6 +52,8 @@ def get_cache_volumes() -> list[str]:
         "type=volume,src=dda-env-dev-linux-container-omnibus_cache,dst=/omnibus/cache",
         "--mount",
         "type=volume,src=dda-env-dev-linux-container-omnibus_git_cache,dst=/tmp/omnibus-git-cache",
+        "--mount",
+        "type=volume,src=dda-env-dev-linux-container-vscode_extensions,dst=/root/.vscode-extensions",
     ]
 
 

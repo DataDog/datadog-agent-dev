@@ -323,6 +323,8 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 path="/tmp/omnibus-git-cache",  # noqa: S108
                 source=self.get_volume_name("omnibus_git_cache"),
             ),
+            # VS Code/Cursor
+            Mount(type="volume", path="/root/.vscode-extensions", source=self.get_volume_name("vscode_extensions")),
         ]
 
     def cache_volume_names(self) -> list[str]:

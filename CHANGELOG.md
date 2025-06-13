@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+***Added:***
+
+- Persist the VS Code extensions directory in the cache for the `linux-container` developer environment type
+
 ## 0.16.0 - 2025-06-12
 
 ***Added:***
