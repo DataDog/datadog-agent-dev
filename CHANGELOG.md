@@ -11,6 +11,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ***Added:***
 
 - Persist the VS Code extensions directory in the cache for the `linux-container` developer environment type
+- Make the editor configurable for the `code` method of the `linux-container` developer environment type
+- Add `--editor`/`-e` flag to the `env dev code` command
 
 ## 0.16.0 - 2025-06-12
 

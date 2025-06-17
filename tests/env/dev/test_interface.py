@@ -3,13 +3,16 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
-from typing import NoReturn
+from typing import TYPE_CHECKING, NoReturn
 
 import msgspec
 import pytest
 
 from dda.env.dev.interface import DeveloperEnvironmentConfig, DeveloperEnvironmentInterface
 from dda.env.models import EnvironmentState, EnvironmentStatus
+
+if TYPE_CHECKING:
+    from dda.utils.editors.interface import EditorInterface
 
 pytestmark = [pytest.mark.usefixtures("private_storage")]
 
@@ -26,7 +29,7 @@ class Container(DeveloperEnvironmentInterface):
 
     def launch_shell(self, *, repo: str | None = None) -> NoReturn: ...
 
-    def code(self, *, repo: str | None = None) -> None: ...
+    def code(self, *, editor: EditorInterface, repo: str | None = None) -> None: ...
 
     def run_command(self, command: list[str], *, repo: str | None = None) -> None: ...
 

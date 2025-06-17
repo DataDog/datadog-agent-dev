@@ -9,6 +9,7 @@ import click
 
 from dda.cli.base import dynamic_command, pass_app
 from dda.cli.env.dev.utils import option_env_type
+from dda.utils.editors import AVAILABLE_EDITORS
 
 if TYPE_CHECKING:
     from dda.cli.application import Application
@@ -18,13 +19,21 @@ if TYPE_CHECKING:
 @option_env_type()
 @click.option("--id", "instance", default="default", help="Unique identifier for the environment")
 @click.option("--repo", "-r", help="The Datadog repository to work on")
+@click.option(
+    "--editor",
+    "-e",
+    "editor_name",
+    type=click.Choice(AVAILABLE_EDITORS),
+    help="The editor to use, overriding any configured editor",
+)
 @pass_app
-def cmd(app: Application, *, env_type: str, instance: str, repo: str | None) -> None:
+def cmd(app: Application, *, env_type: str, instance: str, repo: str | None, editor_name: str | None) -> None:
     """
     Open a code editor for the developer environment.
     """
     from dda.env.dev import get_dev_env
     from dda.env.models import EnvironmentState
+    from dda.utils.editors import get_editor
 
     env = get_dev_env(env_type)(
         app=app,
@@ -36,4 +45,6 @@ def cmd(app: Application, *, env_type: str, instance: str, repo: str | None) -> 
     if status.state != expected_state:
         app.abort(f"Developer environment `{env_type}` is in state `{status.state}`, must be `{expected_state}`")
 
-    env.code(repo=repo)
+    editor_type = editor_name or app.config.env.dev.editor
+    editor = get_editor(editor_type)(app=app, name=editor_type)
+    env.code(editor=editor, repo=repo)
