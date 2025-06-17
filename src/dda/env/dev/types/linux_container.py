@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from dda.env.shells.interface import Shell
     from dda.tools.docker import Docker
     from dda.utils.container.model import Mount
+    from dda.utils.editors.interface import EditorInterface
 
 
 class LinuxContainerConfig(DeveloperEnvironmentConfig):
@@ -229,11 +230,12 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         process = self.app.subprocess.attach(ssh_command, check=False)
         self.app.abort(code=process.returncode)
 
-    def code(self, *, repo: str | None = None) -> None:
+    def code(self, *, editor: EditorInterface, repo: str | None = None) -> None:
+        if editor.name not in {"vscode", "cursor"}:
+            self.app.abort(f"Unsupported editor: {editor.name}")
+
         self.ensure_ssh_config()
-        self.app.subprocess.run(
-            ["code", "--remote", f"ssh-remote+root@localhost:{self.ssh_port}", self.repo_path(repo)],
-        )
+        editor.open_via_ssh(server=self.hostname, port=self.ssh_port, path=self.repo_path(repo))
 
     def run_command(self, command: list[str], *, repo: str | None = None) -> None:
         self.ensure_ssh_config()

@@ -24,6 +24,7 @@ def test_default_scrubbed(dda, config_file, helpers, default_cache_dir, default_
         default-type = "{DEFAULT_DEV_ENV}"
         clone-repos = false
         universal-shell = false
+        editor = "vscode"
 
         [storage]
         data = "{default_data_directory}"
@@ -70,6 +71,7 @@ def test_reveal(dda, config_file, helpers, default_cache_dir, default_data_dir):
         default-type = "{DEFAULT_DEV_ENV}"
         clone-repos = false
         universal-shell = false
+        editor = "vscode"
 
         [storage]
         data = "{default_data_directory}"

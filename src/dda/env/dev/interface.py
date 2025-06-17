@@ -9,6 +9,9 @@ from typing import TYPE_CHECKING, Annotated, Generic, NoReturn, cast
 
 import msgspec
 
+if TYPE_CHECKING:
+    from dda.utils.editors.interface import EditorInterface
+
 
 class DeveloperEnvironmentConfig(msgspec.Struct, kw_only=True):
     repos: Annotated[
@@ -123,13 +126,14 @@ class DeveloperEnvironmentInterface(ABC, Generic[ConfigT]):
         """
 
     @abstractmethod
-    def code(self, *, repo: str | None = None) -> None:
+    def code(self, *, editor: EditorInterface, repo: str | None = None) -> None:
         """
         This method opens the developer environment's code in the configured editor.
 
         Users trigger this method by running the [`env dev code`](../../../cli/commands.md#dda-env-dev-code) command.
 
         Parameters:
+            editor: The editor to use.
             repo: The repository to open the code for, or `None` to open the code for the first
                 [configured repository][dda.env.dev.interface.DeveloperEnvironmentConfig.repos].
         """

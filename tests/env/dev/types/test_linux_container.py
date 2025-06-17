@@ -770,6 +770,61 @@ class TestCode:
             ],
         )
 
+    def test_editor_flag(self, dda, helpers, mocker):
+        write_server_config = mocker.patch("dda.utils.ssh.write_server_config")
+        run = mocker.patch("dda.utils.process.SubprocessRunner.run")
+
+        with helpers.hybrid_patch(
+            "subprocess.run",
+            return_values={
+                # Stop command checks the status
+                1: CompletedProcess([], returncode=0, stdout=json.dumps([{"State": {"Status": "running"}}])),
+            },
+        ):
+            result = dda("env", "dev", "code", "--editor", "cursor")
+
+        assert result.exit_code == 0, result.output
+        assert not result.output
+
+        assert_ssh_config_written(write_server_config, "localhost")
+        run.assert_called_once_with(
+            [
+                "cursor",
+                "--remote",
+                "ssh-remote+root@localhost:59730",
+                "/root/repos/datadog-agent",
+            ],
+        )
+
+    def test_editor_config(self, dda, config_file, helpers, mocker):
+        config_file.data["env"]["dev"]["editor"] = "cursor"
+        config_file.save()
+
+        write_server_config = mocker.patch("dda.utils.ssh.write_server_config")
+        run = mocker.patch("dda.utils.process.SubprocessRunner.run")
+
+        with helpers.hybrid_patch(
+            "subprocess.run",
+            return_values={
+                # Stop command checks the status
+                1: CompletedProcess([], returncode=0, stdout=json.dumps([{"State": {"Status": "running"}}])),
+            },
+        ):
+            result = dda("env", "dev", "code")
+
+        assert result.exit_code == 0, result.output
+        assert not result.output
+
+        assert_ssh_config_written(write_server_config, "localhost")
+        run.assert_called_once_with(
+            [
+                "cursor",
+                "--remote",
+                "ssh-remote+root@localhost:59730",
+                "/root/repos/datadog-agent",
+            ],
+        )
+
 
 class TestRemoveCache:
     def test_not_stopped(self, dda, helpers):
