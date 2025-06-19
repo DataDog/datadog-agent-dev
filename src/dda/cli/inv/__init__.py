@@ -38,6 +38,14 @@ After a dependency is installed once, it will always be available.
 """,
 )
 @click.option(
+    "--repo",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, resolve_path=True),
+    help="""\
+Allows running invoke task from another repository than the one in the current working directory.
+Pass in a path to a local clone of this other repository.
+""",
+)
+@click.option(
     "--no-dynamic-deps",
     envvar=AppEnvVars.NO_DYNAMIC_DEPS,
     is_flag=True,
@@ -50,12 +58,13 @@ def cmd(
     args: tuple[str, ...],
     extra_features: tuple[str, ...],
     extra_dependencies: tuple[str, ...],
+    repo: str | None,
     no_dynamic_deps: bool,
 ) -> None:
     """
     Invoke a local task.
     """
-    from dda.utils.fs import Path
+    from dda.utils.fs import Path, change_workdir
 
     app: Application = ctx.obj
 
@@ -68,19 +77,27 @@ def cmd(
     if invoke_args and Path.cwd().name == "test-infra-definitions":
         features.append("legacy-test-infra-definitions")
 
-    if no_dynamic_deps:
-        import sys
+    workdir = Path.cwd()
+    if repo:
+        workdir = Path(repo).resolve()
+        app.display(f"Running invoke task in repository: {workdir}")
 
-        app.subprocess.exit_with([sys.executable, "-m", "invoke", *args])
+    with change_workdir(workdir):
+        if no_dynamic_deps:
+            import sys
 
-    venv_path = app.config.storage.join("venvs", "legacy").data
-    with app.tools.uv.virtual_env(venv_path) as venv:
-        ensure_features_installed(
-            features,
-            app=app,
-            prefix=str(venv.path),
-        )
-        if extra_dependencies:
-            ensure_deps_installed(list(extra_dependencies), app=app, sys_path=venv.get_sys_path(app))
+            app.subprocess.exit_with([sys.executable, "-m", "invoke", *args])
 
-        app.subprocess.exit_with(["python", "-m", "invoke", *args])
+        venv_path = app.config.storage.join("venvs", "legacy").data
+        with app.tools.uv.virtual_env(venv_path) as venv:
+            ensure_features_installed(
+                features,
+                app=app,
+                prefix=str(venv.path),
+            )
+            if extra_dependencies:
+                ensure_deps_installed(
+                    list(extra_dependencies), app=app, sys_path=venv.get_sys_path(app)
+                )
+
+            app.subprocess.exit_with(["python", "-m", "invoke", *args])
