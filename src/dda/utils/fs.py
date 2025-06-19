@@ -137,3 +137,27 @@ def temp_directory() -> Generator[Path, None, None]:
 
     with TemporaryDirectory() as d:
         yield Path(d).resolve()
+
+
+@contextmanager
+def change_workdir(new_workdir: Path) -> Generator[None, None, None]:
+    """
+    A context manager that temporarily changes the current working directory to the specified path.
+    Example:
+
+    ```python
+    with change_workdir("foo"):
+        ...
+    ```
+
+    Yields:
+        None
+    """
+    new_workdir = Path(new_workdir).expand()
+    old_workdir = Path.cwd().expand()
+    os.chdir(new_workdir)
+
+    try:
+        yield
+    finally:
+        os.chdir(old_workdir)
