@@ -96,8 +96,6 @@ def cmd(
                 prefix=str(venv.path),
             )
             if extra_dependencies:
-                ensure_deps_installed(
-                    list(extra_dependencies), app=app, sys_path=venv.get_sys_path(app)
-                )
+                ensure_deps_installed(list(extra_dependencies), app=app, sys_path=venv.get_sys_path(app))
 
             app.subprocess.exit_with(["python", "-m", "invoke", *args])
