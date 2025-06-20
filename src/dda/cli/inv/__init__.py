@@ -24,8 +24,7 @@ if TYPE_CHECKING:
     "extra_features",
     multiple=True,
     help="""\
-Extra features to install (multiple allowed).
-After a feature is installed once, it will always be available.
+Extra features to install (multiple allowed). After a feature is installed once, it will always be available.
 """,
 )
 @click.option(
@@ -33,23 +32,21 @@ After a feature is installed once, it will always be available.
     "extra_dependencies",
     multiple=True,
     help="""\
-Extra dependencies to install (multiple allowed).
-After a dependency is installed once, it will always be available.
+Extra dependencies to install (multiple allowed). After a dependency is installed once, it will always be available.
 """,
 )
 @click.option(
     "--repo",
     type=click.Path(exists=True, file_okay=False, dir_okay=True, resolve_path=True),
     help="""\
-Allows running invoke task from another repository than the one in the current working directory.
-Pass in a path to a local clone of this other repository.
+Allows running invoke task from another repository than the one in the current working directory. Pass in a path to a local clone of this other repository.
 """,
 )
 @click.option(
     "--no-dynamic-deps",
     envvar=AppEnvVars.NO_DYNAMIC_DEPS,
     is_flag=True,
-    help="Assume required dependencies are already installed",
+    help="Assume required dependencies are already installed.",
 )
 @click.pass_context
 def cmd(
