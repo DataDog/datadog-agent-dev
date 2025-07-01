@@ -300,7 +300,7 @@ class SubprocessRunner:
         def replace_current_process(self, command: list[str]) -> NoReturn:
             self.exit_with(command)
 
-        def spawn_daemon(self, command: list[str] | str, **kwargs: Any) -> None:
+        def spawn_daemon(self, command: list[str] | str, **kwargs: Any) -> int:
             """
             Spawn a daemon process that is detached from the current process.
 
@@ -320,14 +320,15 @@ class SubprocessRunner:
             kwargs["stderr"] = subprocess.DEVNULL
             kwargs["close_fds"] = True
             command, kwargs = self.__sanitize_arguments(command, **kwargs)
-            subprocess.Popen(command, **kwargs)
+            process = subprocess.Popen(command, **kwargs)
+            return process.pid
 
     else:
 
         def replace_current_process(self, command: list[str]) -> NoReturn:  # noqa: PLR6301
             os.execvp(command[0], command)  # noqa: S606
 
-        def spawn_daemon(self, command: list[str] | str, **kwargs: Any) -> None:
+        def spawn_daemon(self, command: list[str] | str, **kwargs: Any) -> int:
             """
             Spawn a daemon process that is detached from the current process.
 
@@ -345,7 +346,8 @@ class SubprocessRunner:
             kwargs["stderr"] = subprocess.DEVNULL
             kwargs["close_fds"] = True
             command, kwargs = self.__sanitize_arguments(command, **kwargs)
-            subprocess.Popen(command, **kwargs)
+            process = subprocess.Popen(command, **kwargs)
+            return process.pid
 
     @staticmethod
     def __sanitize_arguments(command: list[str] | str, **kwargs: Any) -> tuple[list[str] | str, dict[str, Any]]:
