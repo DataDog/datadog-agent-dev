@@ -178,14 +178,6 @@ def dda(
     ctx.obj = app
 
     # Telemetry submission
-    if not app.telemetry.consent_recorded() and app.console.is_interactive:
-        if app.confirm(
-            "Would you like to enable telemetry to help improve the tool (only works for Datadog employees)"
-        ):
-            app.telemetry.consent()
-        else:
-            app.telemetry.dissent()
-
     app.telemetry.watch()
 
     if not ctx.invoked_subcommand:

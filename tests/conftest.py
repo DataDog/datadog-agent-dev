@@ -63,6 +63,11 @@ def isolation() -> Generator[Path, None, None]:
         cache_dir = d / "cache"
         cache_dir.mkdir()
 
+        # Disable telemetry
+        dissent_file = cache_dir / "telemetry" / "dissent"
+        dissent_file.parent.ensure_dir()
+        dissent_file.touch()
+
         default_env_vars = {
             ConfigEnvVars.DATA: str(data_dir),
             ConfigEnvVars.CACHE: str(cache_dir),
@@ -104,6 +109,12 @@ def private_storage(config_file: ConfigFile) -> Generator[None, None, None]:
     cache_dir.mkdir()
     data_dir = config_file.path.parent / "data"
     data_dir.mkdir()
+
+    # Disable telemetry
+    dissent_file = cache_dir / "telemetry" / "dissent"
+    dissent_file.parent.ensure_dir()
+    dissent_file.touch()
+
     config_file.data["storage"] = {"cache": str(cache_dir), "data": str(data_dir)}
     config_file.save()
     with EnvVars({ConfigEnvVars.CACHE: str(cache_dir), ConfigEnvVars.DATA: str(data_dir)}):

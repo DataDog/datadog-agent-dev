@@ -27,7 +27,7 @@ class TelemetryManager:
     @property
     def enabled(self) -> bool:
         """
-        Whether the user has consented to telemetry.
+        Whether the user has not dissented to telemetry.
         """
         return self.__enabled
 
@@ -48,15 +48,13 @@ class TelemetryManager:
             self.__start_daemon()
 
     def consent(self) -> None:
-        self.__consent_file.parent.ensure_dir()
-        self.__consent_file.write_text("1", encoding="utf-8")
+        if self.__dissent_file.is_file():
+            self.__dissent_file.unlink()
 
     def dissent(self) -> None:
-        self.__consent_file.parent.ensure_dir()
-        self.__consent_file.write_text("0", encoding="utf-8")
-
-    def consent_recorded(self) -> bool:
-        return self.__consent_file.is_file()
+        if not self.__dissent_file.is_file():
+            self.__dissent_file.parent.ensure_dir()
+            self.__dissent_file.touch()
 
     def clear_log(self) -> None:
         if self.log_file.is_file():
@@ -86,11 +84,11 @@ class TelemetryManager:
 
     @cached_property
     def __enabled(self) -> bool:
-        return self.__consent_file.read_text(encoding="utf-8") == "1" if self.consent_recorded() else False
+        return not self.__dissent_file.is_file()
 
     @cached_property
-    def __consent_file(self) -> Path:
-        return self.__storage_dir / "consent.txt"
+    def __dissent_file(self) -> Path:
+        return self.__storage_dir / "dissent"
 
     @cached_property
     def __storage_dir(self) -> Path:
