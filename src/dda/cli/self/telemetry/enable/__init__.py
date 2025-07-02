@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from dda.cli.application import Application
 
 
-@dynamic_command(short_help="Enable telemetry")
+@dynamic_command(short_help="Enable telemetry", hidden=True)
 @pass_app
 def cmd(app: Application) -> None:
     """
