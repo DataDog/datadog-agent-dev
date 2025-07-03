@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import asyncio
+import atexit
 import json
 import logging
 import os
@@ -14,6 +15,7 @@ import psutil
 import watchfiles
 
 from dda.telemetry.constants import DaemonEnvVars
+from dda.telemetry.daemon.handler import finalize_error
 from dda.telemetry.secrets import fetch_api_key, read_api_key, save_api_key
 from dda.utils.fs import Path
 
@@ -24,13 +26,8 @@ if TYPE_CHECKING:
 
 COMMAND_PID = int(os.environ[DaemonEnvVars.COMMAND_PID])
 WRITE_DIR = Path(os.environ[DaemonEnvVars.WRITE_DIR])
-LOG_FILE = Path(os.environ[DaemonEnvVars.LOG_FILE])
 
-logging.basicConfig(
-    filename=str(LOG_FILE),
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)s | %(message)s",
-)
+atexit.register(finalize_error)
 
 
 def get_client(id: str, **kwargs: Any) -> TelemetryClient:  # noqa: A002
@@ -110,7 +107,7 @@ async def process_changes(stop_event: asyncio.Event, **kwargs: Any) -> None:
 
 
 async def main() -> None:
-    logging.info("Getting API key from keyring")
+    logging.debug("Getting API key from keyring")
     try:
         api_key = read_api_key()
     except Exception:
@@ -118,7 +115,7 @@ async def main() -> None:
         return
 
     if not api_key:
-        logging.error("No API key found in keyring, fetching from Vault")
+        logging.warning("No API key found in keyring, fetching from Vault")
 
         try:
             api_key = fetch_api_key()
@@ -138,13 +135,13 @@ async def main() -> None:
     try:
         process = psutil.Process(COMMAND_PID)
     except Exception:  # noqa: BLE001
-        logging.info("Command process not found, assuming command has finished")
+        logging.debug("Command process not found, assuming command has finished")
     else:
         if process.create_time() < psutil.Process().create_time():
-            logging.info("Waiting for command to finish")
+            logging.debug("Waiting for command to finish")
             await asyncio.to_thread(process.wait)
         else:
-            logging.info("Command PID reused, assuming command has finished")
+            logging.debug("Command PID reused, assuming command has finished")
 
     await asyncio.sleep(2)
     stop_event.set()
