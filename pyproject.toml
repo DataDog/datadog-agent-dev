@@ -182,7 +182,6 @@ legacy-notifications = [
 ]
 # https://github.com/DataDog/datadog-agent/blob/main/tasks/kernel_matrix_testing/requirements.txt
 legacy-kernel-matrix-testing = [
-    "libvirt-python==10.9.0",
     "termcolor==2.5.0",
     "thefuzz==0.22.1",
     "python-levenshtein==0.26.1",
