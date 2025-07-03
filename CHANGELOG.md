@@ -8,9 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+## 0.19.0 - 2025-07-03
+
 ***Added:***
 
 - The `env dev code` command now starts the MCP server inside the developer environment
+- Update dependencies
 
 ## 0.18.0 - 2025-07-01
 
