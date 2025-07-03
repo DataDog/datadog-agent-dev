@@ -26,14 +26,33 @@ if TYPE_CHECKING:
     type=click.Choice(AVAILABLE_EDITORS),
     help="The editor to use, overriding any configured editor",
 )
+@click.option("--configure-mcp", is_flag=True, hidden=True, help="Enable MCP server for all editors")
 @pass_app
-def cmd(app: Application, *, env_type: str, instance: str, repo: str | None, editor_name: str | None) -> None:
+def cmd(
+    app: Application,
+    *,
+    env_type: str,
+    instance: str,
+    repo: str | None,
+    editor_name: str | None,
+    configure_mcp: bool,
+) -> None:
     """
     Open a code editor for the developer environment.
     """
     from dda.env.dev import get_dev_env
     from dda.env.models import EnvironmentState
     from dda.utils.editors import get_editor
+
+    if configure_mcp:
+        for editor_type in AVAILABLE_EDITORS:
+            editor = get_editor(editor_type)(app=app, name=editor_type)
+            try:
+                editor.add_mcp_server(name="dda", url="http://localhost:9000/mcp/")
+            except NotImplementedError:
+                app.display_warning(f"Editor `{editor_type}` does not support MCP servers")
+
+        return
 
     env = get_dev_env(env_type)(
         app=app,

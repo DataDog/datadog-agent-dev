@@ -37,3 +37,22 @@ class EditorInterface(ABC):
             port: The port to connect to.
             path: The path to the repository to open.
         """
+
+    def add_mcp_server(self, *, name: str, url: str) -> None:
+        """
+        Add an MCP server to the editor.
+
+        Parameters:
+            name: The name of the MCP server.
+            url: The URL of the MCP server.
+        """
+        raise NotImplementedError
+
+    def remove_mcp_server(self, *, name: str) -> None:
+        """
+        Remove an MCP server from the editor.
+
+        Parameters:
+            name: The name of the MCP server.
+        """
+        raise NotImplementedError

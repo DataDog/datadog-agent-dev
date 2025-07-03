@@ -112,6 +112,8 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 self.container_name,
                 "-p",
                 f"{self.ssh_port}:22",
+                "-p",
+                f"{self.mcp_port}:9000",
                 "-v",
                 "/var/run/docker.sock:/var/run/docker.sock",
                 "-e",
@@ -235,7 +237,22 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             self.app.abort(f"Unsupported editor: {editor.name}")
 
         self.ensure_ssh_config()
-        editor.open_via_ssh(server=self.hostname, port=self.ssh_port, path=self.repo_path(repo))
+        repo_path = self.repo_path(repo)
+
+        # TODO: Currently, we do not support aggregating local commands from multiple repositories as a single tool
+        #       so we assume for the purposes of MCP that only one repository is open at a time. We should extend
+        #       the MCP server to support multiple repositories. Documentation for extending the MCP server is here:
+        #       https://ofek.dev/pycli-mcp/api/
+        self.app.subprocess.wait(
+            self.construct_command(["dda", "self", "mcp-server", "stop"], cwd=repo_path),
+            message="Stopping MCP server",
+        )
+        self.app.subprocess.wait(
+            self.construct_command(["dda", "self", "mcp-server", "start"], cwd=repo_path),
+            message="Starting MCP server",
+        )
+
+        editor.open_via_ssh(server=self.hostname, port=self.ssh_port, path=repo_path)
 
     def run_command(self, command: list[str], *, repo: str | None = None) -> None:
         self.ensure_ssh_config()
@@ -285,9 +302,15 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
 
     @cached_property
     def ssh_port(self) -> int:
-        from dda.utils.ssh import derive_dynamic_ssh_port
+        from dda.utils.network.protocols import derive_dynamic_port
 
-        return derive_dynamic_ssh_port(self.container_name)
+        return derive_dynamic_port(f"{self.container_name}-ssh")
+
+    @cached_property
+    def mcp_port(self) -> int:
+        from dda.utils.network.protocols import derive_dynamic_port
+
+        return derive_dynamic_port(f"{self.container_name}-mcp")
 
     @cached_property
     def home_dir(self) -> str:

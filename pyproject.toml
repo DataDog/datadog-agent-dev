@@ -38,6 +38,7 @@ dependencies = [
   "packaging",
   "platformdirs~=4.3",
   "psutil~=7.0",
+  "pyjson5~=1.6.9",
   "pywinpty~=2.0.15; sys_platform == 'win32'",
   "rich~=14.0",
   "rich-click~=1.8.9",
