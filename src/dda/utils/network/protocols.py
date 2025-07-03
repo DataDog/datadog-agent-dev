@@ -13,5 +13,5 @@ def derive_dynamic_port(key: str) -> int:
     min_port = 49152
     max_port = 65535
 
-    repo_id = int.from_bytes(sha256(key.encode("utf-8")).digest(), "big")
-    return repo_id % (max_port - min_port) + min_port
+    key_hash = int.from_bytes(sha256(key.encode("utf-8")).digest(), "big")
+    return key_hash % (max_port - min_port) + min_port
