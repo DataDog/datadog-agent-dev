@@ -196,7 +196,9 @@ class TestStart:
                         "--name",
                         "dda-linux-container-default",
                         "-p",
-                        "59730:22",
+                        "61938:22",
+                        "-p",
+                        "50069:9000",
                         "-v",
                         "/var/run/docker.sock:/var/run/docker.sock",
                         "-e",
@@ -269,7 +271,9 @@ class TestStart:
                         "--name",
                         "dda-linux-container-default",
                         "-p",
-                        "59730:22",
+                        "61938:22",
+                        "-p",
+                        "50069:9000",
                         "-v",
                         "/var/run/docker.sock:/var/run/docker.sock",
                         "-e",
@@ -297,7 +301,7 @@ class TestStart:
                         "-q",
                         "-t",
                         "-p",
-                        "59730",
+                        "61938",
                         "root@localhost",
                         "--",
                         "cd /root && git dd-clone datadog-agent",
@@ -356,7 +360,9 @@ class TestStart:
                         "--name",
                         "dda-linux-container-default",
                         "-p",
-                        "59730:22",
+                        "61938:22",
+                        "-p",
+                        "50069:9000",
                         "-v",
                         "/var/run/docker.sock:/var/run/docker.sock",
                         "-e",
@@ -437,7 +443,9 @@ class TestStart:
                         "--name",
                         "dda-linux-container-default",
                         "-p",
-                        "59730:22",
+                        "61938:22",
+                        "-p",
+                        "50069:9000",
                         "-v",
                         "/var/run/docker.sock:/var/run/docker.sock",
                         "-e",
@@ -513,7 +521,9 @@ class TestStart:
                         "--name",
                         "dda-linux-container-default",
                         "-p",
-                        "59730:22",
+                        "61938:22",
+                        "-p",
+                        "50069:9000",
                         "-v",
                         "/var/run/docker.sock:/var/run/docker.sock",
                         "-e",
@@ -541,7 +551,7 @@ class TestStart:
                         "-q",
                         "-t",
                         "-p",
-                        "59730",
+                        "61938",
                         "root@localhost",
                         "--",
                         "cd /root && git dd-clone datadog-agent tag",
@@ -557,7 +567,7 @@ class TestStart:
                         "-q",
                         "-t",
                         "-p",
-                        "59730",
+                        "61938",
                         "root@localhost",
                         "--",
                         "cd /root && git dd-clone integrations-core",
@@ -675,7 +685,7 @@ class TestShell:
                         "-q",
                         "-t",
                         "-p",
-                        "59730",
+                        "61938",
                         "root@localhost",
                         "--",
                         "cd /root/repos/datadog-agent && zsh -l -i",
@@ -723,7 +733,7 @@ class TestRun:
                 "-q",
                 "-t",
                 "-p",
-                "59730",
+                "61938",
                 "root@localhost",
                 "--",
                 "cd /root/repos/datadog-agent && echo foo",
@@ -751,21 +761,26 @@ class TestCode:
         with helpers.hybrid_patch(
             "subprocess.run",
             return_values={
-                # Stop command checks the status
+                # Code command checks the status
                 1: CompletedProcess([], returncode=0, stdout=json.dumps([{"State": {"Status": "running"}}])),
             },
         ):
             result = dda("env", "dev", "code")
 
         assert result.exit_code == 0, result.output
-        assert not result.output
+        assert result.output == helpers.dedent(
+            """
+            Stopping MCP server
+            Starting MCP server
+            """
+        )
 
         assert_ssh_config_written(write_server_config, "localhost")
         run.assert_called_once_with(
             [
                 "code",
                 "--remote",
-                "ssh-remote+root@localhost:59730",
+                "ssh-remote+root@localhost:61938",
                 "/root/repos/datadog-agent",
             ],
         )
@@ -777,21 +792,26 @@ class TestCode:
         with helpers.hybrid_patch(
             "subprocess.run",
             return_values={
-                # Stop command checks the status
+                # Code command checks the status
                 1: CompletedProcess([], returncode=0, stdout=json.dumps([{"State": {"Status": "running"}}])),
             },
         ):
             result = dda("env", "dev", "code", "--editor", "cursor")
 
         assert result.exit_code == 0, result.output
-        assert not result.output
+        assert result.output == helpers.dedent(
+            """
+            Stopping MCP server
+            Starting MCP server
+            """
+        )
 
         assert_ssh_config_written(write_server_config, "localhost")
         run.assert_called_once_with(
             [
                 "cursor",
                 "--remote",
-                "ssh-remote+root@localhost:59730",
+                "ssh-remote+root@localhost:61938",
                 "/root/repos/datadog-agent",
             ],
         )
@@ -813,14 +833,19 @@ class TestCode:
             result = dda("env", "dev", "code")
 
         assert result.exit_code == 0, result.output
-        assert not result.output
+        assert result.output == helpers.dedent(
+            """
+            Stopping MCP server
+            Starting MCP server
+            """
+        )
 
         assert_ssh_config_written(write_server_config, "localhost")
         run.assert_called_once_with(
             [
                 "cursor",
                 "--remote",
-                "ssh-remote+root@localhost:59730",
+                "ssh-remote+root@localhost:61938",
                 "/root/repos/datadog-agent",
             ],
         )

@@ -22,6 +22,9 @@ class MCPManager:
 
         from dda.cli.base import ensure_features_installed
 
+        if self.__pid_file.is_file():
+            self.__app.abort("MCP server is already running")
+
         ensure_features_installed(["mcp"], app=self.__app)
 
         self.__logging_config_file.write_text(json.dumps(self.__logging_config), encoding="utf-8")
@@ -40,7 +43,7 @@ class MCPManager:
 
     def stop(self) -> None:
         if not self.__pid_file.is_file():
-            self.__app.display("MCP server is not running")
+            self.__app.display_warning("MCP server is not running")
             return
 
         import psutil
@@ -50,13 +53,13 @@ class MCPManager:
             process = psutil.Process(pid)
             process.kill()
         except psutil.NoSuchProcess:
-            self.__app.display("MCP server is not running")
+            self.__app.display_warning("MCP server is not running")
 
         self.__pid_file.unlink()
 
     def status(self) -> None:
         if not self.__pid_file.is_file():
-            self.__app.display("MCP server is not running")
+            self.__app.display_warning("MCP server is not running")
             return
 
         import psutil
@@ -65,12 +68,12 @@ class MCPManager:
         try:
             process = psutil.Process(pid)
         except psutil.NoSuchProcess:
-            self.__app.display("MCP server is not running")
+            self.__app.display_warning("MCP server is not running")
         else:
             if process.is_running():
-                self.__app.display("MCP server is running")
+                self.__app.display_success("MCP server is running")
             else:
-                self.__app.display("MCP server is not running")
+                self.__app.display_warning("MCP server is not running")
 
     def show_log(self) -> None:
         if not self.__log_file.is_file():
