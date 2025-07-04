@@ -42,6 +42,7 @@ class VSCodeEditorInterface(EditorInterface):
     def __save_config(self, config: dict[str, Any]) -> None:
         import json
 
+        self.__config_file.parent.ensure_dir()
         self.__config_file.write_text(json.dumps(config, indent=4), encoding="utf-8")
 
     @cached_property
