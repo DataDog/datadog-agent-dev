@@ -24,6 +24,7 @@
       - display_header
       - display_table
       - display_syntax
+      - display_markdown
       - status
       - prompt
       - confirm

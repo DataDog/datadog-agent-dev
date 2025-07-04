@@ -36,7 +36,6 @@ def cmd(app: Application, *, args: tuple[str, ...]) -> None:
     for i in range(100):
         if python_constraint.contains(f"3.{i}"):
             minor_version = i
-        elif minor_version is not None:
             break
     else:  # no cov
         app.abort(

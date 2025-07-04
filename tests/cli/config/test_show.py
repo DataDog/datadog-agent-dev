@@ -49,6 +49,12 @@ def test_default_scrubbed(dda, config_file, helpers, default_cache_dir, default_
         waiting = "bold magenta"
         debug = "bold on bright_black"
         spinner = "simpleDotsScrolling"
+
+        [update]
+        mode = "check"
+
+        [update.check]
+        period = "2w"
         """
     )
 
@@ -96,5 +102,11 @@ def test_reveal(dda, config_file, helpers, default_cache_dir, default_data_dir):
         waiting = "bold magenta"
         debug = "bold on bright_black"
         spinner = "simpleDotsScrolling"
+
+        [update]
+        mode = "check"
+
+        [update.check]
+        period = "2w"
         """
     )

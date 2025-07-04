@@ -7,6 +7,7 @@ import os
 import pathlib
 import shutil
 import sys
+import time
 from typing import TYPE_CHECKING
 
 import pytest
@@ -68,6 +69,10 @@ def isolation() -> Generator[Path, None, None]:
         dissent_file.parent.ensure_dir()
         dissent_file.touch()
 
+        # Disable update checker
+        last_update_check_file = cache_dir / "last_update_check"
+        last_update_check_file.write_text(str(time.time()), encoding="utf-8")
+
         default_env_vars = {
             ConfigEnvVars.DATA: str(data_dir),
             ConfigEnvVars.CACHE: str(cache_dir),
@@ -114,6 +119,10 @@ def private_storage(config_file: ConfigFile) -> Generator[None, None, None]:
     dissent_file = cache_dir / "telemetry" / "dissent"
     dissent_file.parent.ensure_dir()
     dissent_file.touch()
+
+    # Disable update checker
+    last_update_check_file = cache_dir / "last_update_check"
+    last_update_check_file.write_text(str(time.time()), encoding="utf-8")
 
     config_file.data["storage"] = {"cache": str(cache_dir), "data": str(data_dir)}
     config_file.save()

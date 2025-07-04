@@ -42,6 +42,7 @@ class CursorEditorInterface(EditorInterface):
     def __save_mcp_config(self, config: dict[str, Any]) -> None:
         import json
 
+        self.__mcp_config_file.parent.ensure_dir()
         self.__mcp_config_file.write_text(json.dumps(config, indent=4), encoding="utf-8")
 
     @cached_property
