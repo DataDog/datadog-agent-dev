@@ -141,7 +141,7 @@ class Application(Terminal):
             self.display_info("dda self telemetry disable")
 
         update_checker = UpdateChecker(self)
-        if update_checker.ready():
+        if self.config.update.mode == "check" and update_checker.ready():
             try:
                 new_release = update_checker.new_release()
             except Exception as e:  # noqa: BLE001
@@ -169,11 +169,10 @@ class UpdateChecker:
 
         from time import time
 
-        two_weeks = 60 * 60 * 24 * 14
         last_check = float(self.__timestamp_file.read_text(encoding="utf-8").strip())
         now = time()
 
-        return now - last_check >= two_weeks
+        return now - last_check >= self.__app.config.update.check.get_period_seconds()
 
     def new_release(self) -> tuple[str, str] | None:
         from packaging.version import Version
