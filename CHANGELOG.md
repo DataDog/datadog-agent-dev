@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 - Add `DDA_TELEMETRY_LOG_LEVEL` environment variable to control the log level of the telemetry daemon
 - The user will now see a warning if the most recent telemetry submission resulted in an error
+- The user will now be notified of new releases
 
 ***Fixed:***
 
