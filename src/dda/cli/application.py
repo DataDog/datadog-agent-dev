@@ -5,13 +5,14 @@ from __future__ import annotations
 
 import os
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, NoReturn
+from typing import TYPE_CHECKING, Any, NoReturn, Self
 
 from dda.cli.terminal import Terminal
 from dda.config.constants import AppEnvVars
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from types import TracebackType
 
     from dda.config.file import ConfigFile
     from dda.config.model import RootConfig
@@ -125,3 +126,16 @@ class Application(Terminal):
     @cached_property
     def managed_installation(self) -> bool:
         return os.getenv("PYAPP") is not None
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(
+        self, exc_type: type[BaseException] | None, exc_value: BaseException | None, traceback: TracebackType | None
+    ) -> None:
+        if self.telemetry.error_state():
+            self.display_warning("An error occurred while submitting telemetry.")
+            self.display_warning("Check the log: ", end="")
+            self.display_info("dda self telemetry log show")
+            self.display_warning("Disable telemetry: ", end="")
+            self.display_info("dda self telemetry disable")

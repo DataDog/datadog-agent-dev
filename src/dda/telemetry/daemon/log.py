@@ -40,7 +40,7 @@ class LogTelemetryClient(TelemetryClient):
         except Exception:
             logging.exception("Failed to submit log")
         else:
-            logging.info("Submitted log: %s", data)
+            logging.debug("Submitted log: %s", data)
 
     def __enter__(self) -> Self:
         self.__client.__enter__()

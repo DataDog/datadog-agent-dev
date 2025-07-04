@@ -107,7 +107,7 @@ class TraceTelemetryClient(TelemetryClient):
         except Exception:
             logging.exception("Failed to submit trace")
         else:
-            logging.info("Submitted trace: %s", data)
+            logging.debug("Submitted trace: %s", data)
 
     def __enter__(self) -> Self:
         self.__client.__enter__()

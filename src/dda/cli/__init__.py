@@ -175,7 +175,7 @@ def dda(
     app = Application(terminator=ctx.exit, config_file=config, enable_color=color, interactive=interactive)
 
     # Persist app data for sub-commands
-    ctx.obj = app
+    ctx.obj = ctx.with_resource(app)
 
     # Telemetry submission
     app.telemetry.watch()
