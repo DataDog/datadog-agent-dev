@@ -476,7 +476,6 @@ legacy-github = [
     { name = "toml" },
 ]
 legacy-kernel-matrix-testing = [
-    { name = "libvirt-python" },
     { name = "python-levenshtein" },
     { name = "termcolor" },
     { name = "thefuzz" },
@@ -663,7 +662,6 @@ legacy-github = [
     { name = "toml", specifier = "~=0.10.2" },
 ]
 legacy-kernel-matrix-testing = [
-    { name = "libvirt-python", specifier = "==10.9.0" },
     { name = "python-levenshtein", specifier = "==0.26.1" },
     { name = "termcolor", specifier = "==2.5.0" },
     { name = "thefuzz", specifier = "==0.22.1" },
@@ -1329,12 +1327,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/83/73/372edebc79fd09a8b2382cf1244d279ada5b795124f1e1c4fc73d9fbb00f/levenshtein-0.26.1-cp313-cp313-win_amd64.whl", hash = "sha256:8adcc90e3a5bfb0a463581d85e599d950fe3c2938ac6247b29388b64997f6e2d", size = 98418, upload-time = "2024-10-27T21:59:50.751Z" },
     { url = "https://files.pythonhosted.org/packages/b2/6d/f0160ea5a7bb7a62b3b3d56e9fc5024b440cb59555a90be2347abf2e7888/levenshtein-0.26.1-cp313-cp313-win_arm64.whl", hash = "sha256:c2599407e029865dc66d210b8804c7768cbdbf60f061d993bb488d5242b0b73e", size = 87792, upload-time = "2024-10-27T21:59:51.817Z" },
 ]
-
-[[package]]
-name = "libvirt-python"
-version = "10.9.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/c8/0c/6f4734d9f97ae3a6fc87360cd8e5f26821104a414584a2a71708fcefe840/libvirt-python-10.9.0.tar.gz", hash = "sha256:44833fc6017fc88e43586a78c028a89fa1e1c1bae5089160c62356308ac9a37a", size = 241020, upload-time = "2024-11-01T09:18:46.376Z" }
 
 [[package]]
 name = "linkchecker"
