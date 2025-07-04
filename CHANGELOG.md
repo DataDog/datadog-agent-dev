@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ***Fixed:***
 
 - Decrease the default verbosity of the telemetry daemon
+- Relax the allowed versions of Python
 
 ## 0.19.0 - 2025-07-03
 
