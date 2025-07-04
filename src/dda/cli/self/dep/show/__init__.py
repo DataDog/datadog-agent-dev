@@ -7,14 +7,16 @@ from typing import TYPE_CHECKING
 
 import click
 
-from dda.cli.base import dynamic_command, pass_app, get_installed_dependencies
+from dda.cli.base import dynamic_command, get_installed_dependencies, pass_app
 
 if TYPE_CHECKING:
     from dda.cli.application import Application
 
 
 @dynamic_command(short_help="Show all installed dependencies")
-@click.option("--environment", type=click.Choice(["invoke", "dda", "all"]), default="all", help="Type of dependencies to show")
+@click.option(
+    "--environment", type=click.Choice(["invoke", "dda", "all"]), default="all", help="Type of dependencies to show"
+)
 @pass_app
 def cmd(app: Application, *, environment: str) -> None:
     """
@@ -27,13 +29,13 @@ def cmd(app: Application, *, environment: str) -> None:
     ```
     """
 
-    if environment == "invoke" or environment == "all":
+    if environment in {"invoke", "all"}:
         click.echo("=== Invoke dependencies ===")
         venv_path = app.config.storage.join("venvs", "legacy").data
         with app.tools.uv.virtual_env(venv_path) as venv:
             click.echo(get_installed_dependencies(app=app, prefix=str(venv.path)))
 
-    if environment == "dda" or environment == "all":
+    if environment in {"dda", "all"}:
         if environment == "all":
             click.echo("\n\n")
 

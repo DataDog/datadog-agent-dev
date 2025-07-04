@@ -500,9 +500,6 @@ def get_installed_dependencies(
     app: Application,
     prefix: str = sys.prefix,
 ) -> str:
-    import shutil
-    import sysconfig
-    from dda.utils.fs import Path, temp_directory
     from dda.utils.process import EnvVars
 
     message = f"Project environment: {prefix}"
