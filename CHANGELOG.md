@@ -8,6 +8,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+***Added:***
+
+- Add `DDA_TELEMETRY_LOG_LEVEL` environment variable to control the log level of the telemetry daemon
+- The user will now see a warning if the most recent telemetry submission resulted in an error
+
+***Fixed:***
+
+- Decrease the default verbosity of the telemetry daemon
+
+## 0.19.0 - 2025-07-03
+
+***Added:***
+
+- The `env dev code` command now starts the MCP server inside the developer environment
+- Update dependencies
+
 ## 0.18.0 - 2025-07-01
 
 ***Changed:***

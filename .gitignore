@@ -12,6 +12,7 @@ __pycache__/
 /.benchmarks/
 /.cache/
 /.env/
+/.hypothesis/
 /.idea/
 /.mypy_cache/
 /.pytest_cache/
