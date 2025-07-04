@@ -14,8 +14,9 @@ if TYPE_CHECKING:
 
 
 @dynamic_command(short_help="Show all installed dependencies")
+@click.option("--environment", type=click.Choice(["invoke", "dda", "all"]), default="all", help="Type of dependencies to show")
 @pass_app
-def cmd(app: Application) -> None:
+def cmd(app: Application, *, environment: str) -> None:
     """
     Show all installed dependencies.
 
@@ -25,4 +26,16 @@ def cmd(app: Application) -> None:
     dda self dep show
     ```
     """
-    click.echo(get_installed_dependencies(app=app))
+
+    if environment == "invoke" or environment == "all":
+        click.echo("=== Invoke dependencies ===")
+        venv_path = app.config.storage.join("venvs", "legacy").data
+        with app.tools.uv.virtual_env(venv_path) as venv:
+            click.echo(get_installed_dependencies(app=app, prefix=str(venv.path)))
+
+    if environment == "dda" or environment == "all":
+        if environment == "all":
+            click.echo("\n\n")
+
+        click.echo("=== DDA dependencies ===")
+        click.echo(get_installed_dependencies(app=app))
