@@ -13,6 +13,7 @@ from dda.config.model.github import GitHubConfig
 from dda.config.model.orgs import OrgConfig
 from dda.config.model.storage import StorageDirs
 from dda.config.model.terminal import TerminalConfig
+from dda.config.model.update import UpdateConfig
 from dda.utils.fs import Path
 
 
@@ -33,6 +34,7 @@ class RootConfig(Struct, frozen=True, omit_defaults=True):
     git: GitConfig = field(default_factory=GitConfig)
     github: GitHubConfig = field(default_factory=GitHubConfig)
     terminal: TerminalConfig = field(default_factory=TerminalConfig)
+    update: UpdateConfig = field(default_factory=UpdateConfig)
 
 
 def construct_model(data: dict[str, Any]) -> RootConfig:

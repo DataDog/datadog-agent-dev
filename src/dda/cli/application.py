@@ -5,13 +5,14 @@ from __future__ import annotations
 
 import os
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, NoReturn
+from typing import TYPE_CHECKING, Any, NoReturn, Self
 
 from dda.cli.terminal import Terminal
 from dda.config.constants import AppEnvVars
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from types import TracebackType
 
     from dda.config.file import ConfigFile
     from dda.config.model import RootConfig
@@ -125,3 +126,73 @@ class Application(Terminal):
     @cached_property
     def managed_installation(self) -> bool:
         return os.getenv("PYAPP") is not None
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(
+        self, exc_type: type[BaseException] | None, exc_value: BaseException | None, traceback: TracebackType | None
+    ) -> None:
+        if self.telemetry.error_state():
+            self.display_warning("An error occurred while submitting telemetry.")
+            self.display_warning("Check the log: ", end="")
+            self.display_info("dda self telemetry log show")
+            self.display_warning("Disable telemetry: ", end="")
+            self.display_info("dda self telemetry disable")
+
+        update_checker = UpdateChecker(self)
+        if self.config.update.mode == "check" and update_checker.ready():
+            try:
+                new_release = update_checker.new_release()
+            except Exception as e:  # noqa: BLE001
+                self.display_warning(f"An error occurred while checking for updates: {e}")
+            else:
+                if new_release is not None:
+                    latest_version, release_notes = new_release
+                    self.display_warning(f"A new version of dda is available: {latest_version}")
+                    self.display_markdown(release_notes)
+                    if self.managed_installation:
+                        self.display_warning("Run: ", end="")
+                        self.display_info("dda self update")
+
+                update_checker.reset()
+
+
+class UpdateChecker:
+    def __init__(self, app: Application) -> None:
+        self.__app = app
+        self.__timestamp_file = app.config.storage.cache / "last_update_check"
+
+    def ready(self) -> bool:
+        if not self.__timestamp_file.is_file():
+            return True
+
+        from time import time
+
+        last_check = float(self.__timestamp_file.read_text(encoding="utf-8").strip())
+        now = time()
+
+        return now - last_check >= self.__app.config.update.check.get_period_seconds()
+
+    def new_release(self) -> tuple[str, str] | None:
+        from packaging.version import Version
+
+        from dda._version import __version__
+
+        current_version = Version(__version__)
+        with self.__app.http.client() as client:
+            response = client.get("https://api.github.com/repos/DataDog/datadog-agent-dev/releases/latest")
+            response.raise_for_status()
+            release = response.json()
+
+        latest_version = Version(release["tag_name"].lstrip("v"))
+        if latest_version <= current_version:
+            return None
+
+        return latest_version.base_version, release["body"]
+
+    def reset(self) -> None:
+        from time import time
+
+        self.__timestamp_file.parent.ensure_dir()
+        self.__timestamp_file.write_text(str(time()), encoding="utf-8")

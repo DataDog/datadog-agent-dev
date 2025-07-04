@@ -72,3 +72,16 @@ The file can be managed by the [`config`](../cli/commands.md#dda-config) command
 ::: dda.config.model.terminal.TerminalStyles
     options:
       heading_level: 3
+
+## Update
+
+::: dda.config.model.update.UpdateConfig
+    options:
+      heading_level: 3
+
+::: dda.config.model.update.UpdateCheckConfig
+    options:
+      heading_level: 3
+      members:
+      - period
+      - get_period_seconds

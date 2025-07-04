@@ -265,6 +265,18 @@ class Terminal:
         kwargs.setdefault("background_color", "default" if self.testing else None)
         self.output(Syntax(*args, **kwargs))
 
+    def display_markdown(self, *args: Any, **kwargs: Any) -> None:
+        """
+        Display rendered markdown.
+
+        Parameters:
+            *args: Additional arguments to pass to the [`Markdown`][rich.markdown.Markdown] constructor.
+            **kwargs: Additional keyword arguments to pass to the [`Markdown`][rich.markdown.Markdown] constructor.
+        """
+        from rich.markdown import Markdown
+
+        self.output(Markdown(*args, **kwargs))
+
     def status(self, text: str, **kwargs: Any) -> Status:
         """
         Display a status indicator with the

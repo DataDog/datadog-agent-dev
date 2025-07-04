@@ -60,6 +60,9 @@ class TelemetryManager:
         if self.log_file.is_file():
             self.log_file.unlink()
 
+    def error_state(self) -> bool:
+        return self.__error_file.is_file()
+
     @cached_property
     def log_file(self) -> Path:
         return self.__storage_dir / "daemon.log"
@@ -91,6 +94,10 @@ class TelemetryManager:
         return self.__storage_dir / "dissent"
 
     @cached_property
+    def __error_file(self) -> Path:
+        return self.__storage_dir / "daemon.error"
+
+    @cached_property
     def __storage_dir(self) -> Path:
         return self.__app.config.storage.cache / "telemetry"
 
@@ -113,6 +120,7 @@ class TelemetryManager:
             DaemonEnvVars.COMMAND_PID: str(os.getpid()),
             DaemonEnvVars.WRITE_DIR: str(self.__write_dir),
             DaemonEnvVars.LOG_FILE: str(self.log_file),
+            DaemonEnvVars.ERROR_FILE: str(self.__error_file),
         })
         self.__app.subprocess.spawn_daemon([sys.executable, "-m", "dda.telemetry.daemon"], env=env_vars)
         self.__started = True
