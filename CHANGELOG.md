@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+## 0.20.0 - 2025-07-05
+
 ***Added:***
 
 - Add `DDA_TELEMETRY_LOG_LEVEL` environment variable to control the log level of the telemetry daemon
