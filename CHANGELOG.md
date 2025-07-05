@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - The user will now see a warning if the most recent telemetry submission resulted in an error
 - The user will now be notified of new releases by default
 - Add `update` configuration section to control the update functionality
+- Add `self dep show` command
 
 ***Fixed:***
 
