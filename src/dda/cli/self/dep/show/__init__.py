@@ -7,18 +7,16 @@ from typing import TYPE_CHECKING
 
 import click
 
-from dda.cli.base import dynamic_command, get_installed_dependencies, pass_app
+from dda.cli.base import dynamic_command, pass_app
 
 if TYPE_CHECKING:
     from dda.cli.application import Application
 
 
-@dynamic_command(short_help="Show all installed dependencies")
-@click.option(
-    "--environment", type=click.Choice(["invoke", "dda", "all"]), default="all", help="Type of dependencies to show"
-)
+@dynamic_command(short_help="Show installed dependencies")
+@click.option("--legacy", is_flag=True, help="Only show legacy invoke dependencies")
 @pass_app
-def cmd(app: Application, *, environment: str) -> None:
+def cmd(app: Application, *, legacy: bool) -> None:
     """
     Show all installed dependencies.
 
@@ -28,16 +26,11 @@ def cmd(app: Application, *, environment: str) -> None:
     dda self dep show
     ```
     """
+    import sys
 
-    if environment in {"invoke", "all"}:
-        click.echo("=== Invoke dependencies ===")
+    if legacy:
         venv_path = app.config.storage.join("venvs", "legacy").data
-        with app.tools.uv.virtual_env(venv_path) as venv:
-            click.echo(get_installed_dependencies(app=app, prefix=str(venv.path)))
-
-    if environment in {"dda", "all"}:
-        if environment == "all":
-            click.echo("\n\n")
-
-        click.echo("=== DDA dependencies ===")
-        click.echo(get_installed_dependencies(app=app))
+        with app.tools.uv.virtual_env(venv_path):
+            app.tools.uv.exit_with(["pip", "tree"])
+    else:
+        app.tools.uv.exit_with(["pip", "tree", "--python", sys.executable])

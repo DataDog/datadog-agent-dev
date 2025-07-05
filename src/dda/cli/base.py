@@ -495,26 +495,6 @@ def ensure_features_installed(
         app.tools.uv.wait(command, message="Synchronizing dependencies", cwd=str(temp_dir), env=env_vars)
 
 
-def get_installed_dependencies(
-    *,
-    app: Application,
-    prefix: str = sys.prefix,
-) -> str:
-    from dda.utils.process import EnvVars
-
-    message = f"Project environment: {prefix}"
-
-    env_vars = EnvVars()
-    # https://docs.astral.sh/uv/concepts/projects/config/#project-environment-path
-    env_vars["UV_PROJECT_ENVIRONMENT"] = prefix
-    # Remove warning from output if we happen to display it due to an error
-    env_vars.pop("VIRTUAL_ENV", None)
-
-    message += "\nDependency tree:\n"
-    message += app.tools.uv.capture(["tree", "--all-groups"], env=env_vars)
-    return message
-
-
 def _get_root_ctx(ctx: click.Context) -> DynamicContext:
     while ctx.parent is not None:
         ctx = ctx.parent
