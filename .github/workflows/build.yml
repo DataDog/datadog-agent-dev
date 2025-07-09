@@ -22,7 +22,6 @@ env:
   APP_NAME: dda
   PYTHON_VERSION: "3.12"
   PYOXIDIZER_VERSION: "0.24.0"
-  DIST_URL: "https://github.com/DataDog/datadog-agent-dev/releases/download"
 
 jobs:
   python-artifacts:
@@ -108,11 +107,9 @@ jobs:
         # Linux
         - target: aarch64-unknown-linux-gnu
           os: ubuntu-22.04
-          use-dist: true
           cross: true
         - target: x86_64-unknown-linux-gnu
           os: ubuntu-22.04
-          use-dist: true
           cross: true
         - target: x86_64-unknown-linux-musl
           os: ubuntu-22.04
@@ -123,22 +120,19 @@ jobs:
         # Windows
         - target: x86_64-pc-windows-msvc
           os: windows-2022
-          use-dist: true
         - target: i686-pc-windows-msvc
           os: windows-2022
         # macOS
         - target: aarch64-apple-darwin
           os: macos-13
-          use-dist: true
         - target: x86_64-apple-darwin
           os: macos-13
-          use-dist: true
 
     env:
       CARGO: cargo
       CARGO_BUILD_TARGET: ${{ matrix.job.target }}
       PYAPP_REPO: pyapp
-      PYAPP_VERSION: "0.25.0"
+      PYAPP_VERSION: "0.27.0"
       PYAPP_UV_ENABLED: "true"
       PYAPP_PASS_LOCATION: "true"
 
@@ -196,25 +190,13 @@ jobs:
         name: python-artifacts
         path: dist
 
-    - name: Configure embedded project
+    - name: Configure dev build
       if: ${{ !startsWith(github.event.ref, 'refs/tags') }}
       run: |-
         cd dist
         wheel="$(echo *.whl)"
         mv "$wheel" "../$PYAPP_REPO"
         echo "PYAPP_PROJECT_PATH=$wheel" >> $GITHUB_ENV
-
-    - name: Configure release with distribution
-      if: startsWith(github.event.ref, 'refs/tags') && matrix.job.use-dist
-      run: |-
-        echo "PYAPP_SKIP_INSTALL=true" >> $GITHUB_ENV
-        echo "PYAPP_FULL_ISOLATION=true" >> $GITHUB_ENV
-        echo "PYAPP_DISTRIBUTION_SOURCE=${{ env.DIST_URL }}/v${{ needs.python-artifacts.outputs.version }}/dda-dist-${{ matrix.job.target }}.tar.gz" >> $GITHUB_ENV
-        echo "PYAPP_DISTRIBUTION_PATH_PREFIX=python" >> $GITHUB_ENV
-        echo "PYAPP_ALLOW_UPDATES=true" >> $GITHUB_ENV
-
-        # Disable in the case of self updates
-        echo "PYAPP_UV_ENABLED=false" >> $GITHUB_ENV
 
     - name: Build binary
       run: hatch build --target binary
@@ -531,24 +513,6 @@ jobs:
         path: signed/${{ steps.pkg.outputs.path }}
         if-no-files-found: error
 
-  distributions-dev:
-    name: Build development distributions
-    if: ${{ !startsWith(github.event.ref, 'refs/tags') }}
-    uses: ./.github/workflows/build-distributions.yml
-    # This actually does not need the binary jobs but we want to prioritize
-    # resources for the test jobs therefore this forces these later on
-    needs: binaries
-
-  distributions-release:
-    name: Build release distributions
-    needs:
-    - python-artifacts
-    - publish-pypi
-    if: startsWith(github.event.ref, 'refs/tags')
-    uses: ./.github/workflows/build-distributions.yml
-    with:
-      version: ${{ needs.python-artifacts.outputs.version }}
-
   publish-release:
     name: Publish distributions
     if: startsWith(github.event.ref, 'refs/tags')
@@ -556,7 +520,6 @@ jobs:
     - binaries
     - windows-packaging
     - macos-packaging
-    - distributions-release
     runs-on: ubuntu-latest
 
     permissions:
@@ -564,13 +527,6 @@ jobs:
       id-token: write
 
     steps:
-    - name: Download distributions
-      uses: actions/download-artifact@v4
-      with:
-        pattern: distribution-*
-        path: distributions
-        merge-multiple: true
-
     - name: Download binaries
       uses: actions/download-artifact@v4
       with:
@@ -603,5 +559,4 @@ jobs:
       with:
         files: |-
           archives/*
-          distributions/*
           installers/*
