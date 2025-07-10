@@ -61,7 +61,7 @@ def cmd(
     """
     Invoke a local task.
     """
-    from dda.utils.fs import Path, change_workdir
+    from dda.utils.fs import Path
 
     app: Application = ctx.obj
 
@@ -79,7 +79,7 @@ def cmd(
         workdir = Path(repo).resolve()
         app.display(f"Running invoke task in repository: {workdir}")
 
-    with change_workdir(workdir):
+    with workdir.as_cwd():
         if no_dynamic_deps:
             import sys
 
