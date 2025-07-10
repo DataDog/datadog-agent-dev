@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+***Fixed:***
+
+- Fix telemetry daemon spawning on Windows when installed inside a virtual environment
+
 ## 0.20.0 - 2025-07-05
 
 ***Added:***
