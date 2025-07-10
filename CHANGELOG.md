@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ***Added:***
 
 - No longer build pre-configured Python distributions for release builds
+- The top-level `--interactive` flag now disables the use of pseudo-terminals for subprocesses
 
 ***Fixed:***
 
