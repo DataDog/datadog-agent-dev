@@ -143,8 +143,12 @@ class DynamicContext(click.RichContext):
                 "git.author.name": app.config.git.user.name,
                 "git.author.email": app.config.git.user.email,
             }
-            if mcp_tool_name := os.environ.get("PYCLI_MCP_TOOL_NAME"):
-                metadata["mcp.tool.name"] = mcp_tool_name
+            if os.environ.get("PRE_COMMIT") == "1":
+                metadata["exec.source"] = "pre-commit"
+            elif os.environ.get("PYCLI_MCP_TOOL_NAME"):
+                metadata["exec.source"] = "mcp"
+            else:
+                metadata["exec.source"] = "human"
 
             if last_error := app.last_error.strip():
                 # Payload limit is 5MB so we truncate the error message to a little bit less than that
