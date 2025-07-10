@@ -251,6 +251,19 @@ class SubprocessRunner:
         check: bool,
         capture: bool,
     ) -> tuple[int, str]:
+        if self.__app.force_interactive:
+            import subprocess
+
+            kwargs: dict[str, Any] = {"env": env, "cwd": cwd}
+            if capture:
+                kwargs["encoding"] = encoding
+                kwargs["stdout"] = subprocess.PIPE
+                kwargs["stderr"] = subprocess.STDOUT
+
+            cmd, kwargs = self.__sanitize_arguments(command, **kwargs)
+            process = subprocess.run(cmd, **kwargs)  # noqa: PLW1510
+            return process.returncode, process.stdout if capture else ""
+
         import tempfile
         import threading
 

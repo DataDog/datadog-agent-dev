@@ -26,6 +26,7 @@ class Terminal:
         # Force consistent output for test assertions
         self.testing = "DDA_SELF_TESTING" in os.environ
 
+        self.force_interactive = interactive is True
         self.console = Console(
             force_terminal=enable_color,
             force_interactive=interactive,
