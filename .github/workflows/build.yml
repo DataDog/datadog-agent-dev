@@ -74,27 +74,6 @@ jobs:
         path: dist/*
         if-no-files-found: error
 
-  publish-pypi:
-    name: Publish to PyPI
-    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
-    needs: python-artifacts
-    runs-on: ubuntu-latest
-
-    permissions:
-      id-token: write
-
-    steps:
-    - name: Download Python artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: python-artifacts
-        path: dist
-
-    - name: Push Python artifacts to PyPI
-      uses: pypa/gh-action-pypi-publish@v1.12.4
-      with:
-        skip-existing: true
-
   binaries:
     name: Binary ${{ matrix.job.target }} (${{ matrix.job.os }})
     needs:
@@ -527,6 +506,12 @@ jobs:
       id-token: write
 
     steps:
+    - name: Download Python artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: python-artifacts
+        path: dist
+
     - name: Download binaries
       uses: actions/download-artifact@v4
       with:
@@ -541,18 +526,10 @@ jobs:
         path: installers
         merge-multiple: true
 
-    - name: Create backward compatibility artifacts
-      run: |-
-        # Create copies of dda- artifacts with deva- prefix for backward compatibility
-        for dir in archives distributions installers; do
-          cd $dir
-          for file in dda-*; do
-            if [ -f "$file" ]; then
-              cp "$file" "${file/dda-/deva-}"
-            fi
-          done
-          cd ..
-        done
+    - name: Push Python artifacts to PyPI
+      uses: pypa/gh-action-pypi-publish@v1.12.4
+      with:
+        skip-existing: true
 
     - name: Add assets to current release
       uses: softprops/action-gh-release@v2
