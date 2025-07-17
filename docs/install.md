@@ -96,6 +96,7 @@ After downloading the archive corresponding to your platform and architecture, e
 pip install dda
 ```
 
-!!! warning
-    - This method modifies the Python environment in which you choose to install.
-    - Python 3.12.x is required.
+/// warning
+- This method modifies the Python environment in which you choose to install.
+- Python 3.12.x is required.
+///
