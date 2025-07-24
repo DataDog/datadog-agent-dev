@@ -133,6 +133,8 @@ class Application(Terminal):
     def __exit__(
         self, exc_type: type[BaseException] | None, exc_value: BaseException | None, traceback: TracebackType | None
     ) -> None:
+        from dda.utils.ci import running_in_ci
+
         if self.telemetry.error_state():
             self.display_warning("An error occurred while submitting telemetry.")
             self.display_warning("Check the log: ", end="")
@@ -141,7 +143,7 @@ class Application(Terminal):
             self.display_info("dda self telemetry disable")
 
         update_checker = UpdateChecker(self)
-        if self.config.update.mode == "check" and update_checker.ready():
+        if not running_in_ci() and self.config.update.mode == "check" and update_checker.ready():
             try:
                 new_release = update_checker.new_release()
             except Exception as e:  # noqa: BLE001
