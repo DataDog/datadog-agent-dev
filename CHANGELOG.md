@@ -12,6 +12,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 - Update binaries to use Python 3.12.11
 
+***Fixed:***
+
+- Prevent notification of new releases when running in CI
+
 ## 0.22.0 - 2025-07-10
 
 ***Added:***
