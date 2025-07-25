@@ -211,7 +211,7 @@ class Terminal:
         """
         self.console.rule(Text(title, self.__style_success))
 
-    def display_table(self, data: dict[str, Any]) -> None:
+    def display_table(self, data: dict[str, Any], *, stderr: bool = True) -> None:
         """
         Display a table with the given data using the
         [`success`][dda.config.model.terminal.TerminalStyles.success] style for the keys.
@@ -250,33 +250,40 @@ class Terminal:
 
         Parameters:
             data: The data to display.
+            stderr: Whether to output to stderr.
         """
-        self.output(_construct_table(data, key_style=self.__style_success))
+        self.output(_construct_table(data, key_style=self.__style_success), stderr=stderr)
 
-    def display_syntax(self, *args: Any, **kwargs: Any) -> None:
+    def display_syntax(self, *args: Any, stderr: bool = True, **kwargs: Any) -> None:
         """
         Display a syntax-highlighted block of text.
 
         Parameters:
+            stderr: Whether to output to stderr.
+
+        Other parameters:
             *args: Additional arguments to pass to the [`Syntax`][rich.syntax.Syntax] constructor.
             **kwargs: Additional keyword arguments to pass to the [`Syntax`][rich.syntax.Syntax] constructor.
         """
         from rich.syntax import Syntax
 
         kwargs.setdefault("background_color", "default" if self.testing else None)
-        self.output(Syntax(*args, **kwargs))
+        self.output(Syntax(*args, **kwargs), stderr=stderr)
 
-    def display_markdown(self, *args: Any, **kwargs: Any) -> None:
+    def display_markdown(self, *args: Any, stderr: bool = True, **kwargs: Any) -> None:
         """
         Display rendered markdown.
 
         Parameters:
+            stderr: Whether to output to stderr.
+
+        Other parameters:
             *args: Additional arguments to pass to the [`Markdown`][rich.markdown.Markdown] constructor.
             **kwargs: Additional keyword arguments to pass to the [`Markdown`][rich.markdown.Markdown] constructor.
         """
         from rich.markdown import Markdown
 
-        self.output(Markdown(*args, **kwargs))
+        self.output(Markdown(*args, **kwargs), stderr=stderr)
 
     def status(self, text: str, **kwargs: Any) -> Status:
         """
