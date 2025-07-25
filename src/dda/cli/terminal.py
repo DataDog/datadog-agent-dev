@@ -201,15 +201,21 @@ class Terminal:
     def style_debug(self, text: str) -> Text:
         return Text(text, style=self.__style_debug)
 
-    def display_header(self, title: str) -> None:
+    def display_header(self, title: str = "", *, stderr: bool = True, **kwargs: Any) -> None:
         """
         Display a horizontal rule with an embedded title using the
         [`success`][dda.config.model.terminal.TerminalStyles.success] style.
 
         Parameters:
             title: The title to display.
+            stderr: Whether to output to stderr.
+
+        Other parameters:
+            **kwargs: Additional keyword arguments to pass to the [`Rule`][rich.rule.Rule] constructor.
         """
-        self.console.rule(Text(title, self.__style_success))
+        from rich.rule import Rule
+
+        self.output(Rule(Text(title, self.__style_success), **kwargs), stderr=stderr)
 
     def display_table(self, data: dict[str, Any], *, stderr: bool = True) -> None:
         """
