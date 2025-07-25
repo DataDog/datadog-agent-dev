@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+***Fixed:***
+
+- Properly default to `stderr` for the non-raw text output methods
+
 ## 0.23.0 - 2025-07-24
 
 ***Added:***
