@@ -14,9 +14,9 @@ from dda.env.dev.interface import DeveloperEnvironmentConfig, DeveloperEnvironme
 from dda.utils.git.constants import GitEnvVars
 
 if TYPE_CHECKING:
+    from dda.env.docker import Docker
     from dda.env.models import EnvironmentStatus
     from dda.env.shells.interface import Shell
-    from dda.tools.docker import Docker
     from dda.utils.container.model import Mount
     from dda.utils.editors.interface import EditorInterface
 
@@ -73,14 +73,6 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
     @classmethod
     def config_class(cls) -> type[LinuxContainerConfig]:
         return LinuxContainerConfig
-
-    @cached_property
-    def docker(self) -> Docker:
-        from dda.tools.docker import Docker
-
-        docker = Docker(self.app)
-        docker.path = self.config.cli
-        return docker
 
     def start(self) -> None:
         from dda.env.models import EnvironmentState
@@ -201,35 +193,12 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         self.docker.wait(["rm", "-f", self.container_name], message=f"Removing container: {self.container_name}")
 
     def status(self) -> EnvironmentStatus:
-        import json
+        from dda.env.models import EnvironmentState
 
-        from dda.env.models import EnvironmentState, EnvironmentStatus
+        status = self.docker.get_status(self.container_name)
+        if status.state == EnvironmentState.NONEXISTENT:
+            return status
 
-        output = self.docker.capture(["inspect", self.container_name], check=False)
-        items = json.loads(output)
-        if not items:
-            return EnvironmentStatus(state=EnvironmentState.NONEXISTENT)
-
-        inspection = items[0]
-
-        # https://docs.docker.com/reference/api/engine/version/v1.47/#tag/Container/operation/ContainerList
-        # https://docs.podman.io/en/latest/_static/api.html?version=v5.0#tag/containers-(compat)/operation/ContainerList
-        state_data = inspection["State"]
-        status = state_data["Status"].lower()
-        if status == "running":
-            state = EnvironmentState.STARTED
-        elif status in {"created", "paused"}:
-            state = EnvironmentState.STOPPED
-        elif status == "exited":
-            state = EnvironmentState.ERROR if state_data["ExitCode"] == 1 else EnvironmentState.STOPPED
-        elif status == "restarting":
-            state = EnvironmentState.STARTING
-        elif status == "removing":
-            state = EnvironmentState.STOPPING
-        else:
-            state = EnvironmentState.UNKNOWN
-
-        status = EnvironmentStatus(state=state)
         self.__latest_status = status
         return status
 
@@ -327,6 +296,14 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
     @cached_property
     def container_name(self) -> str:
         return f"dda-{self.name}-{self.instance}"
+
+    @cached_property
+    def docker(self) -> Docker:
+        from dda.env.docker import Docker
+
+        docker = Docker(self.app)
+        docker.path = self.config.cli
+        return docker
 
     @cached_property
     def shell(self) -> Shell:

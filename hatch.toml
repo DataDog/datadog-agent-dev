@@ -15,9 +15,10 @@ extra-dependencies = [
 extra-dependencies = [
   "mypy",
   "pytest",
+  "types-pyyaml",
 ]
 [envs.types.scripts]
-check = "mypy --install-types --non-interactive {args:src/dda tests}"
+check = "mypy {args:src/dda tests}"
 
 [envs.docs]
 dependencies = [
