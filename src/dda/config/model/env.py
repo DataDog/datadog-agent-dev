@@ -6,6 +6,7 @@ from __future__ import annotations
 from msgspec import Struct, field
 
 from dda.env.dev import DEFAULT_DEV_ENV
+from dda.env.qa import DEFAULT_QA_ENV
 from dda.utils.editors import AVAILABLE_EDITORS, DEFAULT_EDITOR
 
 
@@ -33,5 +34,21 @@ class DevEnvConfig(Struct, frozen=True):
             raise ValueError(message)
 
 
+class QAEnvConfig(Struct, frozen=True):
+    """
+    /// tab | :octicons-file-code-16: config.toml
+    ```toml
+    [env.qa]
+    default-type = "linux-container"
+    e2e = false
+    ```
+    ///
+    """
+
+    default_type: str = field(name="default-type", default=DEFAULT_QA_ENV)
+    e2e: bool = False
+
+
 class EnvConfig(Struct, frozen=True):
     dev: DevEnvConfig = field(default_factory=DevEnvConfig)
+    qa: QAEnvConfig = field(default_factory=QAEnvConfig)
