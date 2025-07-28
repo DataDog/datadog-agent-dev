@@ -61,3 +61,14 @@ def hybrid_patch(target: str, *, return_values: dict[int, CompletedProcess]) -> 
 
     with mock.patch(target, side_effect=side_effect):
         yield calls
+
+
+class ExpectedEnvVars:  # noqa: PLW1641
+    def __init__(self, env_vars: dict[str, str]) -> None:
+        self.env_vars = env_vars
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, dict):
+            return False
+
+        return {k: v for k, v in other.items() if k in self.env_vars} == self.env_vars

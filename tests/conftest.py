@@ -84,7 +84,7 @@ def isolation() -> Generator[Path, None, None]:
             "COLUMNS": "80",
             "LINES": "24",
         }
-        with d.as_cwd(), EnvVars(default_env_vars):
+        with d.as_cwd(), EnvVars(default_env_vars, exclude=["DD_*"]):
             os.environ.pop(AppEnvVars.FORCE_COLOR, None)
             yield d
 
@@ -148,6 +148,13 @@ def default_cache_dir() -> Path:
 @pytest.fixture(scope="session")
 def uv_on_path() -> Path:
     return Path(shutil.which("uv"))
+
+
+@pytest.fixture(scope="session")
+def hostname() -> str:
+    import socket
+
+    return socket.gethostname().lower()
 
 
 def pytest_runtest_setup(item):
