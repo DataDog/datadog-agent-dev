@@ -46,7 +46,7 @@ install_dda() {
   if [[ "${DDA_INSTALL_VERSION}" == "latest" ]]; then
     curl -sSLo "${archive}" "https://github.com/DataDog/datadog-agent-dev/releases/latest/download/$1"
   else
-    curl -sSLo "${archive}" "https://github.com/DataDog/datadog-agent-dev/releases/download/v${DDA_INSTALL_VERSION}/$1"
+    curl -sSLo "${archive}" "https://github.com/DataDog/datadog-agent-dev/releases/download/${DDA_INSTALL_VERSION}/$1"
   fi
 
   if [[ "${archive}" =~ \.zip$ ]]; then
