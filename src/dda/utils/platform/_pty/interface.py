@@ -7,7 +7,6 @@ import io
 import os
 import shutil
 from abc import ABC, abstractmethod
-from functools import cache
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -15,11 +14,6 @@ if TYPE_CHECKING:
     from types import TracebackType
 
     from dda.utils.fs import Path
-
-
-@cache
-def get_terminal_dimensions() -> tuple[int, int]:
-    return shutil.get_terminal_size()
 
 
 class PtySessionInterface(ABC):
@@ -58,10 +52,6 @@ class PtySessionInterface(ABC):
 
     @abstractmethod
     def get_exit_code(self) -> int | None: ...
-
-    @classmethod
-    def get_terminal_dimensions(cls) -> tuple[int, int]:
-        return get_terminal_dimensions()
 
     def __enter__(self) -> None: ...
 

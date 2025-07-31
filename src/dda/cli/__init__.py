@@ -16,6 +16,7 @@ import rich_click as click
 from dda._version import __version__
 from dda.cli.base import dynamic_group
 from dda.config.constants import AppEnvVars, ConfigEnvVars
+from dda.utils.terminal import terminal_size
 
 if TYPE_CHECKING:
     from dda.config.file import ConfigFile
@@ -56,7 +57,12 @@ def set_default_config(
 
 
 @dynamic_group(
-    context_settings={"help_option_names": ["-h", "--help"], "max_content_width": 120, "show_default": True},
+    context_settings={
+        "help_option_names": ["-h", "--help"],
+        "terminal_width": terminal_size().columns,
+        "max_content_width": terminal_size().columns,
+        "show_default": True,
+    },
     invoke_without_command=True,
     allow_external_plugins=True,
     search_path_finder=search_path_finder,

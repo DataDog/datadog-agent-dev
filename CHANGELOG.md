@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+***Fixed:***
+
+- Properly set the dimensions of pseudo-terminals on Linux
+- Ensure that CLI formatting utilizes the full width of the terminal
+
 ## 0.23.1 - 2025-07-25
 
 ***Fixed:***

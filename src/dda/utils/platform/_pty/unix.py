@@ -9,10 +9,12 @@ import os
 import pty
 import subprocess
 import sys
+import termios
 from select import select
 from typing import TYPE_CHECKING
 
 from dda.utils.platform._pty.interface import PtySessionInterface
+from dda.utils.terminal import terminal_size
 
 # https://github.com/python/mypy/issues/19013
 assert sys.platform != "win32"  # noqa: S101
@@ -39,6 +41,10 @@ class PtySession(PtySessionInterface):
         self._fd, child_fd = pty.openpty()
         os.set_inheritable(self._fd, False)
         os.set_inheritable(child_fd, True)
+
+        width, height = terminal_size()
+        termios.tcsetwinsize(self._fd, (height, width))
+
         self.process = subprocess.Popen(
             [self.executable, *self.args],
             cwd=self.cwd,
