@@ -12,6 +12,7 @@ import winpty
 
 from dda.utils.platform import join_command_args
 from dda.utils.platform._pty.interface import PtySessionInterface
+from dda.utils.terminal import terminal_size
 
 # https://github.com/python/mypy/issues/19013
 assert sys.platform == "win32"  # noqa: S101
@@ -37,7 +38,7 @@ class PtySession(PtySessionInterface):
     ) -> None:
         super().__init__(command, env=env, cwd=cwd, encoding=encoding)
 
-        width, height = self.get_terminal_dimensions()
+        width, height = terminal_size()
         self.pty = winpty.PTY(width, height)
         self.pty.spawn(
             # Add quotes if the executable path contains spaces

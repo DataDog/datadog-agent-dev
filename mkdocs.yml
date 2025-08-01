@@ -78,6 +78,7 @@ nav:
     - Config: reference/api/config.md
     - Container:
       - Model: reference/api/container/model.md
+    - Terminal: reference/api/terminal.md
     - Constants: reference/api/constants.md
     - Telemetry: reference/api/telemetry.md
   - Interface:
