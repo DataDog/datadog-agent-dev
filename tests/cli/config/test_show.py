@@ -26,6 +26,9 @@ def test_default_scrubbed(dda, config_file, helpers, default_cache_dir, default_
         universal-shell = false
         editor = "vscode"
 
+        [tools.bazel]
+        managed = "auto"
+
         [storage]
         data = "{default_data_directory}"
         cache = "{default_cache_directory}"
@@ -78,6 +81,9 @@ def test_reveal(dda, config_file, helpers, default_cache_dir, default_data_dir):
         clone-repos = false
         universal-shell = false
         editor = "vscode"
+
+        [tools.bazel]
+        managed = "auto"
 
         [storage]
         data = "{default_data_directory}"

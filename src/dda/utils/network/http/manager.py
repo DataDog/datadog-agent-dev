@@ -34,6 +34,10 @@ class HTTPClientManager:
         return get_http_client(**kwargs)
 
     def download(self, url: str, *, path: Path) -> None:
-        with self.client() as client, client.stream("GET", url) as response, path.open(mode="wb", buffering=0) as f:
+        with (
+            self.client() as client,
+            client.stream("GET", url, follow_redirects=True) as response,
+            path.open_atomic(mode="wb", buffering=0) as f,
+        ):
             for chunk in response.iter_bytes():
                 f.write(chunk)

@@ -120,6 +120,23 @@ Platform | Environment variables | Fallback
 """
 
 
+def which(name: str) -> str | None:
+    """
+    This is equivalent to [shutil.which][] except on Windows, where extensions will no longer be entirely capitalized.
+    """
+    import shutil
+
+    path = shutil.which(name)
+    if path is None:
+        return None
+
+    if PLATFORM_ID != "windows":
+        return path
+
+    root, ext = os.path.splitext(path)
+    return f"{root}{ext.lower()}"
+
+
 def join_command_args(args: list[str]) -> str:
     """
     Create a valid shell command from a list of arguments.

@@ -4,17 +4,18 @@
 from __future__ import annotations
 
 import re
+import shutil
 import sys
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from functools import cache
-from shutil import which
 from textwrap import dedent as _dedent
 from typing import TYPE_CHECKING, Any
 from unittest import mock
 
 if TYPE_CHECKING:
     from collections.abc import Generator
+    from os import PathLike
     from subprocess import CompletedProcess
 
 CallArgsT = list[tuple[tuple[Any, ...], dict[str, Any]]]
@@ -41,7 +42,7 @@ def assert_output_match(output: str, pattern: str, *, exact: bool = True) -> Non
 def locate(executable: str) -> str:
     # This is used for cross-platform subprocess call assertions as our utilities
     # only resolve the executable path on Windows.
-    return (which(executable) if sys.platform == "win32" else executable) or executable
+    return (shutil.which(executable) if sys.platform == "win32" else executable) or executable
 
 
 @contextmanager
@@ -61,3 +62,15 @@ def hybrid_patch(target: str, *, return_values: dict[int, CompletedProcess]) -> 
 
     with mock.patch(target, side_effect=side_effect):
         yield calls
+
+
+def create_binary(path: PathLike) -> None:
+    shutil.copy(__existing_binary(), path)
+
+
+@cache
+def __existing_binary() -> str:
+    import sysconfig
+
+    # Prefer the entry point because it's very small
+    return shutil.which("dda", path=sysconfig.get_path("scripts")) or sys.executable
