@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from dda.cli.application import Application
+    from dda.tools.bazel import Bazel
     from dda.tools.docker import Docker
     from dda.tools.go import Go
     from dda.tools.uv import UV
@@ -20,6 +21,12 @@ class Tools:
 
     def __init__(self, app: Application) -> None:
         self.__app = app
+
+    @cached_property
+    def bazel(self) -> Bazel:
+        from dda.tools.bazel import Bazel
+
+        return Bazel(self.__app)
 
     @cached_property
     def docker(self) -> Docker:

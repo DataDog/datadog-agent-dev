@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+***Added:***
+
+- Add `build bazel` command
+- Add `tools bazel` command group
+
 ***Fixed:***
 
 - Properly set the dimensions of pseudo-terminals on Linux

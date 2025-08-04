@@ -30,6 +30,22 @@ The file can be managed by the [`config`](../cli/commands.md#dda-config) command
     options:
       heading_level: 3
 
+## Tools
+
+::: dda.config.model.tools.ToolsConfig
+    options:
+      heading_level: 3
+
+::: dda.config.model.tools.BazelConfig
+    options:
+      heading_level: 3
+
+## Storage
+
+::: dda.config.model.storage.StorageDirs
+    options:
+      heading_level: 3
+
 ## Git
 
 ::: dda.config.model.git.GitConfig
@@ -56,12 +72,6 @@ The file can be managed by the [`config`](../cli/commands.md#dda-config) command
     options:
       heading_level: 3
       annotations_path: full
-
-## Storage
-
-::: dda.config.model.storage.StorageDirs
-    options:
-      heading_level: 3
 
 ## Terminal
 

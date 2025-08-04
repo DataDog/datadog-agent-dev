@@ -8,7 +8,7 @@ import pathlib
 import sys
 from contextlib import contextmanager
 from functools import cached_property
-from typing import TYPE_CHECKING, Any
+from typing import IO, TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -79,10 +79,27 @@ class Path(pathlib.Path):
 
     def write_atomic(self, data: str | bytes, *args: Any, **kwargs: Any) -> None:
         """
-        Atomically write data to the current path.
+        Atomically write data to the current path. This is equivalent to the following:
+
+        ```python
+        with path.open_atomic("w", encoding="utf-8") as f:
+            f.write(data)
+        ```
 
         Parameters:
             data: The data to write.
+
+        Other parameters:
+            *args: Additional arguments to pass to [`os.fdopen`][os.fdopen].
+            **kwargs: Additional keyword arguments to pass to [`os.fdopen`][os.fdopen].
+        """
+        with self.open_atomic(*args, **kwargs) as f:
+            f.write(data)
+
+    @contextmanager
+    def open_atomic(self, *args: Any, **kwargs: Any) -> Generator[IO[Any], None, None]:
+        """
+        Atomically open a file for writing.
 
         Other parameters:
             *args: Additional arguments to pass to [`os.fdopen`][os.fdopen].
@@ -92,7 +109,7 @@ class Path(pathlib.Path):
 
         fd, path = mkstemp(dir=self.parent)
         with os.fdopen(fd, *args, **kwargs) as f:
-            f.write(data)
+            yield f
             f.flush()
             disk_sync(fd)
 
@@ -118,6 +135,22 @@ class Path(pathlib.Path):
             yield self
         finally:
             os.chdir(origin)
+
+    def as_exe(self) -> Path:
+        """
+        Return the current path with the appropriate executable suffix.
+        """
+        return self.__as_exe()
+
+    if sys.platform == "win32":
+
+        def __as_exe(self) -> Path:
+            return self.parent.joinpath(f"{self.stem}.exe")
+
+    else:
+
+        def __as_exe(self) -> Path:
+            return self
 
 
 @contextmanager
