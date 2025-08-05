@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 - Add `build bazel` command
 - Add `tools bazel` command group
+- Add `DD_HOST_UID` and `DD_HOST_GID` environment variables to the `linux-container` developer environment type when running on non-Windows platforms
 
 ***Fixed:***
 
