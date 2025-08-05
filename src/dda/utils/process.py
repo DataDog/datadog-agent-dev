@@ -251,7 +251,9 @@ class SubprocessRunner:
         check: bool,
         capture: bool,
     ) -> tuple[int, str]:
-        if self.__app.force_interactive:
+        from dda.utils.ci import running_in_ci
+
+        if self.__app.force_interactive or running_in_ci():
             import subprocess
 
             kwargs: dict[str, Any] = {"env": env, "cwd": cwd}

@@ -102,6 +102,8 @@ f.write_text("foo")
         assert "Microsoft Antimalware Service" in output
 
     def test_run_reverse_interactivity(self, app, mocker, tmp_path):
+        mocker.patch("dda.utils.ci.running_in_ci", return_value=False)
+
         if app.console.is_interactive:
             from dda.utils.platform._pty.mock import PtySession
         elif sys.platform == "win32":
