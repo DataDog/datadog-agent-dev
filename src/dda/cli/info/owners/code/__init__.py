@@ -28,3 +28,9 @@ def cmd(file: str, *, owners_file: str) -> None:
     Gets the code owners for the specified file.
     """
     import codeowners
+
+    with open(owners_file, "r") as f:
+        owners = codeowners.CodeOwners(f.read())
+    owners_list = owners.of(file)
+
+    print(", ".join(owner[1] for owner in owners_list))
