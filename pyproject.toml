@@ -225,6 +225,7 @@ packages = ["src/dda"]
 
 [tool.hatch.build.hooks.vcs]
 version-file = "src/dda/_version.py"
+template = "__version__ = '{version}'"
 
 [tool.mypy]
 disallow_untyped_defs = true
