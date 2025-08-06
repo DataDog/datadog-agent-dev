@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from subprocess import CompletedProcess
@@ -24,6 +25,11 @@ def updated_config(config_file):
     if sys.platform == "win32":
         config_file.data["env"] = {"dev": {"default-type": "linux-container"}}
         config_file.save()
+
+
+@pytest.fixture(scope="module")
+def host_user_args():
+    return [] if sys.platform == "win32" else ["-e", f"HOST_UID={os.getuid()}", "-e", f"HOST_GID={os.getgid()}"]
 
 
 def get_starship_mount(shared_dir: Path) -> list[str]:
@@ -141,7 +147,7 @@ class TestStart:
             """
         )
 
-    def test_default(self, dda, helpers, mocker, temp_dir):
+    def test_default(self, dda, helpers, mocker, temp_dir, host_user_args):
         repos_dir = temp_dir / "repos"
         repos_dir.ensure_dir()
         repo_dir = repos_dir / "datadog-agent"
@@ -201,6 +207,7 @@ class TestStart:
                         "50069:9000",
                         "-v",
                         "/var/run/docker.sock:/var/run/docker.sock",
+                        *host_user_args,
                         "-e",
                         "DD_SHELL",
                         "-e",
@@ -222,7 +229,7 @@ class TestStart:
             ),
         ]
 
-    def test_clone(self, dda, helpers, mocker, temp_dir):
+    def test_clone(self, dda, helpers, mocker, temp_dir, host_user_args):
         write_server_config = mocker.patch("dda.utils.ssh.write_server_config")
         with helpers.hybrid_patch(
             "subprocess.run",
@@ -276,6 +283,7 @@ class TestStart:
                         "50069:9000",
                         "-v",
                         "/var/run/docker.sock:/var/run/docker.sock",
+                        *host_user_args,
                         "-e",
                         "DD_SHELL",
                         "-e",
@@ -311,7 +319,7 @@ class TestStart:
             ),
         ]
 
-    def test_no_pull(self, dda, helpers, mocker, temp_dir):
+    def test_no_pull(self, dda, helpers, mocker, temp_dir, host_user_args):
         repos_dir = temp_dir / "repos"
         repos_dir.ensure_dir()
         repo_dir = repos_dir / "datadog-agent"
@@ -365,6 +373,7 @@ class TestStart:
                         "50069:9000",
                         "-v",
                         "/var/run/docker.sock:/var/run/docker.sock",
+                        *host_user_args,
                         "-e",
                         "DD_SHELL",
                         "-e",
@@ -386,7 +395,7 @@ class TestStart:
             ),
         ]
 
-    def test_multiple(self, dda, helpers, mocker, temp_dir):
+    def test_multiple(self, dda, helpers, mocker, temp_dir, host_user_args):
         repos_dir = temp_dir / "repos"
         repos_dir.ensure_dir()
         repo1_dir = repos_dir / "datadog-agent"
@@ -448,6 +457,7 @@ class TestStart:
                         "50069:9000",
                         "-v",
                         "/var/run/docker.sock:/var/run/docker.sock",
+                        *host_user_args,
                         "-e",
                         "DD_SHELL",
                         "-e",
@@ -471,7 +481,7 @@ class TestStart:
             ),
         ]
 
-    def test_multiple_clones(self, dda, helpers, mocker, temp_dir):
+    def test_multiple_clones(self, dda, helpers, mocker, temp_dir, host_user_args):
         write_server_config = mocker.patch("dda.utils.ssh.write_server_config")
         with helpers.hybrid_patch(
             "subprocess.run",
@@ -526,6 +536,7 @@ class TestStart:
                         "50069:9000",
                         "-v",
                         "/var/run/docker.sock:/var/run/docker.sock",
+                        *host_user_args,
                         "-e",
                         "DD_SHELL",
                         "-e",

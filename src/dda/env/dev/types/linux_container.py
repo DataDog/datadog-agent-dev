@@ -3,6 +3,8 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
+import os
+import sys
 from functools import cached_property
 from typing import TYPE_CHECKING, Annotated, Any, Literal, NoReturn
 
@@ -116,6 +118,16 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 f"{self.mcp_port}:9000",
                 "-v",
                 "/var/run/docker.sock:/var/run/docker.sock",
+            ]
+            if sys.platform != "win32":
+                command.extend((
+                    "-e",
+                    f"HOST_UID={os.getuid()}",
+                    "-e",
+                    f"HOST_GID={os.getgid()}",
+                ))
+
+            command.extend((
                 "-e",
                 "DD_SHELL",
                 "-e",
@@ -124,7 +136,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 GIT_AUTHOR_NAME_ENV_VAR,
                 "-e",
                 GIT_AUTHOR_EMAIL_ENV_VAR,
-            ]
+            ))
             if self.config.arch is not None:
                 command.extend(("--platform", f"linux/{self.config.arch}"))
 
