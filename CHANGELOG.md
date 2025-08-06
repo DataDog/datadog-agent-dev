@@ -12,6 +12,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 - Add `build bazel` command
 - Add `tools bazel` command group
+- Add `env qa` command group for managing QA environments
+- Add the `linux-container` QA environment type
 
 ***Fixed:***
 
