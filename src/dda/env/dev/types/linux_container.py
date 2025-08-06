@@ -122,9 +122,9 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             if sys.platform != "win32":
                 command.extend((
                     "-e",
-                    f"DD_HOST_UID={os.getuid()}",
+                    f"HOST_UID={os.getuid()}",
                     "-e",
-                    f"DD_HOST_GID={os.getgid()}",
+                    f"HOST_GID={os.getgid()}",
                 ))
 
             command.extend((

@@ -29,7 +29,7 @@ def updated_config(config_file):
 
 @pytest.fixture(scope="module")
 def host_user_args():
-    return [] if sys.platform == "win32" else ["-e", f"DD_HOST_UID={os.getuid()}", "-e", f"DD_HOST_GID={os.getgid()}"]
+    return [] if sys.platform == "win32" else ["-e", f"HOST_UID={os.getuid()}", "-e", f"HOST_GID={os.getgid()}"]
 
 
 def get_starship_mount(shared_dir: Path) -> list[str]:
