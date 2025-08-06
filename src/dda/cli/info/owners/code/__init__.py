@@ -8,7 +8,9 @@ import click
 from dda.cli.base import dynamic_command
 
 
-@dynamic_command(short_help="Gets the code owners for the specified file.")
+@dynamic_command(
+    short_help="Gets the code owners for the specified file.", features=["codeowners"]
+)
 @click.argument(
     "file",
     type=click.Path(exists=True, dir_okay=False),
@@ -25,4 +27,4 @@ def cmd(file: str, *, owners_file: str) -> None:
     """
     Gets the code owners for the specified file.
     """
-    pass
+    import codeowners

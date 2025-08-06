@@ -64,6 +64,9 @@ gcp = [
 github = [
     "pygithub",
 ]
+codeowners = [
+    "codeowners",
+]
 gitlab = [
     "python-gitlab",
 ]
