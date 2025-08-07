@@ -11,12 +11,9 @@ from dda.cli.base import dynamic_command, pass_app
 
 if TYPE_CHECKING:
     from dda.cli.application import Application
-    from rich.text import Text
 
 
-@dynamic_command(
-    short_help="Gets the code owners for the specified file.", features=["codeowners"]
-)
+@dynamic_command(short_help="Gets the code owners for the specified file.", features=["codeowners"])
 @click.argument(
     "files",
     type=click.Path(exists=True, dir_okay=False),
@@ -37,15 +34,13 @@ if TYPE_CHECKING:
     default=True,
 )
 @pass_app
-def cmd(
-    app: Application, files: tuple[str, ...], *, owners_file: str, pretty: bool
-) -> None:
+def cmd(app: Application, files: tuple[str, ...], *, owners_file: str, pretty: bool) -> None:
     """
     Gets the code owners for the specified files.
     """
     import codeowners
 
-    with open(owners_file, "r") as f:
+    with open(owners_file, encoding="utf-8") as f:
         owners = codeowners.CodeOwners(f.read())
 
     res = {file: [owner[1] for owner in owners.of(file)] for file in files}

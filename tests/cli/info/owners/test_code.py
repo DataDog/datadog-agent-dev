@@ -2,19 +2,22 @@
 #
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
-from typing import Iterable
+
+import json
+from typing import TYPE_CHECKING
 
 from dda.utils.fs import Path, temp_directory
 
-import json
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+DEFAULT_CODEOWNERS_LOCATION = Path(".github/CODEOWNERS")
 
 
-def _create_codeowners_file(ownership_data: dict[str, list[str]], location: Path):
+def _create_codeowners_file(ownership_data: dict[str, list[str]], location: Path) -> None:
     location.parent.ensure_dir()
     location.touch(exist_ok=True)
-    codeowners_content = "\n".join(
-        f"{pattern} {' '.join(owners)}" for pattern, owners in ownership_data.items()
-    )
+    codeowners_content = "\n".join(f"{pattern} {' '.join(owners)}" for pattern, owners in ownership_data.items())
     location.write_text(codeowners_content)
 
 
@@ -25,13 +28,13 @@ def _create_temp_files(files: Iterable[str], temp_dir: Path) -> None:
         file_path.touch()
 
 
-def _test_owner_template(
+def _test_owner_template(  # type: ignore[no-untyped-def]
     dda,
     ownership_data: dict[str, list[str]],
     expected_result: dict[str, list[str]],
     extra_command_parts: Iterable[str] = (),
-    codeowners_location: Path = Path(".github/CODEOWNERS"),
-):
+    codeowners_location: Path = DEFAULT_CODEOWNERS_LOCATION,
+) -> None:
     files = expected_result.keys()
     with temp_directory() as temp_dir:
         _create_codeowners_file(ownership_data, temp_dir / codeowners_location)
