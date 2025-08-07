@@ -120,6 +120,7 @@ legacy-agent-deploy = [
 ]
 # https://github.com/DataDog/datadog-agent-buildimages/blob/main/requirements/e2e.txt
 legacy-e2e = [
+    "boto3==1.38.8",
     "codeowners==0.6.0",
     "docker-squash==1.1.0",
     "docker==6.1.3",
