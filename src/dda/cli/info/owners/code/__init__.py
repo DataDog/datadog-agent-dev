@@ -3,9 +3,15 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import click
 
-from dda.cli.base import dynamic_command
+from dda.cli.base import dynamic_command, pass_app
+
+if TYPE_CHECKING:
+    from dda.cli.application import Application
+    from rich.text import Text
 
 
 @dynamic_command(
@@ -24,7 +30,16 @@ from dda.cli.base import dynamic_command
     help="Path to CODEOWNERS file",
     default=".github/CODEOWNERS",
 )
-def cmd(files: tuple[str, ...], *, owners_file: str) -> None:
+# TODO: Make this respect any --non-interactive flag or other way to detect CI environment
+@click.option(
+    "--pretty/--no-pretty",
+    help="Format the output in a human-readable format instead of JSON object",
+    default=True,
+)
+@pass_app
+def cmd(
+    app: Application, files: tuple[str, ...], *, owners_file: str, pretty: bool
+) -> None:
     """
     Gets the code owners for the specified files.
     """
@@ -35,4 +50,10 @@ def cmd(files: tuple[str, ...], *, owners_file: str) -> None:
 
     res = {file: [owner[1] for owner in owners.of(file)] for file in files}
 
-    print(res)
+    if pretty:
+        display_res = {file: ", ".join(owners) for file, owners in res.items()}
+        app.display_table(display_res)
+    else:
+        from json import dumps
+
+        app.output(dumps(res))
