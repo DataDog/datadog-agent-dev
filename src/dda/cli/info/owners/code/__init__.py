@@ -12,9 +12,10 @@ from dda.cli.base import dynamic_command
     short_help="Gets the code owners for the specified file.", features=["codeowners"]
 )
 @click.argument(
-    "file",
+    "files",
     type=click.Path(exists=True, dir_okay=False),
     required=True,
+    nargs=-1,
 )
 @click.option(
     "--owners-file",
@@ -23,14 +24,15 @@ from dda.cli.base import dynamic_command
     help="Path to CODEOWNERS file",
     default=".github/CODEOWNERS",
 )
-def cmd(file: str, *, owners_file: str) -> None:
+def cmd(files: tuple[str, ...], *, owners_file: str) -> None:
     """
-    Gets the code owners for the specified file.
+    Gets the code owners for the specified files.
     """
     import codeowners
 
     with open(owners_file, "r") as f:
         owners = codeowners.CodeOwners(f.read())
-    owners_list = owners.of(file)
 
-    print(", ".join(owner[1] for owner in owners_list))
+    res = {file: [owner[1] for owner in owners.of(file)] for file in files}
+
+    print(res)
