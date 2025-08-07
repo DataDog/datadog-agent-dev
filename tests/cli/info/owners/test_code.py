@@ -60,3 +60,68 @@ def test_single_owner(dda):
         ownership_data=ownership_data,
         expected_result=expected_result,
     )
+
+
+def test_multiple_owners(dda):
+    ownership_data = {
+        "testfile.txt": ["@owner1", "@owner2"],
+    }
+    expected_result = ownership_data
+    _test_owner_template(
+        dda,
+        ownership_data=ownership_data,
+        expected_result=expected_result,
+    )
+
+
+def test_wildcard_ownership(dda):
+    ownership_data = {
+        "*.txt": ["@owner1"],
+        "testfile.txt": ["@owner2"],
+    }
+    expected_result = {
+        "testfile.txt": ["@owner2"],
+        "otherfile.txt": ["@owner1"],
+    }
+    _test_owner_template(
+        dda,
+        ownership_data=ownership_data,
+        expected_result=expected_result,
+    )
+
+
+def test_ownership_location(dda):
+    ownership_data = {
+        "testfile.txt": ["@owner1"],
+    }
+    expected_result = ownership_data
+    _test_owner_template(
+        dda,
+        extra_command_parts=["--owners-file", "custom/CODEOWNERS"],
+        codeowners_location=Path("custom/CODEOWNERS"),
+        ownership_data=ownership_data,
+        expected_result=expected_result,
+    )
+
+
+def test_complicated_situation(dda):
+    ownership_data = {
+        "*": ["@DataDog/team-everything"],
+        "*.md": ["@DataDog/team-devops", "@DataDog/team-doc"],
+        ".gitlab/": ["@DataDog/team-devops"],
+        ".gitlab/security.yml": ["@DataDog/team-security"],
+    }
+    expected_result = {
+        "test.txt": ["@DataDog/team-everything"],
+        "README.md": [
+            "@DataDog/team-devops",
+            "@DataDog/team-doc",
+        ],
+        ".gitlab/security.yml": ["@DataDog/team-security"],
+        ".gitlab/ci.yml": ["@DataDog/team-devops"],
+    }
+    _test_owner_template(
+        dda,
+        ownership_data=ownership_data,
+        expected_result=expected_result,
+    )
