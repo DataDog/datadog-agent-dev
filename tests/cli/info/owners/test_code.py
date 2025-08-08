@@ -1,0 +1,190 @@
+# SPDX-FileCopyrightText: 2025-present Datadog, Inc. <dev@datadoghq.com>
+#
+# SPDX-License-Identifier: MIT
+from __future__ import annotations
+
+import json
+from os import name as os_name
+from os import sep
+from typing import TYPE_CHECKING
+
+from dda.utils.fs import Path
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+DEFAULT_CODEOWNERS_LOCATION = Path(".github/CODEOWNERS")
+
+
+def _create_codeowners_file(ownership_data: dict[str, list[str]], location: Path) -> None:
+    location.parent.ensure_dir()
+    location.touch(exist_ok=True)
+    codeowners_content = "\n".join(f"{pattern} {' '.join(owners)}" for pattern, owners in ownership_data.items())
+    location.write_text(codeowners_content)
+
+
+def _create_temp_items(files: Iterable[str], temp_dir: Path) -> None:
+    for file_str in files:
+        file_path = temp_dir / file_str
+        file_path.parent.ensure_dir()
+
+        # Assume that if the file path does not have an extension, it is a directory
+        if file_path.suffix == "":
+            file_path.mkdir()
+        else:
+            file_path.touch()
+
+
+def _test_owner_template(  # type: ignore[no-untyped-def]
+    dda,
+    temp_dir: Path,
+    ownership_data: dict[str, list[str]],
+    expected_result: dict[str, list[str]],
+    extra_command_parts: Iterable[str] = (),
+    codeowners_location: Path = DEFAULT_CODEOWNERS_LOCATION,
+) -> None:
+    files = expected_result.keys()
+    _create_codeowners_file(ownership_data, temp_dir / codeowners_location)
+    _create_temp_items(files, temp_dir)
+
+    with temp_dir.as_cwd():
+        result = dda(
+            "info",
+            "owners",
+            "code",
+            "--json",
+            *extra_command_parts,
+            *expected_result.keys(),
+        )
+    assert result.exit_code == 0, result.stdout
+    assert json.loads(result.stdout) == expected_result
+
+
+def test_single_owner(dda, temp_dir):
+    ownership_data = {
+        "testfile.txt": ["@owner1"],
+    }
+    expected_result = ownership_data
+    _test_owner_template(
+        dda,
+        temp_dir=temp_dir,
+        ownership_data=ownership_data,
+        expected_result=expected_result,
+    )
+
+
+def test_multiple_owners(dda, temp_dir):
+    ownership_data = {
+        "testfile.txt": ["@owner1", "@owner2"],
+    }
+    expected_result = ownership_data
+    _test_owner_template(
+        dda,
+        temp_dir=temp_dir,
+        ownership_data=ownership_data,
+        expected_result=expected_result,
+    )
+
+
+def test_wildcard_ownership(dda, temp_dir):
+    ownership_data = {
+        "*.txt": ["@owner1"],
+        "testfile.txt": ["@owner2"],
+    }
+    expected_result = {
+        "testfile.txt": ["@owner2"],
+        "otherfile.txt": ["@owner1"],
+    }
+    _test_owner_template(
+        dda,
+        temp_dir=temp_dir,
+        ownership_data=ownership_data,
+        expected_result=expected_result,
+    )
+
+
+def test_directory_ownership(dda, temp_dir):
+    ownership_data = {
+        "subdir1": ["@owner1"],
+        "subdir2": ["@owner2"],
+        f"subdir2{sep}testfile2.txt": ["@owner3"],
+    }
+    expected_result = {
+        "subdir1": ["@owner1"],
+        f"subdir1{sep}testfile1.txt": ["@owner1"],
+        "subdir2": ["@owner2"],
+        f"subdir2{sep}testfile2.txt": ["@owner3"],
+    }
+    _test_owner_template(
+        dda,
+        temp_dir=temp_dir,
+        ownership_data=ownership_data,
+        expected_result=expected_result,
+    )
+
+
+def test_ownership_location(dda, temp_dir):
+    ownership_data = {
+        "testfile.txt": ["@owner1"],
+    }
+    expected_result = ownership_data
+    _test_owner_template(
+        dda,
+        temp_dir=temp_dir,
+        extra_command_parts=["--config", "custom/CODEOWNERS"],
+        codeowners_location=Path("custom/CODEOWNERS"),
+        ownership_data=ownership_data,
+        expected_result=expected_result,
+    )
+
+
+def test_complicated_situation(dda, temp_dir):
+    ownership_data = {
+        "*": ["@DataDog/team-everything"],
+        "*.md": ["@DataDog/team-devops", "@DataDog/team-doc"],
+        ".gitlab": ["@DataDog/team-devops"],
+        f".gitlab{sep}security.yml": ["@DataDog/team-security"],
+    }
+    expected_result = {
+        "test.txt": ["@DataDog/team-everything"],
+        "README.md": [
+            "@DataDog/team-devops",
+            "@DataDog/team-doc",
+        ],
+        ".gitlab": ["@DataDog/team-devops"],
+        f".gitlab{sep}security.yml": ["@DataDog/team-security"],
+        f".gitlab{sep}ci.yml": ["@DataDog/team-devops"],
+    }
+    _test_owner_template(
+        dda,
+        temp_dir=temp_dir,
+        ownership_data=ownership_data,
+        expected_result=expected_result,
+    )
+
+
+def test_human_output(dda, temp_dir):
+    ownership_data = {
+        "testfile.txt": ["@owner1"],
+        f"subdir{sep}testfile2.txt": ["@owner2"],
+        f"subdir{sep}anotherfile.txt": ["@owner1", "@owner3"],
+    }
+
+    _create_codeowners_file(ownership_data, temp_dir / DEFAULT_CODEOWNERS_LOCATION)
+    _create_temp_items(ownership_data.keys(), temp_dir)
+    with temp_dir.as_cwd():
+        result = dda("info", "owners", "code", *ownership_data.keys())
+    assert result.exit_code == 0, result.stdout
+
+    unix_result = """┌────────────────────────┬──────────────────┐
+│ testfile.txt           │ @owner1          │
+│ subdir/testfile2.txt   │ @owner2          │
+│ subdir/anotherfile.txt │ @owner1, @owner3 │
+└────────────────────────┴──────────────────┘
+"""
+
+    windows_result = unix_result.replace("/", "\\")
+    if os_name == "nt":
+        assert result.stdout == windows_result, result.stdout
+    else:
+        assert result.stdout == unix_result, result.stdout
