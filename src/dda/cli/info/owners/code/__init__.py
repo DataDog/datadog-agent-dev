@@ -53,4 +53,4 @@ def cmd(app: Application, paths: tuple[Path, ...], *, config_filepath: Path, jso
         app.output(dumps(res))
     else:
         display_res = {path: ", ".join(owners) for path, owners in res.items()}
-        app.display_table(display_res)
+        app.display_table(display_res, stderr=False)
