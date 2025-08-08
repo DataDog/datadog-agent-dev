@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import json
+from os import name as os_name
+from os import sep
 from typing import TYPE_CHECKING
 
 from dda.utils.fs import Path
@@ -105,13 +107,13 @@ def test_directory_ownership(dda, temp_dir):
     ownership_data = {
         "subdir1": ["@owner1"],
         "subdir2": ["@owner2"],
-        "subdir2/testfile2.txt": ["@owner3"],
+        f"subdir2{sep}testfile2.txt": ["@owner3"],
     }
     expected_result = {
         "subdir1": ["@owner1"],
-        "subdir1/testfile1.txt": ["@owner1"],
+        f"subdir1{sep}testfile1.txt": ["@owner1"],
         "subdir2": ["@owner2"],
-        "subdir2/testfile2.txt": ["@owner3"],
+        f"subdir2{sep}testfile2.txt": ["@owner3"],
     }
     _test_owner_template(
         dda,
@@ -141,7 +143,7 @@ def test_complicated_situation(dda, temp_dir):
         "*": ["@DataDog/team-everything"],
         "*.md": ["@DataDog/team-devops", "@DataDog/team-doc"],
         ".gitlab": ["@DataDog/team-devops"],
-        ".gitlab/security.yml": ["@DataDog/team-security"],
+        f".gitlab{sep}security.yml": ["@DataDog/team-security"],
     }
     expected_result = {
         "test.txt": ["@DataDog/team-everything"],
@@ -150,8 +152,8 @@ def test_complicated_situation(dda, temp_dir):
             "@DataDog/team-doc",
         ],
         ".gitlab": ["@DataDog/team-devops"],
-        ".gitlab/security.yml": ["@DataDog/team-security"],
-        ".gitlab/ci.yml": ["@DataDog/team-devops"],
+        f".gitlab{sep}security.yml": ["@DataDog/team-security"],
+        f".gitlab{sep}ci.yml": ["@DataDog/team-devops"],
     }
     _test_owner_template(
         dda,
@@ -164,8 +166,8 @@ def test_complicated_situation(dda, temp_dir):
 def test_human_output(dda, temp_dir):
     ownership_data = {
         "testfile.txt": ["@owner1"],
-        "subdir/testfile2.txt": ["@owner2"],
-        "subdir/anotherfile.txt": ["@owner1", "@owner3"],
+        f"subdir{sep}testfile2.txt": ["@owner2"],
+        f"subdir{sep}anotherfile.txt": ["@owner1", "@owner3"],
     }
 
     _create_codeowners_file(ownership_data, temp_dir / DEFAULT_CODEOWNERS_LOCATION)
@@ -173,12 +175,16 @@ def test_human_output(dda, temp_dir):
     with temp_dir.as_cwd():
         result = dda("info", "owners", "code", *ownership_data.keys())
     assert result.exit_code == 0, result.stdout
-    assert (
-        result.stdout
-        == """┌────────────────────────┬──────────────────┐
+
+    unix_result = """┌────────────────────────┬──────────────────┐
 │ testfile.txt           │ @owner1          │
 │ subdir/testfile2.txt   │ @owner2          │
 │ subdir/anotherfile.txt │ @owner1, @owner3 │
 └────────────────────────┴──────────────────┘
 """
-    )
+
+    windows_result = unix_result.replace("/", "\\")
+    if os_name == "nt":
+        assert result.stdout == windows_result, result.stdout
+    else:
+        assert result.stdout == unix_result, result.stdout
