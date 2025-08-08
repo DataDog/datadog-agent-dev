@@ -21,11 +21,16 @@ def _create_codeowners_file(ownership_data: dict[str, list[str]], location: Path
     location.write_text(codeowners_content)
 
 
-def _create_temp_files(files: Iterable[str], temp_dir: Path) -> None:
+def _create_temp_items(files: Iterable[str], temp_dir: Path) -> None:
     for file_str in files:
         file_path = temp_dir / file_str
         file_path.parent.ensure_dir()
-        file_path.touch()
+
+        # Assume that if the file path does not have an extension, it is a directory
+        if file_path.suffix == "":
+            file_path.mkdir()
+        else:
+            file_path.touch()
 
 
 def _test_owner_template(  # type: ignore[no-untyped-def]
@@ -38,7 +43,7 @@ def _test_owner_template(  # type: ignore[no-untyped-def]
 ) -> None:
     files = expected_result.keys()
     _create_codeowners_file(ownership_data, temp_dir / codeowners_location)
-    _create_temp_files(files, temp_dir)
+    _create_temp_items(files, temp_dir)
 
     with temp_dir.as_cwd():
         result = dda(
@@ -96,6 +101,26 @@ def test_wildcard_ownership(dda, temp_dir):
     )
 
 
+def test_directory_ownership(dda, temp_dir):
+    ownership_data = {
+        "subdir1": ["@owner1"],
+        "subdir2": ["@owner2"],
+        "subdir2/testfile2.txt": ["@owner3"],
+    }
+    expected_result = {
+        "subdir1": ["@owner1"],
+        "subdir1/testfile1.txt": ["@owner1"],
+        "subdir2": ["@owner2"],
+        "subdir2/testfile2.txt": ["@owner3"],
+    }
+    _test_owner_template(
+        dda,
+        temp_dir=temp_dir,
+        ownership_data=ownership_data,
+        expected_result=expected_result,
+    )
+
+
 def test_ownership_location(dda, temp_dir):
     ownership_data = {
         "testfile.txt": ["@owner1"],
@@ -115,7 +140,7 @@ def test_complicated_situation(dda, temp_dir):
     ownership_data = {
         "*": ["@DataDog/team-everything"],
         "*.md": ["@DataDog/team-devops", "@DataDog/team-doc"],
-        ".gitlab/": ["@DataDog/team-devops"],
+        ".gitlab": ["@DataDog/team-devops"],
         ".gitlab/security.yml": ["@DataDog/team-security"],
     }
     expected_result = {
@@ -124,6 +149,7 @@ def test_complicated_situation(dda, temp_dir):
             "@DataDog/team-devops",
             "@DataDog/team-doc",
         ],
+        ".gitlab": ["@DataDog/team-devops"],
         ".gitlab/security.yml": ["@DataDog/team-security"],
         ".gitlab/ci.yml": ["@DataDog/team-devops"],
     }
@@ -132,4 +158,27 @@ def test_complicated_situation(dda, temp_dir):
         temp_dir=temp_dir,
         ownership_data=ownership_data,
         expected_result=expected_result,
+    )
+
+
+def test_human_output(dda, temp_dir):
+    ownership_data = {
+        "testfile.txt": ["@owner1"],
+        "subdir/testfile2.txt": ["@owner2"],
+        "subdir/anotherfile.txt": ["@owner1", "@owner3"],
+    }
+
+    _create_codeowners_file(ownership_data, temp_dir / DEFAULT_CODEOWNERS_LOCATION)
+    _create_temp_items(ownership_data.keys(), temp_dir)
+    with temp_dir.as_cwd():
+        result = dda("info", "owners", "code", *ownership_data.keys())
+    assert result.exit_code == 0, result.stdout
+    assert (
+        result.stdout
+        == """┌────────────────────────┬──────────────────┐
+│ testfile.txt           │ @owner1          │
+│ subdir/testfile2.txt   │ @owner2          │
+│ subdir/anotherfile.txt │ @owner1, @owner3 │
+└────────────────────────┴──────────────────┘
+"""
     )
