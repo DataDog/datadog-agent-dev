@@ -7,7 +7,7 @@ from dda.cli.base import dynamic_group
 
 
 @dynamic_group(
-    short_help="Get info about ownership of files in the repo",
+    short_help="Find owners of repo content",
 )
 def cmd() -> None:
     pass

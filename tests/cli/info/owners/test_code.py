@@ -6,7 +6,7 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING
 
-from dda.utils.fs import Path, temp_directory
+from dda.utils.fs import Path
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -30,54 +30,56 @@ def _create_temp_files(files: Iterable[str], temp_dir: Path) -> None:
 
 def _test_owner_template(  # type: ignore[no-untyped-def]
     dda,
+    temp_dir: Path,
     ownership_data: dict[str, list[str]],
     expected_result: dict[str, list[str]],
     extra_command_parts: Iterable[str] = (),
     codeowners_location: Path = DEFAULT_CODEOWNERS_LOCATION,
 ) -> None:
     files = expected_result.keys()
-    with temp_directory() as temp_dir:
-        _create_codeowners_file(ownership_data, temp_dir / codeowners_location)
-        _create_temp_files(files, temp_dir)
+    _create_codeowners_file(ownership_data, temp_dir / codeowners_location)
+    _create_temp_files(files, temp_dir)
 
-        with temp_dir.as_cwd():
-            result = dda(
-                "info",
-                "owners",
-                "code",
-                "--no-pretty",
-                *extra_command_parts,
-                *expected_result.keys(),
-            )
+    with temp_dir.as_cwd():
+        result = dda(
+            "info",
+            "owners",
+            "code",
+            "--json",
+            *extra_command_parts,
+            *expected_result.keys(),
+        )
     assert result.exit_code == 0, result.stdout
     assert json.loads(result.stdout) == expected_result
 
 
-def test_single_owner(dda):
+def test_single_owner(dda, temp_dir):
     ownership_data = {
         "testfile.txt": ["@owner1"],
     }
     expected_result = ownership_data
     _test_owner_template(
         dda,
+        temp_dir=temp_dir,
         ownership_data=ownership_data,
         expected_result=expected_result,
     )
 
 
-def test_multiple_owners(dda):
+def test_multiple_owners(dda, temp_dir):
     ownership_data = {
         "testfile.txt": ["@owner1", "@owner2"],
     }
     expected_result = ownership_data
     _test_owner_template(
         dda,
+        temp_dir=temp_dir,
         ownership_data=ownership_data,
         expected_result=expected_result,
     )
 
 
-def test_wildcard_ownership(dda):
+def test_wildcard_ownership(dda, temp_dir):
     ownership_data = {
         "*.txt": ["@owner1"],
         "testfile.txt": ["@owner2"],
@@ -88,26 +90,28 @@ def test_wildcard_ownership(dda):
     }
     _test_owner_template(
         dda,
+        temp_dir=temp_dir,
         ownership_data=ownership_data,
         expected_result=expected_result,
     )
 
 
-def test_ownership_location(dda):
+def test_ownership_location(dda, temp_dir):
     ownership_data = {
         "testfile.txt": ["@owner1"],
     }
     expected_result = ownership_data
     _test_owner_template(
         dda,
-        extra_command_parts=["--owners-file", "custom/CODEOWNERS"],
+        temp_dir=temp_dir,
+        extra_command_parts=["--config", "custom/CODEOWNERS"],
         codeowners_location=Path("custom/CODEOWNERS"),
         ownership_data=ownership_data,
         expected_result=expected_result,
     )
 
 
-def test_complicated_situation(dda):
+def test_complicated_situation(dda, temp_dir):
     ownership_data = {
         "*": ["@DataDog/team-everything"],
         "*.md": ["@DataDog/team-devops", "@DataDog/team-doc"],
@@ -125,6 +129,7 @@ def test_complicated_situation(dda):
     }
     _test_owner_template(
         dda,
+        temp_dir=temp_dir,
         ownership_data=ownership_data,
         expected_result=expected_result,
     )

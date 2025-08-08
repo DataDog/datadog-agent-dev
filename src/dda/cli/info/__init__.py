@@ -7,7 +7,7 @@ from dda.cli.base import dynamic_group
 
 
 @dynamic_group(
-    short_help="Programatically get information about the Agent's code, repo, CI and more",
+    short_help="Get information about the repo, CI and more",
 )
 def cmd() -> None:
     pass
