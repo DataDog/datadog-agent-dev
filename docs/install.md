@@ -2,6 +2,16 @@
 
 -----
 
+## Package managers
+
+### Homebrew
+
+Install the `dda` [cask](https://formulae.brew.sh/cask/dda) using [Homebrew](https://brew.sh).
+
+```
+brew install --cask dda
+```
+
 ## Installers
 
 /// tab | macOS
@@ -55,6 +65,7 @@
         msiexec /passive /i https://github.com/DataDog/datadog-agent-dev/releases/latest/download/dda-x64.msi
         ```
         /////
+
         ///// tab | x86
         ```
         msiexec /passive /i https://github.com/DataDog/datadog-agent-dev/releases/latest/download/dda-x86.msi
