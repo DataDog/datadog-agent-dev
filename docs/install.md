@@ -107,14 +107,16 @@ After downloading the archive corresponding to your platform and architecture, e
 
 ## Upgrade
 
-If you installed `dda` using a [package manager](#package-managers), prefer its native upgrade mechanism. Otherwise, you can upgrade to the latest version by running the following command.
+You can upgrade to the latest version by running the following command.
 
 ```
 dda self update
 ```
 
+If you installed `dda` using a [package manager](#package-managers), prefer its native upgrade mechanism.
+
 /// warning
-[Development](#development) and [manual](#manual) installations do not support this command and have their own upgrade mechanisms.
+[Development](#development) and [manual](#manual) installations do not support this command and each have their own means of upgrading.
 ///
 
 ## Development
