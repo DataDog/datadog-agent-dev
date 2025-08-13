@@ -135,7 +135,7 @@ class Application(Terminal):
     ) -> None:
         from dda.utils.ci import running_in_ci
 
-        if self.telemetry.error_state():
+        if self.telemetry.enabled and self.telemetry.error_state():
             self.display_warning("An error occurred while submitting telemetry.")
             self.display_warning("Check the log: ", end="")
             self.display_info("dda self telemetry log show")
