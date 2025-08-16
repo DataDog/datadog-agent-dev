@@ -14,20 +14,6 @@ Completion is achieved by saving a script and then executing it as a part of you
 
 Afterward, you'll need to start a new shell in order for the changes to take effect.
 
-/// tab | bash
-Save the script somewhere:
-
-```console
-_DDA_COMPLETE=bash_source dda > ~/.dda-complete.bash
-```
-
-Source the file in `~/.bashrc` (or `~/.bash_profile` if on macOS):
-
-```console
-. ~/.dda-complete.bash
-```
-///
-
 /// tab | zsh
 Save the script somewhere:
 
@@ -39,6 +25,20 @@ Source the file in `~/.zshrc`:
 
 ```console
 . ~/.dda-complete.zsh
+```
+///
+
+/// tab | bash
+Save the script somewhere:
+
+```console
+_DDA_COMPLETE=bash_source dda > ~/.dda-complete.bash
+```
+
+Source the file in `~/.bashrc` (or `~/.bash_profile` if on macOS):
+
+```console
+. ~/.dda-complete.bash
 ```
 ///
 
