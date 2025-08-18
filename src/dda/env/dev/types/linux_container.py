@@ -349,6 +349,8 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             Mount(type="volume", path="/go/pkg/mod", source=self.get_volume_name("go_mod_cache")),
             # `pip cache dir`
             Mount(type="volume", path="/root/.cache/pip", source=self.get_volume_name("pip_cache")),
+            # `uv cache dir`
+            Mount(type="volume", path="/root/.cache/uv", source=self.get_volume_name("uv_cache")),
             # Rust
             Mount(type="volume", path="/root/.cargo/registry", source=self.get_volume_name("cargo_registry")),
             Mount(type="volume", path="/root/.cargo/git", source=self.get_volume_name("cargo_git")),

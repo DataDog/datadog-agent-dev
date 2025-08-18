@@ -49,6 +49,8 @@ def get_cache_volumes() -> list[str]:
         "--mount",
         "type=volume,src=dda-env-dev-linux-container-pip_cache,dst=/root/.cache/pip",
         "--mount",
+        "type=volume,src=dda-env-dev-linux-container-uv_cache,dst=/root/.cache/uv",
+        "--mount",
         "type=volume,src=dda-env-dev-linux-container-cargo_registry,dst=/root/.cargo/registry",
         "--mount",
         "type=volume,src=dda-env-dev-linux-container-cargo_git,dst=/root/.cargo/git",
