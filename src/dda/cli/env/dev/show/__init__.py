@@ -11,11 +11,11 @@ if TYPE_CHECKING:
     from dda.cli.application import Application
 
 
-@dynamic_command(short_help="List the available developer environments")
+@dynamic_command(short_help="Show the available developer environments")
 @pass_app
 def cmd(app: Application) -> None:
     """
-    List the available developer environments.
+    Show the available developer environments.
     """
     import json
 
