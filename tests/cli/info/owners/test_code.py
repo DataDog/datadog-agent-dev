@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+from os import sep
 from typing import TYPE_CHECKING
 
 from dda.utils.fs import Path
@@ -23,7 +24,8 @@ def _create_codeowners_file(ownership_data: dict[str, list[str]], location: Path
 
 def _create_temp_items(files: Iterable[str], temp_dir: Path) -> None:
     for file_str in files:
-        file_path = temp_dir / file_str
+        # Always use forward slashes for paths, as that's what pathlib expects
+        file_path = temp_dir / file_str.replace(sep, "/")
         file_path.parent.ensure_dir()
 
         # Assume that if the file path does not have an extension, it is a directory

@@ -45,12 +45,15 @@ def cmd(app: Application, paths: tuple[Path, ...], *, config_filepath: Path, jso
     with config_filepath.open(encoding="utf-8") as f:
         owners = codeowners.CodeOwners(f.read())
 
-    res = {str(path): [owner[1] for owner in owners.of(str(path))] for path in paths}
+    # The codeowners library expects paths to be in POSIX format (even on Windows)
+    posix_paths = (path.as_posix() for path in paths)
+    res = {path: [owner[1] for owner in owners.of(path)] for path in posix_paths}
 
     if json:
         from json import dumps
 
         app.output(dumps(res))
     else:
+        # Note: paths here are in POSIX format, so they will use / even on Windows
         display_res = {path: ", ".join(owners) for path, owners in res.items()}
         app.display_table(display_res, stderr=False)
