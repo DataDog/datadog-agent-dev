@@ -22,9 +22,9 @@ if TYPE_CHECKING:
     nargs=-1,
 )
 @click.option(
-    "--config",
-    "-c",
-    "config_filepath",
+    "--owners",
+    "-f",
+    "owners_filepath",
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
     help="Path to CODEOWNERS file",
     default=".github/CODEOWNERS",
@@ -36,13 +36,13 @@ if TYPE_CHECKING:
     help="Format the output as JSON",
 )
 @pass_app
-def cmd(app: Application, paths: tuple[Path, ...], *, config_filepath: Path, json: bool) -> None:
+def cmd(app: Application, paths: tuple[Path, ...], *, owners_filepath: Path, json: bool) -> None:
     """
     Gets the code owners for the specified paths.
     """
     import codeowners
 
-    owners = codeowners.CodeOwners(config_filepath.read_text(encoding="utf-8"))
+    owners = codeowners.CodeOwners(owners_filepath.read_text(encoding="utf-8"))
 
     # The codeowners library expects paths to be in POSIX format (even on Windows)
     res = {(posix_path := path.as_posix()): [owner[1] for owner in owners.of(posix_path)] for path in paths}

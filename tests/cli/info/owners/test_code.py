@@ -140,7 +140,7 @@ def test_ownership_location(dda, temp_dir):
     _test_owner_template(
         dda,
         temp_dir=temp_dir,
-        extra_command_parts=["--config", "custom/CODEOWNERS"],
+        extra_command_parts=["--owners", "custom/CODEOWNERS"],
         codeowners_location=Path("custom/CODEOWNERS"),
         ownership_data=ownership_data,
         expected_result=expected_result,
