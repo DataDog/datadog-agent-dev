@@ -391,6 +391,9 @@ dependencies = [
 ]
 
 [package.dev-dependencies]
+codeowners = [
+    { name = "codeowners" },
+]
 gcp = [
     { name = "google-api-python-client" },
     { name = "oauth2client" },
@@ -584,6 +587,7 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
+codeowners = [{ name = "codeowners" }]
 gcp = [
     { name = "google-api-python-client", specifier = "~=2.160.0" },
     { name = "oauth2client", specifier = "~=4.1.3" },
