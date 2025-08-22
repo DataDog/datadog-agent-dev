@@ -15,42 +15,139 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def default_codeowners_location() -> Path:
     return Path(".github/CODEOWNERS")
 
 
-def _create_codeowners_file(ownership_data: dict[str, list[str]], location: Path) -> None:
-    location.parent.ensure_dir()
-    location.touch(exist_ok=True)
-    codeowners_content = "\n".join(f"{pattern} {' '.join(owners)}" for pattern, owners in ownership_data.items())
-    location.write_text(codeowners_content)
+@pytest.fixture
+def create_temp_file_or_dir():
+    """Fixture to create and clean up temporary files and directories."""
+    created_paths: list[Path] = []
 
+    def _create_temp_file_or_dir(location: Path, *, force_file: bool = False) -> None:
+        for parent in reversed(location.parents):
+            # Create and keep track of created parent directories for cleanup
+            if not parent.exists():
+                parent.mkdir()
+                created_paths.append(parent)
 
-def _create_temp_items(files: Iterable[str], temp_dir: Path) -> None:
-    for file_str in files:
-        # Always use forward slashes for paths, as that's what pathlib expects
-        file_path = temp_dir / file_str.replace(sep, "/")
-        file_path.parent.ensure_dir()
-
+        # Create the requested file or directory and keep track of it for cleanup
         # Assume that if the file path does not have an extension, it is a directory
-        if file_path.suffix == "":
-            file_path.mkdir()
+        # The force_file flag can be used to override this behavior
+        if location.suffix == "" and not force_file:
+            location.mkdir()
         else:
-            file_path.touch()
+            location.touch()
+        created_paths.append(location)
+
+    yield _create_temp_file_or_dir
+    for path in reversed(created_paths):
+        if path.exists():
+            if path.is_dir():
+                path.rmdir()
+            else:
+                path.unlink()
 
 
-def _test_owner_template(  # type: ignore[no-untyped-def]
+@pytest.fixture
+def create_codeowners_file(create_temp_file_or_dir):
+    def _create_codeowners_file(ownership_data: dict[str, list[str]], location: Path) -> None:
+        create_temp_file_or_dir(location, force_file=True)
+        codeowners_content = "\n".join(f"{pattern} {' '.join(owners)}" for pattern, owners in ownership_data.items())
+        location.write_text(codeowners_content)
+
+    return _create_codeowners_file
+
+
+@pytest.fixture
+def create_temp_items(create_temp_file_or_dir):
+    def _create_temp_items(files: Iterable[str], temp_dir: Path) -> None:
+        for file_str in files:
+            # Always use forward slashes for paths, as that's what pathlib expects
+            file_path = temp_dir / file_str.replace(sep, "/")
+            create_temp_file_or_dir(file_path)
+
+    return _create_temp_items
+
+
+@pytest.mark.parametrize(
+    ("ownership_data", "expected_result"),
+    [
+        # Test case 1: Single owner for a single file
+        (
+            {
+                "testfile.txt": ["@owner1"],
+            },
+            None,  # expected_result will default to ownership_data
+        ),
+        # Test case 2: Multiple owners for a single file
+        (
+            {
+                "testfile.txt": ["@owner1", "@owner2"],
+            },
+            None,
+        ),
+        # Test case 3: Wildcard ownership
+        (
+            {
+                "*.txt": ["@owner1"],
+                "testfile.txt": ["@owner2"],
+            },
+            {
+                "testfile.txt": ["@owner2"],
+                "otherfile.txt": ["@owner1"],
+            },
+        ),
+        # Test case 4: Directory ownership
+        (
+            {
+                "subdir1": ["@owner1"],
+                "subdir2": ["@owner2"],
+                "subdir2/testfile2.txt": ["@owner3"],
+            },
+            {
+                "subdir1": ["@owner1"],
+                "subdir1/testfile1.txt": ["@owner1"],
+                "subdir2": ["@owner2"],
+                "subdir2/testfile2.txt": ["@owner3"],
+            },
+        ),
+        # Test case 5: Complicated situation with multiple patterns
+        (
+            {
+                "*": ["@DataDog/team-everything"],
+                "*.md": ["@DataDog/team-devops", "@DataDog/team-doc"],
+                ".gitlab": ["@DataDog/team-devops"],
+                ".gitlab/security.yml": ["@DataDog/team-security"],
+            },
+            {
+                "test.txt": ["@DataDog/team-everything"],
+                "README.md": [
+                    "@DataDog/team-devops",
+                    "@DataDog/team-doc",
+                ],
+                ".gitlab": ["@DataDog/team-devops"],
+                ".gitlab/security.yml": ["@DataDog/team-security"],
+                ".gitlab/ci.yml": ["@DataDog/team-devops"],
+            },
+        ),
+    ],
+)
+def test_ownership_parsing(  # type: ignore[no-untyped-def]
     dda,
     temp_dir: Path,
+    create_codeowners_file,
+    create_temp_items,
+    default_codeowners_location,
     ownership_data: dict[str, list[str]],
-    expected_result: dict[str, list[str]],
-    codeowners_location: Path,
-    extra_command_parts: Iterable[str] = (),
+    expected_result: dict[str, list[str]] | None,
 ) -> None:
+    if expected_result is None:
+        expected_result = ownership_data
     files = expected_result.keys()
-    _create_codeowners_file(ownership_data, temp_dir / codeowners_location)
-    _create_temp_items(files, temp_dir)
+    create_codeowners_file(ownership_data, temp_dir / default_codeowners_location)
+    create_temp_items(files, temp_dir)
 
     with temp_dir.as_cwd():
         result = dda(
@@ -58,130 +155,48 @@ def _test_owner_template(  # type: ignore[no-untyped-def]
             "owners",
             "code",
             "--json",
-            *extra_command_parts,
             *expected_result.keys(),
         )
     assert result.exit_code == 0, result.stdout
     assert json.loads(result.stdout) == expected_result
 
 
-def test_single_owner(dda, temp_dir, default_codeowners_location):
+def test_ownership_location(
+    dda,
+    temp_dir: Path,
+    create_codeowners_file,
+    create_temp_items,
+):
     ownership_data = {
         "testfile.txt": ["@owner1"],
     }
     expected_result = ownership_data
-    _test_owner_template(
-        dda,
-        temp_dir=temp_dir,
-        ownership_data=ownership_data,
-        expected_result=expected_result,
-        codeowners_location=default_codeowners_location,
-    )
+    custom_location = Path("custom/CODEOWNERS")
+    create_codeowners_file(ownership_data, temp_dir / custom_location)
+    create_temp_items(ownership_data.keys(), temp_dir)
+    with temp_dir.as_cwd():
+        result = dda(
+            "info",
+            "owners",
+            "code",
+            "--json",
+            "--owners",
+            custom_location.as_posix(),
+            *expected_result.keys(),
+        )
+    assert result.exit_code == 0, result.stdout
+    assert json.loads(result.stdout) == expected_result
 
 
-def test_multiple_owners(dda, temp_dir, default_codeowners_location):
-    ownership_data = {
-        "testfile.txt": ["@owner1", "@owner2"],
-    }
-    expected_result = ownership_data
-    _test_owner_template(
-        dda,
-        temp_dir=temp_dir,
-        ownership_data=ownership_data,
-        expected_result=expected_result,
-        codeowners_location=default_codeowners_location,
-    )
-
-
-def test_wildcard_ownership(dda, temp_dir, default_codeowners_location):
-    ownership_data = {
-        "*.txt": ["@owner1"],
-        "testfile.txt": ["@owner2"],
-    }
-    expected_result = {
-        "testfile.txt": ["@owner2"],
-        "otherfile.txt": ["@owner1"],
-    }
-    _test_owner_template(
-        dda,
-        temp_dir=temp_dir,
-        ownership_data=ownership_data,
-        expected_result=expected_result,
-        codeowners_location=default_codeowners_location,
-    )
-
-
-def test_directory_ownership(dda, temp_dir, default_codeowners_location):
-    ownership_data = {
-        "subdir1": ["@owner1"],
-        "subdir2": ["@owner2"],
-        "subdir2/testfile2.txt": ["@owner3"],
-    }
-    expected_result = {
-        "subdir1": ["@owner1"],
-        "subdir1/testfile1.txt": ["@owner1"],
-        "subdir2": ["@owner2"],
-        "subdir2/testfile2.txt": ["@owner3"],
-    }
-    _test_owner_template(
-        dda,
-        temp_dir=temp_dir,
-        ownership_data=ownership_data,
-        expected_result=expected_result,
-        codeowners_location=default_codeowners_location,
-    )
-
-
-def test_ownership_location(dda, temp_dir):
-    ownership_data = {
-        "testfile.txt": ["@owner1"],
-    }
-    expected_result = ownership_data
-    _test_owner_template(
-        dda,
-        temp_dir=temp_dir,
-        extra_command_parts=["--owners", "custom/CODEOWNERS"],
-        codeowners_location=Path("custom/CODEOWNERS"),
-        ownership_data=ownership_data,
-        expected_result=expected_result,
-    )
-
-
-def test_complicated_situation(dda, temp_dir, default_codeowners_location):
-    ownership_data = {
-        "*": ["@DataDog/team-everything"],
-        "*.md": ["@DataDog/team-devops", "@DataDog/team-doc"],
-        ".gitlab": ["@DataDog/team-devops"],
-        ".gitlab/security.yml": ["@DataDog/team-security"],
-    }
-    expected_result = {
-        "test.txt": ["@DataDog/team-everything"],
-        "README.md": [
-            "@DataDog/team-devops",
-            "@DataDog/team-doc",
-        ],
-        ".gitlab": ["@DataDog/team-devops"],
-        ".gitlab/security.yml": ["@DataDog/team-security"],
-        ".gitlab/ci.yml": ["@DataDog/team-devops"],
-    }
-    _test_owner_template(
-        dda,
-        temp_dir=temp_dir,
-        ownership_data=ownership_data,
-        expected_result=expected_result,
-        codeowners_location=default_codeowners_location,
-    )
-
-
-def test_human_output(dda, temp_dir, helpers, default_codeowners_location):
+def test_human_output(dda, temp_dir, helpers, create_codeowners_file, create_temp_items, default_codeowners_location):
     ownership_data = {
         "testfile.txt": ["@owner1"],
         "subdir/testfile2.txt": ["@owner2"],
         "subdir/anotherfile.txt": ["@owner1", "@owner3"],
     }
 
-    _create_codeowners_file(ownership_data, temp_dir / default_codeowners_location)
-    _create_temp_items(ownership_data.keys(), temp_dir)
+    create_codeowners_file(ownership_data, temp_dir / default_codeowners_location)
+    create_temp_items(ownership_data.keys(), temp_dir)
     with temp_dir.as_cwd():
         result = dda("info", "owners", "code", *ownership_data.keys())
     assert result.exit_code == 0, result.stdout
