@@ -7,12 +7,17 @@ import json
 from os import sep
 from typing import TYPE_CHECKING
 
+import pytest
+
 from dda.utils.fs import Path
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-DEFAULT_CODEOWNERS_LOCATION = Path(".github/CODEOWNERS")
+
+@pytest.fixture(scope="module")
+def default_codeowners_location() -> Path:
+    return Path(".github/CODEOWNERS")
 
 
 def _create_codeowners_file(ownership_data: dict[str, list[str]], location: Path) -> None:
@@ -40,8 +45,8 @@ def _test_owner_template(  # type: ignore[no-untyped-def]
     temp_dir: Path,
     ownership_data: dict[str, list[str]],
     expected_result: dict[str, list[str]],
+    codeowners_location: Path,
     extra_command_parts: Iterable[str] = (),
-    codeowners_location: Path = DEFAULT_CODEOWNERS_LOCATION,
 ) -> None:
     files = expected_result.keys()
     _create_codeowners_file(ownership_data, temp_dir / codeowners_location)
@@ -60,7 +65,7 @@ def _test_owner_template(  # type: ignore[no-untyped-def]
     assert json.loads(result.stdout) == expected_result
 
 
-def test_single_owner(dda, temp_dir):
+def test_single_owner(dda, temp_dir, default_codeowners_location):
     ownership_data = {
         "testfile.txt": ["@owner1"],
     }
@@ -70,10 +75,11 @@ def test_single_owner(dda, temp_dir):
         temp_dir=temp_dir,
         ownership_data=ownership_data,
         expected_result=expected_result,
+        codeowners_location=default_codeowners_location,
     )
 
 
-def test_multiple_owners(dda, temp_dir):
+def test_multiple_owners(dda, temp_dir, default_codeowners_location):
     ownership_data = {
         "testfile.txt": ["@owner1", "@owner2"],
     }
@@ -83,10 +89,11 @@ def test_multiple_owners(dda, temp_dir):
         temp_dir=temp_dir,
         ownership_data=ownership_data,
         expected_result=expected_result,
+        codeowners_location=default_codeowners_location,
     )
 
 
-def test_wildcard_ownership(dda, temp_dir):
+def test_wildcard_ownership(dda, temp_dir, default_codeowners_location):
     ownership_data = {
         "*.txt": ["@owner1"],
         "testfile.txt": ["@owner2"],
@@ -100,10 +107,11 @@ def test_wildcard_ownership(dda, temp_dir):
         temp_dir=temp_dir,
         ownership_data=ownership_data,
         expected_result=expected_result,
+        codeowners_location=default_codeowners_location,
     )
 
 
-def test_directory_ownership(dda, temp_dir):
+def test_directory_ownership(dda, temp_dir, default_codeowners_location):
     ownership_data = {
         "subdir1": ["@owner1"],
         "subdir2": ["@owner2"],
@@ -120,6 +128,7 @@ def test_directory_ownership(dda, temp_dir):
         temp_dir=temp_dir,
         ownership_data=ownership_data,
         expected_result=expected_result,
+        codeowners_location=default_codeowners_location,
     )
 
 
@@ -138,7 +147,7 @@ def test_ownership_location(dda, temp_dir):
     )
 
 
-def test_complicated_situation(dda, temp_dir):
+def test_complicated_situation(dda, temp_dir, default_codeowners_location):
     ownership_data = {
         "*": ["@DataDog/team-everything"],
         "*.md": ["@DataDog/team-devops", "@DataDog/team-doc"],
@@ -160,27 +169,28 @@ def test_complicated_situation(dda, temp_dir):
         temp_dir=temp_dir,
         ownership_data=ownership_data,
         expected_result=expected_result,
+        codeowners_location=default_codeowners_location,
     )
 
 
-def test_human_output(dda, temp_dir):
+def test_human_output(dda, temp_dir, helpers, default_codeowners_location):
     ownership_data = {
         "testfile.txt": ["@owner1"],
         "subdir/testfile2.txt": ["@owner2"],
         "subdir/anotherfile.txt": ["@owner1", "@owner3"],
     }
 
-    _create_codeowners_file(ownership_data, temp_dir / DEFAULT_CODEOWNERS_LOCATION)
+    _create_codeowners_file(ownership_data, temp_dir / default_codeowners_location)
     _create_temp_items(ownership_data.keys(), temp_dir)
     with temp_dir.as_cwd():
         result = dda("info", "owners", "code", *ownership_data.keys())
     assert result.exit_code == 0, result.stdout
-    assert (
-        result.stdout
-        == """┌────────────────────────┬──────────────────┐
-│ testfile.txt           │ @owner1          │
-│ subdir/testfile2.txt   │ @owner2          │
-│ subdir/anotherfile.txt │ @owner1, @owner3 │
-└────────────────────────┴──────────────────┘
-"""
+    assert result.stdout == helpers.dedent(
+        """
+        ┌────────────────────────┬──────────────────┐
+        │ testfile.txt           │ @owner1          │
+        │ subdir/testfile2.txt   │ @owner2          │
+        │ subdir/anotherfile.txt │ @owner1, @owner3 │
+        └────────────────────────┴──────────────────┘
+        """
     )

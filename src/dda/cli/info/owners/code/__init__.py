@@ -42,13 +42,10 @@ def cmd(app: Application, paths: tuple[Path, ...], *, config_filepath: Path, jso
     """
     import codeowners
 
-    with config_filepath.open(encoding="utf-8") as f:
-        owners = codeowners.CodeOwners(f.read())
+    owners = codeowners.CodeOwners(config_filepath.read_text(encoding="utf-8"))
 
     # The codeowners library expects paths to be in POSIX format (even on Windows)
-    posix_paths = (path.as_posix() for path in paths)
-    res = {path: [owner[1] for owner in owners.of(path)] for path in posix_paths}
-
+    res = {(posix_path := path.as_posix()): [owner[1] for owner in owners.of(posix_path)] for path in paths}
     if json:
         from json import dumps
 
