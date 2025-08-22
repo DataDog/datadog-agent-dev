@@ -12,16 +12,21 @@ import pytest
 from dda.utils.fs import Path
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Callable, Iterable
+    from types import ModuleType
+
+    from tests.conftest import CliRunner
 
 
-@pytest.fixture
-def default_codeowners_location() -> Path:
+# We prepend "fixt_" to the fixture names to avoid pylint complaining about name shadowing
+# https://docs.pytest.org/en/stable/reference/reference.html#pytest-fixture
+@pytest.fixture(name="default_codeowners_location")
+def fixt_default_codeowners_location() -> Path:
     return Path(".github/CODEOWNERS")
 
 
-@pytest.fixture
-def create_temp_file_or_dir():
+@pytest.fixture(name="create_temp_file_or_dir")
+def fixt_create_temp_file_or_dir():
     """Fixture to create and clean up temporary files and directories."""
     created_paths: list[Path] = []
 
@@ -50,8 +55,8 @@ def create_temp_file_or_dir():
                 path.unlink()
 
 
-@pytest.fixture
-def create_codeowners_file(create_temp_file_or_dir):
+@pytest.fixture(name="create_codeowners_file")
+def fixt_create_codeowners_file(create_temp_file_or_dir):
     def _create_codeowners_file(ownership_data: dict[str, list[str]], location: Path) -> None:
         create_temp_file_or_dir(location, force_file=True)
         codeowners_content = "\n".join(f"{pattern} {' '.join(owners)}" for pattern, owners in ownership_data.items())
@@ -60,8 +65,8 @@ def create_codeowners_file(create_temp_file_or_dir):
     return _create_codeowners_file
 
 
-@pytest.fixture
-def create_temp_items(create_temp_file_or_dir):
+@pytest.fixture(name="create_temp_items")
+def fixt_create_temp_items(create_temp_file_or_dir):
     def _create_temp_items(files: Iterable[str], temp_dir: Path) -> None:
         for file_str in files:
             # Always use forward slashes for paths, as that's what pathlib expects
@@ -135,11 +140,11 @@ def create_temp_items(create_temp_file_or_dir):
     ],
 )
 def test_ownership_parsing(  # type: ignore[no-untyped-def]
-    dda,
+    dda: CliRunner,
     temp_dir: Path,
-    create_codeowners_file,
-    create_temp_items,
-    default_codeowners_location,
+    create_codeowners_file: Callable[[dict[str, list[str]], Path], None],
+    create_temp_items: Callable[[Iterable[str], Path], None],
+    default_codeowners_location: Path,
     ownership_data: dict[str, list[str]],
     expected_result: dict[str, list[str]] | None,
 ) -> None:
@@ -162,11 +167,11 @@ def test_ownership_parsing(  # type: ignore[no-untyped-def]
 
 
 def test_ownership_location(
-    dda,
+    dda: CliRunner,
     temp_dir: Path,
-    create_codeowners_file,
-    create_temp_items,
-):
+    create_codeowners_file: Callable[[dict[str, list[str]], Path], None],
+    create_temp_items: Callable[[Iterable[str], Path], None],
+) -> None:
     ownership_data = {
         "testfile.txt": ["@owner1"],
     }
@@ -188,7 +193,14 @@ def test_ownership_location(
     assert json.loads(result.stdout) == expected_result
 
 
-def test_human_output(dda, temp_dir, helpers, create_codeowners_file, create_temp_items, default_codeowners_location):
+def test_human_output(
+    dda: CliRunner,
+    temp_dir: Path,
+    helpers: ModuleType,
+    create_codeowners_file: Callable[[dict[str, list[str]], Path], None],
+    create_temp_items: Callable[[Iterable[str], Path], None],
+    default_codeowners_location: Path,
+) -> None:
     ownership_data = {
         "testfile.txt": ["@owner1"],
         "subdir/testfile2.txt": ["@owner2"],
