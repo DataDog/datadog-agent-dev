@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from dda.cli.application import Application
     from dda.tools.bazel import Bazel
     from dda.tools.docker import Docker
+    from dda.tools.git import Git
     from dda.tools.go import Go
     from dda.tools.uv import UV
 
@@ -45,3 +46,9 @@ class Tools:
         from dda.tools.uv import UV
 
         return UV(self.__app)
+
+    @cached_property
+    def git(self) -> Git:
+        from dda.tools.git import Git
+
+        return Git(self.__app)
