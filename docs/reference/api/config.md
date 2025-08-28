@@ -4,11 +4,11 @@
 
 Configuration for `dda` itself is stored in a `config.toml` file located by default in one of the following platform-specific directories:
 
-Platform | Directory
---- | ---
-macOS | `~/Library/Application Support/dd-agent-dev`
-Windows | `%USERPROFILE%\AppData\Local\dd-agent-dev`
-Linux | `$XDG_CONFIG_HOME/dd-agent-dev` (the [XDG_CONFIG_HOME](https://specifications.freedesktop.org/basedir-spec/latest/#variables) environment variable defaults to `~/.config` on Linux)
+| Platform | Directory                                                                                                                                                                            |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| macOS    | `~/Library/Application Support/dd-agent-dev`                                                                                                                                         |
+| Windows  | `%USERPROFILE%\AppData\Local\dd-agent-dev`                                                                                                                                           |
+| Linux    | `$XDG_CONFIG_HOME/dd-agent-dev` (the [XDG_CONFIG_HOME](https://specifications.freedesktop.org/basedir-spec/latest/#variables) environment variable defaults to `~/.config` on Linux) |
 
 You can select a custom path to the file using the `--config` [root option](../cli/commands.md#dda) or by setting the [ConfigEnvVars.CONFIG][dda.config.constants.ConfigEnvVars.CONFIG] environment variable.
 
@@ -40,19 +40,13 @@ The file can be managed by the [`config`](../cli/commands.md#dda-config) command
     options:
       heading_level: 3
 
+::: dda.config.model.tools.GitConfig
+    options:
+      heading_level: 3
+
 ## Storage
 
 ::: dda.config.model.storage.StorageDirs
-    options:
-      heading_level: 3
-
-## Git
-
-::: dda.config.model.git.GitConfig
-    options:
-      heading_level: 3
-
-::: dda.config.model.git.GitUser
     options:
       heading_level: 3
 

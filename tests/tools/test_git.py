@@ -104,8 +104,8 @@ def clear_cached_config(app: Application) -> None:
 @pytest.fixture
 def reset_user_config(app: Application) -> None:
     # Modify the underlying config data and clear the cached model
-    app.config_file.data.setdefault("git", {}).setdefault("user", {})["name"] = ""
-    app.config_file.data["git"]["user"]["email"] = ""
+    app.config_file.data["tools"].setdefault("git", {})["username"] = ""
+    app.config_file.data["tools"]["git"]["user_email"] = ""
 
     # Clear the cached properties so they get reconstructed with the new data
     clear_cached_config(app)
@@ -128,9 +128,8 @@ def test_author_details(app: Application, reset_user_config: None, set_commiter_
     assert app.tools.git.get_author_email() == "jane.smith@example.com"
 
     # Test 3: Test author details coming from dda config - highest priority
-    # Use __setattr__ to bypass the frozen struct
-    app.config_file.data.setdefault("git", {}).setdefault("user", {})["name"] = "John Doe"
-    app.config_file.data["git"]["user"]["email"] = "john.doe@example.com"
+    app.config_file.data["tools"].setdefault("git", {})["username"] = "John Doe"
+    app.config_file.data["tools"]["git"]["user_email"] = "john.doe@example.com"
 
     # Clear the cached properties so they get reconstructed with the new data
     clear_cached_config(app)

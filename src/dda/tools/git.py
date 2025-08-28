@@ -37,7 +37,7 @@ class Git(Tool):
         Note that the global git config should itself read the env var if it exists - we manually read the env var as a performance optimization.
         """
 
-        if cfg_username := self.app.config.git.user.name:
+        if cfg_username := self.app.config.tools.git.username:
             return cfg_username
 
         from os import environ
@@ -55,7 +55,7 @@ class Git(Tool):
         Note that the global git config should itself read the env var if it exists - we manually read the env var as a performance optimization.
         """
 
-        if cfg_email := self.app.config.git.user.email:
+        if cfg_email := self.app.config.tools.git.user_email:
             return cfg_email
 
         from os import environ

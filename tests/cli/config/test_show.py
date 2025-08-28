@@ -29,13 +29,13 @@ def test_default_scrubbed(dda, config_file, helpers, default_cache_dir, default_
         [tools.bazel]
         managed = "auto"
 
+        [tools.git]
+        username = "Foo Bar"
+        user_email = "foo@bar.baz"
+
         [storage]
         data = "{default_data_directory}"
         cache = "{default_cache_directory}"
-
-        [git.user]
-        name = "Foo Bar"
-        email = "foo@bar.baz"
 
         [github.auth]
         user = "foo"
@@ -85,13 +85,13 @@ def test_reveal(dda, config_file, helpers, default_cache_dir, default_data_dir):
         [tools.bazel]
         managed = "auto"
 
+        [tools.git]
+        username = "Foo Bar"
+        user_email = "foo@bar.baz"
+
         [storage]
         data = "{default_data_directory}"
         cache = "{default_cache_directory}"
-
-        [git.user]
-        name = "Foo Bar"
-        email = "foo@bar.baz"
 
         [github.auth]
         user = "foo"

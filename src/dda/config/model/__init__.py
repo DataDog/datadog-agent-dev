@@ -8,7 +8,6 @@ from typing import Any
 from msgspec import Struct, convert, field, to_builtins
 
 from dda.config.model.env import EnvConfig
-from dda.config.model.git import GitConfig
 from dda.config.model.github import GitHubConfig
 from dda.config.model.orgs import OrgConfig
 from dda.config.model.storage import StorageDirs
@@ -33,7 +32,6 @@ class RootConfig(Struct, frozen=True, omit_defaults=True):
     envs: dict[str, dict[str, Any]] = {}
     tools: ToolsConfig = field(default_factory=ToolsConfig)
     storage: StorageDirs = field(default_factory=StorageDirs)
-    git: GitConfig = field(default_factory=GitConfig)
     github: GitHubConfig = field(default_factory=GitHubConfig)
     terminal: TerminalConfig = field(default_factory=TerminalConfig)
     update: UpdateConfig = field(default_factory=UpdateConfig)
