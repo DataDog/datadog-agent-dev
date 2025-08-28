@@ -26,6 +26,14 @@ class Tool(ABC):
     def __init__(self, app: Application) -> None:
         self.__app = app
 
+    @property
+    @abstractmethod
+    def path(self) -> str | None:
+        """
+        A CLI string that can be used to execute the tool - either the name of the tool itself or the full path to the tool.
+        Returns `None` if the tool path cannot be found.
+        """
+
     @abstractmethod
     def format_command(self, command: list[str]) -> list[str]:
         """

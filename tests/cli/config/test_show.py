@@ -8,6 +8,11 @@ from dda.env.dev import DEFAULT_DEV_ENV
 
 def test_default_scrubbed(dda, config_file, helpers, default_cache_dir, default_data_dir):
     config_file.data["github"]["auth"] = {"user": "foo", "token": "bar"}
+
+    # The default name and email are queried from the global git config on config initialization
+    # We override them to make sure we have a known value
+    config_file.data["tools"]["git"]["author_name"] = "Foo Bar"
+    config_file.data["tools"]["git"]["author_email"] = "foo@bar.baz"
     config_file.save()
 
     result = dda("config", "show")
@@ -29,17 +34,21 @@ def test_default_scrubbed(dda, config_file, helpers, default_cache_dir, default_
         [tools.bazel]
         managed = "auto"
 
+        [tools.git]
+        author_name = "Foo Bar"
+        author_email = "foo@bar.baz"
+
         [storage]
         data = "{default_data_directory}"
         cache = "{default_cache_directory}"
 
-        [git.user]
-        name = "Foo Bar"
-        email = "foo@bar.baz"
-
         [github.auth]
         user = "foo"
         token = "*****"
+
+        [user]
+        name = "auto"
+        email = "auto"
 
         [terminal]
         verbosity = 0
@@ -64,6 +73,11 @@ def test_default_scrubbed(dda, config_file, helpers, default_cache_dir, default_
 
 def test_reveal(dda, config_file, helpers, default_cache_dir, default_data_dir):
     config_file.data["github"]["auth"] = {"user": "foo", "token": "bar"}
+
+    # The default git author name and email are queried from the global git config on config initialization
+    # We override them to make sure we have a known value
+    config_file.data["tools"]["git"]["author_name"] = "Foo Bar"
+    config_file.data["tools"]["git"]["author_email"] = "foo@bar.baz"
     config_file.save()
 
     result = dda("config", "show", "-a")
@@ -85,17 +99,21 @@ def test_reveal(dda, config_file, helpers, default_cache_dir, default_data_dir):
         [tools.bazel]
         managed = "auto"
 
+        [tools.git]
+        author_name = "Foo Bar"
+        author_email = "foo@bar.baz"
+
         [storage]
         data = "{default_data_directory}"
         cache = "{default_cache_directory}"
 
-        [git.user]
-        name = "Foo Bar"
-        email = "foo@bar.baz"
-
         [github.auth]
         user = "foo"
         token = "bar"
+
+        [user]
+        name = "auto"
+        email = "auto"
 
         [terminal]
         verbosity = 0

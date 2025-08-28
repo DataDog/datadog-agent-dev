@@ -24,7 +24,11 @@ def updated_config(config_file):
     # Allow Windows users to run these tests
     if sys.platform == "win32":
         config_file.data["env"] = {"dev": {"default-type": "linux-container"}}
-        config_file.save()
+
+    # Override the git author name and email in config to be a known value
+    config_file.data["user"]["name"] = "Foo Bar"
+    config_file.data["user"]["email"] = "foo@bar.baz"
+    config_file.save()
 
 
 @pytest.fixture(scope="module")

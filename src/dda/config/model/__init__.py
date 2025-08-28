@@ -8,13 +8,13 @@ from typing import Any
 from msgspec import Struct, convert, field, to_builtins
 
 from dda.config.model.env import EnvConfig
-from dda.config.model.git import GitConfig
 from dda.config.model.github import GitHubConfig
 from dda.config.model.orgs import OrgConfig
 from dda.config.model.storage import StorageDirs
 from dda.config.model.terminal import TerminalConfig
 from dda.config.model.tools import ToolsConfig
 from dda.config.model.update import UpdateConfig
+from dda.config.model.user import UserConfig
 from dda.utils.fs import Path
 
 
@@ -33,8 +33,8 @@ class RootConfig(Struct, frozen=True, omit_defaults=True):
     envs: dict[str, dict[str, Any]] = {}
     tools: ToolsConfig = field(default_factory=ToolsConfig)
     storage: StorageDirs = field(default_factory=StorageDirs)
-    git: GitConfig = field(default_factory=GitConfig)
     github: GitHubConfig = field(default_factory=GitHubConfig)
+    user: UserConfig = field(default_factory=UserConfig)
     terminal: TerminalConfig = field(default_factory=TerminalConfig)
     update: UpdateConfig = field(default_factory=UpdateConfig)
 
