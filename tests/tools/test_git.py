@@ -38,8 +38,8 @@ def set_commiter_details(app: Application) -> Generator[None, None, None]:
     # The cleanup here is very important as it affects the global git config
     old_env_author = os.environ.pop(Git.AUTHOR_NAME_ENV_VAR, default=None)
     old_env_email = os.environ.pop(Git.AUTHOR_EMAIL_ENV_VAR, default=None)
-    old_author_name = app.tools.git._query_author_name(app.tools.git, check=False)  # noqa: SLF001
-    old_author_email = app.tools.git._query_author_email(app.tools.git, check=False)  # noqa: SLF001
+    old_author_name = app.tools.git.capture(["config", "--global", "--get", "user.name"], check=False)
+    old_author_email = app.tools.git.capture(["config", "--global", "--get", "user.email"], check=False)
     app.tools.git.run(["config", "--global", "user.name", "Test Runner"])
     app.tools.git.run(["config", "--global", "user.email", "test.runner@example.com"])
     yield
