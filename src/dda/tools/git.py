@@ -24,6 +24,27 @@ class Git(Tool):
     AUTHOR_NAME_ENV_VAR = "GIT_AUTHOR_NAME"
     AUTHOR_EMAIL_ENV_VAR = "GIT_AUTHOR_EMAIL"
 
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+
+        detected_name = self._query_author_name(self, check=False)
+        config_name = self.app.config.user.name
+
+        if detected_name and config_name and detected_name != config_name:
+            self.app.display_warning(
+                f"Git author name '{detected_name}' does not match the one configured in dda config: '{config_name}'. "
+                "This can cause unexpected behavior - considering updating your global git config or the dda config.",
+            )
+
+        detected_email = self._query_author_email(self, check=False)
+        config_email = self.app.config.user.email
+
+        if detected_email and config_email and detected_email != config_email:
+            self.app.display_warning(
+                f"Git author email '{detected_email}' does not match the one configured in dda config: '{config_email}'. "
+                "This can cause unexpected behavior - consider updating your global git config or the dda config.",
+            )
+
     @cached_property
     def path(self) -> str:
         import shutil
@@ -63,7 +84,7 @@ class Git(Tool):
         Note that the global git config should itself read the env var if it exists - we manually read the env var as a performance optimization.
         """
 
-        if cfg_username := self.app.config.tools.git.username:
+        if cfg_username := self.app.config.user.name:
             return cfg_username
 
         from os import environ
@@ -79,7 +100,7 @@ class Git(Tool):
         Note that the global git config should itself read the env var if it exists - we manually read the env var as a performance optimization.
         """
 
-        if cfg_email := self.app.config.tools.git.user_email:
+        if cfg_email := self.app.config.user.email:
             return cfg_email
 
         from os import environ

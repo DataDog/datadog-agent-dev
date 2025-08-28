@@ -8,6 +8,11 @@ from dda.env.dev import DEFAULT_DEV_ENV
 
 def test_default_scrubbed(dda, config_file, helpers, default_cache_dir, default_data_dir):
     config_file.data["github"]["auth"] = {"user": "foo", "token": "bar"}
+
+    # The default name and email are queried from the global git config on config initialization
+    # We override them to make sure we have a known value
+    config_file.data["user"]["name"] = "Foo Bar"
+    config_file.data["user"]["email"] = "foo@bar.baz"
     config_file.save()
 
     result = dda("config", "show")
@@ -20,6 +25,10 @@ def test_default_scrubbed(dda, config_file, helpers, default_cache_dir, default_
         f"""
         [orgs.default]
 
+        [user]
+        name = "Foo Bar"
+        email = "foo@bar.baz"
+
         [env.dev]
         default-type = "{DEFAULT_DEV_ENV}"
         clone-repos = false
@@ -28,10 +37,6 @@ def test_default_scrubbed(dda, config_file, helpers, default_cache_dir, default_
 
         [tools.bazel]
         managed = "auto"
-
-        [tools.git]
-        username = "Foo Bar"
-        user_email = "foo@bar.baz"
 
         [storage]
         data = "{default_data_directory}"
@@ -64,6 +69,11 @@ def test_default_scrubbed(dda, config_file, helpers, default_cache_dir, default_
 
 def test_reveal(dda, config_file, helpers, default_cache_dir, default_data_dir):
     config_file.data["github"]["auth"] = {"user": "foo", "token": "bar"}
+
+    # The default name and email are queried from the global git config on config initialization
+    # We override them to make sure we have a known value
+    config_file.data["user"]["name"] = "Foo Bar"
+    config_file.data["user"]["email"] = "foo@bar.baz"
     config_file.save()
 
     result = dda("config", "show", "-a")
@@ -76,6 +86,10 @@ def test_reveal(dda, config_file, helpers, default_cache_dir, default_data_dir):
         f"""
         [orgs.default]
 
+        [user]
+        name = "Foo Bar"
+        email = "foo@bar.baz"
+
         [env.dev]
         default-type = "{DEFAULT_DEV_ENV}"
         clone-repos = false
@@ -84,10 +98,6 @@ def test_reveal(dda, config_file, helpers, default_cache_dir, default_data_dir):
 
         [tools.bazel]
         managed = "auto"
-
-        [tools.git]
-        username = "Foo Bar"
-        user_email = "foo@bar.baz"
 
         [storage]
         data = "{default_data_directory}"

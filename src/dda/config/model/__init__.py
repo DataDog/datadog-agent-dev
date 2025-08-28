@@ -14,6 +14,7 @@ from dda.config.model.storage import StorageDirs
 from dda.config.model.terminal import TerminalConfig
 from dda.config.model.tools import ToolsConfig
 from dda.config.model.update import UpdateConfig
+from dda.config.model.user import UserConfig
 from dda.utils.fs import Path
 
 
@@ -28,6 +29,7 @@ class RootConfig(Struct, frozen=True, omit_defaults=True):
     """
 
     orgs: dict[str, OrgConfig] = field(default_factory=_default_orgs)
+    user: UserConfig = field(default_factory=UserConfig)
     env: EnvConfig = field(default_factory=EnvConfig)
     envs: dict[str, dict[str, Any]] = {}
     tools: ToolsConfig = field(default_factory=ToolsConfig)

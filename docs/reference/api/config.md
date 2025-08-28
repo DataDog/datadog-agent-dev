@@ -20,6 +20,12 @@ The file can be managed by the [`config`](../cli/commands.md#dda-config) command
     options:
       heading_level: 3
 
+## User
+
+::: dda.config.model.user.UserConfig
+    options:
+      heading_level: 3
+
 ## Environments
 
 ::: dda.config.model.env.EnvConfig
@@ -37,10 +43,6 @@ The file can be managed by the [`config`](../cli/commands.md#dda-config) command
       heading_level: 3
 
 ::: dda.config.model.tools.BazelConfig
-    options:
-      heading_level: 3
-
-::: dda.config.model.tools.GitConfig
     options:
       heading_level: 3
 
