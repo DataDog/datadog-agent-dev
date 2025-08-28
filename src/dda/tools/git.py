@@ -4,8 +4,12 @@
 from __future__ import annotations
 
 from functools import cached_property
+from typing import TYPE_CHECKING
 
 from dda.tools.base import Tool
+
+if TYPE_CHECKING:
+    from typing import Any
 
 
 class Git(Tool):
@@ -29,8 +33,30 @@ class Git(Tool):
     def format_command(self, command: list[str]) -> list[str]:
         return [self.path, *command]
 
-    # These properties are used on every command invocation by the telemetry system
-    # so we cache them to avoid running git commands too often
+    # === NOTE === #
+    # The following functions are used by dda internals:
+    # - as default_factories in the config for setting up git author name/email
+    # - by telemetry to identify users if for some reason the config/env var is not set
+    # - by the linux_container environment to pass the git author name/email to the container
+    #
+    # When generating the dda config, the Application object is not yet available.
+    # It is therefore not possible to instantiate any Tool class at that point.
+    # To work around this, these functions can be called statically with an _optional_ `tool` param
+    # ============= #
+    @staticmethod
+    def _query_author_name(tool: Git | None = None, **kwargs: Any) -> str:
+        """Query the global git config for the author name. This function can be used in a static context."""
+        from dda.tools.base import static_tool_capture
+
+        return static_tool_capture(["git", "config", "--global", "--get", "user.name"], tool, **kwargs).strip()
+
+    @staticmethod
+    def _query_author_email(tool: Git | None = None, **kwargs: Any) -> str:
+        """Query the global git config for the author email. This function can be used in a static context."""
+        from dda.tools.base import static_tool_capture
+
+        return static_tool_capture(["git", "config", "--global", "--get", "user.email"], tool, **kwargs).strip()
+
     def get_author_name(self) -> str:
         """
         Get the git author name from dda config, env var, or by querying the global git config.
@@ -45,9 +71,7 @@ class Git(Tool):
         if env_username := environ.get(self.AUTHOR_NAME_ENV_VAR):
             return env_username
 
-        return self.capture(
-            ["config", "--global", "--get", "user.name"],
-        ).strip()
+        return self._query_author_name(self)
 
     def get_author_email(self) -> str:
         """
@@ -63,9 +87,7 @@ class Git(Tool):
         if env_email := environ.get(self.AUTHOR_EMAIL_ENV_VAR):
             return env_email
 
-        return self.capture(
-            ["config", "--global", "--get", "user.email"],
-        ).strip()
+        return self._query_author_email(self)
 
     @cached_property
     def author_name(self) -> str:

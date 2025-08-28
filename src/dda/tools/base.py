@@ -26,6 +26,14 @@ class Tool(ABC):
     def __init__(self, app: Application) -> None:
         self.__app = app
 
+    @property
+    @abstractmethod
+    def path(self) -> str | None:
+        """
+        A CLI string that can be used to execute the tool - either the name of the tool itself or the full path to the tool.
+        Returns `None` if the tool path cannot be found.
+        """
+
     @abstractmethod
     def format_command(self, command: list[str]) -> list[str]:
         """
@@ -170,3 +178,17 @@ class Tool(ABC):
     def __exit__(
         self, exc_type: type[BaseException] | None, exc_value: BaseException | None, traceback: TracebackType | None
     ) -> None: ...
+
+
+def static_tool_capture(command_parts: list[str], tool: Tool | None = None, **kwargs: Any) -> str:
+    """Helper function for capturing output from a tool in a static context (i.e. when the `Application` object is not yet available).
+    Any keyword arguments will be passed to the `subprocess.run` call."""
+    if tool is not None:
+        tool_caller = tool.format_command([])[0]
+        if command_parts[0] in tool_caller:
+            command_parts = command_parts[1:]
+        return tool.capture(command_parts, **kwargs)
+
+    import subprocess
+
+    return subprocess.run(command_parts, encoding="utf-8", capture_output=True, **kwargs).stdout  # noqa: PLW1510

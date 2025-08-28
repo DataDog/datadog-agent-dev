@@ -7,7 +7,7 @@ from typing import Literal
 
 from msgspec import Struct, field
 
-from dda.utils._git import get_git_author_email, get_git_author_name
+from dda.tools.git import Git
 
 
 class BazelConfig(Struct, frozen=True, forbid_unknown_fields=True):
@@ -34,10 +34,36 @@ class GitConfig(Struct, frozen=True):
     ///
     """
 
+    @staticmethod
+    def _get_username_from_git() -> str:
+        from os import environ
+        from subprocess import CalledProcessError
+
+        if env_name := environ.get(Git.AUTHOR_NAME_ENV_VAR):
+            return env_name
+
+        try:
+            return Git._query_author_name()  # noqa: SLF001
+        except CalledProcessError:
+            return ""
+
+    @staticmethod
+    def _get_email_from_git() -> str:
+        from os import environ
+        from subprocess import CalledProcessError
+
+        if env_email := environ.get(Git.AUTHOR_EMAIL_ENV_VAR):
+            return env_email
+
+        try:
+            return Git._query_author_email()  # noqa: SLF001
+        except CalledProcessError:
+            return ""
+
     # TODO: Do we really want to tie this to git? Should we have a separate section for user info instead?
     # TODO: Do we really want this here ? We are not so much configuring git
-    username: str = field(default_factory=get_git_author_name)
-    user_email: str = field(default_factory=get_git_author_email)
+    username: str = field(default_factory=_get_username_from_git)
+    user_email: str = field(default_factory=_get_email_from_git)
 
 
 class ToolsConfig(Struct, frozen=True):
