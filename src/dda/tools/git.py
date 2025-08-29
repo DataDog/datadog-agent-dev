@@ -11,6 +11,9 @@ from dda.tools.base import Tool
 if TYPE_CHECKING:
     from typing import Any
 
+    from dda.utils.fs import Path
+    from dda.utils.git.commit import Commit
+
 
 class Git(Tool):
     """
@@ -117,3 +120,46 @@ class Git(Tool):
     @cached_property
     def author_email(self) -> str:
         return self.get_author_email()
+
+    # === PRETEMPLATED COMMANDS === #
+    def get_remote_details(self, repo_path: Path | None = None, remote_name: str = "origin") -> tuple[str, str, str]:
+        """
+        Get the details of the given remote for the Git repository at the given path.
+        If no path is given, use the current working directory.
+        The returned tuple is (org, repo, url).
+        """
+        from dda.utils.fs import Path
+
+        repo_path = Path(repo_path or ".").resolve()
+        remote_url = self.capture(
+            ["config", "--get", f"remote.{remote_name}.url"],
+            cwd=str(repo_path),
+        ).strip()
+
+        if remote_url.startswith("git@"):
+            # Format is git@<website>:org/repo(.git)
+            _, path = remote_url.split(":", 1)
+            path.removesuffix(".git")
+            org, repo = path.split("/", 1)
+            return org, repo, remote_url
+
+        # Format is https://<website>/org/repo(.git)
+        org, repo = remote_url.removesuffix(".git").rsplit("/", 2)[-2:]
+        return org, repo, remote_url
+
+    def get_head_commit(self, repo_path: Path | None = None) -> Commit:
+        """
+        Get the current HEAD commit of the Git repository at the given path.
+        If no path is given, use the current working directory.
+        """
+        from dda.utils.fs import Path
+        from dda.utils.git.commit import Commit
+        from dda.utils.git.sha1hash import SHA1Hash
+
+        repo_path = Path(repo_path or ".").resolve()
+        sha1_str = self.capture(["rev-parse", "HEAD"], cwd=str(repo_path)).strip()
+        sha1 = SHA1Hash(sha1_str)
+
+        # Get the org/repo from the remote URL
+        org, repo, _ = self.get_remote_details(repo_path)
+        return Commit(org=org, repo=repo, sha1=sha1)
