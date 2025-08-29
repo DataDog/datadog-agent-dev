@@ -12,7 +12,8 @@ if TYPE_CHECKING:
     from typing import Any
 
     from dda.utils.fs import Path
-    from dda.utils.git.commit import Commit
+    from dda.utils.git.commit import Commit, CommitDetails
+    from dda.utils.git.sha1hash import SHA1Hash
 
 
 class Git(Tool):
@@ -163,3 +164,37 @@ class Git(Tool):
         # Get the org/repo from the remote URL
         org, repo, _ = self.get_remote_details(repo_path)
         return Commit(org=org, repo=repo, sha1=sha1)
+
+    def get_commit_details(self, sha1: SHA1Hash, repo_path: Path | None = None) -> CommitDetails:
+        """
+        Get the details of the given commit in the Git repository at the given path.
+        If no path is given, use the current working directory.
+        """
+        from datetime import datetime
+
+        from dda.utils.fs import Path
+        from dda.utils.git.commit import CommitDetails
+        from dda.utils.git.sha1hash import SHA1Hash
+
+        repo_path = Path(repo_path or ".").resolve()
+        raw_details = self.capture(
+            [
+                "show",
+                "--quiet",
+                # Use a format that is easy to parse
+                # fmt: author name, author email, author date, parent SHAs, commit message body
+                "--format=%an%n%ae%n%ad%n%P%n%B",
+                "--date=iso-strict",
+                str(sha1),
+            ],
+            cwd=str(repo_path),
+        )
+        author_name, author_email, date_str, parents_str, *message_lines = raw_details.splitlines()
+
+        return CommitDetails(
+            author_name=author_name,
+            author_email=author_email,
+            datetime=datetime.fromisoformat(date_str),
+            message="\n".join(message_lines).strip().strip('"'),
+            parent_shas=[SHA1Hash(parent_sha) for parent_sha in parents_str.split()],
+        )
