@@ -56,11 +56,11 @@ def set_commiter_details(app: Application) -> Generator[None, None, None]:
 
 
 # Create a dummy file in the repository - uses the previously initialized dummy repo and the "fixture factory" pattern
+# Commiter details are set automatically be the env vars in conftest.py
 @pytest.fixture(name="create_commit_dummy_file")
 def fixt_create_commit_dummy_file(
     app: Application,
     temp_repo: Path,
-    set_commiter_details: None,  # noqa: ARG001
 ) -> Callable[[Path | str, str, str], None]:
     git: Git = app.tools.git
 
@@ -91,3 +91,48 @@ def test_basic(
         random_key = random.randint(1, 1000000)
         create_commit_dummy_file("testfile.txt", "test", f"Initial commit: {random_key}")
         assert f"Initial commit: {random_key}" in app.tools.git.capture(["log", "-1", "--oneline"])
+
+
+def clear_cached_config(app: Application) -> None:
+    if hasattr(app.config_file, "model"):
+        del app.config_file.model
+
+    if hasattr(app, "config"):
+        del app.config
+
+
+@pytest.fixture
+def reset_user_config(app: Application) -> None:
+    # Modify the underlying config data and clear the cached model
+    app.config_file.data.setdefault("git", {}).setdefault("user", {})["name"] = ""
+    app.config_file.data["git"]["user"]["email"] = ""
+
+    # Clear the cached properties so they get reconstructed with the new data
+    clear_cached_config(app)
+
+    # These are set by conftest.py, so we need to clean them up to make sure they don't interfere
+    os.environ.pop("GIT_AUTHOR_NAME", None)
+    os.environ.pop("GIT_AUTHOR_EMAIL", None)
+
+
+def test_author_details(app: Application, reset_user_config: None, set_commiter_details: None) -> None:  # noqa: ARG001
+    # Test 1: Test author details coming from global git config - lowest priority
+    # The set_commiter_details fixture ensures the global git config is set to known values
+    assert app.tools.git.get_author_name() == "Test Runner"
+    assert app.tools.git.get_author_email() == "test.runner@example.com"
+
+    # Test 2: Test author details coming from environment variables - second priority
+    os.environ[Git.AUTHOR_NAME_ENV_VAR] = "Jane Smith"
+    os.environ[Git.AUTHOR_EMAIL_ENV_VAR] = "jane.smith@example.com"
+    assert app.tools.git.get_author_name() == "Jane Smith"
+    assert app.tools.git.get_author_email() == "jane.smith@example.com"
+
+    # Test 3: Test author details coming from dda config - highest priority
+    # Use __setattr__ to bypass the frozen struct
+    app.config_file.data.setdefault("git", {}).setdefault("user", {})["name"] = "John Doe"
+    app.config_file.data["git"]["user"]["email"] = "john.doe@example.com"
+
+    # Clear the cached properties so they get reconstructed with the new data
+    clear_cached_config(app)
+    assert app.tools.git.get_author_name() == "John Doe"
+    assert app.tools.git.get_author_email() == "john.doe@example.com"
