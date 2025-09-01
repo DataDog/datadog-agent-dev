@@ -11,6 +11,8 @@ import pytest
 
 from dda.tools.git import Git
 from dda.utils.fs import Path
+from dda.utils.git.commit import Commit
+from dda.utils.git.sha1hash import SHA1Hash
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator
@@ -135,3 +137,25 @@ def test_author_details(app: Application, reset_user_config: None, set_commiter_
     clear_cached_config(app)
     assert app.tools.git.get_author_name() == "John Doe"
     assert app.tools.git.get_author_email() == "john.doe@example.com"
+
+
+@pytest.fixture
+def temp_repo_with_remote(app: Application, temp_repo: Path) -> Path:
+    with temp_repo.as_cwd():
+        app.tools.git.run(["remote", "add", "origin", "https://github.com/foo/bar"])
+    return temp_repo
+
+
+def test_get_remote_details(app: Application, temp_repo_with_remote: Path) -> None:
+    with temp_repo_with_remote.as_cwd():
+        assert app.tools.git.get_remote_details() == ("foo", "bar", "https://github.com/foo/bar")
+
+
+def test_get_head_commit(
+    app: Application, temp_repo_with_remote: Path, create_commit_dummy_file: Callable[[Path | str, str, str], None]
+) -> None:
+    with temp_repo_with_remote.as_cwd():
+        create_commit_dummy_file("hello.txt", "world", "Brand-new commit")
+        sha1 = app.tools.git.capture(["rev-parse", "HEAD"]).strip()
+
+        assert app.tools.git.get_head_commit() == Commit(org="foo", repo="bar", sha1=SHA1Hash(sha1))
