@@ -10,6 +10,7 @@ import pytest
 from httpx import Response
 
 from dda.utils.fs import Path
+from dda.utils.git.changeset import ChangeSet, ChangeType, FileChanges
 from dda.utils.git.commit import Commit, CommitDetails
 from dda.utils.git.sha1hash import SHA1Hash
 
@@ -35,7 +36,7 @@ class TestCommitClass:
         "github_payload_file",
         ["commit_example_dda_1425a34.json", "commit_example_multiple_parents.json"],
     )
-    def test_get_commit_details_from_github(self, mocker, github_payload_file):
+    def test_get_commit_details_and_changes_from_github(self, mocker, github_payload_file):
         # Mock http client to return a known payload
         testdata_file = Path(__file__).parent / "testdata" / "github_payloads" / github_payload_file
         github_payload_str = testdata_file.read_text(encoding="utf-8")
@@ -52,13 +53,28 @@ class TestCommitClass:
         repo = commit_url.split("/")[5]
         commit = Commit(org=org, repo=repo, sha1=SHA1Hash(sha1))
 
-        # Make the comparison
-        commit_details = commit.get_details_from_github()
-        assert commit_details.author_name == github_payload["commit"]["author"]["name"]
-        assert commit_details.author_email == github_payload["commit"]["author"]["email"]
-        assert commit_details.datetime == datetime.fromisoformat(github_payload["commit"]["author"]["date"])
-        assert commit_details.message == github_payload["commit"]["message"]
-        assert commit_details.parent_shas == [SHA1Hash(parent["sha"]) for parent in github_payload["parents"]]
+        # Create a CommitDetails object
+        expected_commit_details = CommitDetails(
+            author_name=github_payload["commit"]["author"]["name"],
+            author_email=github_payload["commit"]["author"]["email"],
+            datetime=datetime.fromisoformat(github_payload["commit"]["author"]["date"]),
+            message=github_payload["commit"]["message"],
+            parent_shas=[SHA1Hash(parent["sha"]) for parent in github_payload["parents"]],
+        )
+
+        # Create a ChangeSet object
+        expected_commit_changes = ChangeSet()
+        for file in github_payload["files"]:
+            expected_commit_changes.add(
+                FileChanges(
+                    file=Path(file["filename"]), type=ChangeType.from_github_status(file["status"]), patch=file["patch"]
+                )
+            )
+
+        # Make the comparisons
+        commit_details, commit_changes = commit.get_details_and_changes_from_github()
+        assert commit_details == expected_commit_details
+        assert commit_changes == expected_commit_changes
 
     # Already tested in tools/test_git.py
     def test_get_commit_details_from_git(self):

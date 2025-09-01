@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from typing import Any
 
     from dda.utils.fs import Path
+    from dda.utils.git.changeset import ChangeSet
     from dda.utils.git.commit import Commit, CommitDetails
     from dda.utils.git.sha1hash import SHA1Hash
 
@@ -198,3 +199,44 @@ class Git(Tool):
             message="\n".join(message_lines).strip().strip('"'),
             parent_shas=[SHA1Hash(parent_sha) for parent_sha in parents_str.split()],
         )
+
+    def get_commit_changes(self, sha1: SHA1Hash, repo_path: Path | None = None) -> ChangeSet:
+        """
+        Get the changes of the given commit in the Git repository at the given path.
+        If no path is given, use the current working directory.
+        """
+        from dda.utils.fs import Path
+        from dda.utils.git.changeset import FILECHANGES_GIT_DIFF_ARGS, ChangeSet
+
+        repo_path = Path(repo_path or ".").resolve()
+        return ChangeSet.generate_from_diff_output(
+            self.capture([*FILECHANGES_GIT_DIFF_ARGS, f"{sha1}^", str(sha1)], cwd=str(repo_path)),
+        )
+
+    def get_working_tree_changes(self, repo_path: Path | None = None) -> ChangeSet:
+        """
+        Get the changes in the working tree of the Git repository at the given path.
+        If no path is given, use the current working directory.
+        """
+        from itertools import chain
+
+        from dda.utils.fs import Path
+        from dda.utils.git.changeset import FILECHANGES_GIT_DIFF_ARGS, ChangeSet
+
+        repo_path = Path(repo_path or ".").resolve()
+        with repo_path.as_cwd():
+            # Capture changes to already-tracked files - `diff HEAD` does not include any untracked files !
+            tracked_changes = ChangeSet.generate_from_diff_output(self.capture([*FILECHANGES_GIT_DIFF_ARGS, "HEAD"]))
+
+            # Capture changes to untracked files
+            untracked_files = self.capture(["ls-files", "--others", "--exclude-standard"]).strip().splitlines()
+            diffs = list(
+                chain.from_iterable(
+                    self.capture([*FILECHANGES_GIT_DIFF_ARGS, "/dev/null", file], check=False).strip().splitlines()
+                    for file in untracked_files
+                )
+            )
+            untracked_changes = ChangeSet.generate_from_diff_output(diffs)
+
+        # Combine the changes
+        return ChangeSet(tracked_changes | untracked_changes)
