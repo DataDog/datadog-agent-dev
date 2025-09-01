@@ -43,10 +43,24 @@ install_dda() {
   archive="${INSTALL_PATH}${SEP}$1"
 
   echo -e "${PURPLE}Downloading dda ${DDA_INSTALL_VERSION}${RESET}\n"
+  curl_opts=(
+    # fail on HTTP errors (>=400), prevents saving an error page
+    --fail
+    # no progress meter or extra output
+    --silent
+    # but still show errors (important for debugging)
+    --show-error
+    # follow redirects
+    --location
+    # retry N more times on transient errors
+    --retry 2
+    # also if connection is refused (CDN saturation cases)
+    --retry-connrefused
+  )
   if [[ "${DDA_INSTALL_VERSION}" == "latest" ]]; then
-    curl -sSLo "${archive}" "https://github.com/DataDog/datadog-agent-dev/releases/latest/download/$1"
+    curl "${curl_opts[@]}" -o "${archive}" "https://github.com/DataDog/datadog-agent-dev/releases/latest/download/$1"
   else
-    curl -sSLo "${archive}" "https://github.com/DataDog/datadog-agent-dev/releases/download/${DDA_INSTALL_VERSION}/$1"
+    curl "${curl_opts[@]}" -o "${archive}" "https://github.com/DataDog/datadog-agent-dev/releases/download/${DDA_INSTALL_VERSION}/$1"
   fi
 
   if [[ "${archive}" =~ \.zip$ ]]; then
