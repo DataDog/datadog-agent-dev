@@ -30,8 +30,21 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Install
-      # Command needs to be wrapped in single quotes so backslashes are preserved for Windows paths
-      run: "'${{ github.workspace }}${{ runner.os == 'Windows' && '\\' || '/' }}main.sh'"
+      run: |
+        set -eo pipefail
+        script="'${{ github.workspace }}${{ runner.os == 'Windows' && '\\' || '/' }}main.sh'"
+        max_attempts=3
+        attempt=1
+        until eval "$script"; do
+          status=$?
+          if [ $attempt -ge $max_attempts ]; then
+            echo "Failed after $attempt attempts (exit $status)"
+            exit $status
+          fi
+          echo "Attempt $attempt failed (exit $status). Retrying in $((attempt*5))s..."
+          sleep $((attempt*5))
+          attempt=$((attempt+1))
+        done
       shell: bash
       env:
         DDA_INSTALL_VERSION: latest
