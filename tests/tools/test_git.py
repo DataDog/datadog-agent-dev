@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import os
 import random
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 import pytest
@@ -159,3 +160,23 @@ def test_get_head_commit(
         sha1 = app.tools.git.capture(["rev-parse", "HEAD"]).strip()
 
         assert app.tools.git.get_head_commit() == Commit(org="foo", repo="bar", sha1=SHA1Hash(sha1))
+
+
+def test_get_commit_details(
+    app: Application, temp_repo: Path, create_commit_dummy_file: Callable[[Path | str, str, str], None]
+) -> None:
+    with temp_repo.as_cwd():
+        create_commit_dummy_file("dummy", "dummy content", "Initial commit")
+        parent_sha1 = app.tools.git.capture(["rev-parse", "HEAD"]).strip()
+
+        random_key = random.randint(1, 1000000)
+        create_commit_dummy_file("hello.txt", "world", f"Brand-new commit: {random_key}")
+        sha1 = app.tools.git.capture(["rev-parse", "HEAD"]).strip()
+        commit_time = datetime.fromisoformat(app.tools.git.capture(["show", "-s", "--format=%cI", sha1]).strip())
+
+        details = app.tools.git.get_commit_details(SHA1Hash(sha1))
+        assert details.author_name == "Test Runner"
+        assert details.author_email == "test.runner@example.com"
+        assert details.datetime == commit_time
+        assert details.message == f"Brand-new commit: {random_key}"
+        assert details.parent_shas == [SHA1Hash(parent_sha1)]
