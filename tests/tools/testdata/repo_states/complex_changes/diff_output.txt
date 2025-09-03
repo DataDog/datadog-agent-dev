@@ -1,0 +1,58 @@
+diff --git file2.txt file2.txt
+deleted file mode 100644
+index 70e6734..0000000
+--- file2.txt
++++ /dev/null
+@@ -1,4 +0,0 @@
+-I am file2 !
+-I feel like I take up space for nothing...
+-I have a feeling like I won't exist pretty soon :/
+-
+diff --git file3.txt file3.txt
+new file mode 100644
+index 0000000..1c54fdf
+--- /dev/null
++++ file3.txt
+@@ -0,0 +1,2 @@
++I am file3 !
++I'm new around here, hopefully everyone treats me nice :)
+diff --git file4.txt file4.txt
+index 73fa5d6..307c4c9 100644
+--- file4.txt
++++ file4.txt
+@@ -2 +2 @@ I am file4.
+-People often tell me I am unreliable.
++People often tell me I am THE BEST.
+@@ -4,3 +4,2 @@ Things like:
+-- You always change !
+-- I can never count on you...
+-- I didn't recognize you !
++- You rock !
++- I wish I were you !
+@@ -8 +7,3 @@ Do you think they have a point ?
+-I'd need to look at my own history to know...
++Pah ! Who am I kidding, they're OBVIOUSLY RIGHT.
++Arrogance ? What is that, an italian ice cream flavor ?
++Get outta here !
+diff --git file5.txt file5.txt
+deleted file mode 100644
+index bf6c86e..0000000
+--- file5.txt
++++ /dev/null
+@@ -1,5 +0,0 @@
+-I am a humble file.
+-Soon I will change name.
+-I think I'll also take this as an opportunity to change myself.
+-New name, new me !
+-Or is that not how the saying goes ?
+diff --git file5_new.txt file5_new.txt
+new file mode 100644
+index 0000000..bf6c86e
+--- /dev/null
++++ file5_new.txt
+@@ -0,0 +1,5 @@
++I am a humble file.
++Soon I will change name.
++I think I'll also take this as an opportunity to change myself.
++New name, new me !
++Or is that not how the saying goes ?

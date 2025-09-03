@@ -3,8 +3,10 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
+import json
 import os
 import random
+import shutil
 from datetime import datetime
 from typing import TYPE_CHECKING
 
@@ -12,11 +14,14 @@ import pytest
 
 from dda.tools.git import Git
 from dda.utils.fs import Path
+from dda.utils.git.changeset import ChangeSet
 from dda.utils.git.commit import Commit
 from dda.utils.git.sha1hash import SHA1Hash
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator
+
+    from _pytest.fixtures import SubRequest
 
     from dda.cli.application import Application
 
@@ -180,3 +185,99 @@ def test_get_commit_details(
         assert details.datetime == commit_time
         assert details.message == f"Brand-new commit: {random_key}"
         assert details.parent_shas == [SHA1Hash(parent_sha1)]
+
+
+def _make_repo_changes(
+    git: Git, temp_repo: Path, base_dir: Path, changed_dir: Path, *, commit_end: bool = True
+) -> None:
+    with temp_repo.as_cwd():
+        # Create base commit
+        # -- Copy files from base to temp_repo
+        for file in base_dir.iterdir():
+            shutil.copy(file, temp_repo / file.name)
+        # -- Create commit
+        git.run(["add", "."])
+        git.run(["commit", "-m", "Initial commit"])
+        # Create changed commit
+        # -- Remove all files from temp_repo
+        for file in temp_repo.iterdir():
+            if file.is_file():
+                file.unlink()
+        # -- Copy files from changed to temp_repo
+        for file in changed_dir.iterdir():
+            shutil.copy(file, temp_repo / file.name)
+        # -- Create commit if requested, otherwise leave working tree changes
+        if commit_end:
+            git.run(["add", "."])
+            git.run(["commit", "-m", "Changed commit"])
+
+
+def _load_changeset(filepath: Path) -> ChangeSet:
+    with open(filepath, encoding="utf-8") as f:
+        data = json.load(f)
+    return ChangeSet.from_list(data)
+
+
+REPO_TESTCASES = [path.name for path in (Path(__file__).parent / "testdata" / "repo_states").iterdir()]
+
+
+@pytest.fixture(params=REPO_TESTCASES)
+def repo_setup(app: Application, temp_repo: Path, request: SubRequest) -> tuple[Path, ChangeSet]:
+    git: Git = app.tools.git
+    testdata_dir = Path(__file__).parent / "testdata" / "repo_states"
+    base_dir: Path = testdata_dir / request.param / "base"
+    changed_dir: Path = testdata_dir / request.param / "changed"
+
+    # Make repo changes
+    _make_repo_changes(git, temp_repo, base_dir, changed_dir, commit_end=True)
+
+    # Load expected changeset
+    expected_changeset = _load_changeset(testdata_dir / request.param / "expected_changeset.json")
+
+    return temp_repo, expected_changeset
+
+
+@pytest.fixture(params=REPO_TESTCASES)
+def repo_setup_working_tree(app: Application, temp_repo: Path, request: SubRequest) -> tuple[Path, ChangeSet]:
+    git: Git = app.tools.git
+    testdata_dir = Path(__file__).parent / "testdata" / "repo_states"
+    base_dir: Path = testdata_dir / request.param / "base"
+    changed_dir: Path = testdata_dir / request.param / "changed"
+
+    # Make repo changes
+    _make_repo_changes(git, temp_repo, base_dir, changed_dir, commit_end=False)
+
+    # Load expected changeset
+    expected_changeset = _load_changeset(testdata_dir / request.param / "expected_changeset.json")
+
+    return temp_repo, expected_changeset
+
+
+# These tests are quite slow (the setup fixtures are quite heavy), and mostly replicated in the utils/git/test_changeset.py tests
+# Thus we only run them in CI
+@pytest.mark.requires_ci
+def test_get_commit_changes(app: Application, repo_setup: tuple[Path, ChangeSet]) -> None:
+    git: Git = app.tools.git
+    temp_repo, expected_changeset = repo_setup
+    with temp_repo.as_cwd():
+        changeset = git.get_commit_changes(SHA1Hash(git.capture(["rev-parse", "HEAD"]).strip()))
+        assert changeset.keys() == expected_changeset.keys()
+        for file in changeset:
+            seen, expected = changeset[file], expected_changeset[file]
+            assert seen.file == expected.file
+            assert seen.type == expected.type
+            assert seen.patch == expected.patch
+
+
+@pytest.mark.requires_ci
+def test_get_working_tree_changes(app: Application, repo_setup_working_tree: tuple[Path, ChangeSet]) -> None:
+    git: Git = app.tools.git
+    temp_repo, expected_changeset = repo_setup_working_tree
+    with temp_repo.as_cwd():
+        changeset = git.get_working_tree_changes()
+        assert changeset.keys() == expected_changeset.keys()
+        for file in changeset:
+            seen, expected = changeset[file], expected_changeset[file]
+            assert seen.file == expected.file
+            assert seen.type == expected.type
+            assert seen.patch == expected.patch

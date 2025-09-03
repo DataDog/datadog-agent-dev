@@ -1,0 +1,14 @@
+Hi ! My name is edited_lines.
+I have a big block of text here:
+---
+Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+Vestibulum ornare cursus diam, quis hendrerit nibh.
+Donec sollicitudin neque in tempus ornare.
+Integer sit amet pretium quam.
+Maecenas lacinia augue id est malesuada, vitae fermentum justo faucibus.
+Aenean posuere nisi tincidunt nisi pharetra blandit.
+Integer sed nulla sed eros aliquet eleifend quis ac quam.
+Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.
+---
+Seems interesting, doesn't it ?
+I wonder if it might change in the future.
