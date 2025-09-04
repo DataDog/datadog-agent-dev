@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from functools import cached_property
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -13,7 +13,6 @@ if TYPE_CHECKING:
     from dda.cli.application import Application
     from dda.utils.fs import Path
     from dda.utils.git.changeset import ChangeSet
-    from dda.utils.git.sha1hash import SHA1Hash
 
 
 @dataclass
@@ -64,7 +63,6 @@ class Commit:
 
         from dda.utils.fs import Path
         from dda.utils.git.changeset import ChangeSet, ChangeType, FileChanges
-        from dda.utils.git.sha1hash import SHA1Hash
         from dda.utils.network.http.client import get_http_client
 
         client = get_http_client()
@@ -156,3 +154,24 @@ class CommitDetails:
     datetime: datetime
     message: str
     parent_shas: list[SHA1Hash]
+
+
+class SHA1Hash(str):
+    """
+    A hexadecimal representation of a SHA-1 hash.
+    """
+
+    LENGTH = 40
+    __slots__ = ()
+
+    def __new__(cls, value: str) -> Self:
+        if len(value) != cls.LENGTH or any(c not in "0123456789abcdef" for c in value.lower()):
+            msg = f"Invalid SHA-1 hash: {value}"
+            raise ValueError(msg)
+        return str.__new__(cls, value)
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({super().__repr__()})"
+
+    def __bytes__(self) -> bytes:
+        return bytes.fromhex(self)

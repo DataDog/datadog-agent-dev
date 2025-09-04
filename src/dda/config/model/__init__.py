@@ -29,12 +29,12 @@ class RootConfig(Struct, frozen=True, omit_defaults=True):
     """
 
     orgs: dict[str, OrgConfig] = field(default_factory=_default_orgs)
-    user: UserConfig = field(default_factory=UserConfig)
     env: EnvConfig = field(default_factory=EnvConfig)
     envs: dict[str, dict[str, Any]] = {}
     tools: ToolsConfig = field(default_factory=ToolsConfig)
     storage: StorageDirs = field(default_factory=StorageDirs)
     github: GitHubConfig = field(default_factory=GitHubConfig)
+    user: UserConfig = field(default_factory=UserConfig)
     terminal: TerminalConfig = field(default_factory=TerminalConfig)
     update: UpdateConfig = field(default_factory=UpdateConfig)
 

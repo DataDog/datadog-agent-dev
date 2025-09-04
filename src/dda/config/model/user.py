@@ -16,7 +16,7 @@ class UserConfig(Struct, frozen=True):
     ```toml
     [user]
     name = "U.N. Owen"
-    email = ""void@some.where"
+    email = "void@some.where"
     ```
     ///
     """

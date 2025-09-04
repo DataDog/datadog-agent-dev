@@ -1,14 +1,15 @@
 # SPDX-FileCopyrightText: 2025-present Datadog, Inc. <dev@datadoghq.com>
 #
 # SPDX-License-Identifier: MIT
-from collections.abc import Generator, Iterable
-from dataclasses import dataclass
+from collections.abc import Generator
 from enum import StrEnum
 from functools import cached_property
 from typing import Self
 
+from msgspec import Struct
+
 from dda.utils.fs import Path
-from dda.utils.git.sha1hash import SHA1Hash
+from dda.utils.git.commit import SHA1Hash
 
 FILECHANGES_GIT_DIFF_ARGS = ["diff", "-U0", "--no-color", "--no-prefix", "--no-renames"]
 
@@ -20,24 +21,24 @@ class ChangeType(StrEnum):
 
     @classmethod
     def from_github_status(cls, status: str) -> "ChangeType":
-        mapping = {
-            "added": cls.ADDED,
-            "modified": cls.MODIFIED,
-            "removed": cls.DELETED,
-        }
-        try:
-            return mapping[status]
-        except KeyError as e:
-            msg = f"Invalid GitHub change type message: {status}"
-            raise ValueError(msg) from e
+        if status == "added":
+            return cls.ADDED
+        if status == "modified":
+            return cls.MODIFIED
+        if status == "removed":
+            return cls.DELETED
+
+        msg = f"Invalid GitHub change type message: {status}"
+        raise ValueError(msg)
 
 
-@dataclass(frozen=True, order=True)
-class FileChanges:
+class FileChanges(Struct):
     """Represents changes to a single file in a git repository."""
 
     file: Path
+    """The path to the file that was changed."""
     type: ChangeType
+    """The type of change that was made to the file: added, modified, or deleted."""
 
     patch: str
     """
@@ -49,35 +50,29 @@ class FileChanges:
     ```diff
     @@ -15,2 +15 @@ if TYPE_CHECKING:
     -    from dda.utils.git.commit import Commit, CommitDetails
-    -    from dda.utils.git.sha1hash import SHA1Hash
-    +    from dda.utils.git.commit import Commit
+    -    from dda.utils.git.commit import SHA1Hash
+    +    from dda.utils.git.commit import Commit, CommitDetails, SHA1Hash
     ```
     """
 
     # TODO: This might be a bit brittle - or we might want to move this to a separate file ?
     @classmethod
-    def generate_from_diff_output(cls, diff_output: Iterable[str] | str) -> Generator[Self, None, None]:
+    def generate_from_diff_output(cls, diff_output: str | list[str]) -> Generator[Self, None, None]:
         """
         Generate a list of FileChanges from the output of _some_ git diff commands.
         Not all outputs from `git diff` are supported (ex: renames), you should run:
         ```bash
         git diff [dda.utils.git.changeset.FILECHANGES_GIT_DIFF_ARGS] <oldrev> <newrev>
         ```
-        Accepts an Iterable of lines or a single string as argument.
+        Accepts a string or a list of lines.
         """
         if isinstance(diff_output, str):
             diff_output = diff_output.strip().splitlines()
 
-        line_iterator = iter(diff_output)
-
-        # Check if the iterator is empty without consuming the first line
-        try:
-            first_line = next(line_iterator)
-            # Put the first line back by creating a new iterator with it at the front
-            line_iterator = iter([first_line, *list(line_iterator)])
-        except StopIteration:
-            # Iterator is empty, nothing to process
+        if len(diff_output) == 0:
             return
+
+        line_iterator = iter(diff_output)
 
         current_file: Path | None = None
         current_type: ChangeType | None = None
@@ -213,7 +208,7 @@ class ChangeSet(dict[Path, FileChanges]):
         from hashlib import sha1
 
         digester = sha1()  # noqa: S324
-        for change in sorted(self.values()):
+        for change in sorted(self.values(), key=lambda x: x.file.as_posix()):
             digester.update(change.file.as_posix().encode())
             digester.update(change.type.value.encode())
             digester.update(change.patch.encode())
@@ -221,8 +216,11 @@ class ChangeSet(dict[Path, FileChanges]):
         return SHA1Hash(digester.hexdigest())
 
     @classmethod
-    def generate_from_diff_output(cls, diff_output: Iterable[str] | str) -> Self:
-        """Generate a changeset from the output of a git diff command."""
+    def generate_from_diff_output(cls, diff_output: str | list[str]) -> Self:
+        """
+        Generate a changeset from the output of a git diff command.
+        The output should be passed as a string or a list of lines.
+        """
         changeset = cls()
         for change in FileChanges.generate_from_diff_output(diff_output):
             changeset.add(change)

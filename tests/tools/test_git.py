@@ -15,8 +15,7 @@ import pytest
 from dda.tools.git import Git
 from dda.utils.fs import Path
 from dda.utils.git.changeset import ChangeSet
-from dda.utils.git.commit import Commit
-from dda.utils.git.sha1hash import SHA1Hash
+from dda.utils.git.commit import Commit, SHA1Hash
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator

@@ -11,8 +11,7 @@ from httpx import Response
 
 from dda.utils.fs import Path
 from dda.utils.git.changeset import ChangeSet, ChangeType, FileChanges
-from dda.utils.git.commit import Commit, CommitDetails
-from dda.utils.git.sha1hash import SHA1Hash
+from dda.utils.git.commit import Commit, CommitDetails, SHA1Hash
 
 
 class TestCommitClass:

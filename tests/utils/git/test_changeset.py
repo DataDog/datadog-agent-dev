@@ -9,7 +9,7 @@ import pytest
 
 from dda.utils.fs import Path
 from dda.utils.git.changeset import ChangeSet, ChangeType, FileChanges
-from dda.utils.git.sha1hash import SHA1Hash
+from dda.utils.git.commit import SHA1Hash
 from tests.tools.test_git import REPO_TESTCASES
 
 
@@ -32,9 +32,11 @@ class TestFileChangesClass:
         with open(testdata_dir / "expected_changeset.json", encoding="utf-8") as f:
             changeset_data = json.load(f)
 
-        expected_filechanges = sorted(FileChanges.from_dict(change) for change in changeset_data)
+        expected_filechanges = sorted(
+            (FileChanges.from_dict(change) for change in changeset_data), key=lambda x: x.file.as_posix()
+        )
 
-        seen_filechanges = sorted(FileChanges.generate_from_diff_output(diff_output))
+        seen_filechanges = sorted(FileChanges.generate_from_diff_output(diff_output), key=lambda x: x.file.as_posix())
 
         assert len(seen_filechanges) == len(expected_filechanges)
         for seen, expected in zip(seen_filechanges, expected_filechanges, strict=True):

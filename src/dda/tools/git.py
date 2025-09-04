@@ -13,8 +13,7 @@ if TYPE_CHECKING:
 
     from dda.utils.fs import Path
     from dda.utils.git.changeset import ChangeSet
-    from dda.utils.git.commit import Commit, CommitDetails
-    from dda.utils.git.sha1hash import SHA1Hash
+    from dda.utils.git.commit import Commit, CommitDetails, SHA1Hash
 
 
 class Git(Tool):
@@ -140,8 +139,7 @@ class Git(Tool):
 
         if remote_url.startswith("git@"):
             # Format is git@<website>:org/repo(.git)
-            _, path = remote_url.split(":", 1)
-            path.removesuffix(".git")
+            path = remote_url.split(":", 1)[1].removesuffix(".git")
             org, repo = path.split("/", 1)
             return org, repo, remote_url
 
@@ -155,8 +153,7 @@ class Git(Tool):
         If no path is given, use the current working directory.
         """
         from dda.utils.fs import Path
-        from dda.utils.git.commit import Commit
-        from dda.utils.git.sha1hash import SHA1Hash
+        from dda.utils.git.commit import Commit, SHA1Hash
 
         repo_path = Path(repo_path or ".").resolve()
         sha1_str = self.capture(["rev-parse", "HEAD"], cwd=str(repo_path)).strip()
@@ -174,8 +171,7 @@ class Git(Tool):
         from datetime import datetime
 
         from dda.utils.fs import Path
-        from dda.utils.git.commit import CommitDetails
-        from dda.utils.git.sha1hash import SHA1Hash
+        from dda.utils.git.commit import CommitDetails, SHA1Hash
 
         repo_path = Path(repo_path or ".").resolve()
         raw_details = self.capture(

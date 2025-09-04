@@ -25,10 +25,6 @@ def test_default_scrubbed(dda, config_file, helpers, default_cache_dir, default_
         f"""
         [orgs.default]
 
-        [user]
-        name = "Foo Bar"
-        email = "foo@bar.baz"
-
         [env.dev]
         default-type = "{DEFAULT_DEV_ENV}"
         clone-repos = false
@@ -45,6 +41,10 @@ def test_default_scrubbed(dda, config_file, helpers, default_cache_dir, default_
         [github.auth]
         user = "foo"
         token = "*****"
+
+        [user]
+        name = "Foo Bar"
+        email = "foo@bar.baz"
 
         [terminal]
         verbosity = 0
@@ -86,10 +86,6 @@ def test_reveal(dda, config_file, helpers, default_cache_dir, default_data_dir):
         f"""
         [orgs.default]
 
-        [user]
-        name = "Foo Bar"
-        email = "foo@bar.baz"
-
         [env.dev]
         default-type = "{DEFAULT_DEV_ENV}"
         clone-repos = false
@@ -106,6 +102,10 @@ def test_reveal(dda, config_file, helpers, default_cache_dir, default_data_dir):
         [github.auth]
         user = "foo"
         token = "bar"
+
+        [user]
+        name = "Foo Bar"
+        email = "foo@bar.baz"
 
         [terminal]
         verbosity = 0
