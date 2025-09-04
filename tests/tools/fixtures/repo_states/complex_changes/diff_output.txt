@@ -52,7 +52,7 @@ index 0000000..bf6c86e
 +++ file5_new.txt
 @@ -0,0 +1,5 @@
 +I am a humble file.
-+Soon I will change name.
-+I think I'll also take this as an opportunity to change myself.
++Hey I have a new name !
++Wow, I feel much better now.
 +New name, new me !
 +Or is that not how the saying goes ?

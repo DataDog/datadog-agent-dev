@@ -10,7 +10,7 @@ import pytest
 from dda.utils.fs import Path
 from dda.utils.git.changeset import ChangeSet, ChangeType, FileChanges
 from dda.utils.git.commit import SHA1Hash
-from tests.tools.test_git import REPO_TESTCASES
+from tests.tools.conftest import REPO_TESTCASES
 
 
 class TestFileChangesClass:
@@ -25,11 +25,11 @@ class TestFileChangesClass:
         REPO_TESTCASES,
     )
     def test_generate_from_diff_output(self, repo_testcase):
-        testdata_dir = Path(__file__).parent.parent.parent / "tools" / "testdata" / "repo_states" / repo_testcase
-        with open(testdata_dir / "diff_output.txt", encoding="utf-8") as f:
+        fixtures_dir = Path(__file__).parent.parent.parent / "tools" / "fixtures" / "repo_states" / repo_testcase
+        with open(fixtures_dir / "diff_output.txt", encoding="utf-8") as f:
             diff_output = f.read()
 
-        with open(testdata_dir / "expected_changeset.json", encoding="utf-8") as f:
+        with open(fixtures_dir / "expected_changeset.json", encoding="utf-8") as f:
             changeset_data = json.load(f)
 
         expected_filechanges = sorted(
@@ -113,11 +113,11 @@ class TestChangeSetClass:
         REPO_TESTCASES,
     )
     def test_generate_from_diff_output(self, repo_testcase):
-        testdata_dir = Path(__file__).parent.parent.parent / "tools" / "testdata" / "repo_states" / repo_testcase
-        with open(testdata_dir / "diff_output.txt", encoding="utf-8") as f:
+        fixtures_dir = Path(__file__).parent.parent.parent / "tools" / "fixtures" / "repo_states" / repo_testcase
+        with open(fixtures_dir / "diff_output.txt", encoding="utf-8") as f:
             diff_output = f.read()
 
-        with open(testdata_dir / "expected_changeset.json", encoding="utf-8") as f:
+        with open(fixtures_dir / "expected_changeset.json", encoding="utf-8") as f:
             changeset_data = json.load(f)
 
         expected_changeset = ChangeSet.from_list(changeset_data)

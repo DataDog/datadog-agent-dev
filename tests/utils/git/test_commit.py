@@ -37,8 +37,8 @@ class TestCommitClass:
     )
     def test_get_commit_details_and_changes_from_github(self, mocker, github_payload_file):
         # Mock http client to return a known payload
-        testdata_file = Path(__file__).parent / "testdata" / "github_payloads" / github_payload_file
-        github_payload_str = testdata_file.read_text(encoding="utf-8")
+        fixtures_file = Path(__file__).parent / "fixtures" / "github_payloads" / github_payload_file
+        github_payload_str = fixtures_file.read_text(encoding="utf-8")
         mocker.patch(
             "dda.utils.network.http.client.HTTPClient.get",
             return_value=Response(status_code=200, content=github_payload_str),
@@ -117,7 +117,7 @@ class TestCommitDetailsClass:
         commit = Commit("DataDog", "datadog-agent-dev", SHA1Hash("1425a34f443f0b468e1739a06fcf97dfbf632594"))
 
         # Mock HTTP client to return a known payload
-        github_payload_file = Path(__file__).parent / "testdata" / "github_payloads" / "commit_example_dda_1425a34.json"
+        github_payload_file = Path(__file__).parent / "fixtures" / "github_payloads" / "commit_example_dda_1425a34.json"
         github_payload_str = github_payload_file.read_text(encoding="utf-8")
         mocker.patch(
             "dda.utils.network.http.client.HTTPClient.get",
@@ -126,7 +126,7 @@ class TestCommitDetailsClass:
         github_details = commit.get_details_from_github()
 
         # Mock Git.capture to return payload from file
-        git_output_file = Path(__file__).parent / "testdata" / "git_show_dda_1425a34.txt"
+        git_output_file = Path(__file__).parent / "fixtures" / "git_show_dda_1425a34.txt"
         git_output = git_output_file.read_text(encoding="utf-8")
         mocker.patch(
             "dda.tools.git.Git.capture",
