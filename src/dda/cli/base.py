@@ -140,7 +140,9 @@ class DynamicContext(click.RichContext):
             metadata = {
                 "cli.command": join_command_args(sys.argv[1:]),
                 "cli.exit_code": str(exit_code),
-                # TODO: Consider not tying the key to git specifically
+                "author.name": app.config.user.name,
+                "author.email": app.config.user.email,
+                # TODO: Remove this once the new keys are fully rolled out
                 "git.author.name": app.config.user.name,
                 "git.author.email": app.config.user.email,
             }
