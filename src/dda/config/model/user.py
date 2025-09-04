@@ -3,11 +3,31 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
-from functools import partial
-
 from msgspec import Struct, field
 
-from dda.tools.git import Git
+
+def _get_name() -> str:
+    from os import environ
+
+    from dda.tools.git import Git
+    from dda.utils.process import SubprocessRunner
+
+    if name := environ.get(Git.AUTHOR_NAME_ENV_VAR):
+        return name
+
+    return SubprocessRunner.static_capture(["git", "config", "--global", "--get", "user.name"]).strip()
+
+
+def _get_email() -> str:
+    from os import environ
+
+    from dda.tools.git import Git
+    from dda.utils.process import SubprocessRunner
+
+    if email := environ.get(Git.AUTHOR_EMAIL_ENV_VAR):
+        return email
+
+    return SubprocessRunner.static_capture(["git", "config", "--global", "--get", "user.email"]).strip()
 
 
 class UserConfig(Struct, frozen=True):
@@ -22,5 +42,5 @@ class UserConfig(Struct, frozen=True):
     """
 
     # Default username and email are fetched from git config
-    name: str = field(default_factory=partial(Git._query_author_name, check=False))  # noqa: SLF001
-    email: str = field(default_factory=partial(Git._query_author_email, check=False))  # noqa: SLF001
+    name: str = field(default_factory=_get_name)
+    email: str = field(default_factory=_get_email)

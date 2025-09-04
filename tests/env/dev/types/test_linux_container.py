@@ -31,16 +31,6 @@ def updated_config(config_file):
     config_file.save()
 
 
-@pytest.fixture
-def mock_git_author_details(mocker):
-    """
-    Mock the queried git author name and email to be a known value.
-    This also helps to avoid making actual `git` calls to the system, since subprocess.run is mocked in many tests here.
-    """
-    mocker.patch("dda.tools.git.Git._query_author_name", return_value="Foo Bar")
-    mocker.patch("dda.tools.git.Git._query_author_email", return_value="foo@bar.baz")
-
-
 @pytest.fixture(scope="module")
 def host_user_args():
     return [] if sys.platform == "win32" else ["-e", f"HOST_UID={os.getuid()}", "-e", f"HOST_GID={os.getgid()}"]
@@ -163,7 +153,7 @@ class TestStart:
             """
         )
 
-    def test_default(self, dda, helpers, mocker, temp_dir, host_user_args, mock_git_author_details):  # noqa: ARG002
+    def test_default(self, dda, helpers, mocker, temp_dir, host_user_args):
         repos_dir = temp_dir / "repos"
         repos_dir.ensure_dir()
         repo_dir = repos_dir / "datadog-agent"
@@ -245,7 +235,7 @@ class TestStart:
             ),
         ]
 
-    def test_clone(self, dda, helpers, mocker, temp_dir, host_user_args, mock_git_author_details):  # noqa: ARG002
+    def test_clone(self, dda, helpers, mocker, temp_dir, host_user_args):
         write_server_config = mocker.patch("dda.utils.ssh.write_server_config")
         with helpers.hybrid_patch(
             "subprocess.run",
@@ -335,7 +325,7 @@ class TestStart:
             ),
         ]
 
-    def test_no_pull(self, dda, helpers, mocker, temp_dir, host_user_args, mock_git_author_details):  # noqa: ARG002
+    def test_no_pull(self, dda, helpers, mocker, temp_dir, host_user_args):
         repos_dir = temp_dir / "repos"
         repos_dir.ensure_dir()
         repo_dir = repos_dir / "datadog-agent"
@@ -411,7 +401,7 @@ class TestStart:
             ),
         ]
 
-    def test_multiple(self, dda, helpers, mocker, temp_dir, host_user_args, mock_git_author_details):  # noqa: ARG002
+    def test_multiple(self, dda, helpers, mocker, temp_dir, host_user_args):
         repos_dir = temp_dir / "repos"
         repos_dir.ensure_dir()
         repo1_dir = repos_dir / "datadog-agent"
@@ -497,7 +487,7 @@ class TestStart:
             ),
         ]
 
-    def test_multiple_clones(self, dda, helpers, mocker, temp_dir, host_user_args, mock_git_author_details):  # noqa: ARG002
+    def test_multiple_clones(self, dda, helpers, mocker, temp_dir, host_user_args):
         write_server_config = mocker.patch("dda.utils.ssh.write_server_config")
         with helpers.hybrid_patch(
             "subprocess.run",

@@ -133,11 +133,6 @@ class TestCommitDetailsClass:
             return_value=git_output,
         )
 
-        # Mock Git._query_author_name and _query_author_email as well, otherwise they are affected by the above mock
-        # This is important as they are called in __init__ and would otherwise cause a warning to be displayed
-        mocker.patch("dda.tools.git.Git._query_author_name", return_value="John Doe")
-        mocker.patch("dda.tools.git.Git._query_author_email", return_value="john.doe@example.com")
-
         # Get details from Git
         git_details = commit.get_details_from_git(app, repo_path=Path(__file__).parent.parent.parent.parent)
         assert github_details == git_details

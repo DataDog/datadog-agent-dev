@@ -107,6 +107,12 @@ def clear_cached_config(app: Application) -> None:
     if hasattr(app, "config"):
         del app.config
 
+    if hasattr(app.tools.git, "author_name"):
+        del app.tools.git.author_name
+
+    if hasattr(app.tools.git, "author_email"):
+        del app.tools.git.author_email
+
 
 @pytest.fixture
 def reset_user_config(app: Application) -> None:
@@ -125,14 +131,16 @@ def reset_user_config(app: Application) -> None:
 def test_author_details(app: Application, reset_user_config: None, set_commiter_details: None) -> None:  # noqa: ARG001
     # Test 1: Test author details coming from global git config - lowest priority
     # The set_commiter_details fixture ensures the global git config is set to known values
-    assert app.tools.git.get_author_name() == "Test Runner"
-    assert app.tools.git.get_author_email() == "test.runner@example.com"
+    clear_cached_config(app)
+    assert app.tools.git.author_name == "Test Runner"
+    assert app.tools.git.author_email == "test.runner@example.com"
 
     # Test 2: Test author details coming from environment variables - second priority
+    clear_cached_config(app)
     os.environ[Git.AUTHOR_NAME_ENV_VAR] = "Jane Smith"
     os.environ[Git.AUTHOR_EMAIL_ENV_VAR] = "jane.smith@example.com"
-    assert app.tools.git.get_author_name() == "Jane Smith"
-    assert app.tools.git.get_author_email() == "jane.smith@example.com"
+    assert app.tools.git.author_name == "Jane Smith"
+    assert app.tools.git.author_email == "jane.smith@example.com"
 
     # Test 3: Test author details coming from dda config - highest priority
     app.config_file.data["user"]["name"] = "John Doe"
@@ -140,8 +148,8 @@ def test_author_details(app: Application, reset_user_config: None, set_commiter_
 
     # Clear the cached properties so they get reconstructed with the new data
     clear_cached_config(app)
-    assert app.tools.git.get_author_name() == "John Doe"
-    assert app.tools.git.get_author_email() == "john.doe@example.com"
+    assert app.tools.git.author_name == "John Doe"
+    assert app.tools.git.author_email == "john.doe@example.com"
 
 
 @pytest.fixture
