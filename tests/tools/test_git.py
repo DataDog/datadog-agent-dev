@@ -3,14 +3,12 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
-import os
 import random
 from datetime import datetime
 from typing import TYPE_CHECKING
 
 import pytest
 
-from dda.tools.git import Git
 from dda.utils.git.commit import Commit, SHA1Hash
 from tests.tools.conftest import clear_cached_config
 
@@ -18,6 +16,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from dda.cli.application import Application
+    from dda.tools.git import Git
     from dda.utils.fs import Path
     from dda.utils.git.changeset import ChangeSet
 
@@ -32,28 +31,16 @@ def test_basic(
         assert f"Initial commit: {random_key}" in app.tools.git.capture(["log", "-1", "--oneline"])
 
 
-def test_author_details(app: Application, reset_user_config: None, set_commiter_details: None) -> None:  # noqa: ARG001
-    # Test 1: Test author details coming from global git config - lowest priority
-    # The set_commiter_details fixture ensures the global git config is set to known values
+def test_author_details_from_system(app: Application, set_system_git_author: None) -> None:  # noqa: ARG001
     clear_cached_config(app)
     assert app.tools.git.author_name == "Test Runner"
     assert app.tools.git.author_email == "test.runner@example.com"
 
-    # Test 2: Test author details coming from environment variables - second priority
-    clear_cached_config(app)
-    os.environ[Git.AUTHOR_NAME_ENV_VAR] = "Jane Smith"
-    os.environ[Git.AUTHOR_EMAIL_ENV_VAR] = "jane.smith@example.com"
-    assert app.tools.git.author_name == "Jane Smith"
-    assert app.tools.git.author_email == "jane.smith@example.com"
 
-    # Test 3: Test author details coming from dda config - highest priority
-    app.config_file.data["user"]["name"] = "John Doe"
-    app.config_file.data["user"]["email"] = "john.doe@example.com"
-
-    # Clear the cached properties so they get reconstructed with the new data
+def test_author_details_inherit(app: Application, set_inherit_git_author: None) -> None:  # noqa: ARG001
     clear_cached_config(app)
-    assert app.tools.git.author_name == "John Doe"
-    assert app.tools.git.author_email == "john.doe@example.com"
+    assert app.tools.git.author_name == app.config.user.name
+    assert app.tools.git.author_email == app.config.user.emails[0]
 
 
 def test_get_remote_details(app: Application, temp_repo_with_remote: Path) -> None:

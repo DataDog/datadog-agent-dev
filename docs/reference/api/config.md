@@ -46,6 +46,10 @@ The file can be managed by the [`config`](../cli/commands.md#dda-config) command
     options:
       heading_level: 3
 
+::: dda.config.model.tools.GitConfig
+    options:
+      heading_level: 3
+
 ## Storage
 
 ::: dda.config.model.storage.StorageDirs

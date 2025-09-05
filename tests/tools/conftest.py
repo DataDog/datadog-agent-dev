@@ -42,7 +42,7 @@ def reset_user_config(app: Application) -> None:
 
 # Initialize a dummy repo in a temporary directory for the tests to use
 @pytest.fixture
-def temp_repo(app: Application, temp_dir: Path, set_commiter_details: None) -> Generator[Path, None, None]:  # noqa: ARG001
+def temp_repo(app: Application, temp_dir: Path, set_system_git_author: None) -> Generator[Path, None, None]:  # noqa: ARG001
     git: Git = app.tools.git
     repo_path = temp_dir / "dummy-repo"
     repo_path.mkdir()  # Don't do exist_ok, the directory should not exist
@@ -56,25 +56,54 @@ def temp_repo(app: Application, temp_dir: Path, set_commiter_details: None) -> G
 
 
 @pytest.fixture
-def set_commiter_details(app: Application) -> Generator[None, None, None]:
-    # The cleanup here is very important as it affects the global git config
+def set_system_git_author(app: Application) -> Generator[None, None, None]:
+    # Make sure the config is set to "system" mode, so that the author details are not inherited from the user config
+    old_config = app.config_file.data["tools"]["git"]["author_details"]
+    app.config_file.data["tools"]["git"]["author_details"] = "system"
+    app.config_file.save()
+    clear_cached_config(app)
+
     old_env_author = os.environ.pop(Git.AUTHOR_NAME_ENV_VAR, default=None)
     old_env_email = os.environ.pop(Git.AUTHOR_EMAIL_ENV_VAR, default=None)
-    old_author_name = app.tools.git.capture(["config", "--global", "--get", "user.name"], check=False)
-    old_author_email = app.tools.git.capture(["config", "--global", "--get", "user.email"], check=False)
+    old_author_name = app.tools.git.capture(["config", "--get", "user.name"], check=False)
+    old_author_email = app.tools.git.capture(["config", "--get", "user.email"], check=False)
     app.tools.git.run(["config", "--global", "user.name", "Test Runner"])
     app.tools.git.run(["config", "--global", "user.email", "test.runner@example.com"])
     yield
+
     app.tools.git.run(["config", "--global", "--unset", "user.name"])
     app.tools.git.run(["config", "--global", "--unset", "user.email"])
     if old_author_name:
-        app.tools.git.run(["config", "--global", "user.name", old_author_name])
+        app.tools.git.run(["config", "--global", "user.name", old_author_name.strip()])
     if old_author_email:
-        app.tools.git.run(["config", "--global", "user.email", old_author_email])
+        app.tools.git.run(["config", "--global", "user.email", old_author_email.strip()])
     if old_env_author:
-        os.environ[Git.AUTHOR_NAME_ENV_VAR] = old_env_author
+        os.environ[Git.AUTHOR_NAME_ENV_VAR] = old_env_author.strip()
     if old_env_email:
-        os.environ[Git.AUTHOR_EMAIL_ENV_VAR] = old_env_email
+        os.environ[Git.AUTHOR_EMAIL_ENV_VAR] = old_env_email.strip()
+
+    app.config_file.data["tools"]["git"]["author_details"] = old_config
+    app.config_file.save()
+    clear_cached_config(app)
+
+
+@pytest.fixture
+def set_inherit_git_author(app: Application) -> Generator[None, None, None]:
+    old_config = app.config_file.data["tools"]["git"]["author_details"]
+    app.config_file.data["tools"]["git"]["author_details"] = "inherit"
+
+    old_name = app.config_file.data["user"]["name"]
+    old_emails = app.config_file.data["user"]["emails"]
+    app.config_file.data["user"]["name"] = "Test Runner"
+    app.config_file.data["user"]["emails"] = ["test.runner@example.com"]
+    app.config_file.save()
+    clear_cached_config(app)
+    yield
+    app.config_file.data["tools"]["git"]["author_details"] = old_config
+    app.config_file.data["user"]["name"] = old_name
+    app.config_file.data["user"]["emails"] = old_emails
+    app.config_file.save()
+    clear_cached_config(app)
 
 
 # Create a dummy file in the repository - uses the previously initialized dummy repo and the "fixture factory" pattern

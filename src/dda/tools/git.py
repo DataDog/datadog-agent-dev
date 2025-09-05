@@ -26,6 +26,14 @@ class Git(Tool):
     AUTHOR_NAME_ENV_VAR = "GIT_AUTHOR_NAME"
     AUTHOR_EMAIL_ENV_VAR = "GIT_AUTHOR_EMAIL"
 
+    def env_vars(self) -> dict[str, str]:
+        if self.app.config.tools.git.author_details == "inherit":
+            return {
+                self.AUTHOR_NAME_ENV_VAR: self.app.config.user.name.strip(),
+                self.AUTHOR_EMAIL_ENV_VAR: self.app.config.user.emails[0].strip(),
+            }
+        return {}
+
     @cached_property
     def path(self) -> str:
         import shutil
@@ -41,16 +49,16 @@ class Git(Tool):
         Get the git author name from dda config, env var, or by querying the global git config.
         Note that the global git config should itself read the env var if it exists - we manually read the env var as a performance optimization.
         """
-
-        if cfg_username := self.app.config.user.name:
-            return cfg_username
-
         from os import environ
 
-        if env_username := environ.get(self.AUTHOR_NAME_ENV_VAR):
+        # If the env var is set (either by the environment or because the user config is set to inherit),
+        # Its value is what git will use for committing. We need to read it, as it might not correspond to the global git config.
+        if env_username := (environ | self.env_vars()).get(self.AUTHOR_NAME_ENV_VAR):
             return env_username
 
-        return self.capture(["config", "--global", "--get", "user.name"]).strip()
+        # Don't use global in case some repo-specific config overrides it.
+        # If no repo-specific config, the global config will be used automatically by git.
+        return self.capture(["config", "--get", "user.name"]).strip()
 
     @cached_property
     def author_email(self) -> str:
@@ -58,16 +66,13 @@ class Git(Tool):
         Get the git author email from dda config, env var, or by querying the global git config.
         Note that the global git config should itself read the env var if it exists - we manually read the env var as a performance optimization.
         """
-
-        if cfg_email := self.app.config.user.email:
-            return cfg_email
-
         from os import environ
 
-        if env_email := environ.get(self.AUTHOR_EMAIL_ENV_VAR):
+        # See comment in author_name
+        if env_email := (environ | self.env_vars()).get(self.AUTHOR_EMAIL_ENV_VAR):
             return env_email
 
-        return self.capture(["config", "--global", "--get", "user.email"]).strip()
+        return self.capture(["config", "--get", "user.email"]).strip()
 
     # === PRETEMPLATED COMMANDS === #
     def get_remote_details(self, repo_path: Path | None = None, remote_name: str = "origin") -> tuple[str, str, str]:
