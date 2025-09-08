@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from functools import cached_property
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from dda.tools.base import Tool
 from dda.utils.git.changeset import ChangeSet
@@ -131,7 +131,7 @@ class Git(Tool):
             parent_shas=list(parents_str.split()),
         )
 
-    def _capture_diff_lines(self, *args: str) -> list[str]:
+    def _capture_diff_lines(self, *args: str, **kwargs: Any) -> list[str]:
         diff_args = [
             "-c",
             "core.quotepath=false",
@@ -143,7 +143,7 @@ class Git(Tool):
             "--no-ext-diff",
             # "-z",
         ]
-        return self.capture([*diff_args, *args], check=False).strip().splitlines()
+        return self.capture([*diff_args, *args], check=False, **kwargs).strip().splitlines()
 
     def _compare_refs(self, ref1: str, ref2: str) -> ChangeSet:
         return ChangeSet.generate_from_diff_output(self._capture_diff_lines(ref1, ref2))
@@ -164,25 +164,32 @@ class Git(Tool):
         """
         Get the changes in the working tree of the Git repository in the current working directory.
         """
-        from itertools import chain
+        from os import environ
 
-        from dda.utils.git.changeset import ChangeSet
+        from dda.utils.fs import temp_file
 
-        # Capture changes to already-tracked files - `diff HEAD` does not include any untracked files !
-        tracked_changes = ChangeSet.generate_from_diff_output(self._capture_diff_lines("HEAD"))
+        with temp_file(suffix=".git_index") as temp_index_path:
+            # Set up environment with temporary index
+            original_env = environ.copy()
+            temp_env = original_env | {"GIT_INDEX_FILE": str(temp_index_path.resolve())}
 
-        # Capture changes to untracked files
-        other_files_output = self.capture(["ls-files", "--others", "--exclude-standard", "-z"]).strip()
-        untracked_files = [x.strip() for x in other_files_output.split("\0") if x]  # Remove empty strings
+            # Populate the temporary index with HEAD
+            self.run(["read-tree", "HEAD"], env=temp_env)
 
-        if not untracked_files:
-            return tracked_changes
+            # Get list of untracked files
+            untracked_files_output = self.capture(
+                ["ls-files", "--others", "--exclude-standard", "-z"], env=temp_env
+            ).strip()
+            untracked_files = [x.strip() for x in untracked_files_output.split("\0") if x.strip()]
 
-        diffs = list(chain.from_iterable(self._capture_diff_lines("/dev/null", file) for file in untracked_files))
-        untracked_changes = ChangeSet.generate_from_diff_output(diffs)
+            # Add untracked files to the index with --intent-to-add
+            if untracked_files:
+                self.run(["add", "--intent-to-add", *untracked_files], env=temp_env)
 
-        # Combine the changes
-        return tracked_changes | untracked_changes
+            # Get all changes (tracked + untracked) with a single diff command
+            diff_lines = self._capture_diff_lines("HEAD", env=temp_env)
+
+            return ChangeSet.generate_from_diff_output(diff_lines)
 
     def get_merge_base(self, remote_name: str = "origin") -> str:
         """
