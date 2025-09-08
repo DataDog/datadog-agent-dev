@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any
 
 from dda.tools.base import Tool
 from dda.utils.git.changeset import ChangeSet
+from dda.utils.git.remote import Remote
 
 if TYPE_CHECKING:
     from dda.utils.git.commit import Commit, CommitDetails
@@ -72,7 +73,7 @@ class Git(Tool):
         return self.capture(["config", "--get", "user.email"]).strip()
 
     # === PRETEMPLATED COMMANDS === #
-    def get_remote_details(self, remote_name: str = "origin") -> tuple[str, str, str]:
+    def get_remote_details(self, remote_name: str = "origin") -> Remote:
         """
         Get the details of the given remote for the Git repository in the current working directory.
         The returned tuple is (org, repo, url).
@@ -82,15 +83,7 @@ class Git(Tool):
             ["config", "--get", f"remote.{remote_name}.url"],
         ).strip()
 
-        if remote_url.startswith("git@"):
-            # Format is git@<website>:org/repo(.git)
-            path = remote_url.split(":", 1)[1].removesuffix(".git")
-            org, repo = path.split("/", 1)
-            return org, repo, remote_url
-
-        # Format is https://<website>/org/repo(.git)
-        org, repo = remote_url.removesuffix(".git").rsplit("/", 2)[-2:]
-        return org, repo, remote_url
+        return Remote(remote_url)  # type: ignore[abstract]
 
     def get_head_commit(self) -> Commit:
         """
@@ -100,9 +93,7 @@ class Git(Tool):
 
         sha1 = self.capture(["rev-parse", "HEAD"]).strip()
 
-        # Get the org/repo from the remote URL
-        org, repo, _ = self.get_remote_details()
-        return Commit(org=org, repo=repo, sha1=sha1)
+        return Commit(sha1=sha1)
 
     def get_commit_details(self, sha1: str) -> CommitDetails:
         """

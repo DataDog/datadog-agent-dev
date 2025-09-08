@@ -43,32 +43,6 @@ class TestFileChangesClass:
             assert seen.type == expected.type
             assert seen.patch == expected.patch
 
-    @pytest.mark.parametrize(
-        "input_dict",
-        [
-            {
-                "file": "complex/repo/path/added_lines_middle.txt",
-                "change_type": "modified",
-                "patch": "@@ -2,0 +3,2 @@ I have a bit more text than added_lines.\n+Nobody expects the Spanish Inquisition !\n+My developer really wonders if cracking jokes in test data is against company policy.",
-            },
-            {
-                "file": "simple/file2.txt",
-                "change_type": "removed",
-                "patch": "@@ -1,3 +0,0 @@\n-file2\n-I will be deleted, unfortunately.\n-That's quite sad.",
-            },
-            {
-                "file": "hopefully/you/support/../../file6.txt",
-                "change_type": "added",
-                "patch": "@@ -0,0 +1,3 @@\n+file6\n+I am a new file in the repo !\n+That's incredible.",
-            },
-        ],
-    )
-    def test_from_dict(self, input_dict):
-        seen_filechanges = FileChanges.from_dict(input_dict)
-        assert seen_filechanges.file == Path(input_dict["file"])
-        assert seen_filechanges.type == ChangeType.from_github_status(input_dict["change_type"])
-        assert seen_filechanges.patch == input_dict["patch"]
-
     def test_encode_decode(self):
         file_changes = FileChanges(file=Path("/path/to/file"), type=ChangeType.ADDED, patch="patch")
         encoded_file_changes = msgspec.json.encode(file_changes, enc_hook=FileChanges.enc_hook)

@@ -22,18 +22,6 @@ class ChangeType(StrEnum):
     MODIFIED = "M"
     DELETED = "D"
 
-    @classmethod
-    def from_github_status(cls, status: str) -> ChangeType:
-        if status == "added":
-            return cls.ADDED
-        if status == "modified":
-            return cls.MODIFIED
-        if status == "removed":
-            return cls.DELETED
-
-        msg = f"Invalid GitHub change type message: {status}"
-        raise ValueError(msg)
-
 
 class FileChanges(Struct, frozen=True):
     """Represents changes to a single file in a git repository."""
@@ -159,15 +147,6 @@ class FileChanges(Struct, frozen=True):
         except StopIteration:
             msg = "Unexpected end of git diff output while parsing"
             raise ValueError(msg)  # noqa: B904
-
-    @classmethod
-    def from_dict(cls, data: dict) -> Self:
-        """Create a FileChanges from a JSON-serializable dictionary."""
-        return cls(
-            file=Path(data["file"]),
-            type=ChangeType.from_github_status(data["change_type"]),
-            patch=data["patch"],
-        )
 
     @classmethod
     def enc_hook(cls, obj: Any) -> Any:

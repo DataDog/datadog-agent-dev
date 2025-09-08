@@ -3,29 +3,19 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
-import json
 from datetime import UTC, datetime
 
-import pytest
 from httpx import Response
 
 from dda.utils.fs import Path
-from dda.utils.git.changeset import ChangeSet, ChangeType, FileChanges
 from dda.utils.git.commit import Commit, CommitDetails
+from dda.utils.git.remote import Remote
 
 
 class TestCommitClass:
     def test_basic(self):
-        commit = Commit(org="foo", repo="bar", sha1="82ee754ca931816902ac7e6e38f66a51e65912f9")
-        assert commit.org == "foo"
-        assert commit.repo == "bar"
+        commit = Commit(sha1="82ee754ca931816902ac7e6e38f66a51e65912f9")
         assert commit.sha1 == "82ee754ca931816902ac7e6e38f66a51e65912f9"
-        assert commit.full_repo == "foo/bar"
-        assert commit.github_url == "https://github.com/foo/bar/commit/82ee754ca931816902ac7e6e38f66a51e65912f9"
-        assert (
-            commit.github_api_url
-            == "https://api.github.com/repos/foo/bar/commits/82ee754ca931816902ac7e6e38f66a51e65912f9"
-        )
 
     # Already tested in tools/test_git.py
     def test_head(self):
@@ -35,56 +25,16 @@ class TestCommitClass:
     def test_compare_to(self, app):
         pass
 
-    @pytest.mark.parametrize(
-        "github_payload_file",
-        ["commit_example_dda_1425a34.json", "commit_example_multiple_parents.json"],
-    )
-    def test_get_commit_details_and_changes_from_github(self, mocker, github_payload_file):
-        # Mock http client to return a known payload
-        fixtures_file = Path(__file__).parent / "fixtures" / "github_payloads" / github_payload_file
-        github_payload_str = fixtures_file.read_text(encoding="utf-8")
-        mocker.patch(
-            "dda.utils.network.http.client.HTTPClient.get",
-            return_value=Response(status_code=200, content=github_payload_str),
-        )
-
-        # Create a commit object with details from the payload
-        github_payload = json.loads(github_payload_str)
-        sha1 = github_payload["sha"]
-        commit_url = github_payload["commit"]["url"]
-        org = commit_url.split("/")[4]
-        repo = commit_url.split("/")[5]
-        commit = Commit(org=org, repo=repo, sha1=sha1)
-
-        # Create a CommitDetails object
-        expected_commit_details = CommitDetails(
-            author_name=github_payload["commit"]["author"]["name"],
-            author_email=github_payload["commit"]["author"]["email"],
-            datetime=datetime.fromisoformat(github_payload["commit"]["author"]["date"]),
-            message=github_payload["commit"]["message"],
-            parent_shas=[parent["sha"] for parent in github_payload["parents"]],
-        )
-
-        # Create a ChangeSet object
-        changes = [
-            FileChanges(
-                file=Path(file["filename"]), type=ChangeType.from_github_status(file["status"]), patch=file["patch"]
-            )
-            for file in github_payload["files"]
-        ]
-        expected_commit_changes = ChangeSet.from_iter(changes)
-
-        # Make the comparisons
-        commit_details, commit_changes = commit.get_details_and_changes_from_github()
-        assert commit_details == expected_commit_details
-        assert commit_changes == expected_commit_changes
+    # Already tested in test_remote.py
+    def test_get_commit_details_from_remote(self):
+        pass
 
     # Already tested in tools/test_git.py
     def test_get_commit_details_from_git(self):
         pass
 
     def test_properties_proxying(self):
-        commit = Commit("DataDog", "datadog-agent-dev", "1425a34f443f0b468e1739a06fcf97dfbf632594")
+        commit = Commit("1425a34f443f0b468e1739a06fcf97dfbf632594")
         details_dict = {
             "author_name": "John Doe",
             "author_email": "john.doe@example.com",
@@ -118,7 +68,7 @@ class TestCommitDetailsClass:
 
     def test_details_github_git_equality(self, app, mocker):
         # Initialize commit object
-        commit = Commit("DataDog", "datadog-agent-dev", "1425a34f443f0b468e1739a06fcf97dfbf632594")
+        commit = Commit("1425a34f443f0b468e1739a06fcf97dfbf632594")
 
         # Mock HTTP client to return a known payload
         github_payload_file = Path(__file__).parent / "fixtures" / "github_payloads" / "commit_example_dda_1425a34.json"
@@ -127,7 +77,7 @@ class TestCommitDetailsClass:
             "dda.utils.network.http.client.HTTPClient.get",
             return_value=Response(status_code=200, content=github_payload_str),
         )
-        github_details = commit.get_details_from_github()
+        github_details = commit.get_details_from_remote(Remote("https://github.com/foo/bar"))
 
         # Mock Git.capture to return payload from file
         git_output_file = Path(__file__).parent / "fixtures" / "git_show_dda_1425a34.txt"
