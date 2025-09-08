@@ -19,11 +19,15 @@ class Git(Tool):
 
     AUTHOR_NAME_ENV_VAR = "GIT_AUTHOR_NAME"
     AUTHOR_EMAIL_ENV_VAR = "GIT_AUTHOR_EMAIL"
+    COMMITTER_NAME_ENV_VAR = "GIT_COMMITTER_NAME"
+    COMMITTER_EMAIL_ENV_VAR = "GIT_COMMITTER_EMAIL"
 
     def env_vars(self) -> dict[str, str]:
         return {
-            self.AUTHOR_NAME_ENV_VAR: self.app.config.tools.git.author_name.strip(),
-            self.AUTHOR_EMAIL_ENV_VAR: self.app.config.tools.git.author_email.strip(),
+            # self.AUTHOR_NAME_ENV_VAR: self.app.config.tools.git.author_name.strip(),
+            # self.AUTHOR_EMAIL_ENV_VAR: self.app.config.tools.git.author_email.strip(),
+            self.COMMITTER_NAME_ENV_VAR: self.app.config.tools.git.author_name.strip(),
+            self.COMMITTER_EMAIL_ENV_VAR: self.app.config.tools.git.author_email.strip(),
         }
 
     @cached_property
@@ -43,9 +47,7 @@ class Git(Tool):
         """
         from os import environ
 
-        # If the env var is set (either by the environment or because the user config is set to inherit),
-        # Its value is what git will use for committing. We need to read it, as it might not correspond to the global git config.
-        if env_username := (environ | self.env_vars()).get(self.AUTHOR_NAME_ENV_VAR):
+        if env_username := environ.get(self.AUTHOR_NAME_ENV_VAR):
             return env_username
 
         # Don't use global in case some repo-specific config overrides it.
@@ -60,8 +62,7 @@ class Git(Tool):
         """
         from os import environ
 
-        # See comment in author_name
-        if env_email := (environ | self.env_vars()).get(self.AUTHOR_EMAIL_ENV_VAR):
+        if env_email := environ.get(self.AUTHOR_EMAIL_ENV_VAR):
             return env_email
 
         return self.capture(["config", "--get", "user.email"]).strip()
