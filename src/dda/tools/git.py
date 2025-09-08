@@ -171,7 +171,7 @@ class Git(Tool):
         untracked_changes = ChangeSet.generate_from_diff_output(diffs)
 
         # Combine the changes
-        return ChangeSet(tracked_changes | untracked_changes)
+        return tracked_changes | untracked_changes
 
     def get_merge_base(self, remote_name: str = "origin") -> SHA1Hash | str:
         """

@@ -1,8 +1,8 @@
-import json
 import os
 import shutil
 from collections.abc import Callable, Generator
 
+import msgspec
 import pytest
 from _pytest.fixtures import SubRequest
 
@@ -157,8 +157,7 @@ def _make_repo_changes(
 
 def _load_changeset(filepath: Path) -> ChangeSet:
     with open(filepath, encoding="utf-8") as f:
-        data = json.load(f)
-    return ChangeSet.from_list(data)
+        return msgspec.json.decode(f.read(), type=ChangeSet, dec_hook=ChangeSet.dec_hook)
 
 
 @pytest.fixture(params=REPO_TESTCASES)

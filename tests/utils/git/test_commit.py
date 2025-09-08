@@ -66,13 +66,13 @@ class TestCommitClass:
         )
 
         # Create a ChangeSet object
-        expected_commit_changes = ChangeSet()
-        for file in github_payload["files"]:
-            expected_commit_changes.add(
-                FileChanges(
-                    file=Path(file["filename"]), type=ChangeType.from_github_status(file["status"]), patch=file["patch"]
-                )
+        changes = [
+            FileChanges(
+                file=Path(file["filename"]), type=ChangeType.from_github_status(file["status"]), patch=file["patch"]
             )
+            for file in github_payload["files"]
+        ]
+        expected_commit_changes = ChangeSet.from_iter(changes)
 
         # Make the comparisons
         commit_details, commit_changes = commit.get_details_and_changes_from_github()

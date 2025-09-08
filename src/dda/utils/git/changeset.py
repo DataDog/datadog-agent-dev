@@ -1,15 +1,21 @@
 # SPDX-FileCopyrightText: 2025-present Datadog, Inc. <dev@datadoghq.com>
 #
 # SPDX-License-Identifier: MIT
-from collections.abc import Generator
+
+from __future__ import annotations
+
 from enum import StrEnum
 from functools import cached_property
-from typing import Self
+from typing import TYPE_CHECKING, Any, Self
 
-from msgspec import Struct
+from msgspec import Struct, field
 
 from dda.utils.fs import Path
 from dda.utils.git.commit import SHA1Hash
+
+if TYPE_CHECKING:
+    from _collections_abc import dict_items, dict_keys, dict_values
+    from collections.abc import Generator, Iterable, Iterator
 
 
 class ChangeType(StrEnum):
@@ -18,7 +24,7 @@ class ChangeType(StrEnum):
     DELETED = "D"
 
     @classmethod
-    def from_github_status(cls, status: str) -> "ChangeType":
+    def from_github_status(cls, status: str) -> ChangeType:
         if status == "added":
             return cls.ADDED
         if status == "modified":
@@ -30,7 +36,7 @@ class ChangeType(StrEnum):
         raise ValueError(msg)
 
 
-class FileChanges(Struct):
+class FileChanges(Struct, frozen=True):
     """Represents changes to a single file in a git repository."""
 
     file: Path
@@ -164,9 +170,21 @@ class FileChanges(Struct):
             patch=data["patch"],
         )
 
+    @classmethod
+    def enc_hook(cls, obj: Any) -> Any:
+        # Only unsupported objects are Path objects
+        return Path.enc_hook(obj)
 
-# Easier and safer to subclass UserDict than Dict directly
-class ChangeSet(dict[Path, FileChanges]):
+    @classmethod
+    def dec_hook(cls, obj_type: type, obj: Any) -> Any:  # type: ignore[valid-type]
+        # Only unsupported objects are Path objects
+        return Path.dec_hook(obj_type, obj)
+
+
+# Need dict=True so that cached_property can be used
+class ChangeSet(Struct, dict=True, frozen=True):
+    _changes: dict[Path, FileChanges] = field(default_factory=dict)
+
     """
     Represents a set of changes to files in a git repository.
     This can both be a change between two commits, or the changes in the working directory.
@@ -174,6 +192,32 @@ class ChangeSet(dict[Path, FileChanges]):
     When considering the changes to the working directory, the untracked files are considered as added files.
     """
 
+    # == dict proxy methods == #
+    def keys(self) -> dict_keys[Path, FileChanges]:
+        return self._changes.keys()
+
+    def values(self) -> dict_values[Path, FileChanges]:
+        return self._changes.values()
+
+    def items(self) -> dict_items[Path, FileChanges]:
+        return self._changes.items()
+
+    def __getitem__(self, key: Path) -> FileChanges:
+        return self._changes[key]
+
+    def __contains__(self, key: Path) -> bool:
+        return key in self._changes
+
+    def __len__(self) -> int:
+        return len(self._changes)
+
+    def __iter__(self) -> Iterator[Path]:
+        return iter(self._changes.keys())
+
+    def __or__(self, other: Self) -> Self:
+        return self.from_iter(list(self.values()) + list(other.values()))
+
+    # == properties == #
     @cached_property
     def added(self) -> set[Path]:
         """List of files that were added."""
@@ -194,10 +238,7 @@ class ChangeSet(dict[Path, FileChanges]):
         """List of files that were changed (added, modified, or deleted)."""
         return set(self.keys())
 
-    def add(self, change: FileChanges) -> None:
-        """Add a file change to the changeset."""
-        self[change.file] = change
-
+    # == methods == #
     def digest(self) -> SHA1Hash:
         """Compute a hash of the changeset."""
         from hashlib import sha1
@@ -211,20 +252,25 @@ class ChangeSet(dict[Path, FileChanges]):
         return SHA1Hash(digester.hexdigest())
 
     @classmethod
+    def from_iter(cls, data: Iterable[FileChanges]) -> Self:
+        """Create a ChangeSet from an iterable of FileChanges."""
+        items = {change.file: change for change in data}
+        return cls(_changes=items)
+
+    @classmethod
     def generate_from_diff_output(cls, diff_output: str | list[str]) -> Self:
         """
         Generate a changeset from the output of a git diff command.
         The output should be passed as a string or a list of lines.
         """
-        changeset = cls()
-        for change in FileChanges.generate_from_diff_output(diff_output):
-            changeset.add(change)
-        return changeset
+        return cls.from_iter(FileChanges.generate_from_diff_output(diff_output))
 
     @classmethod
-    def from_list(cls, data: list[dict]) -> Self:
-        """Create a ChangeSet from a JSON-serializable list."""
-        changeset = cls()
-        for change in data:
-            changeset.add(FileChanges.from_dict(change))
-        return changeset
+    def enc_hook(cls, obj: Any) -> Any:
+        # Only unsupported objects are Path objects
+        return Path.enc_hook(obj)
+
+    @classmethod
+    def dec_hook(cls, obj_type: type, obj: Any) -> Any:
+        # Only unsupported objects are Path objects
+        return Path.dec_hook(obj_type, obj)

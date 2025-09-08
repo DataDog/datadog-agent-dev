@@ -73,15 +73,14 @@ class Commit:
         data = client.get(self.github_api_url).json()
 
         # Compute ChangeSet
-        changes = ChangeSet()
-        for file_obj in data["files"]:
-            changes.add(
-                FileChanges(
-                    file=Path(file_obj["filename"]),
-                    type=ChangeType.from_github_status(file_obj["status"]),
-                    patch=file_obj["patch"],
-                )
+        changes = ChangeSet.from_iter(
+            FileChanges(
+                file=Path(file_obj["filename"]),
+                type=ChangeType.from_github_status(file_obj["status"]),
+                patch=file_obj["patch"],
             )
+            for file_obj in data["files"]
+        )
         self._changes = changes
 
         self._details = CommitDetails(

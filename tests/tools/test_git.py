@@ -194,8 +194,7 @@ def test_get_changes_with_base(app: Application, mocker: Any, repo_testcase: str
     mocker.patch("dda.tools.git.Git.get_working_tree_changes", return_value=working_tree_changes)
 
     changeset_with_working_tree = git.get_changes_with_base(base_commit, include_working_tree=True)
-    expected_changeset_with_working_tree = ChangeSet(expected_changeset.copy())
-    expected_changeset_with_working_tree.add(
+    expected_changeset_with_working_tree = expected_changeset | ChangeSet.from_iter([
         FileChanges(file=Path("test.txt"), type=ChangeType.ADDED, patch="@@ -0,0 +1 @@\n+test")
-    )
+    ])  # noqa: SLF001
     assert_changesets_equal(changeset_with_working_tree, expected_changeset_with_working_tree)
