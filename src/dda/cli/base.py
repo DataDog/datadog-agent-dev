@@ -137,14 +137,17 @@ class DynamicContext(click.RichContext):
             from dda.cli import START_TIME, START_TIMESTAMP
             from dda.utils.platform import join_command_args
 
+            username = app.config.user.name if app.config.user.name != "auto" else app.tools.git.author_name
+            email = app.config.user.email if app.config.user.email != "auto" else app.tools.git.author_email
+
             metadata = {
                 "cli.command": join_command_args(sys.argv[1:]),
                 "cli.exit_code": str(exit_code),
-                "author.name": app.config.user.name,
-                "author.emails": app.config.user.emails,
+                "author.name": username,
+                "author.email": email,
                 # TODO: Remove this once the new keys are fully rolled out
-                "git.author.name": app.config.user.name,
-                "git.author.email": app.config.user.emails[0],
+                "git.author.name": username,
+                "git.author.email": email,
             }
             if os.environ.get("PRE_COMMIT") == "1":
                 metadata["exec.source"] = "pre-commit"

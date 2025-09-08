@@ -49,16 +49,10 @@ def test_basic(
         assert f"Initial commit: {random_key}" in app.tools.git.capture(["log", "-1", "--oneline"])
 
 
-def test_author_details_from_system(app: Application, set_system_git_author: None) -> None:  # noqa: ARG001
+def test_author_details(app: Application, set_git_author: None) -> None:  # noqa: ARG001
     clear_cached_config(app)
     assert app.tools.git.author_name == "Test Runner"
     assert app.tools.git.author_email == "test.runner@example.com"
-
-
-def test_author_details_inherit(app: Application, set_inherit_git_author: None) -> None:  # noqa: ARG001
-    clear_cached_config(app)
-    assert app.tools.git.author_name == app.config.user.name
-    assert app.tools.git.author_email == app.config.user.emails[0]
 
 
 def test_get_remote_details(app: Application, temp_repo_with_remote: Path) -> None:
@@ -77,7 +71,9 @@ def test_get_head_commit(
 
 
 def test_get_commit_details(
-    app: Application, temp_repo: Path, create_commit_dummy_file: Callable[[Path | str, str, str], None]
+    app: Application,
+    temp_repo: Path,
+    create_commit_dummy_file: Callable[[Path | str, str, str], None],
 ) -> None:
     with temp_repo.as_cwd():
         create_commit_dummy_file("dummy", "dummy content", "Initial commit")

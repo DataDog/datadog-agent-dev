@@ -3,31 +3,7 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
-from msgspec import Struct, field
-
-
-def _get_name_from_git() -> str:
-    from os import environ
-
-    from dda.tools.git import Git
-    from dda.utils.process import static_capture
-
-    if name := environ.get(Git.AUTHOR_NAME_ENV_VAR):
-        return name
-
-    return static_capture(["git", "config", "--global", "--get", "user.name"]).strip()
-
-
-def _get_emails_from_git() -> list[str]:
-    from os import environ
-
-    from dda.tools.git import Git
-    from dda.utils.process import static_capture
-
-    if email := environ.get(Git.AUTHOR_EMAIL_ENV_VAR):
-        return [email]
-
-    return [static_capture(["git", "config", "--global", "--get", "user.email"]).strip()]
+from msgspec import Struct
 
 
 class UserConfig(Struct, frozen=True):
@@ -36,12 +12,13 @@ class UserConfig(Struct, frozen=True):
     ```toml
     [user]
     name = "U.N. Owen"
-    emails = ["void@some.where", "other@some.where"]
+    email = "void@some.where"
     ```
-    > The first email will be used for setting git author email if multiple emails are found.
+    These values will be used for dda-related functionality, such as telemetry.
+    Both `email` and `name` can be set to `auto`, in which case they will be equal to the values in the [`[tools.git]`][dda.config.model.tools.GitConfig] section.
     ///
     """
 
-    # Default username and email are fetched from git config
-    name: str = field(default_factory=_get_name_from_git)
-    emails: list[str] = field(default_factory=_get_emails_from_git)
+    # Default username and email are equal to the values in [tools.git]
+    name: str = "auto"
+    email: str = "auto"

@@ -26,12 +26,10 @@ class Git(Tool):
     AUTHOR_EMAIL_ENV_VAR = "GIT_AUTHOR_EMAIL"
 
     def env_vars(self) -> dict[str, str]:
-        if self.app.config.tools.git.author_details == "inherit":
-            return {
-                self.AUTHOR_NAME_ENV_VAR: self.app.config.user.name.strip(),
-                self.AUTHOR_EMAIL_ENV_VAR: self.app.config.user.emails[0].strip(),
-            }
-        return {}
+        return {
+            self.AUTHOR_NAME_ENV_VAR: self.app.config.tools.git.author_name.strip(),
+            self.AUTHOR_EMAIL_ENV_VAR: self.app.config.tools.git.author_email.strip(),
+        }
 
     @cached_property
     def path(self) -> str:

@@ -1,4 +1,3 @@
-import os
 import shutil
 from collections.abc import Callable, Generator
 
@@ -28,7 +27,7 @@ def clear_cached_config(app: Application) -> None:
 
 # Initialize a dummy repo in a temporary directory for the tests to use
 @pytest.fixture
-def temp_repo(app: Application, temp_dir: Path, set_system_git_author: None) -> Generator[Path, None, None]:  # noqa: ARG001
+def temp_repo(app: Application, temp_dir: Path, set_git_author: None) -> Generator[Path, None, None]:  # noqa: ARG001
     git: Git = app.tools.git
     repo_path = temp_dir / "dummy-repo"
     repo_path.mkdir()  # Don't do exist_ok, the directory should not exist
@@ -42,52 +41,22 @@ def temp_repo(app: Application, temp_dir: Path, set_system_git_author: None) -> 
 
 
 @pytest.fixture
-def set_system_git_author(app: Application) -> Generator[None, None, None]:
-    # Make sure the config is set to "system" mode, so that the author details are not inherited from the user config
-    old_config = app.config_file.data["tools"]["git"]["author_details"]
-    app.config_file.data["tools"]["git"]["author_details"] = "system"
-    app.config_file.save()
-    clear_cached_config(app)
+def set_git_author(app: Application) -> Generator[None, None, None]:
+    """
+    Set the git author name and email to "Test Runner" and "test.runner@example.com" respectively.
+    This is done by setting the values in the config file.
+    Any commits made by `dda` will use these values, but any calls to `git config` will still return the global git config values.
+    """
+    old_name = app.config_file.data["tools"]["git"]["author_name"]
+    old_email = app.config_file.data["tools"]["git"]["author_email"]
+    app.config_file.data["tools"]["git"]["author_name"] = "Test Runner"
+    app.config_file.data["tools"]["git"]["author_email"] = "test.runner@example.com"
 
-    old_env_author = os.environ.pop(Git.AUTHOR_NAME_ENV_VAR, default=None)
-    old_env_email = os.environ.pop(Git.AUTHOR_EMAIL_ENV_VAR, default=None)
-    old_author_name = app.tools.git.capture(["config", "--get", "user.name"], check=False)
-    old_author_email = app.tools.git.capture(["config", "--get", "user.email"], check=False)
-    app.tools.git.run(["config", "--global", "user.name", "Test Runner"])
-    app.tools.git.run(["config", "--global", "user.email", "test.runner@example.com"])
-    yield
-
-    app.tools.git.run(["config", "--global", "--unset", "user.name"])
-    app.tools.git.run(["config", "--global", "--unset", "user.email"])
-    if old_author_name:
-        app.tools.git.run(["config", "--global", "user.name", old_author_name.strip()])
-    if old_author_email:
-        app.tools.git.run(["config", "--global", "user.email", old_author_email.strip()])
-    if old_env_author:
-        os.environ[Git.AUTHOR_NAME_ENV_VAR] = old_env_author.strip()
-    if old_env_email:
-        os.environ[Git.AUTHOR_EMAIL_ENV_VAR] = old_env_email.strip()
-
-    app.config_file.data["tools"]["git"]["author_details"] = old_config
-    app.config_file.save()
-    clear_cached_config(app)
-
-
-@pytest.fixture
-def set_inherit_git_author(app: Application) -> Generator[None, None, None]:
-    old_config = app.config_file.data["tools"]["git"]["author_details"]
-    app.config_file.data["tools"]["git"]["author_details"] = "inherit"
-
-    old_name = app.config_file.data["user"]["name"]
-    old_emails = app.config_file.data["user"]["emails"]
-    app.config_file.data["user"]["name"] = "Test Runner"
-    app.config_file.data["user"]["emails"] = ["test.runner@example.com"]
     app.config_file.save()
     clear_cached_config(app)
     yield
-    app.config_file.data["tools"]["git"]["author_details"] = old_config
-    app.config_file.data["user"]["name"] = old_name
-    app.config_file.data["user"]["emails"] = old_emails
+    app.config_file.data["tools"]["git"]["author_name"] = old_name
+    app.config_file.data["tools"]["git"]["author_email"] = old_email
     app.config_file.save()
     clear_cached_config(app)
 
