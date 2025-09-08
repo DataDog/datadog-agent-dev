@@ -31,6 +31,10 @@ class TestCommitClass:
     def test_head(self):
         pass
 
+    # Already tested in tools/test_git.py
+    def test_compare_to(self, app):
+        pass
+
     @pytest.mark.parametrize(
         "github_payload_file",
         ["commit_example_dda_1425a34.json", "commit_example_multiple_parents.json"],
@@ -134,5 +138,5 @@ class TestCommitDetailsClass:
         )
 
         # Get details from Git
-        git_details = commit.get_details_from_git(app, repo_path=Path(__file__).parent.parent.parent.parent)
+        git_details = commit.get_details_from_git(app)
         assert github_details == git_details

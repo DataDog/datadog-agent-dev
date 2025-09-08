@@ -11,7 +11,6 @@ if TYPE_CHECKING:
     from datetime import datetime
 
     from dda.cli.application import Application
-    from dda.utils.fs import Path
     from dda.utils.git.changeset import ChangeSet
 
 
@@ -44,12 +43,17 @@ class Commit:
         return f"https://api.github.com/repos/{self.full_repo}/commits/{self.sha1}"
 
     @classmethod
-    def head(cls, app: Application, repo_path: Path | None = None) -> Commit:
+    def head(cls, app: Application) -> Commit:
         """
-        Get the current HEAD commit of the Git repository at the given path.
-        If no path is given, use the current working directory.
+        Get the current HEAD commit of the Git repository in the current working directory.
         """
-        return app.tools.git.get_head_commit(repo_path)
+        return app.tools.git.get_head_commit()
+
+    def compare_to(self, app: Application, other: Commit) -> ChangeSet:
+        """
+        Compare this commit to another commit.
+        """
+        return app.tools.git.get_changes_between_commits(self, other)
 
     def get_details_and_changes_from_github(self) -> tuple[CommitDetails, ChangeSet]:
         """
@@ -93,7 +97,7 @@ class Commit:
     def get_details_from_github(self) -> CommitDetails:
         return self.get_details_and_changes_from_github()[0]
 
-    def get_details_from_git(self, app: Application, repo_path: Path | None = None) -> CommitDetails:
+    def get_details_from_git(self, app: Application) -> CommitDetails:
         """
         Get the details of this commit by querying the local Git repository.
         This requires an Application instance to access the Git tool.
@@ -101,14 +105,14 @@ class Commit:
         Prefer to use this method when possible, as it is much faster than
         querying the GitHub API.
         """
-        self._details = app.tools.git.get_commit_details(self.sha1, repo_path)
+        self._details = app.tools.git.get_commit_details(self.sha1)
         return self.details
 
     def get_changes_from_github(self) -> ChangeSet:
         return self.get_details_and_changes_from_github()[1]
 
-    def get_changes_from_git(self, app: Application, repo_path: Path | None = None) -> ChangeSet:
-        self._changes = app.tools.git.get_commit_changes(self.sha1, repo_path)
+    def get_changes_from_git(self, app: Application) -> ChangeSet:
+        self._changes = app.tools.git.get_commit_changes(self.sha1)
         return self.changes
 
     @cached_property

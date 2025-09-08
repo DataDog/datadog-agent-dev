@@ -26,20 +26,6 @@ def clear_cached_config(app: Application) -> None:
         del app.tools.git.author_email
 
 
-@pytest.fixture
-def reset_user_config(app: Application) -> None:
-    # Modify the underlying config data and clear the cached model
-    app.config_file.data["user"]["name"] = ""
-    app.config_file.data["user"]["email"] = ""
-
-    # Clear the cached properties so they get reconstructed with the new data
-    clear_cached_config(app)
-
-    # These are set by conftest.py, so we need to clean them up to make sure they don't interfere
-    os.environ.pop("GIT_AUTHOR_NAME", None)
-    os.environ.pop("GIT_AUTHOR_EMAIL", None)
-
-
 # Initialize a dummy repo in a temporary directory for the tests to use
 @pytest.fixture
 def temp_repo(app: Application, temp_dir: Path, set_system_git_author: None) -> Generator[Path, None, None]:  # noqa: ARG001

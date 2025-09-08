@@ -11,8 +11,6 @@ from msgspec import Struct
 from dda.utils.fs import Path
 from dda.utils.git.commit import SHA1Hash
 
-FILECHANGES_GIT_DIFF_ARGS = ["diff", "-U0", "--no-color", "--no-prefix", "--no-renames"]
-
 
 class ChangeType(StrEnum):
     ADDED = "A"
@@ -60,10 +58,7 @@ class FileChanges(Struct):
     def generate_from_diff_output(cls, diff_output: str | list[str]) -> Generator[Self, None, None]:
         """
         Generate a list of FileChanges from the output of _some_ git diff commands.
-        Not all outputs from `git diff` are supported (ex: renames), you should run:
-        ```bash
-        git diff [dda.utils.git.changeset.FILECHANGES_GIT_DIFF_ARGS] <oldrev> <newrev>
-        ```
+        Not all outputs from `git diff` are supported (ex: renames), see set of args in [Git._capture_diff_lines](dda.tools.git.Git._capture_diff_lines) method.
         Accepts a string or a list of lines.
         """
         if isinstance(diff_output, str):
