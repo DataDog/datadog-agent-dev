@@ -12,7 +12,7 @@ import pytest
 
 from dda.utils.fs import Path
 from dda.utils.git.changeset import ChangeSet, ChangeType, FileChanges
-from dda.utils.git.commit import Commit, SHA1Hash
+from dda.utils.git.commit import Commit
 from tests.tools.conftest import REPO_TESTCASES, _load_changeset, clear_cached_config
 
 if TYPE_CHECKING:
@@ -73,7 +73,7 @@ def test_get_head_commit(
         create_commit_dummy_file("hello.txt", "world", "Brand-new commit")
         sha1 = app.tools.git.capture(["rev-parse", "HEAD"]).strip()
 
-        assert app.tools.git.get_head_commit() == Commit(org="foo", repo="bar", sha1=SHA1Hash(sha1))
+        assert app.tools.git.get_head_commit() == Commit(org="foo", repo="bar", sha1=sha1)
 
 
 def test_get_commit_details(
@@ -88,12 +88,12 @@ def test_get_commit_details(
         sha1 = app.tools.git.capture(["rev-parse", "HEAD"]).strip()
         commit_time = datetime.fromisoformat(app.tools.git.capture(["show", "-s", "--format=%cI", sha1]).strip())
 
-        details = app.tools.git.get_commit_details(SHA1Hash(sha1))
+        details = app.tools.git.get_commit_details(sha1)
         assert details.author_name == "Test Runner"
         assert details.author_email == "test.runner@example.com"
         assert details.datetime == commit_time
         assert details.message == f"Brand-new commit: {random_key}"
-        assert details.parent_shas == [SHA1Hash(parent_sha1)]
+        assert details.parent_shas == [parent_sha1]
 
 
 def test_capture_diff_lines(
@@ -140,7 +140,7 @@ def test_get_commit_changes(app: Application, repo_setup: tuple[Path, ChangeSet]
     git: Git = app.tools.git
     temp_repo, expected_changeset = repo_setup
     with temp_repo.as_cwd():
-        changeset = git.get_commit_changes(SHA1Hash(git.capture(["rev-parse", "HEAD"]).strip()))
+        changeset = git.get_commit_changes(git.capture(["rev-parse", "HEAD"]).strip())
         assert_changesets_equal(changeset, expected_changeset)
 
 
@@ -150,13 +150,13 @@ def test_get_changes_between_commits(app: Application, mocker: Any, repo_testcas
     expected_changeset = _load_changeset(testcase_dir / "expected_changeset.json")
 
     mocker.patch("dda.tools.git.Git._compare_refs", return_value=expected_changeset)
-    commit1 = Commit(org="foo", repo="bar", sha1=SHA1Hash("a" * 40))
-    commit2 = Commit(org="foo", repo="bar", sha1=SHA1Hash("b" * 40))
-    result = app.tools.git.get_changes_between_commits(commit1, commit2)
+    commit1 = Commit(org="foo", repo="bar", sha1="a" * 40)
+    commit2 = Commit(org="foo", repo="bar", sha1="b" * 40)
+    result = app.tools.git.get_changes_between_commits(commit1.sha1, commit2.sha1)
     assert_changesets_equal(result, expected_changeset)
 
 
-@pytest.mark.requires_ci
+# @pytest.mark.requires_ci
 def test_get_working_tree_changes(app: Application, repo_setup_working_tree: tuple[Path, ChangeSet]) -> None:
     git: Git = app.tools.git
     temp_repo, expected_changeset = repo_setup_working_tree
@@ -176,15 +176,15 @@ def test_get_changes_with_base(app: Application, mocker: Any, repo_testcase: str
     expected_changeset = _load_changeset(testcase_dir / "expected_changeset.json")
 
     git: Git = app.tools.git
-    base_commit = Commit(org="foo", repo="bar", sha1=SHA1Hash("a" * 40))
-    head_commit = Commit(org="foo", repo="bar", sha1=SHA1Hash("b" * 40))
+    base_commit = Commit(org="foo", repo="bar", sha1="a" * 40)
+    head_commit = Commit(org="foo", repo="bar", sha1="b" * 40)
 
     # Mock the underlying functions
     mocker.patch("dda.tools.git.Git.get_head_commit", return_value=head_commit)
-    mocker.patch("dda.tools.git.Git._compare_refs", return_value=expected_changeset)
+    mocker.patch("dda.utils.git.changeset.ChangeSet.generate_from_diff_output", return_value=expected_changeset)
 
     # Test without working tree changes
-    changeset = git.get_changes_with_base(base_commit, include_working_tree=False)
+    changeset = git.get_changes_with_base(base_commit.sha1, include_working_tree=False)
     assert_changesets_equal(changeset, expected_changeset)
 
     # Test with working tree changes
@@ -193,8 +193,8 @@ def test_get_changes_with_base(app: Application, mocker: Any, repo_testcase: str
     })
     mocker.patch("dda.tools.git.Git.get_working_tree_changes", return_value=working_tree_changes)
 
-    changeset_with_working_tree = git.get_changes_with_base(base_commit, include_working_tree=True)
+    changeset_with_working_tree = git.get_changes_with_base(base_commit.sha1, include_working_tree=True)
     expected_changeset_with_working_tree = expected_changeset | ChangeSet.from_iter([
         FileChanges(file=Path("test.txt"), type=ChangeType.ADDED, patch="@@ -0,0 +1 @@\n+test")
-    ])  # noqa: SLF001
+    ])
     assert_changesets_equal(changeset_with_working_tree, expected_changeset_with_working_tree)

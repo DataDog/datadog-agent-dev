@@ -10,24 +10,24 @@ def _get_name_from_git() -> str:
     from os import environ
 
     from dda.tools.git import Git
-    from dda.utils.process import SubprocessRunner
+    from dda.utils.process import static_capture
 
     if name := environ.get(Git.AUTHOR_NAME_ENV_VAR):
         return name
 
-    return SubprocessRunner.static_capture(["git", "config", "--global", "--get", "user.name"]).strip()
+    return static_capture(["git", "config", "--global", "--get", "user.name"]).strip()
 
 
 def _get_emails_from_git() -> list[str]:
     from os import environ
 
     from dda.tools.git import Git
-    from dda.utils.process import SubprocessRunner
+    from dda.utils.process import static_capture
 
     if email := environ.get(Git.AUTHOR_EMAIL_ENV_VAR):
         return [email]
 
-    return [SubprocessRunner.static_capture(["git", "config", "--global", "--get", "user.email"]).strip()]
+    return [static_capture(["git", "config", "--global", "--get", "user.email"]).strip()]
 
 
 class UserConfig(Struct, frozen=True):

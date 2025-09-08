@@ -8,7 +8,6 @@ import pytest
 
 from dda.utils.fs import Path
 from dda.utils.git.changeset import ChangeSet, ChangeType, FileChanges
-from dda.utils.git.commit import SHA1Hash
 from tests.tools.conftest import REPO_TESTCASES
 
 
@@ -97,7 +96,7 @@ class TestChangeSetClass:
             FileChanges(file=Path("/path/../file3"), type=ChangeType.DELETED, patch="patch3"),
         ]
         changeset = ChangeSet.from_iter(changes)
-        assert changeset.digest() == SHA1Hash("95a9fe4d808bdda19da9285b6d1a31a6e29ddbfa")
+        assert changeset.digest() == "95a9fe4d808bdda19da9285b6d1a31a6e29ddbfa"
 
     def test_properties(self):
         changes = [

@@ -11,12 +11,12 @@ from httpx import Response
 
 from dda.utils.fs import Path
 from dda.utils.git.changeset import ChangeSet, ChangeType, FileChanges
-from dda.utils.git.commit import Commit, CommitDetails, SHA1Hash
+from dda.utils.git.commit import Commit, CommitDetails
 
 
 class TestCommitClass:
     def test_basic(self):
-        commit = Commit(org="foo", repo="bar", sha1=SHA1Hash("82ee754ca931816902ac7e6e38f66a51e65912f9"))
+        commit = Commit(org="foo", repo="bar", sha1="82ee754ca931816902ac7e6e38f66a51e65912f9")
         assert commit.org == "foo"
         assert commit.repo == "bar"
         assert commit.sha1 == "82ee754ca931816902ac7e6e38f66a51e65912f9"
@@ -54,7 +54,7 @@ class TestCommitClass:
         commit_url = github_payload["commit"]["url"]
         org = commit_url.split("/")[4]
         repo = commit_url.split("/")[5]
-        commit = Commit(org=org, repo=repo, sha1=SHA1Hash(sha1))
+        commit = Commit(org=org, repo=repo, sha1=sha1)
 
         # Create a CommitDetails object
         expected_commit_details = CommitDetails(
@@ -62,7 +62,7 @@ class TestCommitClass:
             author_email=github_payload["commit"]["author"]["email"],
             datetime=datetime.fromisoformat(github_payload["commit"]["author"]["date"]),
             message=github_payload["commit"]["message"],
-            parent_shas=[SHA1Hash(parent["sha"]) for parent in github_payload["parents"]],
+            parent_shas=[parent["sha"] for parent in github_payload["parents"]],
         )
 
         # Create a ChangeSet object
@@ -84,13 +84,13 @@ class TestCommitClass:
         pass
 
     def test_properties_proxying(self):
-        commit = Commit("DataDog", "datadog-agent-dev", SHA1Hash("1425a34f443f0b468e1739a06fcf97dfbf632594"))
+        commit = Commit("DataDog", "datadog-agent-dev", "1425a34f443f0b468e1739a06fcf97dfbf632594")
         details_dict = {
             "author_name": "John Doe",
             "author_email": "john.doe@example.com",
             "datetime": datetime(2023, 1, 15, 10, 30, 0, tzinfo=UTC),
             "message": "Add new feature for testing",
-            "parent_shas": [SHA1Hash("82ee754ca931816902ac7e6e38f66a51e65912f9")],
+            "parent_shas": ["82ee754ca931816902ac7e6e38f66a51e65912f9"],
         }
         commit_details = CommitDetails(**details_dict)
         commit._details = commit_details  # noqa: SLF001
@@ -108,17 +108,17 @@ class TestCommitDetailsClass:
             author_email="john.doe@example.com",
             datetime=now,
             message="This is a test message",
-            parent_shas=[SHA1Hash("82ee754ca931816902ac7e6e38f66a51e65912f9")],
+            parent_shas=["82ee754ca931816902ac7e6e38f66a51e65912f9"],
         )
         assert commit_details.author_name == "John Doe"
         assert commit_details.author_email == "john.doe@example.com"
         assert commit_details.datetime == now
         assert commit_details.message == "This is a test message"
-        assert commit_details.parent_shas == [SHA1Hash("82ee754ca931816902ac7e6e38f66a51e65912f9")]
+        assert commit_details.parent_shas == ["82ee754ca931816902ac7e6e38f66a51e65912f9"]
 
     def test_details_github_git_equality(self, app, mocker):
         # Initialize commit object
-        commit = Commit("DataDog", "datadog-agent-dev", SHA1Hash("1425a34f443f0b468e1739a06fcf97dfbf632594"))
+        commit = Commit("DataDog", "datadog-agent-dev", "1425a34f443f0b468e1739a06fcf97dfbf632594")
 
         # Mock HTTP client to return a known payload
         github_payload_file = Path(__file__).parent / "fixtures" / "github_payloads" / "commit_example_dda_1425a34.json"

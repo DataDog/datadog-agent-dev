@@ -11,7 +11,6 @@ from typing import TYPE_CHECKING, Any, Self
 from msgspec import Struct, field
 
 from dda.utils.fs import Path
-from dda.utils.git.commit import SHA1Hash
 
 if TYPE_CHECKING:
     from _collections_abc import dict_items, dict_keys, dict_values
@@ -52,10 +51,10 @@ class FileChanges(Struct, frozen=True):
 
     Example:
     ```diff
-    @@ -15,2 +15 @@ if TYPE_CHECKING:
-    -    from dda.utils.git.commit import Commit, CommitDetails
-    -    from dda.utils.git.commit import SHA1Hash
-    +    from dda.utils.git.commit import Commit, CommitDetails, SHA1Hash
+    @@ -15,1 +15 @@ if TYPE_CHECKING:
+    -    from dda.utils.git.commit import Commit
+    -    from dda.utils.git.commit import CommitDetails
+    +    from dda.utils.git.commit import Commit, CommitDetails
     ```
     """
 
@@ -239,7 +238,7 @@ class ChangeSet(Struct, dict=True, frozen=True):
         return set(self.keys())
 
     # == methods == #
-    def digest(self) -> SHA1Hash:
+    def digest(self) -> str:
         """Compute a hash of the changeset."""
         from hashlib import sha1
 
@@ -249,7 +248,7 @@ class ChangeSet(Struct, dict=True, frozen=True):
             digester.update(change.type.value.encode())
             digester.update(change.patch.encode())
 
-        return SHA1Hash(digester.hexdigest())
+        return str(digester.hexdigest())
 
     @classmethod
     def from_iter(cls, data: Iterable[FileChanges]) -> Self:

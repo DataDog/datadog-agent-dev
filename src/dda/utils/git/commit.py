@@ -3,9 +3,10 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 from functools import cached_property
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING
+
+from msgspec import Struct, field
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -14,21 +15,30 @@ if TYPE_CHECKING:
     from dda.utils.git.changeset import ChangeSet
 
 
-@dataclass
-class Commit:
+class Commit(Struct, dict=True):
     """
     A Git commit, identified by its SHA-1 hash.
     """
 
     org: str
     repo: str
-    sha1: SHA1Hash
+    sha1: str
 
-    _details: CommitDetails | None = field(default=None, init=False)
+    _details: CommitDetails | None = field(default=None)
     _changes: ChangeSet | None = field(default=None)
 
+    def __post_init__(self) -> None:
+        if len(self.sha1) != 40:  # noqa: PLR2004
+            msg = "SHA-1 hash must be 40 characters long"
+            raise ValueError(msg)
+        for c in self.sha1:
+            code = ord(c)
+            if code not in range(48, 58) and code not in range(97, 103):
+                msg = "SHA-1 hash must contain only hexadecimal characters"
+                raise ValueError(msg)
+
     def __str__(self) -> str:
-        return str(self.sha1)
+        return self.sha1
 
     @property
     def full_repo(self) -> str:
@@ -53,7 +63,7 @@ class Commit:
         """
         Compare this commit to another commit.
         """
-        return app.tools.git.get_changes_between_commits(self, other)
+        return app.tools.git.get_changes_between_commits(self.sha1, other.sha1)
 
     def get_details_and_changes_from_github(self) -> tuple[CommitDetails, ChangeSet]:
         """
@@ -88,7 +98,7 @@ class Commit:
             author_email=data["commit"]["author"]["email"],
             datetime=datetime.fromisoformat(data["commit"]["author"]["date"]),
             message=data["commit"]["message"],
-            parent_shas=[SHA1Hash(parent["sha"]) for parent in data.get("parents", [])],
+            parent_shas=[parent["sha"] for parent in data.get("parents", [])],
         )
 
         return self.details, self.changes
@@ -146,35 +156,13 @@ class Commit:
         return self.details.message
 
     @property
-    def parent_shas(self) -> list[SHA1Hash]:
+    def parent_shas(self) -> list[str]:
         return self.details.parent_shas
 
 
-@dataclass
-class CommitDetails:
+class CommitDetails(Struct):
     author_name: str
     author_email: str
     datetime: datetime
     message: str
-    parent_shas: list[SHA1Hash]
-
-
-class SHA1Hash(str):
-    """
-    A hexadecimal representation of a SHA-1 hash.
-    """
-
-    LENGTH = 40
-    __slots__ = ()
-
-    def __new__(cls, value: str) -> Self:
-        if len(value) != cls.LENGTH or any(c not in "0123456789abcdef" for c in value.lower()):
-            msg = f"Invalid SHA-1 hash: {value}"
-            raise ValueError(msg)
-        return str.__new__(cls, value)
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({super().__repr__()})"
-
-    def __bytes__(self) -> bytes:
-        return bytes.fromhex(self)
+    parent_shas: list[str]

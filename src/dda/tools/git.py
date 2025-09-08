@@ -4,10 +4,13 @@
 from __future__ import annotations
 
 from functools import cached_property
+from typing import TYPE_CHECKING
 
 from dda.tools.base import Tool
 from dda.utils.git.changeset import ChangeSet
-from dda.utils.git.commit import Commit, CommitDetails, SHA1Hash
+
+if TYPE_CHECKING:
+    from dda.utils.git.commit import Commit, CommitDetails
 
 
 class Git(Tool):
@@ -95,22 +98,21 @@ class Git(Tool):
         """
         Get the current HEAD commit of the Git repository in the current working directory.
         """
-        from dda.utils.git.commit import Commit, SHA1Hash
+        from dda.utils.git.commit import Commit
 
-        sha1_str = self.capture(["rev-parse", "HEAD"]).strip()
-        sha1 = SHA1Hash(sha1_str)
+        sha1 = self.capture(["rev-parse", "HEAD"]).strip()
 
         # Get the org/repo from the remote URL
         org, repo, _ = self.get_remote_details()
         return Commit(org=org, repo=repo, sha1=sha1)
 
-    def get_commit_details(self, sha1: SHA1Hash) -> CommitDetails:
+    def get_commit_details(self, sha1: str) -> CommitDetails:
         """
         Get the details of the given commit in the Git repository in the current working directory.
         """
         from datetime import datetime
 
-        from dda.utils.git.commit import CommitDetails, SHA1Hash
+        from dda.utils.git.commit import CommitDetails
 
         raw_details = self.capture([
             "show",
@@ -119,7 +121,7 @@ class Git(Tool):
             # fmt: author name, author email, author date, parent SHAs, commit message body
             "--format=%an%n%ae%n%ad%n%P%n%B",
             "--date=iso-strict",
-            str(sha1),
+            sha1,
         ])
         author_name, author_email, date_str, parents_str, *message_lines = raw_details.splitlines()
 
@@ -128,31 +130,37 @@ class Git(Tool):
             author_email=author_email,
             datetime=datetime.fromisoformat(date_str),
             message="\n".join(message_lines).strip().strip('"'),
-            parent_shas=[SHA1Hash(parent_sha) for parent_sha in parents_str.split()],
+            parent_shas=list(parents_str.split()),
         )
 
     def _capture_diff_lines(self, *args: str) -> list[str]:
-        diff_args = ["diff", "-U0", "--no-color", "--no-prefix", "--no-renames"]
+        diff_args = [
+            "-c",
+            "core.quotepath=false",
+            "diff",
+            "-U0",
+            "--no-color",
+            "--no-prefix",
+            "--no-renames",
+            "--no-ext-diff",
+            # "-z",
+        ]
         return self.capture([*diff_args, *args], check=False).strip().splitlines()
 
     def _compare_refs(self, ref1: str, ref2: str) -> ChangeSet:
-        return ChangeSet.generate_from_diff_output(self._capture_diff_lines(str(ref1), str(ref2)))
+        return ChangeSet.generate_from_diff_output(self._capture_diff_lines(ref1, ref2))
 
-    def get_commit_changes(self, sha1: SHA1Hash) -> ChangeSet:
+    def get_commit_changes(self, sha1: str) -> ChangeSet:
         """
         Get the changes of the given commit in the Git repository in the current working directory.
         """
-        return self._compare_refs(f"{sha1}^", str(sha1))
+        return self._compare_refs(f"{sha1}^", sha1)
 
-    def get_changes_between_commits(self, a: SHA1Hash | Commit, b: SHA1Hash | Commit) -> ChangeSet:
+    def get_changes_between_commits(self, a: str, b: str) -> ChangeSet:
         """
-        Get the changes between two commits.
+        Get the changes between two commits, identified by their SHA-1 hashes.
         """
-        if isinstance(a, Commit):
-            a = a.sha1
-        if isinstance(b, Commit):
-            b = b.sha1
-        return self._compare_refs(str(a), str(b))
+        return self._compare_refs(a, b)
 
     def get_working_tree_changes(self) -> ChangeSet:
         """
@@ -166,26 +174,31 @@ class Git(Tool):
         tracked_changes = ChangeSet.generate_from_diff_output(self._capture_diff_lines("HEAD"))
 
         # Capture changes to untracked files
-        untracked_files = self.capture(["ls-files", "--others", "--exclude-standard"]).strip().splitlines()
+        other_files_output = self.capture(["ls-files", "--others", "--exclude-standard", "-z"]).strip()
+        untracked_files = [x.strip() for x in other_files_output.split("\0") if x]  # Remove empty strings
+
+        if not untracked_files:
+            return tracked_changes
+
         diffs = list(chain.from_iterable(self._capture_diff_lines("/dev/null", file) for file in untracked_files))
         untracked_changes = ChangeSet.generate_from_diff_output(diffs)
 
         # Combine the changes
         return tracked_changes | untracked_changes
 
-    def get_merge_base(self, remote_name: str = "origin") -> SHA1Hash | str:
+    def get_merge_base(self, remote_name: str = "origin") -> str:
         """
         Get the merge base of the current branch.
         """
-        res = self.capture(["merge-base", "HEAD", remote_name]).strip()
+        res = self.capture(["merge-base", "HEAD", remote_name], check=False).strip()
         if not res:
             self.app.display_warning("Could not determine merge base for current branch. Using `main` instead.")
             return "main"
-        return SHA1Hash(res)
+        return res
 
     def get_changes_with_base(
         self,
-        base: SHA1Hash | Commit | str | None = None,
+        base: str | None = None,
         *,
         include_working_tree: bool = True,
         remote_name: str = "origin",
@@ -200,12 +213,9 @@ class Git(Tool):
         """
         if base is None:
             base = self.get_merge_base(remote_name)
-        if isinstance(base, Commit):
-            base = base.sha1
-        base = str(base)
 
         head = self.get_head_commit()
-        changes = self._compare_refs(base, head.sha1)
+        changes = ChangeSet.generate_from_diff_output(self._capture_diff_lines(base, "...", head.sha1))
         if include_working_tree:
             changes |= self.get_working_tree_changes()
         return changes
