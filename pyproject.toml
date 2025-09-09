@@ -73,6 +73,9 @@ gitlab = [
 mcp = [
     "pycli-mcp~=0.3.0",
 ]
+virustotal = [
+    "vt-py~=0.21.0"
+]
 ### The following dependencies were defined in the build image repo
 # https://github.com/DataDog/datadog-agent-buildimages/blob/main/requirements/constraints.txt
 legacy-constraints = [
