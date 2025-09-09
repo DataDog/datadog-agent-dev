@@ -38,6 +38,8 @@ def _get_name_from_git() -> str:
     except FileNotFoundError as e:
         msg = f"Executable `{command[0]}` not found: {command}"
         raise FileNotFoundError(msg) from e
+    except subprocess.CalledProcessError:
+        return ""  # Needed in some contexts, e.g. docs building in CI
 
     return process.stdout.strip()
 
@@ -57,6 +59,8 @@ def _get_email_from_git() -> str:
     except FileNotFoundError as e:
         msg = f"Executable `{command[0]}` not found: {command}"
         raise FileNotFoundError(msg) from e
+    except subprocess.CalledProcessError:
+        return ""  # Needed in some contexts, e.g. docs building in CI
 
     return process.stdout.strip()
 
