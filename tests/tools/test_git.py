@@ -4,8 +4,10 @@
 from __future__ import annotations
 
 import random
+from os import environ
 from typing import TYPE_CHECKING
 
+from dda.utils.git.constants import GitAuthorEnvVars
 from tests.tools.conftest import clear_cached_config
 
 if TYPE_CHECKING:
@@ -25,7 +27,15 @@ def test_basic(
         assert f"Initial commit: {random_key}" in app.tools.git.capture(["log", "-1", "--oneline"])
 
 
-def test_author_details(app: Application) -> None:
-    clear_cached_config(app)
+def test_author_details(app: Application, mocker) -> None:  # type: ignore[no-untyped-def]
+    # Test 1: Author details coming from env vars, set in conftest.py
     assert app.tools.git.author_name == "Foo Bar"
     assert app.tools.git.author_email == "foo@bar.baz"
+    clear_cached_config(app)
+    # Test 2: Author details coming from git config, not set in conftest.py
+    environ.pop(GitAuthorEnvVars.NAME)
+    environ.pop(GitAuthorEnvVars.EMAIL)
+    mocker.patch("dda.tools.git.Git.capture", return_value="Foo Bar 2")
+    assert app.tools.git.author_name == "Foo Bar 2"
+    mocker.patch("dda.tools.git.Git.capture", return_value="foo@bar2.baz")
+    assert app.tools.git.author_email == "foo@bar2.baz"
