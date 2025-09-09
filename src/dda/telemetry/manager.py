@@ -86,6 +86,22 @@ class TelemetryManager:
         return api_key
 
     @cached_property
+    def user_name(self) -> str:
+        return (
+            self.__app.config.user.name
+            if self.__app.config.user.name != "auto"
+            else self.__app.config.tools.git.author.name
+        )
+
+    @cached_property
+    def user_email(self) -> str:
+        return (
+            self.__app.config.user.email
+            if self.__app.config.user.email != "auto"
+            else self.__app.config.tools.git.author.email
+        )
+
+    @cached_property
     def __enabled(self) -> bool:
         return not self.__dissent_file.is_file()
 
