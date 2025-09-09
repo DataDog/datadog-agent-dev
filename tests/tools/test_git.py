@@ -8,7 +8,6 @@ from os import environ
 from typing import TYPE_CHECKING
 
 from dda.utils.git.constants import GitAuthorEnvVars
-from tests.tools.conftest import clear_cached_config
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -31,7 +30,9 @@ def test_author_details(app: Application, mocker) -> None:  # type: ignore[no-un
     # Test 1: Author details coming from env vars, set in conftest.py
     assert app.tools.git.author_name == "Foo Bar"
     assert app.tools.git.author_email == "foo@bar.baz"
-    clear_cached_config(app)
+    # Clear the cached properties
+    del app.tools.git.author_name
+    del app.tools.git.author_email
     # Test 2: Author details coming from git config, not set in conftest.py
     environ.pop(GitAuthorEnvVars.NAME)
     environ.pop(GitAuthorEnvVars.EMAIL)

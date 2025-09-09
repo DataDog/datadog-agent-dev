@@ -1,42 +1,29 @@
-import shutil
-from collections.abc import Callable, Generator
+# SPDX-FileCopyrightText: 2025-present Datadog, Inc. <dev@datadoghq.com>
+#
+# SPDX-License-Identifier: MIT
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 import pytest
 
-from dda.cli.application import Application
 from dda.utils.fs import Path
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Generator
+
+    from dda.cli.application import Application
     from dda.tools.git import Git
-
-
-def clear_cached_config(app: Application) -> None:
-    if hasattr(app.config_file, "model"):
-        del app.config_file.model
-
-    if hasattr(app, "config"):
-        del app.config
-
-    if hasattr(app.tools.git, "author_name"):
-        del app.tools.git.author_name
-
-    if hasattr(app.tools.git, "author_email"):
-        del app.tools.git.author_email
 
 
 # Initialize a dummy repo in a temporary directory for the tests to use
 @pytest.fixture
-def temp_repo(app: Application, temp_dir: Path, set_git_author: None) -> Generator[Path, None, None]:  # noqa: ARG001
-    git: Git = app.tools.git
+def temp_repo(app: Application, temp_dir: Path, set_git_author: None) -> Path:  # noqa: ARG001
     repo_path = temp_dir / "dummy-repo"
     repo_path.mkdir()  # Don't do exist_ok, the directory should not exist
     with repo_path.as_cwd():
-        git.run(["init", "--initial-branch", "main"])
-    yield repo_path
-    # Cleanup
-
-    shutil.rmtree(repo_path)
+        app.subprocess.run(["git", "init", "--initial-branch", "main"])
+    return repo_path
 
 
 @pytest.fixture
@@ -52,18 +39,15 @@ def set_git_author(app: Application) -> Generator[None, None, None]:
     app.config_file.data["tools"]["git"]["author"]["email"] = "test.runner@example.com"
 
     app.config_file.save()
-    clear_cached_config(app)
     yield
     app.config_file.data["tools"]["git"]["author"]["name"] = old_name
     app.config_file.data["tools"]["git"]["author"]["email"] = old_email
     app.config_file.save()
-    clear_cached_config(app)
 
 
 # Create a dummy file in the repository - uses the previously initialized dummy repo and the "fixture factory" pattern
-# Commiter details are set automatically be the env vars in conftest.py
-@pytest.fixture(name="create_commit_dummy_file")
-def fixt_create_commit_dummy_file(
+@pytest.fixture
+def create_commit_dummy_file(
     app: Application,
     temp_repo: Path,
 ) -> Callable[[Path | str, str, str], None]:
@@ -83,6 +67,6 @@ def fixt_create_commit_dummy_file(
         with temp_repo.as_cwd():
             location.write_text(content)
             git.run(["add", str(location)])
-            git.run(["commit", "-m", f'"{commit_message}"'])
+            git.run(["commit", "-m", commit_message])
 
     return _create_commit_dummy_file
