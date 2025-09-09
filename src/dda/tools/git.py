@@ -19,12 +19,16 @@ class Git(Tool):
     """
 
     def env_vars(self) -> dict[str, str]:
-        return {
-            # GitAuthorEnvVars.NAME: self.app.config.tools.git.author.name.strip(),
-            # GitAuthorEnvVars.EMAIL: self.app.config.tools.git.author.email.strip(),
-            GitAuthorEnvVars.COMMITTER_NAME: self.app.config.tools.git.author.name.strip(),
-            GitAuthorEnvVars.COMMITTER_EMAIL: self.app.config.tools.git.author.email.strip(),
-        }
+        name = self.app.config.tools.git.author.name.strip()
+        email = self.app.config.tools.git.author.email.strip()
+        result = {}
+        if name:
+            result[GitAuthorEnvVars.NAME] = name
+            result[GitAuthorEnvVars.COMMITTER_NAME] = name
+        if email:
+            result[GitAuthorEnvVars.EMAIL] = email
+            result[GitAuthorEnvVars.COMMITTER_EMAIL] = email
+        return result
 
     @cached_property
     def path(self) -> str:
