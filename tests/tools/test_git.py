@@ -4,10 +4,10 @@
 from __future__ import annotations
 
 import random
-from os import environ
 from typing import TYPE_CHECKING
 
 from dda.utils.git.constants import GitEnvVars
+from dda.utils.process import EnvVars
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -34,9 +34,8 @@ def test_author_details(app: Application, mocker) -> None:  # type: ignore[no-un
     del app.tools.git.author_name
     del app.tools.git.author_email
     # Test 2: Author details coming from git config, not set in conftest.py
-    environ.pop(GitEnvVars.AUTHOR_NAME)
-    environ.pop(GitEnvVars.AUTHOR_EMAIL)
-    mocker.patch("dda.tools.git.Git.capture", return_value="Foo Bar 2")
-    assert app.tools.git.author_name == "Foo Bar 2"
-    mocker.patch("dda.tools.git.Git.capture", return_value="foo@bar2.baz")
-    assert app.tools.git.author_email == "foo@bar2.baz"
+    with EnvVars({GitEnvVars.AUTHOR_NAME: "", GitEnvVars.AUTHOR_EMAIL: ""}):
+        mocker.patch("dda.tools.git.Git.capture", return_value="Foo Bar 2")
+        assert app.tools.git.author_name == "Foo Bar 2"
+        mocker.patch("dda.tools.git.Git.capture", return_value="foo@bar2.baz")
+        assert app.tools.git.author_email == "foo@bar2.baz"

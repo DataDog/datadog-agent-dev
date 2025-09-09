@@ -18,6 +18,9 @@ if TYPE_CHECKING:
     from os import PathLike
     from subprocess import CompletedProcess
 
+    from dda.cli.application import Application
+    from dda.utils.fs import Path
+
 CallArgsT = list[tuple[tuple[Any, ...], dict[str, Any]]]
 
 
@@ -36,6 +39,14 @@ def get_current_timestamp() -> float:
 def assert_output_match(output: str, pattern: str, *, exact: bool = True) -> None:
     flags = re.MULTILINE if exact else re.MULTILINE | re.DOTALL
     assert re.search(dedent(pattern), output, flags=flags) is not None, output
+
+
+def commit_file(app: Application, *, file: Path, message: str, file_content: str) -> None:
+    git = app.tools.git
+    with file.parent.as_cwd():
+        file.write_text(file_content)
+        git.run(["add", str(file.relative_to(file.parent))])
+        git.run(["commit", "-m", message])
 
 
 @cache

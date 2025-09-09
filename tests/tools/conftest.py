@@ -7,13 +7,11 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from dda.utils.fs import Path
-
 if TYPE_CHECKING:
-    from collections.abc import Callable, Generator
+    from collections.abc import Callable
 
     from dda.cli.application import Application
-    from dda.tools.git import Git
+    from dda.utils.fs import Path
 
 
 # Initialize a dummy repo in a temporary directory for the tests to use
@@ -27,46 +25,28 @@ def temp_repo(app: Application, temp_dir: Path, set_git_author: None) -> Path:  
 
 
 @pytest.fixture
-def set_git_author(app: Application) -> Generator[None, None, None]:
+def set_git_author(app: Application) -> None:
     """
     Set the git author name and email to "Test Runner" and "test.runner@example.com" respectively.
     This is done by setting the values in the config file.
     Any commits made by `dda` will use these values, but any calls to `git config` will still return the global git config values.
     """
-    old_name = app.config_file.data["tools"]["git"]["author"]["name"]
-    old_email = app.config_file.data["tools"]["git"]["author"]["email"]
     app.config_file.data["tools"]["git"]["author"]["name"] = "Test Runner"
     app.config_file.data["tools"]["git"]["author"]["email"] = "test.runner@example.com"
 
-    app.config_file.save()
-    yield
-    app.config_file.data["tools"]["git"]["author"]["name"] = old_name
-    app.config_file.data["tools"]["git"]["author"]["email"] = old_email
     app.config_file.save()
 
 
 # Create a dummy file in the repository - uses the previously initialized dummy repo and the "fixture factory" pattern
 @pytest.fixture
-def create_commit_dummy_file(
+def create_commit_dummy_file(  # type: ignore[no-untyped-def]
     app: Application,
     temp_repo: Path,
+    helpers,
 ) -> Callable[[Path | str, str, str], None]:
-    git: Git = app.tools.git
-
     def _create_commit_dummy_file(location: Path | str, content: str, commit_message: str) -> None:
-        if isinstance(location, str):
-            location = Path(location)
+        location = temp_repo / location
 
-        if location.is_absolute():
-            try:
-                location = location.relative_to(temp_repo)
-            except ValueError as e:
-                msg = "Location must be a relative path to the temporary directory"
-                raise ValueError(msg) from e
-
-        with temp_repo.as_cwd():
-            location.write_text(content)
-            git.run(["add", str(location)])
-            git.run(["commit", "-m", commit_message])
+        helpers.commit_file(app, file=location, message=commit_message, file_content=content)
 
     return _create_commit_dummy_file
