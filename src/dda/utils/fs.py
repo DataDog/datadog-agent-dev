@@ -152,6 +152,30 @@ class Path(pathlib.Path):
         def __as_exe(self) -> Path:
             return self
 
+    @classmethod
+    def enc_hook(cls, obj: Any) -> Any:
+        if isinstance(obj, cls):
+            return repr(obj)
+
+        message = f"Objects of type {type(obj)} are not supported"
+        raise NotImplementedError(message)
+
+    @classmethod
+    def dec_hook(cls, obj_type: type, obj: Any) -> Any:
+        if obj_type is cls:
+            # Was encoded as the repr of this object
+            # Should be of the form f"{cls.__qualname__}({str(obj)})"
+            qualname, path = obj.split("(")
+            path = path.rstrip(")").strip("'").strip('"')
+            if qualname != cls.__qualname__:
+                message = f"Objects of type {obj_type} are not supported"
+                raise NotImplementedError(message)
+
+            return cls(path)
+
+        message = f"Objects of type {obj_type} are not supported"
+        raise NotImplementedError(message)
+
 
 @contextmanager
 def temp_directory() -> Generator[Path, None, None]:
@@ -170,3 +194,22 @@ def temp_directory() -> Generator[Path, None, None]:
 
     with TemporaryDirectory() as d:
         yield Path(d).resolve()
+
+
+@contextmanager
+def temp_file(suffix: str = "") -> Generator[Path, None, None]:
+    """
+    A context manager that creates a temporary file and yields a path to it. Example:
+
+    ```python
+    with temp_file() as temp_file:
+        ...
+    ```
+
+    Yields:
+        The resolved path to the temporary file, following all symlinks.
+    """
+    from tempfile import NamedTemporaryFile
+
+    with NamedTemporaryFile(suffix=suffix) as f:
+        yield Path(f.name)
