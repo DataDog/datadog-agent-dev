@@ -6,7 +6,7 @@ from __future__ import annotations
 from functools import cached_property
 
 from dda.tools.base import Tool
-from dda.utils.git.constants import GitAuthorEnvVars
+from dda.utils.git.constants import GitEnvVars
 
 
 class Git(Tool):
@@ -23,11 +23,11 @@ class Git(Tool):
         email = self.app.config.tools.git.author.email.strip()
         result = {}
         if name:
-            result[GitAuthorEnvVars.NAME] = name
-            result[GitAuthorEnvVars.COMMITTER_NAME] = name
+            result[GitEnvVars.AUTHOR_NAME] = name
+            result[GitEnvVars.COMMITTER_NAME] = name
         if email:
-            result[GitAuthorEnvVars.EMAIL] = email
-            result[GitAuthorEnvVars.COMMITTER_EMAIL] = email
+            result[GitEnvVars.AUTHOR_EMAIL] = email
+            result[GitEnvVars.COMMITTER_EMAIL] = email
         return result
 
     @cached_property
@@ -47,7 +47,7 @@ class Git(Tool):
         """
         from os import environ
 
-        if env_username := environ.get(GitAuthorEnvVars.NAME):
+        if env_username := environ.get(GitEnvVars.AUTHOR_NAME):
             return env_username
 
         # Don't use global in case some repo-specific config overrides it.
@@ -62,7 +62,7 @@ class Git(Tool):
         """
         from os import environ
 
-        if env_email := environ.get(GitAuthorEnvVars.EMAIL):
+        if env_email := environ.get(GitEnvVars.AUTHOR_EMAIL):
             return env_email
 
         return self.capture(["config", "--get", "user.email"]).strip()

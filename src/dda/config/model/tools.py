@@ -7,7 +7,7 @@ from typing import Literal
 
 from msgspec import Struct, field
 
-from dda.utils.git.constants import GitAuthorEnvVars
+from dda.utils.git.constants import GitEnvVars
 
 
 class BazelConfig(Struct, frozen=True, forbid_unknown_fields=True):
@@ -28,7 +28,7 @@ def _get_name_from_git() -> str:
 
     from dda.utils.process import static_capture
 
-    if name := environ.get(GitAuthorEnvVars.NAME):
+    if name := environ.get(GitEnvVars.AUTHOR_NAME):
         return name
 
     return static_capture(["git", "config", "--global", "--get", "user.name"]).strip()
@@ -39,7 +39,7 @@ def _get_email_from_git() -> str:
 
     from dda.utils.process import static_capture
 
-    if email := environ.get(GitAuthorEnvVars.EMAIL):
+    if email := environ.get(GitEnvVars.AUTHOR_EMAIL):
         return email
 
     return static_capture(["git", "config", "--global", "--get", "user.email"]).strip()

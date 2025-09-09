@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Annotated, Any, Literal, NoReturn
 import msgspec
 
 from dda.env.dev.interface import DeveloperEnvironmentConfig, DeveloperEnvironmentInterface
-from dda.utils.git.constants import GitAuthorEnvVars
+from dda.utils.git.constants import GitEnvVars
 
 if TYPE_CHECKING:
     from dda.env.models import EnvironmentStatus
@@ -128,9 +128,9 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 "-e",
                 AppEnvVars.TELEMETRY_API_KEY,
                 "-e",
-                GitAuthorEnvVars.NAME,
+                GitEnvVars.AUTHOR_NAME,
                 "-e",
-                GitAuthorEnvVars.EMAIL,
+                GitEnvVars.AUTHOR_EMAIL,
             ))
             if self.config.arch is not None:
                 command.extend(("--platform", f"linux/{self.config.arch}"))
@@ -161,8 +161,8 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             if self.app.telemetry.api_key is not None:
                 env[AppEnvVars.TELEMETRY_API_KEY] = self.app.telemetry.api_key
 
-            env[GitAuthorEnvVars.NAME] = self.app.config.user.name
-            env[GitAuthorEnvVars.EMAIL] = self.app.config.user.email
+            env[GitEnvVars.AUTHOR_NAME] = self.app.config.user.name
+            env[GitEnvVars.AUTHOR_EMAIL] = self.app.config.user.email
 
             self.docker.wait(
                 command,

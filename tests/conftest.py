@@ -19,7 +19,7 @@ from dda.config.constants import AppEnvVars, ConfigEnvVars
 from dda.config.file import ConfigFile
 from dda.utils.ci import running_in_ci
 from dda.utils.fs import Path, temp_directory
-from dda.utils.git.constants import GitAuthorEnvVars
+from dda.utils.git.constants import GitEnvVars
 from dda.utils.platform import PLATFORM_ID
 from dda.utils.process import EnvVars
 
@@ -80,8 +80,8 @@ def isolation() -> Generator[Path, None, None]:
             AppEnvVars.NO_COLOR: "1",
             "PYAPP": "1",
             "DDA_SELF_TESTING": "true",
-            GitAuthorEnvVars.NAME: "Foo Bar",
-            GitAuthorEnvVars.EMAIL: "foo@bar.baz",
+            GitEnvVars.AUTHOR_NAME: "Foo Bar",
+            GitEnvVars.AUTHOR_EMAIL: "foo@bar.baz",
             "COLUMNS": "80",
             "LINES": "24",
         }
