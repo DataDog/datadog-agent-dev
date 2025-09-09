@@ -1,0 +1,48 @@
+Pierre-Louis Veyrenc
+pierrelouis.veyrenc@datadoghq.com
+2025-08-22T16:39:33+02:00
+f8026d5d3566f06f719a317d64b04c2c370e11b2
+[ACIX-973] Implement `info owners code` command (#167)
+
+* feat(info): Add stub for new `info owners code` command and groups
+
+* feat(info): Add and require new `codeowners` dep group
+
+* feat(info): Basic body for the task
+
+* feat(info): Support getting codeowners for multiple files at once
+
+* feat(info): Add pretty-printing mechanism
+
+* feat(tests): Add test helper functions and first test for `dda info owners code`
+
+* feat(tests): Add more tests for `dda info owners code`
+
+* chore: Linter and formatter fixes
+
+* refactor: Address review comments
+
+* fix(info): Human output on `stdout`
+
+* feat(tests): Add a couple more tests
+
+* fix(info): Always use POSIX paths with codeowners library
+
+This was causing test failures on Windows, as the codeowners library expects paths to be in POSIX format.
+Also some tests were not using the correct path separator, which was causing issues on Windows.
+
+* refactor(info): Post-review code style tweaks
+
+* use `Path.read_text` instead of manually `open`ing
+* Use walrus operator instead of intermediary list
+* Use pytest fixtures and `dedent` helper function in test code
+
+* refactor(info): Rename `--config` argument to `--owners`
+
+* feat(tests): Use pytest features for `test_code.py`
+
+* Use fixtures, and in particular the "Factories as fixtures" pattern
+* Use parametrization for better defining test cases
+* Improve cleanup logic by including it in the fixtures
+
+* chore(tests): Add extra typing info and address linter complains

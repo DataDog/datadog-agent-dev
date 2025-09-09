@@ -1,0 +1,50 @@
+diff --git added_lines.txt added_lines.txt
+index de26ed0..6ecbb1d 100644
+--- added_lines.txt
++++ added_lines.txt
+@@ -2,0 +3,4 @@ I wonder what that could mean ?
++
++But of course !
++I get some added lines.
++That makes sense.
+diff --git added_lines_middle.txt added_lines_middle.txt
+index 3d25620..210f576 100644
+--- added_lines_middle.txt
++++ added_lines_middle.txt
+@@ -2,0 +3,2 @@ I have a bit more text than added_lines.
++Nobody expects the Spanish Inquisition !
++My developer really wonders if cracking jokes in test data is against company policy.
+diff --git deleted_lines.txt deleted_lines.txt
+index 6e8fcd4..948a9b2 100644
+--- deleted_lines.txt
++++ deleted_lines.txt
+@@ -2,2 +2 @@ Hmm, my name is deleted_lines.
+-I wonder what that could mean ?
+-I don't want to be shortened, that does not seem fun.
++
+diff --git deleted_lines_middle.txt deleted_lines_middle.txt
+index 45d5f5b..cd54e70 100644
+--- deleted_lines_middle.txt
++++ deleted_lines_middle.txt
+@@ -2,3 +1,0 @@ Hmm, my name is deleted_lines_middle.
+-I wonder what that could mean ?
+-I don't want to be shortened, that does not seem fun.
+-Thinking about it, being short is also kind of nice though.
+diff --git edited_lines.txt edited_lines.txt
+index b6c56a0..cbb5216 100644
+--- edited_lines.txt
++++ edited_lines.txt
+@@ -4,8 +4,5 @@ I have a big block of text here:
+-Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+-Vestibulum ornare cursus diam, quis hendrerit nibh.
+-Donec sollicitudin neque in tempus ornare.
+-Integer sit amet pretium quam.
+-Maecenas lacinia augue id est malesuada, vitae fermentum justo faucibus.
+-Aenean posuere nisi tincidunt nisi pharetra blandit.
+-Integer sed nulla sed eros aliquet eleifend quis ac quam.
+-Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.
++What kind of dev uses lorem ipsum ?
++Keyboard mashing is where it's at !
++Check this out:
++phq w4q3t'p£tfnjklifewqkpjnoq23bjikkijq4ovikobjqv4kioblj;
++vqpewkvnkqknbpjlo[iqervkb[jplofqvwer[kpjlqfp[okqolp[f;vn]]]]]

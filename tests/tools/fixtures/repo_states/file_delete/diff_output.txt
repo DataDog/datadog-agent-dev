@@ -1,0 +1,9 @@
+diff --git file2.txt file2.txt
+deleted file mode 100644
+index c4193d0..0000000
+--- file2.txt
++++ /dev/null
+@@ -1,3 +0,0 @@
+-file2
+-I will be deleted, unfortunately.
+-That's quite sad.

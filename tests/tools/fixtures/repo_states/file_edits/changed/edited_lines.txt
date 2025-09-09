@@ -1,0 +1,11 @@
+Hi ! My name is edited_lines.
+I have a big block of text here:
+---
+What kind of dev uses lorem ipsum ?
+Keyboard mashing is where it's at !
+Check this out:
+phq w4q3t'p£tfnjklifewqkpjnoq23bjikkijq4ovikobjqv4kioblj;
+vqpewkvnkqknbpjlo[iqervkb[jplofqvwer[kpjlqfp[okqolp[f;vn]]]]]
+---
+Seems interesting, doesn't it ?
+I wonder if it might change in the future.
