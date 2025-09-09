@@ -18,8 +18,6 @@ from dda.utils.process import EnvVars
 from tests.tools.git.conftest import REPO_TESTCASES, _load_changeset
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from dda.cli.application import Application
     from dda.config.model.tools import GitAuthorConfig
     from dda.tools.git import Git
@@ -42,13 +40,15 @@ def assert_changesets_equal(actual: ChangeSet, expected: ChangeSet) -> None:
         assert seen.patch == expected_change.patch
 
 
-def test_basic(app: Application, temp_repo: Path, helpers) -> None:  # type: ignore[no-untyped-def]
+def test_basic(app: Application, temp_repo: Path) -> None:  # type: ignore[no-untyped-def]
     with temp_repo.as_cwd():
         assert app.tools.git.run(["status"]) == 0
         random_key = random.randint(1, 1000000)
-        helpers.commit_file(
-            app, file=Path("testfile.txt"), file_content="test", message=f"Initial commit: {random_key}"
-        )
+        with temp_repo.as_cwd():
+            file = Path("testfile.txt")
+            file.write_text("test")
+            app.tools.git.run(["add", str(file)])
+            app.tools.git.run(["commit", "-m", f"Initial commit: {random_key}"])
         assert f"Initial commit: {random_key}" in app.tools.git.capture(["log", "-1", "--oneline"])
 
 
@@ -72,46 +72,54 @@ def test_get_remote_details(app: Application, temp_repo_with_remote: Path) -> No
         assert app.tools.git.get_remote_details().url == "https://github.com/foo/bar"
 
 
-def test_get_head_commit(
-    app: Application, temp_repo_with_remote: Path, create_commit_dummy_file: Callable[[Path | str, str, str], None]
-) -> None:
+def test_get_head_commit(app: Application, temp_repo_with_remote: Path) -> None:
     with temp_repo_with_remote.as_cwd():
-        create_commit_dummy_file("hello.txt", "world", "Brand-new commit")
+        app.tools.git.commit_file(Path("hello.txt"), content="world", commit_message="Brand-new commit")
         sha1 = app.tools.git.capture(["rev-parse", "HEAD"]).strip()
 
         assert app.tools.git.get_head_commit() == Commit(sha1=sha1)
 
 
-def test_get_commit_details(
-    app: Application,
-    temp_repo: Path,
-    create_commit_dummy_file: Callable[[Path | str, str, str], None],
-) -> None:
+def test_get_commit_details(app: Application, temp_repo: Path, default_git_author: GitAuthorConfig) -> None:
     with temp_repo.as_cwd():
-        create_commit_dummy_file("dummy", "dummy content", "Initial commit")
+        app.tools.git.commit_file(Path("dummy"), content="dummy content", commit_message="Initial commit")
         parent_sha1 = app.tools.git.capture(["rev-parse", "HEAD"]).strip()
 
         random_key = random.randint(1, 1000000)
-        create_commit_dummy_file("hello.txt", "world", f"Brand-new commit: {random_key}")
+        app.tools.git.commit_file(Path("hello.txt"), content="world", commit_message=f"Brand-new commit: {random_key}")
         sha1 = app.tools.git.capture(["rev-parse", "HEAD"]).strip()
         commit_time = datetime.fromisoformat(app.tools.git.capture(["show", "-s", "--format=%cI", sha1]).strip())
 
         details = app.tools.git.get_commit_details(sha1)
-        assert details.author_name == "Test Runner"
-        assert details.author_email == "test.runner@example.com"
+        assert details.author_name == default_git_author.name
+        assert details.author_email == default_git_author.email
         assert details.datetime == commit_time
         assert details.message == f"Brand-new commit: {random_key}"
         assert details.parent_shas == [parent_sha1]
 
 
-def test_capture_diff_lines(
-    app: Application, temp_repo: Path, create_commit_dummy_file: Callable[[Path | str, str, str], None]
-) -> None:
+def test_commit_files(app: Application, temp_repo: Path) -> None:
+    with temp_repo.as_cwd():
+        random_key = random.randint(1, 1000000)
+        app.tools.git.commit_files(
+            {Path("hello.txt"): "world", Path("foo.txt"): "bar"}, commit_message=f"Initial commit: {random_key}"
+        )
+        assert f"Initial commit: {random_key}" in app.tools.git.capture(["log", "-1", "--oneline"])
+        assert Path("hello.txt").read_text() == "world"
+        assert Path("foo.txt").read_text() == "bar"
+
+
+# Already tested by above
+def test_commit_file() -> None:
+    pass
+
+
+def test_capture_diff_lines(app: Application, temp_repo: Path) -> None:
     with temp_repo.as_cwd():
         contents = "hello, world\n"
         # Need to make an initial commit to have a valid diff
-        create_commit_dummy_file("dummy", "", "Initial commit")
-        create_commit_dummy_file("hello.txt", contents, "New commit")
+        app.tools.git.commit_file(Path("dummy"), content="", commit_message="Initial commit")
+        app.tools.git.commit_file(Path("hello.txt"), content=contents, commit_message="New commit")
         diff_lines = app.tools.git._capture_diff_lines("HEAD^", "HEAD")  # noqa: SLF001
         expected_patterns = [
             "diff --git hello.txt hello.txt",

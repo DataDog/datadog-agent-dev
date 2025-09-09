@@ -8,7 +8,7 @@ import pytest
 
 from dda.utils.fs import Path
 from dda.utils.git.changeset import ChangeSet, ChangeType, FileChanges
-from tests.tools.conftest import REPO_TESTCASES
+from tests.tools.git.conftest import REPO_TESTCASES
 
 
 class TestFileChangesClass:
@@ -23,7 +23,9 @@ class TestFileChangesClass:
         REPO_TESTCASES,
     )
     def test_generate_from_diff_output(self, repo_testcase):
-        fixtures_dir = Path(__file__).parent.parent.parent / "tools" / "fixtures" / "repo_states" / repo_testcase
+        fixtures_dir = (
+            Path(__file__).parent.parent.parent / "tools" / "git" / "fixtures" / "repo_states" / repo_testcase
+        )
         with open(fixtures_dir / "diff_output.txt", encoding="utf-8") as f:
             diff_output = f.read()
 
@@ -89,7 +91,9 @@ class TestChangeSetClass:
         REPO_TESTCASES,
     )
     def test_generate_from_diff_output(self, repo_testcase):
-        fixtures_dir = Path(__file__).parent.parent.parent / "tools" / "fixtures" / "repo_states" / repo_testcase
+        fixtures_dir = (
+            Path(__file__).parent.parent.parent / "tools" / "git" / "fixtures" / "repo_states" / repo_testcase
+        )
         with open(fixtures_dir / "diff_output.txt", encoding="utf-8") as f:
             diff_output = f.read()
 
