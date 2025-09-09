@@ -46,16 +46,16 @@ def set_git_author(app: Application) -> Generator[None, None, None]:
     This is done by setting the values in the config file.
     Any commits made by `dda` will use these values, but any calls to `git config` will still return the global git config values.
     """
-    old_name = app.config_file.data["tools"]["git"]["author_name"]
-    old_email = app.config_file.data["tools"]["git"]["author_email"]
-    app.config_file.data["tools"]["git"]["author_name"] = "Test Runner"
-    app.config_file.data["tools"]["git"]["author_email"] = "test.runner@example.com"
+    old_name = app.config_file.data["tools"]["git"]["author"]["name"]
+    old_email = app.config_file.data["tools"]["git"]["author"]["email"]
+    app.config_file.data["tools"]["git"]["author"]["name"] = "Test Runner"
+    app.config_file.data["tools"]["git"]["author"]["email"] = "test.runner@example.com"
 
     app.config_file.save()
     clear_cached_config(app)
     yield
-    app.config_file.data["tools"]["git"]["author_name"] = old_name
-    app.config_file.data["tools"]["git"]["author_email"] = old_email
+    app.config_file.data["tools"]["git"]["author"]["name"] = old_name
+    app.config_file.data["tools"]["git"]["author"]["email"] = old_email
     app.config_file.save()
     clear_cached_config(app)
 

@@ -24,10 +24,10 @@ class Git(Tool):
 
     def env_vars(self) -> dict[str, str]:
         return {
-            # self.AUTHOR_NAME_ENV_VAR: self.app.config.tools.git.author_name.strip(),
-            # self.AUTHOR_EMAIL_ENV_VAR: self.app.config.tools.git.author_email.strip(),
-            self.COMMITTER_NAME_ENV_VAR: self.app.config.tools.git.author_name.strip(),
-            self.COMMITTER_EMAIL_ENV_VAR: self.app.config.tools.git.author_email.strip(),
+            # self.AUTHOR_NAME_ENV_VAR: self.app.config.tools.git.author.name.strip(),
+            # self.AUTHOR_EMAIL_ENV_VAR: self.app.config.tools.git.author.email.strip(),
+            self.COMMITTER_NAME_ENV_VAR: self.app.config.tools.git.author.name.strip(),
+            self.COMMITTER_EMAIL_ENV_VAR: self.app.config.tools.git.author.email.strip(),
         }
 
     @cached_property

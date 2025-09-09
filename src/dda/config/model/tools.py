@@ -45,19 +45,32 @@ def _get_email_from_git() -> str:
     return static_capture(["git", "config", "--global", "--get", "user.email"]).strip()
 
 
-class GitConfig(Struct, frozen=True):
+class GitAuthorConfig(Struct, frozen=True):
     """
     /// tab | :octicons-file-code-16: config.toml
     ```toml
-    [tools.git]
+    [tools.git.author]
     name = "U.N. Owen"
     email = "void@some.where"
     ```
     ///
     """
 
-    author_name: str = field(default_factory=_get_name_from_git)
-    author_email: str = field(default_factory=_get_email_from_git)
+    name: str = field(default_factory=_get_name_from_git)
+    email: str = field(default_factory=_get_email_from_git)
+
+
+class GitConfig(Struct, frozen=True):
+    """
+    /// tab | :octicons-file-code-16: config.toml
+    ```toml
+    [tools.git]
+    ...
+    ```
+    ///
+    """
+
+    author: GitAuthorConfig = field(default_factory=GitAuthorConfig)
 
 
 class ToolsConfig(Struct, frozen=True):

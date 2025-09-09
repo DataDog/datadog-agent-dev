@@ -25,7 +25,7 @@ def test_basic(
         assert f"Initial commit: {random_key}" in app.tools.git.capture(["log", "-1", "--oneline"])
 
 
-def test_author_details(app: Application) -> None:  # noqa: ARG001
+def test_author_details(app: Application) -> None:
     clear_cached_config(app)
     assert app.tools.git.author_name == "Foo Bar"
     assert app.tools.git.author_email == "foo@bar.baz"

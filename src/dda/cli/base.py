@@ -137,8 +137,8 @@ class DynamicContext(click.RichContext):
             from dda.cli import START_TIME, START_TIMESTAMP
             from dda.utils.platform import join_command_args
 
-            username = app.config.user.name if app.config.user.name != "auto" else app.config.tools.git.author_name
-            email = app.config.user.email if app.config.user.email != "auto" else app.config.tools.git.author_email
+            username = app.config.user.name if app.config.user.name != "auto" else app.config.tools.git.author.name
+            email = app.config.user.email if app.config.user.email != "auto" else app.config.tools.git.author.email
 
             metadata = {
                 "cli.command": join_command_args(sys.argv[1:]),

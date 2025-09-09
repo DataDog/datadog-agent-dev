@@ -11,8 +11,8 @@ def test_default_scrubbed(dda, config_file, helpers, default_cache_dir, default_
 
     # The default name and email are queried from the global git config on config initialization
     # We override them to make sure we have a known value
-    config_file.data["tools"]["git"]["author_name"] = "Foo Bar"
-    config_file.data["tools"]["git"]["author_email"] = "foo@bar.baz"
+    config_file.data["tools"]["git"]["author"]["name"] = "Foo Bar"
+    config_file.data["tools"]["git"]["author"]["email"] = "foo@bar.baz"
     config_file.save()
 
     result = dda("config", "show")
@@ -34,9 +34,9 @@ def test_default_scrubbed(dda, config_file, helpers, default_cache_dir, default_
         [tools.bazel]
         managed = "auto"
 
-        [tools.git]
-        author_name = "Foo Bar"
-        author_email = "foo@bar.baz"
+        [tools.git.author]
+        name = "Foo Bar"
+        email = "foo@bar.baz"
 
         [storage]
         data = "{default_data_directory}"
@@ -76,8 +76,8 @@ def test_reveal(dda, config_file, helpers, default_cache_dir, default_data_dir):
 
     # The default git author name and email are queried from the global git config on config initialization
     # We override them to make sure we have a known value
-    config_file.data["tools"]["git"]["author_name"] = "Foo Bar"
-    config_file.data["tools"]["git"]["author_email"] = "foo@bar.baz"
+    config_file.data["tools"]["git"]["author"]["name"] = "Foo Bar"
+    config_file.data["tools"]["git"]["author"]["email"] = "foo@bar.baz"
     config_file.save()
 
     result = dda("config", "show", "-a")
@@ -99,9 +99,9 @@ def test_reveal(dda, config_file, helpers, default_cache_dir, default_data_dir):
         [tools.bazel]
         managed = "auto"
 
-        [tools.git]
-        author_name = "Foo Bar"
-        author_email = "foo@bar.baz"
+        [tools.git.author]
+        name = "Foo Bar"
+        email = "foo@bar.baz"
 
         [storage]
         data = "{default_data_directory}"
