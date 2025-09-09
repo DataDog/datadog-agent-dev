@@ -26,23 +26,39 @@ class BazelConfig(Struct, frozen=True, forbid_unknown_fields=True):
 def _get_name_from_git() -> str:
     from os import environ
 
-    from dda.utils.process import static_capture
-
     if name := environ.get(GitEnvVars.AUTHOR_NAME):
         return name
 
-    return static_capture(["git", "config", "--global", "--get", "user.name"]).strip()
+    import subprocess
+
+    command = ["git", "config", "--global", "--get", "user.name"]
+
+    try:
+        process = subprocess.run(command, encoding="utf-8", check=True)
+    except FileNotFoundError as e:
+        msg = f"Executable `{command[0]}` not found: {command}"
+        raise FileNotFoundError(msg) from e
+
+    return process.stdout.strip()
 
 
 def _get_email_from_git() -> str:
     from os import environ
 
-    from dda.utils.process import static_capture
+    if name := environ.get(GitEnvVars.AUTHOR_NAME):
+        return name
 
-    if email := environ.get(GitEnvVars.AUTHOR_EMAIL):
-        return email
+    import subprocess
 
-    return static_capture(["git", "config", "--global", "--get", "user.email"]).strip()
+    command = ["git", "config", "--global", "--get", "user.email"]
+
+    try:
+        process = subprocess.run(command, encoding="utf-8", check=True)
+    except FileNotFoundError as e:
+        msg = f"Executable `{command[0]}` not found: {command}"
+        raise FileNotFoundError(msg) from e
+
+    return process.stdout.strip()
 
 
 class GitAuthorConfig(Struct, frozen=True):
