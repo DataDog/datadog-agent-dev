@@ -503,8 +503,6 @@ def static_capture(
     if cwd is not None:
         kwargs["cwd"] = str(cwd)
 
-    command, kwargs = SubprocessRunner.__sanitize_arguments(command, **kwargs)  # noqa: SLF001
-
     try:
         process = subprocess.run(command, **kwargs)  # noqa: PLW1510
     except FileNotFoundError as e:
