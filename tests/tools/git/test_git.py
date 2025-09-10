@@ -8,24 +8,22 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from dda.utils.fs import Path
 from dda.utils.git.constants import GitEnvVars
 from dda.utils.process import EnvVars
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from dda.cli.application import Application
-    from dda.utils.fs import Path
 
 
 @pytest.mark.usefixtures("set_config_author_details")
-def test_basic(
-    app: Application, temp_repo: Path, create_commit_dummy_file: Callable[[Path | str, str, str], None]
-) -> None:
+def test_basic(app: Application, temp_repo: Path, helpers) -> None:  # type: ignore[no-untyped-def]
     with temp_repo.as_cwd():
         assert app.tools.git.run(["status"]) == 0
         random_key = random.randint(1, 1000000)
-        create_commit_dummy_file("testfile.txt", "test", f"Initial commit: {random_key}")
+        helpers.commit_file(
+            app, file=Path("testfile.txt"), file_content="test", message=f"Initial commit: {random_key}"
+        )
         assert f"Initial commit: {random_key}" in app.tools.git.capture(["log", "-1", "--oneline"])
 
 

@@ -52,7 +52,7 @@ The file can be managed by the [`config`](../cli/commands.md#dda-config) command
 
 ::: dda.config.model.tools.GitAuthorConfig
     options:
-      heading_level: 4
+      heading_level: 3
 
 ## Storage
 

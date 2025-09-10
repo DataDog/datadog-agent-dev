@@ -8,8 +8,6 @@ from typing import TYPE_CHECKING
 import pytest
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from dda.cli.application import Application
     from dda.utils.fs import Path
 
@@ -22,18 +20,3 @@ def temp_repo(app: Application, temp_dir: Path, set_config_author_details: None)
     with repo_path.as_cwd():
         app.subprocess.run(["git", "init", "--initial-branch", "main"])
     return repo_path
-
-
-# Create a dummy file in the repository - uses the previously initialized dummy repo and the "fixture factory" pattern
-@pytest.fixture
-def create_commit_dummy_file(  # type: ignore[no-untyped-def]
-    app: Application,
-    temp_repo: Path,
-    helpers,
-) -> Callable[[Path | str, str, str], None]:
-    def _create_commit_dummy_file(location: Path | str, content: str, commit_message: str) -> None:
-        location = temp_repo / location
-
-        helpers.commit_file(app, file=location, message=commit_message, file_content=content)
-
-    return _create_commit_dummy_file
