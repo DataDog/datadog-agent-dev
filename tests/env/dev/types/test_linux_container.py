@@ -21,15 +21,10 @@ pytestmark = [pytest.mark.usefixtures("private_storage")]
 
 
 @pytest.fixture(autouse=True)
-def updated_config(config_file):
+def updated_config(config_file, set_config_author_details):  # noqa: ARG001
     # Allow Windows users to run these tests
     if sys.platform == "win32":
         config_file.data["env"] = {"dev": {"default-type": "linux-container"}}
-
-    # Override the git author name and email in config to be a known value
-    config_file.data["user"]["name"] = "Foo Bar"
-    config_file.data["user"]["email"] = "foo@bar.baz"
-    config_file.save()
 
 
 @pytest.fixture(scope="module")

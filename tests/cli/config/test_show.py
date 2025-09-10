@@ -3,18 +3,13 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
+import pytest
+
 from dda.env.dev import DEFAULT_DEV_ENV
 
 
-def test_default_scrubbed(dda, config_file, helpers, default_cache_dir, default_data_dir):
-    config_file.data["github"]["auth"] = {"user": "foo", "token": "bar"}
-
-    # The default name and email are queried from the global git config on config initialization
-    # We override them to make sure we have a known value
-    config_file.data["tools"]["git"]["author"]["name"] = "Foo Bar"
-    config_file.data["tools"]["git"]["author"]["email"] = "foo@bar.baz"
-    config_file.save()
-
+@pytest.mark.usefixtures("set_config_author_details")
+def test_default_scrubbed(dda, helpers, default_cache_dir, default_data_dir):
     result = dda("config", "show")
 
     default_cache_directory = str(default_cache_dir).replace("\\", "\\\\")
@@ -71,13 +66,9 @@ def test_default_scrubbed(dda, config_file, helpers, default_cache_dir, default_
     )
 
 
+@pytest.mark.usefixtures("set_config_author_details")
 def test_reveal(dda, config_file, helpers, default_cache_dir, default_data_dir):
     config_file.data["github"]["auth"] = {"user": "foo", "token": "bar"}
-
-    # The default git author name and email are queried from the global git config on config initialization
-    # We override them to make sure we have a known value
-    config_file.data["tools"]["git"]["author"]["name"] = "Foo Bar"
-    config_file.data["tools"]["git"]["author"]["email"] = "foo@bar.baz"
     config_file.save()
 
     result = dda("config", "show", "-a")

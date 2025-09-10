@@ -80,14 +80,23 @@ def isolation() -> Generator[Path, None, None]:
             AppEnvVars.NO_COLOR: "1",
             "PYAPP": "1",
             "DDA_SELF_TESTING": "true",
-            GitEnvVars.AUTHOR_NAME: "Foo Bar",
-            GitEnvVars.AUTHOR_EMAIL: "foo@bar.baz",
             "COLUMNS": "80",
             "LINES": "24",
         }
         with d.as_cwd(), EnvVars(default_env_vars):
             os.environ.pop(AppEnvVars.FORCE_COLOR, None)
             yield d
+
+
+@pytest.fixture
+def set_config_author_details(config_file: ConfigFile) -> Generator[None, None, None]:
+    config_file.data["tools"]["git"]["author"]["name"] = "Foo Bar"
+    config_file.data["tools"]["git"]["author"]["email"] = "foo@bar.baz"
+    config_file.data["github"]["auth"] = {"user": "foo", "token": "bar"}
+
+    config_file.save()
+    with EnvVars({GitEnvVars.AUTHOR_NAME: "Foo Bar", GitEnvVars.AUTHOR_EMAIL: "foo@bar.baz"}):
+        yield
 
 
 @pytest.fixture(scope="session")

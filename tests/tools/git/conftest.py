@@ -16,25 +16,12 @@ if TYPE_CHECKING:
 
 # Initialize a dummy repo in a temporary directory for the tests to use
 @pytest.fixture
-def temp_repo(app: Application, temp_dir: Path, set_git_author: None) -> Path:  # noqa: ARG001
+def temp_repo(app: Application, temp_dir: Path, set_config_author_details: None) -> Path:  # noqa: ARG001
     repo_path = temp_dir / "dummy-repo"
     repo_path.mkdir()  # Don't do exist_ok, the directory should not exist
     with repo_path.as_cwd():
         app.subprocess.run(["git", "init", "--initial-branch", "main"])
     return repo_path
-
-
-@pytest.fixture
-def set_git_author(app: Application) -> None:
-    """
-    Set the git author name and email to "Test Runner" and "test.runner@example.com" respectively.
-    This is done by setting the values in the config file.
-    Any commits made by `dda` will use these values, but any calls to `git config` will still return the global git config values.
-    """
-    app.config_file.data["tools"]["git"]["author"]["name"] = "Test Runner"
-    app.config_file.data["tools"]["git"]["author"]["email"] = "test.runner@example.com"
-
-    app.config_file.save()
 
 
 # Create a dummy file in the repository - uses the previously initialized dummy repo and the "fixture factory" pattern
