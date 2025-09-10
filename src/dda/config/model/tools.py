@@ -10,19 +10,6 @@ from msgspec import Struct, field
 from dda.utils.git.constants import GitEnvVars
 
 
-class BazelConfig(Struct, frozen=True, forbid_unknown_fields=True):
-    """
-    /// tab | :octicons-file-code-16: config.toml
-    ```toml
-    [tools.bazel]
-    managed = "auto"
-    ```
-    ///
-    """
-
-    managed: bool | Literal["auto"] = "auto"
-
-
 def _get_name_from_git() -> str:
     from os import environ
 
@@ -34,14 +21,14 @@ def _get_name_from_git() -> str:
     command = ["git", "config", "--global", "--get", "user.name"]
 
     try:
-        process = subprocess.run(command, encoding="utf-8", check=True)
-    except FileNotFoundError as e:
-        msg = f"Executable `{command[0]}` not found: {command}"
-        raise FileNotFoundError(msg) from e
-    except subprocess.CalledProcessError:
-        return ""  # Needed in some contexts, e.g. docs building in CI
-
-    return process.stdout.strip()
+        return subprocess.run(
+            command,
+            encoding="utf-8",
+            capture_output=True,
+            check=True,
+        ).stdout.strip()
+    except Exception:  # noqa: BLE001
+        return ""
 
 
 def _get_email_from_git() -> str:
@@ -55,14 +42,27 @@ def _get_email_from_git() -> str:
     command = ["git", "config", "--global", "--get", "user.email"]
 
     try:
-        process = subprocess.run(command, encoding="utf-8", check=True)
-    except FileNotFoundError as e:
-        msg = f"Executable `{command[0]}` not found: {command}"
-        raise FileNotFoundError(msg) from e
-    except subprocess.CalledProcessError:
-        return ""  # Needed in some contexts, e.g. docs building in CI
+        return subprocess.run(
+            command,
+            encoding="utf-8",
+            capture_output=True,
+            check=True,
+        ).stdout.strip()
+    except Exception:  # noqa: BLE001
+        return ""
 
-    return process.stdout.strip()
+
+class BazelConfig(Struct, frozen=True, forbid_unknown_fields=True):
+    """
+    /// tab | :octicons-file-code-16: config.toml
+    ```toml
+    [tools.bazel]
+    managed = "auto"
+    ```
+    ///
+    """
+
+    managed: bool | Literal["auto"] = "auto"
 
 
 class GitAuthorConfig(Struct, frozen=True):
