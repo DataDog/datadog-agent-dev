@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from dda.utils.fs import Path
 
 
+@pytest.mark.usefixtures("set_config_author_details")
 def test_basic(
     app: Application, temp_repo: Path, create_commit_dummy_file: Callable[[Path | str, str, str], None]
 ) -> None:
