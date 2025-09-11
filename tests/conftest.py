@@ -27,6 +27,8 @@ if TYPE_CHECKING:
     import pathlib
     from collections.abc import Generator
 
+    from dda.config.model.tools import GitAuthorConfig
+
 
 class CliRunner(__CliRunner):
     def __init__(self, command):
@@ -58,7 +60,7 @@ def temp_dir(tmp_path: pathlib.Path) -> Path:
 
 
 @pytest.fixture(scope="session", autouse=True)
-def isolation() -> Generator[Path, None, None]:
+def isolation(default_git_author: GitAuthorConfig) -> Generator[Path, None, None]:
     with temp_directory() as d:
         data_dir = d / "data"
         data_dir.mkdir()
@@ -80,23 +82,14 @@ def isolation() -> Generator[Path, None, None]:
             AppEnvVars.NO_COLOR: "1",
             "PYAPP": "1",
             "DDA_SELF_TESTING": "true",
+            GitEnvVars.AUTHOR_NAME: default_git_author.name,
+            GitEnvVars.AUTHOR_EMAIL: default_git_author.email,
             "COLUMNS": "80",
             "LINES": "24",
         }
         with d.as_cwd(), EnvVars(default_env_vars):
             os.environ.pop(AppEnvVars.FORCE_COLOR, None)
             yield d
-
-
-@pytest.fixture
-def set_config_author_details(config_file: ConfigFile) -> Generator[None, None, None]:
-    config_file.data["tools"]["git"]["author"]["name"] = "Foo Bar"
-    config_file.data["tools"]["git"]["author"]["email"] = "foo@bar.baz"
-    config_file.data["github"]["auth"] = {"user": "foo", "token": "bar"}
-
-    config_file.save()
-    with EnvVars({GitEnvVars.AUTHOR_NAME: "Foo Bar", GitEnvVars.AUTHOR_EMAIL: "foo@bar.baz"}):
-        yield
 
 
 @pytest.fixture(scope="session")
@@ -153,6 +146,13 @@ def default_data_dir() -> Path:
 @pytest.fixture(scope="session")
 def default_cache_dir() -> Path:
     return Path(user_cache_dir("dda", appauthor=False))
+
+
+@pytest.fixture(scope="session")
+def default_git_author() -> GitAuthorConfig:
+    from dda.config.model.tools import GitAuthorConfig
+
+    return GitAuthorConfig(name="Foo Bar", email="foo@bar.baz")
 
 
 @pytest.fixture(scope="session")

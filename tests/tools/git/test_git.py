@@ -6,17 +6,15 @@ from __future__ import annotations
 import random
 from typing import TYPE_CHECKING
 
-import pytest
-
 from dda.utils.fs import Path
 from dda.utils.git.constants import GitEnvVars
 from dda.utils.process import EnvVars
 
 if TYPE_CHECKING:
     from dda.cli.application import Application
+    from dda.config.model.tools import GitAuthorConfig
 
 
-@pytest.mark.usefixtures("set_config_author_details")
 def test_basic(app: Application, temp_repo: Path, helpers) -> None:  # type: ignore[no-untyped-def]
     with temp_repo.as_cwd():
         assert app.tools.git.run(["status"]) == 0
@@ -27,11 +25,10 @@ def test_basic(app: Application, temp_repo: Path, helpers) -> None:  # type: ign
         assert f"Initial commit: {random_key}" in app.tools.git.capture(["log", "-1", "--oneline"])
 
 
-@pytest.mark.usefixtures("set_config_author_details")
-def test_author_details(app: Application, mocker) -> None:  # type: ignore[no-untyped-def]
+def test_author_details(app: Application, mocker, default_git_author: GitAuthorConfig) -> None:  # type: ignore[no-untyped-def]
     # Test 1: Author details coming from env vars, set by the fixture
-    assert app.tools.git.author_name == "Foo Bar"
-    assert app.tools.git.author_email == "foo@bar.baz"
+    assert app.tools.git.author_name == default_git_author.name
+    assert app.tools.git.author_email == default_git_author.email
     # Clear the cached properties
     del app.tools.git.author_name
     del app.tools.git.author_email

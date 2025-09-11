@@ -160,10 +160,10 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             env["DD_SHELL"] = self.config.shell
             if self.app.telemetry.api_key is not None:
                 env[AppEnvVars.TELEMETRY_API_KEY] = self.app.telemetry.api_key
-            if self.app.config.user.name:
-                env[GitEnvVars.AUTHOR_NAME] = self.app.config.user.name
-            if self.app.config.user.email:
-                env[GitEnvVars.AUTHOR_EMAIL] = self.app.config.user.email
+            if self.app.config.tools.git.author.name:
+                env[GitEnvVars.AUTHOR_NAME] = self.app.config.tools.git.author.name
+            if self.app.config.tools.git.author.email:
+                env[GitEnvVars.AUTHOR_EMAIL] = self.app.config.tools.git.author.email
 
             self.docker.wait(
                 command,

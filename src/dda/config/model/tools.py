@@ -34,7 +34,7 @@ def _get_name_from_git() -> str:
 def _get_email_from_git() -> str:
     from os import environ
 
-    if name := environ.get(GitEnvVars.AUTHOR_NAME):
+    if name := environ.get(GitEnvVars.AUTHOR_EMAIL):
         return name
 
     import subprocess

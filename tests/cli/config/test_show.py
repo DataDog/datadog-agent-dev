@@ -3,13 +3,13 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
-import pytest
-
 from dda.env.dev import DEFAULT_DEV_ENV
 
 
-@pytest.mark.usefixtures("set_config_author_details")
-def test_default_scrubbed(dda, helpers, default_cache_dir, default_data_dir):
+def test_default_scrubbed(dda, config_file, helpers, default_cache_dir, default_data_dir, default_git_author):
+    config_file.data["github"]["auth"] = {"user": "foo", "token": "bar"}
+    config_file.save()
+
     result = dda("config", "show")
 
     default_cache_directory = str(default_cache_dir).replace("\\", "\\\\")
@@ -30,8 +30,8 @@ def test_default_scrubbed(dda, helpers, default_cache_dir, default_data_dir):
         managed = "auto"
 
         [tools.git.author]
-        name = "Foo Bar"
-        email = "foo@bar.baz"
+        name = "{default_git_author.name}"
+        email = "{default_git_author.email}"
 
         [storage]
         data = "{default_data_directory}"
@@ -66,8 +66,7 @@ def test_default_scrubbed(dda, helpers, default_cache_dir, default_data_dir):
     )
 
 
-@pytest.mark.usefixtures("set_config_author_details")
-def test_reveal(dda, config_file, helpers, default_cache_dir, default_data_dir):
+def test_reveal(dda, config_file, helpers, default_cache_dir, default_data_dir, default_git_author):
     config_file.data["github"]["auth"] = {"user": "foo", "token": "bar"}
     config_file.save()
 
@@ -91,8 +90,8 @@ def test_reveal(dda, config_file, helpers, default_cache_dir, default_data_dir):
         managed = "auto"
 
         [tools.git.author]
-        name = "Foo Bar"
-        email = "foo@bar.baz"
+        name = "{default_git_author.name}"
+        email = "{default_git_author.email}"
 
         [storage]
         data = "{default_data_directory}"
