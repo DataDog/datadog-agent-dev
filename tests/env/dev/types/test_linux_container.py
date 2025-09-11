@@ -21,10 +21,11 @@ pytestmark = [pytest.mark.usefixtures("private_storage")]
 
 
 @pytest.fixture(autouse=True)
-def updated_config(config_file, set_config_author_details):  # noqa: ARG001
+def updated_config(config_file):
     # Allow Windows users to run these tests
     if sys.platform == "win32":
         config_file.data["env"] = {"dev": {"default-type": "linux-container"}}
+        config_file.save()
 
 
 @pytest.fixture(scope="module")

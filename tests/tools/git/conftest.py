@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 # Initialize a dummy repo in a temporary directory for the tests to use
 @pytest.fixture
-def temp_repo(app: Application, temp_dir: Path, set_config_author_details: None) -> Path:  # noqa: ARG001
+def temp_repo(app: Application, temp_dir: Path) -> Path:
     repo_path = temp_dir / "dummy-repo"
     repo_path.mkdir()  # Don't do exist_ok, the directory should not exist
     with repo_path.as_cwd():
