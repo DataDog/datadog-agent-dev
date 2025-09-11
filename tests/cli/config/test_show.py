@@ -6,7 +6,7 @@ from __future__ import annotations
 from dda.env.dev import DEFAULT_DEV_ENV
 
 
-def test_default_scrubbed(dda, config_file, helpers, default_cache_dir, default_data_dir):
+def test_default_scrubbed(dda, config_file, helpers, default_cache_dir, default_data_dir, default_git_author):
     config_file.data["github"]["auth"] = {"user": "foo", "token": "bar"}
     config_file.save()
 
@@ -29,17 +29,21 @@ def test_default_scrubbed(dda, config_file, helpers, default_cache_dir, default_
         [tools.bazel]
         managed = "auto"
 
+        [tools.git.author]
+        name = "{default_git_author.name}"
+        email = "{default_git_author.email}"
+
         [storage]
         data = "{default_data_directory}"
         cache = "{default_cache_directory}"
 
-        [git.user]
-        name = "Foo Bar"
-        email = "foo@bar.baz"
-
         [github.auth]
         user = "foo"
         token = "*****"
+
+        [user]
+        name = "auto"
+        email = "auto"
 
         [terminal]
         verbosity = 0
@@ -62,7 +66,7 @@ def test_default_scrubbed(dda, config_file, helpers, default_cache_dir, default_
     )
 
 
-def test_reveal(dda, config_file, helpers, default_cache_dir, default_data_dir):
+def test_reveal(dda, config_file, helpers, default_cache_dir, default_data_dir, default_git_author):
     config_file.data["github"]["auth"] = {"user": "foo", "token": "bar"}
     config_file.save()
 
@@ -85,17 +89,21 @@ def test_reveal(dda, config_file, helpers, default_cache_dir, default_data_dir):
         [tools.bazel]
         managed = "auto"
 
+        [tools.git.author]
+        name = "{default_git_author.name}"
+        email = "{default_git_author.email}"
+
         [storage]
         data = "{default_data_directory}"
         cache = "{default_cache_directory}"
 
-        [git.user]
-        name = "Foo Bar"
-        email = "foo@bar.baz"
-
         [github.auth]
         user = "foo"
         token = "bar"
+
+        [user]
+        name = "auto"
+        email = "auto"
 
         [terminal]
         verbosity = 0

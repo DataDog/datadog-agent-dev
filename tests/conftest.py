@@ -19,12 +19,15 @@ from dda.config.constants import AppEnvVars, ConfigEnvVars
 from dda.config.file import ConfigFile
 from dda.utils.ci import running_in_ci
 from dda.utils.fs import Path, temp_directory
+from dda.utils.git.constants import GitEnvVars
 from dda.utils.platform import PLATFORM_ID
 from dda.utils.process import EnvVars
 
 if TYPE_CHECKING:
     import pathlib
     from collections.abc import Generator
+
+    from dda.config.model.tools import GitAuthorConfig
 
 
 class CliRunner(__CliRunner):
@@ -57,7 +60,7 @@ def temp_dir(tmp_path: pathlib.Path) -> Path:
 
 
 @pytest.fixture(scope="session", autouse=True)
-def isolation() -> Generator[Path, None, None]:
+def isolation(default_git_author: GitAuthorConfig) -> Generator[Path, None, None]:
     with temp_directory() as d:
         data_dir = d / "data"
         data_dir.mkdir()
@@ -79,8 +82,8 @@ def isolation() -> Generator[Path, None, None]:
             AppEnvVars.NO_COLOR: "1",
             "PYAPP": "1",
             "DDA_SELF_TESTING": "true",
-            "GIT_AUTHOR_NAME": "Foo Bar",
-            "GIT_AUTHOR_EMAIL": "foo@bar.baz",
+            GitEnvVars.AUTHOR_NAME: default_git_author.name,
+            GitEnvVars.AUTHOR_EMAIL: default_git_author.email,
             "COLUMNS": "80",
             "LINES": "24",
         }
@@ -143,6 +146,13 @@ def default_data_dir() -> Path:
 @pytest.fixture(scope="session")
 def default_cache_dir() -> Path:
     return Path(user_cache_dir("dda", appauthor=False))
+
+
+@pytest.fixture(scope="session")
+def default_git_author() -> GitAuthorConfig:
+    from dda.config.model.tools import GitAuthorConfig
+
+    return GitAuthorConfig(name="Foo Bar", email="foo@bar.baz")
 
 
 @pytest.fixture(scope="session")

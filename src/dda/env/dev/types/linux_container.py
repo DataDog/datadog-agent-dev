@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Annotated, Any, Literal, NoReturn
 import msgspec
 
 from dda.env.dev.interface import DeveloperEnvironmentConfig, DeveloperEnvironmentInterface
+from dda.utils.git.constants import GitEnvVars
 
 if TYPE_CHECKING:
     from dda.env.models import EnvironmentStatus
@@ -89,12 +90,6 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             self.docker.wait(["start", self.container_name], message=f"Starting container: {self.container_name}")
         else:
             from dda.config.constants import AppEnvVars
-            from dda.utils._git import (
-                GIT_AUTHOR_EMAIL_ENV_VAR,
-                GIT_AUTHOR_NAME_ENV_VAR,
-                get_git_author_email,
-                get_git_author_name,
-            )
             from dda.utils.process import EnvVars
             from dda.utils.retry import wait_for
 
@@ -133,9 +128,9 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 "-e",
                 AppEnvVars.TELEMETRY_API_KEY,
                 "-e",
-                GIT_AUTHOR_NAME_ENV_VAR,
+                GitEnvVars.AUTHOR_NAME,
                 "-e",
-                GIT_AUTHOR_EMAIL_ENV_VAR,
+                GitEnvVars.AUTHOR_EMAIL,
             ))
             if self.config.arch is not None:
                 command.extend(("--platform", f"linux/{self.config.arch}"))
@@ -165,12 +160,10 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             env["DD_SHELL"] = self.config.shell
             if self.app.telemetry.api_key is not None:
                 env[AppEnvVars.TELEMETRY_API_KEY] = self.app.telemetry.api_key
-
-            if git_user := (self.app.config.git.user.name or get_git_author_name()):
-                env[GIT_AUTHOR_NAME_ENV_VAR] = git_user
-
-            if git_email := (self.app.config.git.user.email or get_git_author_email()):
-                env[GIT_AUTHOR_EMAIL_ENV_VAR] = git_email
+            if self.app.config.tools.git.author.name:
+                env[GitEnvVars.AUTHOR_NAME] = self.app.config.tools.git.author.name
+            if self.app.config.tools.git.author.email:
+                env[GitEnvVars.AUTHOR_EMAIL] = self.app.config.tools.git.author.email
 
             self.docker.wait(
                 command,

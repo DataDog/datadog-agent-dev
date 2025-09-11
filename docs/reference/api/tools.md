@@ -8,6 +8,7 @@
       - docker
       - go
       - uv
+      - git
 
 ::: dda.tools.docker.Docker
     options:
@@ -18,5 +19,9 @@
       members: []
 
 ::: dda.tools.uv.UV
+    options:
+      members: []
+
+::: dda.tools.git.Git
     options:
       members: []

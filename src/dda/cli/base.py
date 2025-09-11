@@ -140,8 +140,11 @@ class DynamicContext(click.RichContext):
             metadata = {
                 "cli.command": join_command_args(sys.argv[1:]),
                 "cli.exit_code": str(exit_code),
-                "git.author.name": app.config.git.user.name,
-                "git.author.email": app.config.git.user.email,
+                "author.name": app.telemetry.user_name,
+                "author.email": app.telemetry.user_email,
+                # TODO: Remove this once the new keys are fully rolled out
+                "git.author.name": app.telemetry.user_name,
+                "git.author.email": app.telemetry.user_email,
             }
             if os.environ.get("PRE_COMMIT") == "1":
                 metadata["exec.source"] = "pre-commit"

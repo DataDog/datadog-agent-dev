@@ -15,6 +15,7 @@ import pytest
 from dda.config.constants import AppEnvVars
 from dda.env.dev.types.linux_container import LinuxContainer
 from dda.utils.fs import Path
+from dda.utils.git.constants import GitEnvVars
 
 pytestmark = [pytest.mark.usefixtures("private_storage")]
 
@@ -215,9 +216,9 @@ class TestStart:
                         "-e",
                         AppEnvVars.TELEMETRY_API_KEY,
                         "-e",
-                        "GIT_AUTHOR_NAME",
+                        GitEnvVars.AUTHOR_NAME,
                         "-e",
-                        "GIT_AUTHOR_EMAIL",
+                        GitEnvVars.AUTHOR_EMAIL,
                         *starship_mount,
                         "-v",
                         f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
@@ -291,9 +292,9 @@ class TestStart:
                         "-e",
                         AppEnvVars.TELEMETRY_API_KEY,
                         "-e",
-                        "GIT_AUTHOR_NAME",
+                        GitEnvVars.AUTHOR_NAME,
                         "-e",
-                        "GIT_AUTHOR_EMAIL",
+                        GitEnvVars.AUTHOR_EMAIL,
                         *starship_mount,
                         "-v",
                         f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
@@ -381,7 +382,7 @@ class TestStart:
                         "-e",
                         AppEnvVars.TELEMETRY_API_KEY,
                         "-e",
-                        "GIT_AUTHOR_NAME",
+                        GitEnvVars.AUTHOR_NAME,
                         "-e",
                         "GIT_AUTHOR_EMAIL",
                         *starship_mount,
@@ -465,9 +466,9 @@ class TestStart:
                         "-e",
                         AppEnvVars.TELEMETRY_API_KEY,
                         "-e",
-                        "GIT_AUTHOR_NAME",
+                        GitEnvVars.AUTHOR_NAME,
                         "-e",
-                        "GIT_AUTHOR_EMAIL",
+                        GitEnvVars.AUTHOR_EMAIL,
                         *starship_mount,
                         "-v",
                         f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
@@ -544,9 +545,9 @@ class TestStart:
                         "-e",
                         AppEnvVars.TELEMETRY_API_KEY,
                         "-e",
-                        "GIT_AUTHOR_NAME",
+                        GitEnvVars.AUTHOR_NAME,
                         "-e",
-                        "GIT_AUTHOR_EMAIL",
+                        GitEnvVars.AUTHOR_EMAIL,
                         *starship_mount,
                         "-v",
                         f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
