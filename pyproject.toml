@@ -237,9 +237,9 @@ scripts = ["dda"]
 packages = ["src/dda"]
 
 [tool.hatch.build.targets.wheel.shared-data]
-"uv.lock" = "dda-data/uv.lock"
+"uv.lock" = "share/dda-data/uv.lock"
 # TODO: remove when this is fixed https://github.com/astral-sh/uv/issues/6722
-"pyproject.toml" = "dda-data/pyproject.toml"
+"pyproject.toml" = "share/dda-data/pyproject.toml"
 
 [tool.hatch.build.hooks.vcs]
 version-file = "src/dda/_version.py"
