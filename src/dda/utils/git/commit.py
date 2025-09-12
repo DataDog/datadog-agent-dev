@@ -7,7 +7,7 @@ from datetime import datetime
 from functools import cached_property
 from typing import TYPE_CHECKING, Any
 
-from msgspec import Struct, field
+from msgspec import Struct
 
 from dda.utils.git.changeset import ChangeSet
 
@@ -18,15 +18,12 @@ if TYPE_CHECKING:
     from dda.utils.git.remote import Remote
 
 
-class Commit(Struct, dict=True):
+class Commit(Struct, frozen=True, dict=True):
     """
     A Git commit, identified by its SHA-1 hash.
     """
 
     sha1: str
-
-    _details: CommitDetails | None = field(default=None)
-    _changes: ChangeSet | None = field(default=None)
 
     def __post_init__(self) -> None:
         if len(self.sha1) != 40:  # noqa: PLR2004
@@ -56,8 +53,8 @@ class Commit(Struct, dict=True):
 
     def get_details_and_changes_from_remote(self, remote: Remote) -> tuple[CommitDetails, ChangeSet]:
         details, changes = remote.get_details_and_changes_for_commit(self)
-        self._details = details
-        self._changes = changes
+        self.__dict__["details"] = details
+        self.__dict__["changes"] = changes
         return details, changes
 
     def get_details_from_remote(self, remote: Remote) -> CommitDetails:
@@ -70,29 +67,25 @@ class Commit(Struct, dict=True):
 
         Prefer to use this method when possible, as it is much faster than querying the remote API.
         """
-        self._details = app.tools.git.get_commit_details(self.sha1)
+        self.__dict__["details"] = app.tools.git.get_commit_details(self.sha1)
         return self.details
 
     def get_changes_from_remote(self, remote: Remote) -> ChangeSet:
         return self.get_details_and_changes_from_remote(remote)[1]
 
     def get_changes_from_git(self, app: Application) -> ChangeSet:
-        self._changes = app.tools.git.get_commit_changes(self.sha1)
+        self.__dict__["changes"] = app.tools.git.get_commit_changes(self.sha1)
         return self.changes
 
     @cached_property
     def details(self) -> CommitDetails:
-        if self._details is None:
-            msg = "Commit details have not been fetched yet. Call one of the get_details_from_*() methods first."
-            raise AttributeError(msg)
-        return self._details
+        msg = "Commit details have not been fetched yet. Call one of the get_details_from_*() methods first."
+        raise AttributeError(msg)
 
     @cached_property
     def changes(self) -> ChangeSet:
-        if self._changes is None:
-            msg = "Commit changes have not been fetched yet. Call one of the get_changes_from_*() methods first."
-            raise AttributeError(msg)
-        return self._changes
+        msg = "Commit changes have not been fetched yet. Call one of the get_changes_from_*() methods first."
+        raise AttributeError(msg)
 
     # Proxy properties to access details directly from the Commit object
     @property

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
+import pytest
 from httpx import Response
 
 from dda.utils.fs import Path
@@ -16,6 +17,26 @@ class TestCommitClass:
     def test_basic(self):
         commit = Commit(sha1="82ee754ca931816902ac7e6e38f66a51e65912f9")
         assert commit.sha1 == "82ee754ca931816902ac7e6e38f66a51e65912f9"
+
+    def test_equality(self):
+        commit1 = Commit(sha1="82ee754ca931816902ac7e6e38f66a51e65912f9")
+        commit2 = Commit(sha1="82ee754ca931816902ac7e6e38f66a51e65912f9")
+
+        # Basic equality
+        assert commit1 == commit2
+
+        # Add details to one of the commits
+        commit1.__dict__["details"] = CommitDetails(
+            author_name="John Doe",
+            author_email="john.doe@example.com",
+            datetime=datetime.now(tz=UTC),
+            message="This is a test message",
+            parent_shas=["1234567890" * 4],
+        )
+        # Should still be equal
+        with pytest.raises(AttributeError):
+            commit2.details  # noqa: B018
+        assert commit1 == commit2
 
     # Already tested in tools/test_git.py
     def test_head(self):
@@ -43,8 +64,7 @@ class TestCommitClass:
             "parent_shas": ["82ee754ca931816902ac7e6e38f66a51e65912f9"],
         }
         commit_details = CommitDetails(**details_dict)
-        commit._details = commit_details  # noqa: SLF001
-        assert commit.details == commit_details
+        commit.__dict__["details"] = commit_details
         for prop, expected_value in details_dict.items():
             assert getattr(commit, prop) == getattr(commit_details, prop)
             assert getattr(commit, prop) == expected_value
