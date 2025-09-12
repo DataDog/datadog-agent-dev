@@ -3,16 +3,18 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
+from datetime import datetime
 from functools import cached_property
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from msgspec import Struct, field
+
+from dda.utils.git.changeset import ChangeSet
 
 if TYPE_CHECKING:
     from datetime import datetime
 
     from dda.cli.application import Application
-    from dda.utils.git.changeset import ChangeSet
     from dda.utils.git.remote import Remote
 
 
@@ -112,6 +114,16 @@ class Commit(Struct, dict=True):
     @property
     def parent_shas(self) -> list[str]:
         return self.details.parent_shas
+
+    @classmethod
+    def enc_hook(cls, obj: Any) -> Any:
+        # Only unsupported objects are ChangeSet objects
+        return ChangeSet.enc_hook(obj)
+
+    @classmethod
+    def dec_hook(cls, obj_type: type, obj: Any) -> Any:
+        # Only unsupported objects are ChangeSet objects
+        return ChangeSet.dec_hook(obj_type, obj)
 
 
 class CommitDetails(Struct):
