@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import TYPE_CHECKING
+from uuid import UUID  # noqa: TC003 - needed outside of typecheck for msgspec decode
 
 from msgspec import Struct
 
@@ -27,7 +28,7 @@ class BuildMetadata(Struct, frozen=True):
     """
 
     # Basic fields
-    id: int
+    id: UUID
     agent_components: set[str]
     artifact_type: ArtifactType
     artifact_format: ArtifactFormat
@@ -102,10 +103,10 @@ class BuildMetadata(Struct, frozen=True):
         )
 
 
-def generate_build_id() -> int:
+def generate_build_id() -> UUID:
     """
     Generate a unique build ID.
     """
-    # TODO: Implement - maybe use UUIDs ? Will be unwieldly to pass them on the command line.
-    # Or maybe use a hash of the "important" fields of the metadata (i.e. agent_components, artifact_type, artifact_format, worktree_diff, compatible_platforms)
-    return 0
+    from uuid import uuid4
+
+    return uuid4()
