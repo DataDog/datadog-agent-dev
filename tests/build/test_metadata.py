@@ -6,6 +6,7 @@ from __future__ import annotations
 import platform
 from datetime import UTC, datetime
 from typing import Any
+from uuid import UUID
 
 import msgspec
 import pytest
@@ -46,7 +47,7 @@ class TestMetadata:
         now = datetime.now(tz=UTC)
         commit = example_commit
         metadata = BuildMetadata(
-            id=0,
+            id=UUID("00000000-0000-0000-0000-000000000000"),
             agent_components={"core-agent"},
             artifact_format=ArtifactFormat.BIN,
             artifact_type=ArtifactType.COMP,
@@ -83,7 +84,7 @@ class TestMetadata:
         expected_agent_components, expected_artifact_type, expected_artifact_format = expected
         build_platform = (OS.from_alias(platform.system().lower()), Arch.from_alias(platform.machine()))
         expected = {
-            "id": 0,
+            "id": UUID("00000000-0000-0000-0000-000000000000"),
             "agent_components": expected_agent_components,
             "artifact_type": expected_artifact_type,
             "artifact_format": expected_artifact_format,
@@ -125,7 +126,7 @@ class TestMetadata:
         "obj_data",
         [
             {
-                "id": 1234,
+                "id": UUID("12345678-0000-0000-0000-000000000000"),
                 "agent_components": {"core-agent"},
                 "artifact_format": ArtifactFormat.BIN,
                 "artifact_type": ArtifactType.COMP,
@@ -134,7 +135,7 @@ class TestMetadata:
                 "build_time": datetime.now(UTC),
             },
             {
-                "id": 56789,
+                "id": UUID("00000000-0000-0000-0000-123456780000"),
                 "agent_components": {"core-agent", "trace-agent"},
                 "artifact_format": ArtifactFormat.RPM,
                 "artifact_type": ArtifactType.DIST,
