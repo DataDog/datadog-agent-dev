@@ -138,6 +138,50 @@ class BuildMetadata(Struct, frozen=True):
 
         return decode(path.read_text(encoding="utf-8"), type=cls, dec_hook=dec_hook)
 
+    def get_canonical_filename(self) -> str:
+        """
+        Get a predictable filename corresponding to the artifact represented by this metadata.
+        Schema is: `{components}-{source info}-{short uuid}-{compatibility}-{artifact format identifier}`.
+        Where:
+        - `components` is the name of the agent component.
+            For components named `x-agent`, we will use `x` instead, omitting the `-agent` suffix.
+            Any `-` characters will be replaced with `_`.
+            If there are multiple components, a comma-separated list will be used, sorted alphabetically.
+        - `short uuid` is the first section of the UUID..
+        - `source_info` is the short commit SHA, appended with `+` if there are working tree changes
+        - `compatibility` is a platform identifier, e.g. `linux-arm64`. If there are multiple compatible platforms, the string `many` will be used instead.
+        - `artifact_format_identifier` gives info on the contents of the artifact when it is a dist. See `ArtifactFormat.get_file_identifier` for more details.
+        NOTE: For binaries, we do not use `.bin`, instead leaving the file extension blank.
+
+        Returns:
+            A predictable filename corresponding to the artifact represented by this metadata.
+        """
+        # TODO: Discuss this schema in a document, this is a first idea
+
+        # Components
+        components = ",".join(
+            sorted(component.replace("-agent", "").replace("-", "_") for component in self.agent_components)
+        )
+
+        # Short UUID
+        short_uuid = self.id.urn.split(":")[2].split("-")[0]
+
+        # Source info
+        source_info = self.commit.sha1[:8]
+        if self.worktree_diff:
+            source_info += "+"
+
+        # Compatibility
+        if len(self.compatible_platforms) > 1:
+            compatibility = "many"
+        else:
+            platform = self.compatible_platforms.copy().pop()
+            compatibility = f"{platform[0]}-{platform[1]}"
+
+        # Artifact format identifier
+        artifact_format_identifier = self.artifact_format.get_file_identifier()
+        return f"{components}-{source_info}-{short_uuid}-{compatibility}{artifact_format_identifier}"
+
 
 def generate_build_id() -> UUID:
     """

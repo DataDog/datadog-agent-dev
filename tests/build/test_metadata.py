@@ -225,3 +225,66 @@ class TestMetadata:
         path = Path(__file__).parent / "fixtures" / "build_metadata.json"
         obj = BuildMetadata.from_file(path)
         assert_metadata_equal(obj, example_build_metadata)
+
+    @pytest.mark.parametrize(
+        ("obj_data", "expected"),
+        [
+            (
+                {
+                    "id": UUID("db5fec1a-7fce-42e9-a29b-13a8cc6a5493"),
+                    "agent_components": {"core-agent", "trace-agent"},
+                    "artifact_format": ArtifactFormat.RPM,
+                    "artifact_type": ArtifactType.DIST,
+                    "compatible_platforms": {(OS.LINUX, Arch.AMD64)},
+                    "build_platform": (OS.MACOS, Arch.ARM64),
+                    "build_time": datetime.now(UTC),
+                    "file_hash": "0" * 64,
+                },
+                "core,trace-12345678-db5fec1a-linux-amd64.rpm",
+            ),
+            (
+                {
+                    "id": UUID("db5fec1a-7fce-42e9-a29b-13a8cc6a5493"),
+                    "agent_components": {"dogstatd"},
+                    "artifact_format": ArtifactFormat.BIN,
+                    "artifact_type": ArtifactType.COMP,
+                    "compatible_platforms": {(OS.LINUX, Arch.AMD64)},
+                    "build_platform": (OS.MACOS, Arch.ARM64),
+                    "build_time": datetime.now(UTC),
+                    "file_hash": "0" * 64,
+                    "worktree_diff": ChangeSet([
+                        ChangedFile(
+                            path=Path("test.txt"),
+                            type=ChangeType.ADDED,
+                            patch="@@ -0,0 +1 @@\n+test",
+                            binary=False,
+                        ),
+                    ]),
+                },
+                "dogstatd-12345678+-db5fec1a-linux-amd64",
+            ),
+            (
+                {
+                    "id": UUID("db5fec1a-7fce-42e9-a29b-13a8cc6a5493"),
+                    "agent_components": {"core-agent", "system-probe", "dogstatsd"},
+                    "artifact_format": ArtifactFormat.DOCKER,
+                    "artifact_type": ArtifactType.DIST,
+                    "compatible_platforms": {
+                        (OS.LINUX, Arch.AMD64),
+                        (OS.MACOS, Arch.ARM64),
+                        (OS.LINUX, Arch.ARM64),
+                        (OS.MACOS, Arch.AMD64),
+                    },
+                    "build_platform": (OS.MACOS, Arch.ARM64),
+                    "build_time": datetime.now(UTC),
+                    "file_hash": "0" * 64,
+                },
+                "core,dogstatsd,system_probe-12345678-db5fec1a-many-dockerimage.tar.gz",
+            ),
+        ],
+    )
+    def test_get_canonical_filename(self, obj_data, example_commit, expected):
+        if "worktree_diff" not in obj_data:
+            obj_data["worktree_diff"] = ChangeSet({})
+        obj = BuildMetadata(**obj_data, commit=example_commit)
+        assert obj.get_canonical_filename() == expected
