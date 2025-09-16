@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from click import Context
 
     from dda.cli.application import Application
+    from dda.utils.fs import Path
 
 
 class BuildMetadata(Struct, frozen=True):
@@ -101,6 +102,16 @@ class BuildMetadata(Struct, frozen=True):
             build_time=build_time,
             worktree_diff=worktree_diff,
         )
+
+    def to_file(self, path: Path) -> None:
+        """
+        Write the build metadata to a file.
+        """
+        from msgspec.json import encode
+
+        from dda.config.model import enc_hook
+
+        path.write_atomic(encode(self, enc_hook=enc_hook), "wb")
 
 
 def generate_build_id() -> UUID:
