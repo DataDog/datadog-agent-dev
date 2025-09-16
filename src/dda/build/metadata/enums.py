@@ -49,6 +49,30 @@ class ArtifactFormat(StrEnum):
                     msg = f"Invalid artifact format for other artifact: {self}"
                     raise ValueError(msg)
 
+    def get_file_identifier(self) -> str:
+        """
+        Get the file identifier for the artifact format.
+        This is the string that will be used to identify the artifact format in the filename.
+        This usually corresponds to the file extension, but can include some other charactres before it.
+        """
+        match self:
+            case self.BIN:
+                return ""
+            case self.SRC:
+                return "-source.tar.gz"
+            case self.DEB:
+                return ".deb"
+            case self.RPM:
+                return ".rpm"
+            case self.MSI:
+                return ".msi"
+            case self.CFG:
+                return "-config.tar.gz"
+            case self.DOCKER:
+                return "-dockerimage.tar.gz"
+        # Adding a default return value to satisfy mypy, even though we should never reach here
+        return ""
+
 
 # TODO: Merge this code with stuff in dda.utils.platform
 # we should have a single source of truth for OS and Arch identifiers and use it everywhere imo
