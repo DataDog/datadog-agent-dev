@@ -42,5 +42,6 @@
         "macos",
         "arm64"
     ],
-    "build_time": "2025-09-16T12:54:34.820949Z"
+    "build_time": "2025-09-16T12:54:34.820949Z",
+    "file_hash": "4a23f9863c45f043ececc0f82bf95ae9e4ff377ec2bb587a61ea7a75a3621115"
 }

@@ -49,6 +49,7 @@ def example_build_metadata(example_commit: Commit) -> BuildMetadata:
                 binary=False,
             )
         ]),
+        file_hash="4a23f9863c45f043ececc0f82bf95ae9e4ff377ec2bb587a61ea7a75a3621115",
     )
 
 
@@ -79,6 +80,7 @@ class TestMetadata:
             build_platform=(OS.LINUX, Arch.AMD64),
             build_time=now,
             worktree_diff=ChangeSet({}),
+            file_hash="0" * 64,
         )
         expected = {
             "agent_components": {"core-agent"},
@@ -89,6 +91,7 @@ class TestMetadata:
             "build_platform": (OS.LINUX, Arch.AMD64),
             "build_time": now,
             "worktree_diff": ChangeSet({}),
+            "file_hash": "0" * 64,
         }
         assert_metadata_equal(metadata, expected)
 
@@ -118,6 +121,7 @@ class TestMetadata:
             "worktree_diff": ChangeSet([
                 ChangedFile(path=Path("test.txt"), type=ChangeType.ADDED, patch="@@ -0,0 +1 @@\n+test", binary=False)
             ]),
+            "file_hash": "0" * 64,
         }
 
         # Setup mocks
@@ -126,13 +130,17 @@ class TestMetadata:
         mocker.patch("dda.build.metadata.metadata.generate_build_id", return_value=expected["id"])
         mocker.patch("dda.tools.git.Git.get_commit", return_value=expected["commit"])
         mocker.patch("dda.tools.git.Git.get_changes", return_value=expected["worktree_diff"])
+        mocker.patch("dda.build.metadata.metadata.calculate_file_hash", return_value=expected["file_hash"])
 
         # Can't directly patch datetime.now because it's a builtin
         patched_datetime = mocker.patch("dda.build.metadata.metadata.datetime")
         patched_datetime.now.return_value = expected["build_time"]
-
         # Test without special arguments
-        metadata = BuildMetadata.this(ctx, app)
+        metadata = BuildMetadata.this(
+            ctx,
+            app,
+            Path("test.txt"),
+        )
 
         assert_metadata_equal(metadata, expected)
 
@@ -141,6 +149,7 @@ class TestMetadata:
         metadata = BuildMetadata.this(
             ctx,
             app,
+            Path("test.txt"),
             compatible_platforms=expected["compatible_platforms"],
         )
         assert_metadata_equal(metadata, expected)
@@ -156,6 +165,7 @@ class TestMetadata:
                 "compatible_platforms": {(OS.LINUX, Arch.AMD64)},
                 "build_platform": (OS.LINUX, Arch.AMD64),
                 "build_time": datetime.now(UTC),
+                "file_hash": "0" * 64,
             },
             {
                 "id": UUID("00000000-0000-0000-0000-123456780000"),
@@ -165,6 +175,7 @@ class TestMetadata:
                 "compatible_platforms": {(OS.LINUX, Arch.AMD64), (OS.MACOS, Arch.ARM64)},
                 "build_platform": (OS.MACOS, Arch.ARM64),
                 "build_time": datetime.now(UTC),
+                "file_hash": "0" * 64,
             },
         ],
     )

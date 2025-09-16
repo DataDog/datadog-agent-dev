@@ -45,12 +45,22 @@ class BuildMetadata(Struct, frozen=True):
     build_platform: Platform
     build_time: datetime
 
+    # File-related fields
+    file_hash: str
+
     def __post_init__(self) -> None:
         self.artifact_format.validate_for_type(self.artifact_type)
+        if self.artifact_type == ArtifactType.COMP and len(self.agent_components) != 1:
+            msg = "An agent component artifact can only represent a single component"
+            raise ValueError(msg)
+
+        if not (all(x in "0123456789abcdef" for x in self.file_hash) and len(self.file_hash) == 64):  # noqa: PLR2004
+            msg = "Invalid format for the specified file hash"
+            raise ValueError(msg)
 
     @classmethod
     def this(
-        cls, ctx: Context, app: Application, *, compatible_platforms: Iterable[Platform] | None = None
+        cls, ctx: Context, app: Application, file: Path, *, compatible_platforms: Iterable[Platform] | None = None
     ) -> BuildMetadata:
         """
         Create a BuildMetadata instance for the current build.
@@ -91,6 +101,9 @@ class BuildMetadata(Struct, frozen=True):
         worktree_diff = app.tools.git.get_changes("HEAD", start="HEAD", working_tree=True)
         commit = app.tools.git.get_commit()
 
+        # Calculate file hash
+        file_hash = calculate_file_hash(file)
+
         return cls(
             id=artifact_id,
             agent_components=agent_components,
@@ -101,6 +114,7 @@ class BuildMetadata(Struct, frozen=True):
             build_platform=build_platform,
             build_time=build_time,
             worktree_diff=worktree_diff,
+            file_hash=file_hash,
         )
 
     def to_file(self, path: Path) -> None:
@@ -132,3 +146,12 @@ def generate_build_id() -> UUID:
     from uuid import uuid4
 
     return uuid4()
+
+
+def calculate_file_hash(file: Path) -> str:
+    """
+    Calculate the hash of a file.
+    """
+    import hashlib
+
+    return hashlib.sha256(file.read_bytes(), usedforsecurity=False).hexdigest()
