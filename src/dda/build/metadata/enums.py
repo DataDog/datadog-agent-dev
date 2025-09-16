@@ -88,6 +88,9 @@ class OS(StrEnum):
     WINDOWS = auto()
     MACOS = auto()
 
+    # Any OS - used for indicating compatibility with any operating system
+    ANY = auto()
+
     @classmethod
     def from_alias(cls, alias: str) -> "OS":
         """
@@ -100,6 +103,8 @@ class OS(StrEnum):
                 return cls.WINDOWS
             case "macos" | "darwin" | "osx":
                 return cls.MACOS
+            case "any":
+                return cls.ANY
             case _:
                 msg = f"Invalid OS identifier: {alias}"
                 raise ValueError(msg)
@@ -119,6 +124,9 @@ class Arch(StrEnum):
     # ARMHF architectures
     ARMHF = auto()
 
+    # Any architecture - used for indicating compatibility with any CPU architecture
+    ANY = auto()
+
     @classmethod
     def from_alias(cls, alias: str) -> "Arch":
         """
@@ -129,6 +137,8 @@ class Arch(StrEnum):
                 return cls.AMD64
             case "arm64" | "aarch64" | "arm" | "aarch":
                 return cls.ARM64
+            case "any":
+                return cls.ANY
             case _:
                 msg = f"Invalid Arch identifier: {alias}"
                 raise ValueError(msg)
