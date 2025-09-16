@@ -281,6 +281,20 @@ class TestMetadata:
                 },
                 "core,dogstatsd,system_probe-12345678-db5fec1a-many-dockerimage.tar.gz",
             ),
+            (
+                {
+                    "id": UUID("db5fec1a-7fce-42e9-a29b-13a8cc6a5493"),
+                    "agent_components": {"core-agent"},
+                    "artifact_format": ArtifactFormat.CFG,
+                    "artifact_type": ArtifactType.OTHER,
+                    "compatible_platforms": {(OS.ANY, Arch.ANY)},
+                    "build_platform": (OS.MACOS, Arch.ARM64),
+                    "build_time": datetime.now(UTC),
+                    "file_hash": "0" * 64,
+                    "worktree_diff": ChangeSet([]),
+                },
+                "core-12345678-db5fec1a-any-config.tar.gz",
+            ),
         ],
     )
     def test_get_canonical_filename(self, obj_data, example_commit, expected):

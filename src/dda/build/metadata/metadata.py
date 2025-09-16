@@ -58,6 +58,15 @@ class BuildMetadata(Struct, frozen=True):
             msg = "Invalid format for the specified file hash"
             raise ValueError(msg)
 
+        os_set = {platform[0] for platform in self.compatible_platforms}
+        arch_set = {platform[1] for platform in self.compatible_platforms}
+        if OS.ANY in os_set and len(os_set) > 1:
+            msg = "Cannot use both the 'any' OS and other OSs in compatible platforms"
+            raise ValueError(msg)
+        if Arch.ANY in arch_set and len(arch_set) > 1:
+            msg = "Cannot have both any architecture and other architectures in compatible platforms"
+            raise ValueError(msg)
+
     @classmethod
     def this(
         cls, ctx: Context, app: Application, file: Path, *, compatible_platforms: Iterable[Platform] | None = None
@@ -149,7 +158,9 @@ class BuildMetadata(Struct, frozen=True):
             If there are multiple components, a comma-separated list will be used, sorted alphabetically.
         - `short uuid` is the first section of the UUID..
         - `source_info` is the short commit SHA, appended with `+` if there are working tree changes
-        - `compatibility` is a platform identifier, e.g. `linux-arm64`. If there are multiple compatible platforms, the string `many` will be used instead.
+        - `compatibility` is a platform identifier, e.g. `linux-arm64`.
+            If there are multiple compatible platforms, the string `many` will be used instead.
+            If the platform compatibility is `any, any`, the string `any` will be used instead.
         - `artifact_format_identifier` gives info on the contents of the artifact when it is a dist. See `ArtifactFormat.get_file_identifier` for more details.
         NOTE: For binaries, we do not use `.bin`, instead leaving the file extension blank.
 
@@ -172,11 +183,15 @@ class BuildMetadata(Struct, frozen=True):
             source_info += "+"
 
         # Compatibility
-        if len(self.compatible_platforms) > 1:
+        if (OS.ANY, Arch.ANY) in self.compatible_platforms:
+            compatibility = "any"
+        elif len(self.compatible_platforms) > 1:
             compatibility = "many"
         else:
+            # Also handles the case in which os is `any` or `arch` is `any`
             platform = self.compatible_platforms.copy().pop()
-            compatibility = f"{platform[0]}-{platform[1]}"
+            os, arch = platform
+            compatibility = f"{os}-{arch}"
 
         # Artifact format identifier
         artifact_format_identifier = self.artifact_format.get_file_identifier()
