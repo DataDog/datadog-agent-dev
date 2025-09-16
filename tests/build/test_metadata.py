@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
+import json
 import platform
 from datetime import UTC, datetime
 from typing import Any
@@ -27,6 +28,28 @@ def example_author() -> GitPersonDetails:
 @pytest.fixture
 def example_commit(example_author: GitPersonDetails) -> Commit:
     return Commit(sha1="1234567890" * 4, author=example_author, committer=example_author, message="test")
+
+
+@pytest.fixture
+def example_build_metadata(example_commit: Commit) -> BuildMetadata:
+    return BuildMetadata(
+        id=UUID("00000000-0000-0000-0000-123456780000"),
+        agent_components={"core-agent", "trace-agent"},
+        artifact_format=ArtifactFormat.RPM,
+        artifact_type=ArtifactType.DIST,
+        commit=example_commit,
+        compatible_platforms={(OS.LINUX, Arch.AMD64), (OS.MACOS, Arch.ARM64)},
+        build_platform=(OS.MACOS, Arch.ARM64),
+        build_time=datetime.fromisoformat("2025-09-16T12:54:34.820949Z"),
+        worktree_diff=ChangeSet([
+            ChangedFile(
+                path=Path("test.txt"),
+                type=ChangeType.ADDED,
+                patch="@@ -0,0 +1 @@\n+test",
+                binary=False,
+            )
+        ]),
+    )
 
 
 def assert_metadata_equal(metadata: BuildMetadata, expected: BuildMetadata | dict[str, Any]) -> None:
@@ -165,3 +188,29 @@ class TestMetadata:
             encoded_obj = msgspec.json.encode(obj, enc_hook=enc_hook)
             decoded_obj = msgspec.json.decode(encoded_obj, type=BuildMetadata, dec_hook=dec_hook)
             assert_metadata_equal(decoded_obj, obj)
+
+    def test_to_file(self, temp_dir, example_build_metadata):
+        path = temp_dir / "build_metadata.json"
+        example_build_metadata.to_file(path)
+        text = path.read_text(encoding="utf-8")
+
+        expected = (Path(__file__).parent / "fixtures" / "build_metadata.json").read_text(encoding="utf-8")
+
+        # Compare both decoded jsons are equal - we decode to avoid being affected by key ordering or whitespace
+        encoded = json.loads(text)
+        expected = json.loads(expected)
+
+        encoded_keys = set(encoded.keys())
+        expected_keys = set(expected.keys())
+        assert encoded_keys == expected_keys
+        for key in encoded_keys:
+            encoded_value, expected_value = encoded[key], expected[key]
+            if isinstance(encoded_value, list):
+                assert sorted(encoded_value) == sorted(expected_value)
+            else:
+                assert encoded_value == expected_value
+
+    def test_from_file(self, example_build_metadata):
+        path = Path(__file__).parent / "fixtures" / "build_metadata.json"
+        obj = BuildMetadata.from_file(path)
+        assert_metadata_equal(obj, example_build_metadata)

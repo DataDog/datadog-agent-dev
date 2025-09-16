@@ -1,0 +1,46 @@
+{
+    "id": "00000000-0000-0000-0000-123456780000",
+    "agent_components": [
+        "trace-agent",
+        "core-agent"
+    ],
+    "artifact_type": "dist",
+    "artifact_format": "rpm",
+    "commit": {
+        "sha1": "1234567890123456789012345678901234567890",
+        "author": {
+            "name": "John Doe",
+            "email": "john.doe@example.com",
+            "timestamp": 1717171717
+        },
+        "committer": {
+            "name": "John Doe",
+            "email": "john.doe@example.com",
+            "timestamp": 1717171717
+        },
+        "message": "test"
+    },
+    "worktree_diff": [
+        {
+            "path": "test.txt",
+            "type": "A",
+            "patch": "@@ -0,0 +1 @@\n+test",
+            "binary": false
+        }
+    ],
+    "compatible_platforms": [
+        [
+            "linux",
+            "amd64"
+        ],
+        [
+            "macos",
+            "arm64"
+        ]
+    ],
+    "build_platform": [
+        "macos",
+        "arm64"
+    ],
+    "build_time": "2025-09-16T12:54:34.820949Z"
+}
