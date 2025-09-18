@@ -8,7 +8,6 @@ from functools import cached_property
 from typing import TYPE_CHECKING, Any
 
 from dda.tools.base import ExecutionContext, Tool
-from dda.utils.fs import Path
 from dda.utils.git.changeset import ChangeSet
 from dda.utils.git.constants import GitEnvVars
 from dda.utils.git.remote import Remote
@@ -16,6 +15,7 @@ from dda.utils.git.remote import Remote
 if TYPE_CHECKING:
     from collections.abc import Generator
 
+    from dda.utils.fs import Path
     from dda.utils.git.commit import Commit, CommitDetails
 
 
@@ -126,31 +126,13 @@ class Git(Tool):
             parent_shas=list(parents_str.split()),
         )
 
-    def commit_files(self, files: dict[Path, str], *, commit_message: str) -> None:
-        """
-        Create and commits the given files with the contents provided.
-        If any files already exist, they will be overwritten:
-        this will result in a commit with changes instead of simple additions.
-        """
-        paths_not_under_cwd = [
-            str(path) for path in files if path.is_absolute() and not path.is_relative_to(Path.cwd())
-        ]
-        if paths_not_under_cwd:
-            msg = f"All files must be under the current working directory, offending: {paths_not_under_cwd}"
-            raise ValueError(msg)
-
-        for path, content in files.items():
-            path.write_text(content)
-
-        relative_paths = [str(path.absolute().relative_to(Path.cwd())) for path in files]
-        self.run(["add", *relative_paths])
-        self.run(["commit", "-m", commit_message])
-
     def commit_file(self, path: Path, *, content: str, commit_message: str) -> None:
         """
         Create and commit a single file with the given content.
         """
-        self.commit_files({path: content}, commit_message=commit_message)
+        path.write_text(content)
+        self.run(["add", str(path)])  # Will fail if path is not under cwd
+        self.run(["commit", "-m", commit_message])
 
     def _capture_diff_lines(self, *args: str, **kwargs: Any) -> list[str]:
         diff_args = [

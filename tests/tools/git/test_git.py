@@ -98,20 +98,11 @@ def test_get_commit_details(app: Application, temp_repo: Path, default_git_autho
         assert details.parent_shas == [parent_sha1]
 
 
-def test_commit_files(app: Application, temp_repo: Path) -> None:
+def test_commit_file(app: Application, temp_repo: Path) -> None:
     with temp_repo.as_cwd():
-        random_key = random.randint(1, 1000000)
-        app.tools.git.commit_files(
-            {Path("hello.txt"): "world", Path("foo.txt"): "bar"}, commit_message=f"Initial commit: {random_key}"
-        )
-        assert f"Initial commit: {random_key}" in app.tools.git.capture(["log", "-1", "--oneline"])
+        app.tools.git.commit_file(Path("hello.txt"), content="world", commit_message="Brand-new commit")
+        assert "Brand-new commit" in app.tools.git.capture(["log", "-1", "--oneline"])
         assert Path("hello.txt").read_text() == "world"
-        assert Path("foo.txt").read_text() == "bar"
-
-
-# Already tested by above
-def test_commit_file() -> None:
-    pass
 
 
 def test_capture_diff_lines(app: Application, temp_repo: Path) -> None:
