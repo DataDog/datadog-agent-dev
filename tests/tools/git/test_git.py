@@ -189,6 +189,7 @@ def test_get_changes_with_base(app: Application, mocker: Any, repo_testcase: str
     # Mock the underlying functions
     mocker.patch("dda.tools.git.Git.get_head_commit", return_value=head_commit)
     mocker.patch("dda.utils.git.changeset.ChangeSet.generate_from_diff_output", return_value=expected_changeset)
+    mocker.patch("dda.tools.git.Git._capture_diff_lines")  # Would fail if called for real as we are not in a git repo
 
     # Test without working tree changes
     changeset = git.get_changes_with_base(base_commit.sha1, include_working_tree=False)

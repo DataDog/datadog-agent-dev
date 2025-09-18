@@ -145,7 +145,7 @@ class Git(Tool):
             "--no-renames",
             "--no-ext-diff",
         ]
-        return self.capture([*diff_args, *args], check=False, **kwargs).strip().splitlines()
+        return self.capture([*diff_args, *args], **kwargs).strip().splitlines()
 
     def _compare_refs(self, ref1: str, ref2: str) -> ChangeSet:
         return ChangeSet.generate_from_diff_output(self._capture_diff_lines(ref1, ref2))
@@ -220,7 +220,7 @@ class Git(Tool):
             base = self.get_merge_base(remote_name)
 
         head = self.get_head_commit()
-        changes = ChangeSet.generate_from_diff_output(self._capture_diff_lines(base, "...", head.sha1))
+        changes = ChangeSet.generate_from_diff_output(self._capture_diff_lines(f"{base}...{head.sha1}"))
         if include_working_tree:
             changes |= self.get_working_tree_changes()
         return changes
