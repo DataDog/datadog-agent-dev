@@ -70,7 +70,7 @@ class Remote(ABC):
         from datetime import datetime
 
         from dda.utils.fs import Path
-        from dda.utils.git.changeset import ChangeSet, FileChanges
+        from dda.utils.git.changeset import ChangeSet, ChangedFile
         from dda.utils.network.http.client import get_http_client
 
         client = get_http_client()
@@ -78,7 +78,7 @@ class Remote(ABC):
 
         # Compute ChangeSet
         changes = ChangeSet.from_iter(
-            FileChanges(
+            ChangedFile(
                 file=Path(file_obj["filename"]),
                 type=get_change_type_from_github_status(file_obj["status"]),
                 patch=file_obj["patch"],

@@ -7,13 +7,13 @@ import msgspec
 import pytest
 
 from dda.utils.fs import Path
-from dda.utils.git.changeset import ChangeSet, ChangeType, FileChanges
+from dda.utils.git.changeset import ChangedFile, ChangeSet, ChangeType
 from tests.tools.git.conftest import REPO_TESTCASES
 
 
 class TestFileChangesClass:
     def test_basic(self):
-        file_changes = FileChanges(file=Path("/path/to/file"), type=ChangeType.ADDED, patch="patch")
+        file_changes = ChangedFile(file=Path("/path/to/file"), type=ChangeType.ADDED, patch="patch")
         assert file_changes.file == Path("/path/to/file")
         assert file_changes.type == ChangeType.ADDED
         assert file_changes.patch == "patch"
@@ -37,7 +37,7 @@ class TestFileChangesClass:
             key=lambda x: x.file.as_posix(),
         )
 
-        seen_filechanges = sorted(FileChanges.generate_from_diff_output(diff_output), key=lambda x: x.file.as_posix())
+        seen_filechanges = sorted(ChangedFile.generate_from_diff_output(diff_output), key=lambda x: x.file.as_posix())
 
         assert len(seen_filechanges) == len(expected_filechanges)
         for seen, expected in zip(seen_filechanges, expected_filechanges, strict=True):
@@ -46,39 +46,39 @@ class TestFileChangesClass:
             assert seen.patch == expected.patch
 
     def test_encode_decode(self):
-        file_changes = FileChanges(file=Path("/path/to/file"), type=ChangeType.ADDED, patch="patch")
-        encoded_file_changes = msgspec.json.encode(file_changes, enc_hook=FileChanges.enc_hook)
+        file_changes = ChangedFile(file=Path("/path/to/file"), type=ChangeType.ADDED, patch="patch")
+        encoded_file_changes = msgspec.json.encode(file_changes, enc_hook=ChangedFile.enc_hook)
         decoded_file_changes = msgspec.json.decode(
-            encoded_file_changes, type=FileChanges, dec_hook=FileChanges.dec_hook
+            encoded_file_changes, type=ChangedFile, dec_hook=ChangedFile.dec_hook
         )
         assert decoded_file_changes == file_changes
 
 
 class TestChangeSetClass:
     def test_basic(self):
-        change = FileChanges(file=Path("/path/to/file"), type=ChangeType.ADDED, patch="patch")
+        change = ChangedFile(file=Path("/path/to/file"), type=ChangeType.ADDED, patch="patch")
         changeset = ChangeSet({change.file: change})
         assert changeset[Path("/path/to/file")] == change
 
     def test_add(self):
-        change = FileChanges(file=Path("/path/to/file"), type=ChangeType.ADDED, patch="patch")
+        change = ChangedFile(file=Path("/path/to/file"), type=ChangeType.ADDED, patch="patch")
         changeset = ChangeSet.from_iter([change])
         assert changeset[Path("/path/to/file")] == change
 
     def test_digest(self):
         changes = [
-            FileChanges(file=Path("/path/to/file"), type=ChangeType.ADDED, patch="patch"),
-            FileChanges(file=Path("file2"), type=ChangeType.MODIFIED, patch="patch2"),
-            FileChanges(file=Path("/path/../file3"), type=ChangeType.DELETED, patch="patch3"),
+            ChangedFile(file=Path("/path/to/file"), type=ChangeType.ADDED, patch="patch"),
+            ChangedFile(file=Path("file2"), type=ChangeType.MODIFIED, patch="patch2"),
+            ChangedFile(file=Path("/path/../file3"), type=ChangeType.DELETED, patch="patch3"),
         ]
         changeset = ChangeSet.from_iter(changes)
         assert changeset.digest() == "95a9fe4d808bdda19da9285b6d1a31a6e29ddbfa"
 
     def test_properties(self):
         changes = [
-            FileChanges(file=Path("/path/to/file"), type=ChangeType.ADDED, patch="patch"),
-            FileChanges(file=Path("file2"), type=ChangeType.MODIFIED, patch="patch2"),
-            FileChanges(file=Path("/path/../file3"), type=ChangeType.DELETED, patch="patch3"),
+            ChangedFile(file=Path("/path/to/file"), type=ChangeType.ADDED, patch="patch"),
+            ChangedFile(file=Path("file2"), type=ChangeType.MODIFIED, patch="patch2"),
+            ChangedFile(file=Path("/path/../file3"), type=ChangeType.DELETED, patch="patch3"),
         ]
         changeset = ChangeSet.from_iter(changes)
         assert changeset.added == {Path("/path/to/file")}
@@ -111,9 +111,9 @@ class TestChangeSetClass:
 
     def test_encode_decode(self):
         changes = [
-            FileChanges(file=Path("/path/to/file"), type=ChangeType.ADDED, patch="patch"),
-            FileChanges(file=Path("file2"), type=ChangeType.MODIFIED, patch="patch2"),
-            FileChanges(file=Path("/path/../file3"), type=ChangeType.DELETED, patch="patch3"),
+            ChangedFile(file=Path("/path/to/file"), type=ChangeType.ADDED, patch="patch"),
+            ChangedFile(file=Path("file2"), type=ChangeType.MODIFIED, patch="patch2"),
+            ChangedFile(file=Path("/path/../file3"), type=ChangeType.DELETED, patch="patch3"),
         ]
         changeset = ChangeSet.from_iter(changes)
         encoded_changeset = msgspec.json.encode(changeset, enc_hook=ChangeSet.enc_hook)

@@ -23,7 +23,7 @@ class ChangeType(StrEnum):
     DELETED = "D"
 
 
-class FileChanges(Struct, frozen=True):
+class ChangedFile(Struct, frozen=True):
     """Represents changes to a single file in a git repository."""
 
     file: Path
@@ -161,7 +161,7 @@ class FileChanges(Struct, frozen=True):
 
 # Need dict=True so that cached_property can be used
 class ChangeSet(Struct, dict=True, frozen=True):
-    _changes: dict[Path, FileChanges] = field(default_factory=dict)
+    _changes: dict[Path, ChangedFile] = field(default_factory=dict)
 
     """
     Represents a set of changes to files in a git repository.
@@ -171,16 +171,16 @@ class ChangeSet(Struct, dict=True, frozen=True):
     """
 
     # == dict proxy methods == #
-    def keys(self) -> dict_keys[Path, FileChanges]:
+    def keys(self) -> dict_keys[Path, ChangedFile]:
         return self._changes.keys()
 
-    def values(self) -> dict_values[Path, FileChanges]:
+    def values(self) -> dict_values[Path, ChangedFile]:
         return self._changes.values()
 
-    def items(self) -> dict_items[Path, FileChanges]:
+    def items(self) -> dict_items[Path, ChangedFile]:
         return self._changes.items()
 
-    def __getitem__(self, key: Path) -> FileChanges:
+    def __getitem__(self, key: Path) -> ChangedFile:
         return self._changes[key]
 
     def __contains__(self, key: Path) -> bool:
@@ -230,7 +230,7 @@ class ChangeSet(Struct, dict=True, frozen=True):
         return str(digester.hexdigest())
 
     @classmethod
-    def from_iter(cls, data: Iterable[FileChanges]) -> Self:
+    def from_iter(cls, data: Iterable[ChangedFile]) -> Self:
         """Create a ChangeSet from an iterable of FileChanges."""
         items = {change.file: change for change in data}
         return cls(_changes=items)
@@ -241,7 +241,7 @@ class ChangeSet(Struct, dict=True, frozen=True):
         Generate a changeset from the output of a git diff command.
         The output should be passed as a string or a list of lines.
         """
-        return cls.from_iter(FileChanges.generate_from_diff_output(diff_output))
+        return cls.from_iter(ChangedFile.generate_from_diff_output(diff_output))
 
     @classmethod
     def enc_hook(cls, obj: Any) -> Any:

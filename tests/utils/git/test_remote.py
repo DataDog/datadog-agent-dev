@@ -10,7 +10,7 @@ import pytest
 from httpx import Response
 
 from dda.utils.fs import Path
-from dda.utils.git.changeset import ChangeSet, FileChanges
+from dda.utils.git.changeset import ChangeSet, ChangedFile
 from dda.utils.git.commit import Commit, CommitDetails
 from dda.utils.git.remote import HTTPSRemote, Remote, SSHRemote, get_change_type_from_github_status
 
@@ -87,7 +87,7 @@ class TestRemoteClass:
 
         # Create a ChangeSet object
         changes = [
-            FileChanges(
+            ChangedFile(
                 file=Path(file["filename"]),
                 type=get_change_type_from_github_status(file["status"]),
                 patch=file["patch"],
