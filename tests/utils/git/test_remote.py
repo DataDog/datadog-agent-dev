@@ -30,7 +30,7 @@ class TestRemoteClass:
         ],
     )
     def test_basic(self, url):
-        remote = Remote(url=url)
+        remote = Remote.from_url(url=url)
         assert remote.url == url
         assert remote.org == "foo"
         assert remote.repo == "bar"
@@ -59,7 +59,7 @@ class TestRemoteClass:
         github_payload = json.loads(github_payload_str)
         sha1 = github_payload["sha"]
         commit_url = github_payload["commit"]["url"]
-        remote = Remote(url=commit_url)
+        remote = Remote.from_url(url=commit_url)
         commit = Commit(sha1=sha1)
 
         # Create a CommitDetails object

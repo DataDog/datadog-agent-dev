@@ -87,7 +87,7 @@ class Git(Tool):
             ["config", "--get", f"remote.{remote_name}.url"],
         ).strip()
 
-        return Remote(remote_url)  # type: ignore[abstract]
+        return Remote.from_url(remote_url)
 
     def get_head_commit(self) -> Commit:
         """

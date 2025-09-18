@@ -97,7 +97,7 @@ class TestCommitDetailsClass:
             "dda.utils.network.http.client.HTTPClient.get",
             return_value=Response(status_code=200, content=github_payload_str),
         )
-        github_details = commit.get_details_from_remote(Remote("https://github.com/foo/bar"))
+        github_details = commit.get_details_from_remote(Remote.from_url("https://github.com/foo/bar"))
 
         # Mock Git.capture to return payload from file
         git_output_file = Path(__file__).parent / "fixtures" / "git_show_dda_1425a34.txt"

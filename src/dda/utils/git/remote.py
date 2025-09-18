@@ -17,16 +17,14 @@ if TYPE_CHECKING:
 class Remote(ABC):
     protocol: ClassVar[Literal["https", "git"]]
 
-    def __new__(cls, url: str) -> Remote:  # noqa: PYI034
-        if cls is Remote:
-            if url.startswith("https://"):
-                return HTTPSRemote(url)
-            if url.startswith("git@"):
-                return SSHRemote(url)
-            msg = f"Invalid protocol: {url}"
-            raise ValueError(msg)
-
-        return super().__new__(cls)
+    @classmethod
+    def from_url(cls, url: str) -> Remote:
+        if url.startswith("https://"):
+            return HTTPSRemote(url)
+        if url.startswith("git@"):
+            return SSHRemote(url)
+        msg = f"Invalid protocol: {url}"
+        raise ValueError(msg)
 
     def __init__(self, url: str) -> None:
         self.url = url
