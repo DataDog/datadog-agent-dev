@@ -10,7 +10,7 @@ import pytest
 from httpx import Response
 
 from dda.utils.fs import Path
-from dda.utils.git.changeset import ChangeSet, ChangedFile
+from dda.utils.git.changeset import ChangedFile, ChangeSet
 from dda.utils.git.commit import Commit, CommitDetails
 from dda.utils.git.remote import HTTPSRemote, Remote, SSHRemote, get_change_type_from_github_status
 
@@ -35,26 +35,12 @@ class TestRemoteClass:
         assert remote.org == "foo"
         assert remote.repo == "bar"
         assert remote.full_repo == "foo/bar"
-        assert remote.github_url == "https://github.com/foo/bar"
-        assert remote.github_api_url == "https://api.github.com/repos/foo/bar"
         if url.startswith("https://"):
             assert isinstance(remote, HTTPSRemote)
             assert remote.protocol == "https"
         elif url.startswith("git@"):
             assert isinstance(remote, SSHRemote)
             assert remote.protocol == "git"
-
-    def test_get_commit_github_url(self):
-        remote = Remote(url="https://github.com/foo/bar")
-        sha1 = "1234567890" * 4
-        commit = Commit(sha1=sha1)
-        assert remote.get_commit_github_url(commit) == f"https://github.com/foo/bar/commit/{sha1}"
-
-    def test_get_commit_github_api_url(self):
-        remote = Remote(url="https://github.com/foo/bar")
-        sha1 = "1234567890" * 4
-        commit = Commit(sha1=sha1)
-        assert remote.get_commit_github_api_url(commit) == f"https://api.github.com/repos/foo/bar/commits/{sha1}"
 
     @pytest.mark.parametrize(
         "github_payload_file",

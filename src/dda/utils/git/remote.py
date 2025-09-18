@@ -49,20 +49,6 @@ class Remote(ABC):
     def full_repo(self) -> str:
         return f"{self.org}/{self.repo}"
 
-    @cached_property
-    def github_url(self) -> str:
-        return f"https://github.com/{self.full_repo}"
-
-    @cached_property
-    def github_api_url(self) -> str:
-        return f"https://api.github.com/repos/{self.full_repo}"
-
-    def get_commit_github_url(self, commit: Commit) -> str:
-        return f"{self.github_url}/commit/{commit.sha1}"
-
-    def get_commit_github_api_url(self, commit: Commit) -> str:
-        return f"{self.github_api_url}/commits/{commit.sha1}"
-
     def get_details_and_changes_for_commit(self, commit: Commit) -> tuple[CommitDetails, ChangeSet]:
         """
         Get the details and set of changes for a given commit by querying the remote.
@@ -70,11 +56,12 @@ class Remote(ABC):
         from datetime import datetime
 
         from dda.utils.fs import Path
-        from dda.utils.git.changeset import ChangeSet, ChangedFile
+        from dda.utils.git.changeset import ChangedFile, ChangeSet
+        from dda.utils.git.github import get_commit_github_api_url
         from dda.utils.network.http.client import get_http_client
 
         client = get_http_client()
-        data = client.get(self.get_commit_github_api_url(commit)).json()
+        data = client.get(get_commit_github_api_url(self, commit)).json()
 
         # Compute ChangeSet
         changes = ChangeSet.from_iter(
