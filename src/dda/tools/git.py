@@ -144,7 +144,6 @@ class Git(Tool):
             "--no-prefix",
             "--no-renames",
             "--no-ext-diff",
-            # "-z",
         ]
         return self.capture([*diff_args, *args], check=False, **kwargs).strip().splitlines()
 
@@ -173,10 +172,8 @@ class Git(Tool):
 
         with temp_file(suffix=".git_index") as temp_index_path:
             # Set up environment with temporary index
-            original_env = environ.copy()
-            temp_env = original_env | {"GIT_INDEX_FILE": str(temp_index_path.resolve())}
-
-            # Populate the temporary index with HEAD
+            temp_env = dict(environ)
+            temp_env["GIT_INDEX_FILE"] = str(temp_index_path.resolve())
             self.run(["read-tree", "HEAD"], env=temp_env)
 
             # Get list of untracked files

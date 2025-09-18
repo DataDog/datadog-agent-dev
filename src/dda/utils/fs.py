@@ -212,4 +212,4 @@ def temp_file(suffix: str = "") -> Generator[Path, None, None]:
     from tempfile import NamedTemporaryFile
 
     with NamedTemporaryFile(suffix=suffix) as f:
-        yield Path(f.name)
+        yield Path(f.name).resolve()
