@@ -8,6 +8,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+***Changed:***
+
+- Rename the `[git.user]` section to `[tools.git.author]`
+- The `Tool` interface now uses a single execution context instead of the dedicated methods `format_command` and `env_vars`
+
+***Added:***
+
+- Add `git` tool
+- Add `[user]` section to the configuration
+- Add abstract context manager `execution_context` method to the `Tool` interface
+
 ## 0.26.0 - 2025-09-09
 
 ***Added:***

@@ -3,13 +3,16 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
+from contextlib import contextmanager
 from functools import cached_property
 from typing import TYPE_CHECKING
 
-from dda.tools.base import Tool
+from dda.tools.base import ExecutionContext, Tool
 from dda.utils.platform import PLATFORM_ID, which
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
+
     from dda.utils.fs import Path
 
 
@@ -25,8 +28,9 @@ class Bazel(Tool):
     to an internal location if `bazel` nor `bazelisk` are already on PATH.
     """
 
-    def format_command(self, command: list[str]) -> list[str]:
-        return [self.path, *command]
+    @contextmanager
+    def execution_context(self, command: list[str]) -> Generator[ExecutionContext, None, None]:
+        yield ExecutionContext(command=[self.path, *command], env_vars={})
 
     @property
     def managed(self) -> bool:

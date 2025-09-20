@@ -3,10 +3,15 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
+from contextlib import contextmanager
 from functools import cached_property
+from typing import TYPE_CHECKING
 
-from dda.tools.base import Tool
+from dda.tools.base import ExecutionContext, Tool
 from dda.utils.git.constants import GitEnvVars
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 
 class Git(Tool):
@@ -18,26 +23,25 @@ class Git(Tool):
     ```
     """
 
-    def env_vars(self) -> dict[str, str]:
-        name = self.app.config.tools.git.author.name.strip()
-        email = self.app.config.tools.git.author.email.strip()
-        result = {}
-        if name:
-            result[GitEnvVars.AUTHOR_NAME] = name
-            result[GitEnvVars.COMMITTER_NAME] = name
-        if email:
-            result[GitEnvVars.AUTHOR_EMAIL] = email
-            result[GitEnvVars.COMMITTER_EMAIL] = email
-        return result
+    @contextmanager
+    def execution_context(self, command: list[str]) -> Generator[ExecutionContext, None, None]:
+        author_name = self.app.config.tools.git.author.name.strip()
+        author_email = self.app.config.tools.git.author.email.strip()
+        env_vars = {}
+        if author_name:
+            env_vars[GitEnvVars.AUTHOR_NAME] = author_name
+            env_vars[GitEnvVars.COMMITTER_NAME] = author_name
+        if author_email:
+            env_vars[GitEnvVars.AUTHOR_EMAIL] = author_email
+            env_vars[GitEnvVars.COMMITTER_EMAIL] = author_email
+
+        yield ExecutionContext(command=[self.path, *command], env_vars=env_vars)
 
     @cached_property
     def path(self) -> str:
         import shutil
 
         return shutil.which("git") or "git"
-
-    def format_command(self, command: list[str]) -> list[str]:
-        return [self.path, *command]
 
     @cached_property
     def author_name(self) -> str:
