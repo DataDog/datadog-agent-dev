@@ -3,10 +3,15 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
+from contextlib import contextmanager
 from functools import cached_property
+from typing import TYPE_CHECKING
 
-from dda.tools.base import Tool
+from dda.tools.base import ExecutionContext, Tool
 from dda.utils.fs import Path
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 
 class Go(Tool):
@@ -25,11 +30,12 @@ class Go(Tool):
     ```
     """
 
-    def format_command(self, command: list[str]) -> list[str]:
-        return [self.path, *command]
-
-    def env_vars(self) -> dict[str, str]:
-        return {"GOTOOLCHAIN": f"go{self.version}"} if self.version else {}
+    @contextmanager
+    def execution_context(self, command: list[str]) -> Generator[ExecutionContext, None, None]:
+        yield ExecutionContext(
+            command=[self.path, *command],
+            env_vars={"GOTOOLCHAIN": f"go{self.version}"} if self.version else {},
+        )
 
     @cached_property
     def path(self) -> str:

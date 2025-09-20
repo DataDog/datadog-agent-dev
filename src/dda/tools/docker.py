@@ -3,9 +3,14 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
+from contextlib import contextmanager
 from functools import cached_property
+from typing import TYPE_CHECKING
 
-from dda.tools.base import Tool
+from dda.tools.base import ExecutionContext, Tool
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 
 class Docker(Tool):
@@ -20,11 +25,9 @@ class Docker(Tool):
     ```
     """
 
-    def format_command(self, command: list[str]) -> list[str]:
-        return [self.path, *command]
-
-    def env_vars(self) -> dict[str, str]:  # noqa: PLR6301
-        return {"DOCKER_CLI_HINTS": "0"}
+    @contextmanager
+    def execution_context(self, command: list[str]) -> Generator[ExecutionContext, None, None]:
+        yield ExecutionContext(command=[self.path, *command], env_vars={"DOCKER_CLI_HINTS": "0"})
 
     @cached_property
     def path(self) -> str:
