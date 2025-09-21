@@ -32,7 +32,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
 
@@ -115,7 +115,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
 
@@ -162,7 +162,7 @@ jobs:
 
     - name: Download Python artifacts
       if: ${{ !startsWith(github.event.ref, 'refs/tags') }}
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v5
       with:
         name: python-artifacts
         path: dist
@@ -241,7 +241,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -255,7 +255,7 @@ jobs:
       run: uv pip install --system pyoxidizer==${{ env.PYOXIDIZER_VERSION }}
 
     - name: Download staged binaries
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v5
       with:
         pattern: staged-${{ runner.os }}-*
         path: archives
@@ -327,7 +327,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -350,7 +350,7 @@ jobs:
         tar --strip-components=1 -xzf - -C /usr/local/bin "$ARCHIVE_NAME/rcodesign"
 
     - name: Download staged binaries
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v5
       with:
         pattern: staged-${{ runner.os }}-*
         path: archives
@@ -505,20 +505,20 @@ jobs:
 
     steps:
     - name: Download Python artifacts
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v5
       with:
         name: python-artifacts
         path: dist
 
     - name: Download binaries
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v5
       with:
         pattern: standalone-*
         path: archives
         merge-multiple: true
 
     - name: Download installers
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v5
       with:
         pattern: installers-*
         path: installers
