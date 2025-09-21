@@ -14,7 +14,7 @@ def test_default_download(dda, helpers, isolation, mocker):
     subprocess_runner = mocker.patch("subprocess.run", return_value=subprocess.CompletedProcess(args=[], returncode=0))
 
     with EnvVars(exclude=["PATH"]):
-        result = dda("build", "bazel", "build", "//...")
+        result = dda("bzl", "build", "//...")
 
     assert result.exit_code == 0, result.output
     assert result.output == helpers.dedent(
@@ -39,7 +39,7 @@ def test_default_exists(dda, helpers, temp_dir, mocker):
     subprocess_runner = mocker.patch("subprocess.run", return_value=subprocess.CompletedProcess(args=[], returncode=0))
 
     with EnvVars({"PATH": str(temp_dir)}):
-        result = dda("build", "bazel", "build", "//...")
+        result = dda("bzl", "build", "//...")
 
     assert result.exit_code == 0, result.output
     assert not result.output
@@ -59,7 +59,7 @@ def test_config_force_managed(dda, helpers, isolation, config_file, temp_dir, mo
     subprocess_runner = mocker.patch("subprocess.run", return_value=subprocess.CompletedProcess(args=[], returncode=0))
 
     with EnvVars({"PATH": str(temp_dir)}):
-        result = dda("build", "bazel", "build", "//...")
+        result = dda("bzl", "build", "//...")
 
     assert result.exit_code == 0, result.output
     assert result.output == helpers.dedent(
@@ -83,7 +83,7 @@ def test_config_force_unmanaged(dda, helpers, config_file, mocker):
     downloader = mocker.patch("dda.utils.network.http.manager.HTTPClientManager.download")
 
     with EnvVars(exclude=["PATH"]):
-        result = dda("build", "bazel", "build", "//...")
+        result = dda("bzl", "build", "//...")
 
     assert result.exit_code == 1, result.output
     assert result.output == helpers.dedent(

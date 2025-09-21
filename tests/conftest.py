@@ -20,7 +20,7 @@ from dda.config.file import ConfigFile
 from dda.utils.ci import running_in_ci
 from dda.utils.fs import Path, temp_directory
 from dda.utils.git.constants import GitEnvVars
-from dda.utils.platform import PLATFORM_ID
+from dda.utils.platform import PLATFORM_ID, which
 from dda.utils.process import EnvVars
 
 if TYPE_CHECKING:
@@ -158,6 +158,11 @@ def default_git_author() -> GitAuthorConfig:
 @pytest.fixture(scope="session")
 def uv_on_path() -> Path:
     return Path(shutil.which("uv"))
+
+
+@pytest.fixture(scope="session")
+def bazel_on_path() -> Path:
+    return Path(which("bazel"))
 
 
 def pytest_runtest_setup(item):

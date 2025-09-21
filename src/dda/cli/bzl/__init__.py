@@ -20,5 +20,7 @@ if TYPE_CHECKING:
 @click.argument("args", nargs=-1)
 @pass_app
 def cmd(app: Application, *, args: tuple[str, ...]) -> None:
-    process = app.tools.bazel.attach(list(args), check=False)
+    with app.tools.bazel.ignore_arg_limits():
+        process = app.tools.bazel.attach(list(args), check=False)
+
     app.abort(code=process.returncode)

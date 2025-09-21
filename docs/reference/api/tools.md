@@ -5,12 +5,21 @@
 ::: dda.tools.Tools
     options:
       members:
+      - bazel
       - docker
+      - git
       - go
       - uv
-      - git
+
+::: dda.tools.bazel.Bazel
+    options:
+      members: []
 
 ::: dda.tools.docker.Docker
+    options:
+      members: []
+
+::: dda.tools.git.Git
     options:
       members: []
 
@@ -19,9 +28,5 @@
       members: []
 
 ::: dda.tools.uv.UV
-    options:
-      members: []
-
-::: dda.tools.git.Git
     options:
       members: []

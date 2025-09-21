@@ -4,8 +4,8 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-from functools import cached_property
-from typing import TYPE_CHECKING
+from functools import cache, cached_property
+from typing import TYPE_CHECKING, Any
 
 from dda.tools.base import ExecutionContext, Tool
 from dda.utils.platform import PLATFORM_ID, which
@@ -28,9 +28,52 @@ class Bazel(Tool):
     to an internal location if `bazel` nor `bazelisk` are already on PATH.
     """
 
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+
+        # Avoid platform-specific command line length limits by default
+        self.__ignore_arg_limits = False
+
     @contextmanager
     def execution_context(self, command: list[str]) -> Generator[ExecutionContext, None, None]:
-        yield ExecutionContext(command=[self.path, *command], env_vars={})
+        first_arg: str | None = None
+        for arg in command:
+            if not arg.startswith("-"):
+                first_arg = arg
+                break
+
+        if first_arg is None:
+            yield ExecutionContext(command=[self.path, *command], env_vars={})
+            return
+
+        try:
+            sep_index = command.index("--")
+        except ValueError:
+            if self.__ignore_arg_limits:
+                yield ExecutionContext(command=[self.path, *command], env_vars={})
+                return
+
+            msg = "Bazel arguments must come after the `--` separator"
+            raise ValueError(msg) from None
+
+        if first_arg in self.target_accepting_commands:
+            arg_file_flag = "--target_pattern_file"
+        elif first_arg in self.query_accepting_commands:
+            arg_file_flag = "--query_file"
+        else:
+            yield ExecutionContext(command=[self.path, *command], env_vars={})
+            return
+
+        from tempfile import NamedTemporaryFile
+
+        with NamedTemporaryFile(mode="w", encoding="utf-8") as f:
+            f.write("\n".join(command[sep_index + 1 :]))
+            f.flush()
+
+            yield ExecutionContext(
+                command=[self.path, *command[:sep_index], arg_file_flag, f.name],
+                env_vars={},
+            )
 
     @property
     def managed(self) -> bool:
@@ -67,6 +110,22 @@ class Bazel(Tool):
 
         return None
 
+    @property
+    def target_accepting_commands(self) -> frozenset[str]:
+        return target_accepting_commands()
+
+    @property
+    def query_accepting_commands(self) -> frozenset[str]:
+        return query_accepting_commands()
+
+    @contextmanager
+    def ignore_arg_limits(self) -> Generator[None, None, None]:
+        self.__ignore_arg_limits = True
+        try:
+            yield
+        finally:
+            self.__ignore_arg_limits = False
+
 
 def get_download_url() -> str:
     import platform
@@ -80,3 +139,13 @@ def get_download_url() -> str:
 
     url = f"https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-{system}-{arch}"
     return f"{url}.exe" if PLATFORM_ID == "windows" else url
+
+
+@cache
+def target_accepting_commands() -> frozenset[str]:
+    return frozenset({"build", "coverage", "fetch", "run", "test"})
+
+
+@cache
+def query_accepting_commands() -> frozenset[str]:
+    return frozenset({"aquery", "cquery", "query"})
