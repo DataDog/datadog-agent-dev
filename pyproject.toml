@@ -166,7 +166,7 @@ legacy-docs = [
 ]
 # https://github.com/DataDog/datadog-agent/blob/main/tasks/requirements_release_tasks.txt
 legacy-release = [
-    "atlassian-python-api==3.41.3",
+    "atlassian-python-api==4.0.7",
     "pandoc==2.4",
     "reno==3.5.0",
     "yattag==1.15.2",
