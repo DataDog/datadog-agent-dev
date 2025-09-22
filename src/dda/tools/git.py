@@ -80,7 +80,6 @@ class Git(Tool):
     def get_remote_details(self, remote_name: str = "origin") -> Remote:
         """
         Get the details of the given remote for the Git repository in the current working directory.
-        The returned tuple is (org, repo, url).
         """
 
         remote_url = self.capture(

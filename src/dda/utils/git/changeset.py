@@ -55,102 +55,52 @@ class ChangedFile(Struct, frozen=True):
         """
         Generate a list of FileChanges from the output of _some_ git diff commands.
         Not all outputs from `git diff` are supported (ex: renames), see set of args in [Git._capture_diff_lines](dda.tools.git.Git._capture_diff_lines) method.
-        Accepts a string or a list of lines.
         """
-        if isinstance(diff_output, str):
-            diff_output = diff_output.strip().splitlines()
+        import re
 
-        if len(diff_output) == 0:
-            return
+        if isinstance(diff_output, list):
+            diff_output = "\n".join(diff_output)
 
-        line_iterator = iter(diff_output)
+        for modification in re.split(r"^diff --git ", diff_output, flags=re.MULTILINE):
+            if not modification:
+                continue
 
-        current_file: Path | None = None
-        current_type: ChangeType | None = None
-        current_patch_lines: list[str] = []
-        iterator_exhausted = False
+            # Extract metadata. It can be in two formats, depending on if the file is a binary file or not.
 
-        try:
-            line = next(line_iterator)
-            while True:
-                # Start processing a new file - the line looks like `diff --git a/<path> b/<path>`
-                if not line.startswith("diff --git "):
-                    msg = f"Unexpected line in git diff output: {line}"
-                    raise ValueError(msg)
+            # Binary files:
+            # (new file mode 100644) - not always present
+            # index 0000000000..089fd64579
+            # Binary files /dev/null and foo/archive.tar.gz differ
 
-                # Go forward until we find the 'old file' line (---)
-                while not line.startswith("--- "):
-                    try:
-                        line = next(line_iterator)
-                    except StopIteration:
-                        msg = "Unexpected end of git diff output while looking for --- line"
-                        raise ValueError(msg)  # noqa: B904
+            # Regular files:
+            # (new file mode 100644) - not always present
+            # index 0000000000..089fd64579
+            # --- a/file
+            # +++ b/file
+            # @@ ... @@ (start of hunks)
+            sep = "@@ "
+            metadata, *blocks = re.split(rf"^{sep}", modification, flags=re.MULTILINE)
+            metadata_lines = metadata.strip().splitlines()
 
-                # When we get here, we are on the --- line
-                # It should always be followed by a +++ line
-                old_file_line = line
+            # Determine if the file is a binary file
+            binary = metadata_lines[-1].startswith("Binary files ")
 
-                try:
-                    new_file_line = next(line_iterator)
-                except StopIteration:
-                    msg = "Unexpected end of git diff output while looking for +++ line"
-                    raise ValueError(msg)  # noqa: B904
-                if not new_file_line.startswith("+++ "):
-                    msg = f"Unexpected line in git diff output, expected +++ line: {new_file_line}"
-                    raise ValueError(msg)
+            # Extract old and new file paths
+            if binary:
+                line = metadata_lines[-1].removeprefix("Binary files ")
+                # This might raise an error if one of the files contains the string " and "
+                before_filename, after_filename = line.split(" and ")
+            else:
+                before_filename = metadata_lines[-2].split(maxsplit=1)[1]
+                after_filename = metadata_lines[-1].split(maxsplit=1)[1]
 
-                old_file_path = old_file_line[4:].strip()
-                new_file_path = new_file_line[4:].strip()
+            # Determine changetype
+            current_type = _determine_change_type(before_filename, after_filename)
+            current_file = Path(after_filename) if current_type == ChangeType.ADDED else Path(before_filename)
 
-                if old_file_path == "/dev/null":
-                    current_type = ChangeType.ADDED
-                    current_file = Path(new_file_path)
-                elif new_file_path == "/dev/null":
-                    current_type = ChangeType.DELETED
-                    current_file = Path(old_file_path)
-                elif old_file_path == new_file_path:
-                    current_type = ChangeType.MODIFIED
-                    current_file = Path(new_file_path)
-                else:
-                    msg = f"Unexpected file paths in git diff output: {old_file_path} -> {new_file_path} - this indicates a rename which we do not support"
-                    raise ValueError(
-                        msg,
-                    )
-
-                # Now, we should be at the start of the patch hunks (lines starting with @@)
-                line = next(line_iterator)
-                if not line.startswith("@@ "):
-                    msg = f"Unexpected line in git diff output, expected hunk start: {line}"
-                    raise ValueError(msg)
-                # Collect hunk lines, i.e. lines starting with @@, +, -, or \ (\ is for the "no newline at end of file" message that can appear)
-
-                while line.startswith(("@@ ", "+", "-", "\\")):
-                    current_patch_lines.append(line)
-                    try:
-                        line = next(line_iterator)
-                    except StopIteration:
-                        # Just break out of the loop, we will handle yielding below
-                        # Set a flag to indicate we reached the end of the iterator
-                        iterator_exhausted = True
-                        break
-
-                # Yield the file we were building now that we have reached the end of its patch
-                yield cls(
-                    file=current_file,
-                    type=current_type,
-                    binary=False,  # TODO: Support binaries
-                    patch="\n".join(current_patch_lines),
-                )
-                current_file = None
-                current_type = None
-                current_patch_lines = []
-
-                if iterator_exhausted:
-                    return
-
-        except StopIteration:
-            msg = "Unexpected end of git diff output while parsing"
-            raise ValueError(msg)  # noqa: B904
+            # Strip every "block" and add the missing separator
+            patch = "" if binary else "\n".join([sep + block.strip() for block in blocks]).strip()
+            yield cls(file=current_file, type=current_type, binary=binary, patch=patch)
 
     @classmethod
     def enc_hook(cls, obj: Any) -> Any:
@@ -256,3 +206,15 @@ class ChangeSet(Struct, dict=True, frozen=True):
     def dec_hook(cls, obj_type: type, obj: Any) -> Any:
         # Only unsupported objects are Path objects
         return Path.dec_hook(obj_type, obj)
+
+
+def _determine_change_type(before_filename: str, after_filename: str) -> ChangeType:
+    if before_filename == after_filename:
+        return ChangeType.MODIFIED
+    if before_filename == "/dev/null":
+        return ChangeType.ADDED
+    if after_filename == "/dev/null":
+        return ChangeType.DELETED
+
+    msg = f"Unexpected file paths in git diff output: {before_filename} -> {after_filename} - this indicates a rename which we do not support"
+    raise ValueError(msg)
