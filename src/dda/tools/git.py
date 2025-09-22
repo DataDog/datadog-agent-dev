@@ -13,7 +13,7 @@ from dda.utils.git.constants import GitEnvVars
 from dda.utils.git.remote import Remote
 
 if TYPE_CHECKING:
-    from collections.abc import Generator
+    from collections.abc import Generator, Iterable
 
     from dda.utils.fs import Path
     from dda.utils.git.commit import Commit, CommitDetails
@@ -126,13 +126,29 @@ class Git(Tool):
             parent_shas=list(parents_str.split()),
         )
 
+    def add(self, paths: Iterable[Path]) -> None:
+        """
+        Add the given paths to the index.
+        Will fail if any path is not under cwd.
+        """
+        self.run(["add", *[str(path) for path in paths]])
+
+    def commit(self, message: str, *, allow_empty: bool = False) -> None:
+        """
+        Commit the changes in the index.
+        """
+        args = ["commit", "-m", message]
+        if allow_empty:
+            args.append("--allow-empty")
+        self.run(args)
+
     def commit_file(self, path: Path, *, content: str, commit_message: str) -> None:
         """
         Create and commit a single file with the given content.
         """
         path.write_text(content)
-        self.run(["add", str(path)])  # Will fail if path is not under cwd
-        self.run(["commit", "-m", commit_message])
+        self.add((path,))
+        self.commit(commit_message)
 
     def _capture_diff_lines(self, *args: str, **kwargs: Any) -> list[str]:
         diff_args = [
