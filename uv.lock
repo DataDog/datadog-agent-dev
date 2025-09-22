@@ -132,18 +132,20 @@ wheels = [
 
 [[package]]
 name = "atlassian-python-api"
-version = "3.41.3"
+version = "4.0.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
+    { name = "beautifulsoup4" },
     { name = "deprecated" },
+    { name = "jmespath" },
     { name = "oauthlib" },
     { name = "requests" },
     { name = "requests-oauthlib" },
-    { name = "six" },
+    { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ac/20/9bbb0c15b73ddbef44828d9f86a4786b038541ef34e135f8340b9bf7837a/atlassian-python-api-3.41.3.tar.gz", hash = "sha256:a29aae8f456babe125e3371a0355018e9c1d37190333efc312bd81163bd96ffd", size = 369258, upload-time = "2023-10-19T22:57:15.846Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/40/e8/f23b7273e410c6fe9f98f9db25268c6736572f22a9566d1dc9ed3614bb68/atlassian_python_api-4.0.7.tar.gz", hash = "sha256:8d9cc6068b1d2a48eb434e22e57f6bbd918a47fac9e46b95b7a3cefb00fceacb", size = 271149, upload-time = "2025-08-21T13:19:40.746Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2d/a4/8479331c0ce7867e0e3401c0d728dd187a969dc37aa34e75f482f672c4ab/atlassian_python_api-3.41.3-py3-none-any.whl", hash = "sha256:7661d3ce3c80e887a7e5ec1c61c1e37d3eaacb4857e377b38ef4084d0f067757", size = 167358, upload-time = "2023-10-19T22:57:12.76Z" },
+    { url = "https://files.pythonhosted.org/packages/1d/83/e4f9976ce3c933a079b8931325e7a9c0a8bba7030a2cb85764c0048f3479/atlassian_python_api-4.0.7-py3-none-any.whl", hash = "sha256:46a70cb29eaab87c0a1697fccd3e25df1aa477e6aa4fb9ba936a9d46b425933c", size = 197746, upload-time = "2025-08-21T13:19:39.044Z" },
 ]
 
 [[package]]
@@ -775,13 +777,13 @@ legacy-notifications = [
     { name = "tabulate", extras = ["widechars"], specifier = "==0.9.0" },
 ]
 legacy-release = [
-    { name = "atlassian-python-api", specifier = "==3.41.3" },
+    { name = "atlassian-python-api", specifier = "==4.0.7" },
     { name = "pandoc", specifier = "==2.4" },
     { name = "reno", specifier = "==3.5.0" },
     { name = "yattag", specifier = "==1.15.2" },
 ]
 legacy-tasks = [
-    { name = "atlassian-python-api", specifier = "==3.41.3" },
+    { name = "atlassian-python-api", specifier = "==4.0.7" },
     { name = "beautifulsoup4", specifier = "~=4.12.3" },
     { name = "boto3", specifier = "==1.38.8" },
     { name = "codeowners", specifier = "==0.6.0" },
