@@ -31,6 +31,9 @@ class ChangedFile(Struct, frozen=True):
     type: ChangeType
     """The type of change that was made to the file: added, modified, or deleted."""
 
+    binary: bool
+    """Whether the changed file was a binary file."""
+
     patch: str
     """
     The patch representing the changes to the file, in unified diff format.
@@ -135,6 +138,7 @@ class ChangedFile(Struct, frozen=True):
                 yield cls(
                     file=current_file,
                     type=current_type,
+                    binary=False,  # TODO: Support binaries
                     patch="\n".join(current_patch_lines),
                 )
                 current_file = None

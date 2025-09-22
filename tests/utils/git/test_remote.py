@@ -44,7 +44,7 @@ class TestRemoteClass:
 
     @pytest.mark.parametrize(
         "github_payload_file",
-        ["commit_example_dda_1425a34.json", "commit_example_multiple_parents.json"],
+        ["commit_example_dda_1425a34.json", "commit_example_multiple_parents.json", "commit_example_binary_files.json"],
     )
     def test_get_commit_details_and_changes_from_remote(self, mocker, github_payload_file):
         # Mock http client to return a known payload
@@ -76,7 +76,8 @@ class TestRemoteClass:
             ChangedFile(
                 file=Path(file["filename"]),
                 type=get_change_type_from_github_status(file["status"]),
-                patch=file["patch"],
+                binary="patch" not in file,
+                patch=file.get("patch", ""),
             )
             for file in github_payload["files"]
         ]

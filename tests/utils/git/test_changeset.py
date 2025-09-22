@@ -13,7 +13,7 @@ from tests.tools.git.conftest import REPO_TESTCASES
 
 class TestFileChangesClass:
     def test_basic(self):
-        file_changes = ChangedFile(file=Path("/path/to/file"), type=ChangeType.ADDED, patch="patch")
+        file_changes = ChangedFile(file=Path("/path/to/file"), type=ChangeType.ADDED, binary=False, patch="patch")
         assert file_changes.file == Path("/path/to/file")
         assert file_changes.type == ChangeType.ADDED
         assert file_changes.patch == "patch"
@@ -46,7 +46,7 @@ class TestFileChangesClass:
             assert seen.patch == expected.patch
 
     def test_encode_decode(self):
-        file_changes = ChangedFile(file=Path("/path/to/file"), type=ChangeType.ADDED, patch="patch")
+        file_changes = ChangedFile(file=Path("/path/to/file"), type=ChangeType.ADDED, binary=False, patch="patch")
         encoded_file_changes = msgspec.json.encode(file_changes, enc_hook=ChangedFile.enc_hook)
         decoded_file_changes = msgspec.json.decode(
             encoded_file_changes, type=ChangedFile, dec_hook=ChangedFile.dec_hook
@@ -56,29 +56,29 @@ class TestFileChangesClass:
 
 class TestChangeSetClass:
     def test_basic(self):
-        change = ChangedFile(file=Path("/path/to/file"), type=ChangeType.ADDED, patch="patch")
+        change = ChangedFile(file=Path("/path/to/file"), type=ChangeType.ADDED, binary=False, patch="patch")
         changeset = ChangeSet({change.file: change})
         assert changeset[Path("/path/to/file")] == change
 
     def test_add(self):
-        change = ChangedFile(file=Path("/path/to/file"), type=ChangeType.ADDED, patch="patch")
+        change = ChangedFile(file=Path("/path/to/file"), type=ChangeType.ADDED, binary=False, patch="patch")
         changeset = ChangeSet.from_iter([change])
         assert changeset[Path("/path/to/file")] == change
 
     def test_digest(self):
         changes = [
-            ChangedFile(file=Path("/path/to/file"), type=ChangeType.ADDED, patch="patch"),
-            ChangedFile(file=Path("file2"), type=ChangeType.MODIFIED, patch="patch2"),
-            ChangedFile(file=Path("/path/../file3"), type=ChangeType.DELETED, patch="patch3"),
+            ChangedFile(file=Path("/path/to/file"), type=ChangeType.ADDED, binary=False, patch="patch"),
+            ChangedFile(file=Path("file2"), type=ChangeType.MODIFIED, binary=False, patch="patch2"),
+            ChangedFile(file=Path("/path/../file3"), type=ChangeType.DELETED, binary=False, patch="patch3"),
         ]
         changeset = ChangeSet.from_iter(changes)
         assert changeset.digest() == "95a9fe4d808bdda19da9285b6d1a31a6e29ddbfa"
 
     def test_properties(self):
         changes = [
-            ChangedFile(file=Path("/path/to/file"), type=ChangeType.ADDED, patch="patch"),
-            ChangedFile(file=Path("file2"), type=ChangeType.MODIFIED, patch="patch2"),
-            ChangedFile(file=Path("/path/../file3"), type=ChangeType.DELETED, patch="patch3"),
+            ChangedFile(file=Path("/path/to/file"), type=ChangeType.ADDED, binary=False, patch="patch"),
+            ChangedFile(file=Path("file2"), type=ChangeType.MODIFIED, binary=False, patch="patch2"),
+            ChangedFile(file=Path("/path/../file3"), type=ChangeType.DELETED, binary=False, patch="patch3"),
         ]
         changeset = ChangeSet.from_iter(changes)
         assert changeset.added == {Path("/path/to/file")}
@@ -111,9 +111,9 @@ class TestChangeSetClass:
 
     def test_encode_decode(self):
         changes = [
-            ChangedFile(file=Path("/path/to/file"), type=ChangeType.ADDED, patch="patch"),
-            ChangedFile(file=Path("file2"), type=ChangeType.MODIFIED, patch="patch2"),
-            ChangedFile(file=Path("/path/../file3"), type=ChangeType.DELETED, patch="patch3"),
+            ChangedFile(file=Path("/path/to/file"), type=ChangeType.ADDED, binary=False, patch="patch"),
+            ChangedFile(file=Path("file2"), type=ChangeType.MODIFIED, binary=False, patch="patch2"),
+            ChangedFile(file=Path("/path/../file3"), type=ChangeType.DELETED, binary=False, patch="patch3"),
         ]
         changeset = ChangeSet.from_iter(changes)
         encoded_changeset = msgspec.json.encode(changeset, enc_hook=ChangeSet.enc_hook)

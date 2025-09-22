@@ -66,7 +66,9 @@ class Remote(ABC):
             ChangedFile(
                 file=Path(file_obj["filename"]),
                 type=get_change_type_from_github_status(file_obj["status"]),
-                patch=file_obj["patch"],
+                # GitHub does not have anything else to indicate binary files
+                binary="patch" not in file_obj,
+                patch=file_obj.get("patch", ""),
             )
             for file_obj in data["files"]
         )

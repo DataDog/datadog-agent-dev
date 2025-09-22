@@ -1,0 +1,232 @@
+{
+    "sha": "dcae0b8602384b11cb9819651f10786f0ff1fcd3",
+    "node_id": "C_kwDOAvp-M9oAKGRjYWUwYjg2MDIzODRiMTFjYjk4MTk2NTFmMTA3ODZmMGZmMWZjZDM",
+    "commit": {
+      "author": {
+        "name": "Florent Clarret",
+        "email": "florent.clarret@datadoghq.com",
+        "date": "2024-05-30T06:17:51Z"
+      },
+      "committer": {
+        "name": "GitHub",
+        "email": "noreply@github.com",
+        "date": "2024-05-30T06:17:51Z"
+      },
+      "message": "Update the documentation to mention `deva` (#26047)\n\n* Update the documentation to mention deva\r\n\r\n* Fix anchors\r\n\r\n* Update docs/public/setup.md\r\n\r\nCo-authored-by: Ofek Lev <ofekmeister@gmail.com>\r\n\r\n* Update docs/dev/agent_dev_env.md\r\n\r\n* remove empty file\r\n\r\n* Update docs/dev/agent_dev_env.md\r\n\r\nCo-authored-by: Nicolas Schweitzer <nicolas.schweitzer@datadoghq.com>\r\n\r\n* comments\r\n\r\n---------\r\n\r\nCo-authored-by: Ofek Lev <ofekmeister@gmail.com>\r\nCo-authored-by: Nicolas Schweitzer <nicolas.schweitzer@datadoghq.com>",
+      "tree": {
+        "sha": "f0bd9e582400e115ff8d72a44f76fe602c57d769",
+        "url": "https://api.github.com/repos/DataDog/datadog-agent/git/trees/f0bd9e582400e115ff8d72a44f76fe602c57d769"
+      },
+      "url": "https://api.github.com/repos/DataDog/datadog-agent/git/commits/dcae0b8602384b11cb9819651f10786f0ff1fcd3",
+      "comment_count": 0,
+      "verification": {
+        "verified": true,
+        "reason": "valid",
+        "signature": "-----BEGIN PGP SIGNATURE-----\n\nwsFcBAABCAAQBQJmWBoPCRC1aQ7uu5UhlAAAw00QAKMA0ERmAzdl0099P1wI8r3k\nR3dG19bhCrnK+Bufh1fTis8hBBmWgBpS5saY/M2+27V0mIC/nhJ/G7T0or5pbm/v\n/iqSKg8Hu2km+JuRqHG0lYr0AomUOvXyHgsixcsVmpEJMrDBMcX5GXxuBuoDorH0\nzMnq7JEwPiOTrGH69hjCqYmLsmcmxXg82oj4uXxbP0cMUGKWo6NpLPaE545Ckv4c\nozHKsfXd0CXkayIoWldgZwNuT5X2kRvXYf2kIqVPARcYAMGG+1moajUaOvfR+grT\nxwnbJW2yUOCy8do1gtPI+e2bHc7qOt/+ScZZid+G4vZoZQmnrwRVr6NprJud2QGC\n5G+b5PbDln9dvrpB4u8RZJdymh4dKZ5OI1Lm5CPY9eMrdLWmbkg70IGmAGUTo1pk\nmub4d1cBo1aKWC29mOR96NbfPeI6czyUkFz0PBzzbI7oU74tMHjzOZDwRxP2AJMx\nd05wVt36OZ3ItSCIVaWCKZ5eegXcXXK1eAgnV5AGvji0lcoFUdRyU5OmI7FH6k5z\nipKrRKsDZjAbhQbXAZ1kGDGIoDM4mP1UuUwrD707jzA8QEuUNhhVt8kHpj7/kTh3\ntfNN3of+FTqH+io+yeR6vS9R7mTUaB9D51TCeAAazQytgWbC1nlg7JDVxKSPhQ+2\nVdVfdYoQBdv0YWuho2PG\n=Nd8d\n-----END PGP SIGNATURE-----\n",
+        "payload": "tree f0bd9e582400e115ff8d72a44f76fe602c57d769\nparent 1d448ec876f6f48bc6eb62f70332ef681422ec97\nauthor Florent Clarret <florent.clarret@datadoghq.com> 1717049871 +0000\ncommitter GitHub <noreply@github.com> 1717049871 +0200\n\nUpdate the documentation to mention `deva` (#26047)\n\n* Update the documentation to mention deva\r\n\r\n* Fix anchors\r\n\r\n* Update docs/public/setup.md\r\n\r\nCo-authored-by: Ofek Lev <ofekmeister@gmail.com>\r\n\r\n* Update docs/dev/agent_dev_env.md\r\n\r\n* remove empty file\r\n\r\n* Update docs/dev/agent_dev_env.md\r\n\r\nCo-authored-by: Nicolas Schweitzer <nicolas.schweitzer@datadoghq.com>\r\n\r\n* comments\r\n\r\n---------\r\n\r\nCo-authored-by: Ofek Lev <ofekmeister@gmail.com>\r\nCo-authored-by: Nicolas Schweitzer <nicolas.schweitzer@datadoghq.com>",
+        "verified_at": "2024-11-08T23:17:00Z"
+      }
+    },
+    "url": "https://api.github.com/repos/DataDog/datadog-agent/commits/dcae0b8602384b11cb9819651f10786f0ff1fcd3",
+    "html_url": "https://github.com/DataDog/datadog-agent/commit/dcae0b8602384b11cb9819651f10786f0ff1fcd3",
+    "comments_url": "https://api.github.com/repos/DataDog/datadog-agent/commits/dcae0b8602384b11cb9819651f10786f0ff1fcd3/comments",
+    "author": {
+      "login": "FlorentClarret",
+      "id": 1266346,
+      "node_id": "MDQ6VXNlcjEyNjYzNDY=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1266346?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/FlorentClarret",
+      "html_url": "https://github.com/FlorentClarret",
+      "followers_url": "https://api.github.com/users/FlorentClarret/followers",
+      "following_url": "https://api.github.com/users/FlorentClarret/following{/other_user}",
+      "gists_url": "https://api.github.com/users/FlorentClarret/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/FlorentClarret/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/FlorentClarret/subscriptions",
+      "organizations_url": "https://api.github.com/users/FlorentClarret/orgs",
+      "repos_url": "https://api.github.com/users/FlorentClarret/repos",
+      "events_url": "https://api.github.com/users/FlorentClarret/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/FlorentClarret/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "committer": {
+      "login": "web-flow",
+      "id": 19864447,
+      "node_id": "MDQ6VXNlcjE5ODY0NDQ3",
+      "avatar_url": "https://avatars.githubusercontent.com/u/19864447?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/web-flow",
+      "html_url": "https://github.com/web-flow",
+      "followers_url": "https://api.github.com/users/web-flow/followers",
+      "following_url": "https://api.github.com/users/web-flow/following{/other_user}",
+      "gists_url": "https://api.github.com/users/web-flow/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/web-flow/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/web-flow/subscriptions",
+      "organizations_url": "https://api.github.com/users/web-flow/orgs",
+      "repos_url": "https://api.github.com/users/web-flow/repos",
+      "events_url": "https://api.github.com/users/web-flow/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/web-flow/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "parents": [
+      {
+        "sha": "1d448ec876f6f48bc6eb62f70332ef681422ec97",
+        "url": "https://api.github.com/repos/DataDog/datadog-agent/commits/1d448ec876f6f48bc6eb62f70332ef681422ec97",
+        "html_url": "https://github.com/DataDog/datadog-agent/commit/1d448ec876f6f48bc6eb62f70332ef681422ec97"
+      }
+    ],
+    "stats": {
+      "total": 192,
+      "additions": 125,
+      "deletions": 67
+    },
+    "files": [
+      {
+        "sha": "3f83af55d0fb970f04f0ee455a5ac181f5746892",
+        "filename": ".gitignore",
+        "status": "modified",
+        "additions": 4,
+        "deletions": 0,
+        "changes": 4,
+        "blob_url": "https://github.com/DataDog/datadog-agent/blob/dcae0b8602384b11cb9819651f10786f0ff1fcd3/.gitignore",
+        "raw_url": "https://github.com/DataDog/datadog-agent/raw/dcae0b8602384b11cb9819651f10786f0ff1fcd3/.gitignore",
+        "contents_url": "https://api.github.com/repos/DataDog/datadog-agent/contents/.gitignore?ref=dcae0b8602384b11cb9819651f10786f0ff1fcd3",
+        "patch": "@@ -37,6 +37,10 @@ Dockerfiles/cluster-agent/nosys-seccomp\n # specific pre-commit hooks\n .pre-commit-config-*.yaml\n \n+# Utility tools\n+devagent\n+deva\n+\n # go-generated files\n datadog.yaml\n system-probe.yaml"
+      },
+      {
+        "sha": "d4490f71e1c1833a5948ff5c76063ab884fdf57c",
+        "filename": "docs/dev/agent_build.md",
+        "status": "modified",
+        "additions": 7,
+        "deletions": 7,
+        "changes": 14,
+        "blob_url": "https://github.com/DataDog/datadog-agent/blob/dcae0b8602384b11cb9819651f10786f0ff1fcd3/docs%2Fdev%2Fagent_build.md",
+        "raw_url": "https://github.com/DataDog/datadog-agent/raw/dcae0b8602384b11cb9819651f10786f0ff1fcd3/docs%2Fdev%2Fagent_build.md",
+        "contents_url": "https://api.github.com/repos/DataDog/datadog-agent/contents/docs%2Fdev%2Fagent_build.md?ref=dcae0b8602384b11cb9819651f10786f0ff1fcd3",
+        "patch": "@@ -5,18 +5,18 @@\n You can decide at build time which components of the Agent you want to find in\n the final artifact. By default, all the components are picked up, so if you want\n to replicate the same configuration of the Agent distributed via system packages,\n-all you have to do is `invoke agent.build`.\n+all you have to do is `deva agent.build`.\n \n To pick only certain components you have to invoke the task like this:\n \n ```\n-invoke agent.build --build-include=zstd,etcd,python\n+deva agent.build --build-include=zstd,etcd,python\n ```\n \n Conversely, if you want to exclude something:\n \n ```\n-invoke agent.build --build-exclude=systemd,python\n+deva agent.build --build-exclude=systemd,python\n ```\n \n This is the complete list of the available components:\n@@ -68,13 +68,13 @@ into the Agent binary. For instance, to override the defaults and bundle only th\n and the security Agents:\n \n ```\n-invoke agent.build --bundle process-agent --bundle security-agent\n+deva agent.build --bundle process-agent --bundle security-agent\n ```\n \n To disable bundling entirely:\n \n ```\n-invoke agent.build --bundle agent\n+deva agent.build --bundle agent\n ```\n \n One binary per Agent can still be built by using its own invoke task and passing the\n@@ -89,7 +89,7 @@ One binary per Agent can still be built by using its own invoke task and passing\n So to build the process Agent as a standalone self contained executable:\n \n ```\n-invoke process-agent.build --no-bundle\n+deva process-agent.build --no-bundle\n ```\n \n \n@@ -108,7 +108,7 @@ COPY agent /opt/datadog-agent/bin/agent/agent\n \n For this to work properly, two things are important:\n - Your change needs to be done on top of the `<AGENT_VERSION>` tag from the DataDog repository.\n-- You need to run the invoke task with the proper embedded path `inv -e agent.build -e /opt/datadog-agent/embedded`.\n+- You need to run the invoke task with the proper embedded path `deva -e agent.build -e /opt/datadog-agent/embedded`.\n \n **Note**: This makes `invoke` install the build's artifacts in the `/opt/datadog-agent/embedded` folder. Make sure the folder exists and the current user has write permissions.\n "
+      },
+      {
+        "sha": "933ab741a2feb4384b0cc41590172457cd23aa36",
+        "filename": "docs/dev/agent_dev_env.md",
+        "status": "modified",
+        "additions": 61,
+        "deletions": 38,
+        "changes": 99,
+        "blob_url": "https://github.com/DataDog/datadog-agent/blob/dcae0b8602384b11cb9819651f10786f0ff1fcd3/docs%2Fdev%2Fagent_dev_env.md",
+        "raw_url": "https://github.com/DataDog/datadog-agent/raw/dcae0b8602384b11cb9819651f10786f0ff1fcd3/docs%2Fdev%2Fagent_dev_env.md",
+        "contents_url": "https://api.github.com/repos/DataDog/datadog-agent/contents/docs%2Fdev%2Fagent_dev_env.md?ref=dcae0b8602384b11cb9819651f10786f0ff1fcd3",
+        "patch": "@@ -7,82 +7,105 @@ To build the agent on Windows, see [datadog-agent-buildimages](https://github.co\n \n ### Python\n \n-The Agent embeds a full-fledged CPython interpreter so it requires the\n+The Agent embeds a full-fledged CPython interpreter, so it requires the\n development files to be available in the dev env. The Agent can embed Python2\n and/or Python3, you will need development files for all versions you want to\n support.\n \n-If you're on OSX/macOS, installing Python 2.7 and/or 3.9 with [Homebrew](https://brew.sh)\n+If you're on OSX/macOS, installing Python 2.7 and/or 3.11 with [Homebrew](https://brew.sh)\n brings along all the development files needed:\n \n **Please note that not using Python versions explicitly supported, you may have\n problems running the built Agent's Python checks, especially if using a virtualenv.\n-At this time, only Python 3.9 is confirmed to work as expected in the development\n+At this time, only Python 3.11 is confirmed to work as expected in the development\n environment.**\n ```\n brew install python@2\n-brew install python@3.9\n+brew install python@3.11\n ```\n \n On Linux, depending on the distribution, you might need to explicitly install\n the development files, for example on Ubuntu:\n ```\n sudo apt-get install python2.7-dev\n-sudo apt-get install python3.9-dev\n+sudo apt-get install python3.11-dev\n ```\n \n-On Windows, install Python 2.7 and/or 3.9 via the [official installer](https://www.python.org/downloads/).\n+On Windows, install Python 2.7 and/or 3.11 via the [official installer](https://www.python.org/downloads/).\n \n #### Python Dependencies\n \n ##### Preface\n \n-To protect and isolate your system-wide python installation, a python virtual\n-environment is _highly_ recommended (though optional). It will help keep a\n-self-contained development environment and ensure a clean system Python.\n+[Invoke](http://www.pyinvoke.org) is a task runner written in Python that is extensively used in this project to orchestrate builds and test runs. To run the tasks, you need to have it installed on your machine. We offer two different ways to run our invoke tasks.\n+\n+##### `deva` (recommended)\n+\n+The `deva` CLI tool is a single binary that can be used to install and manage the development environment for the Agent, built by the Datadog team. It will install all the necessary Python dependencies for you. The development environment will be completely independent of your system Python installation. This tool leverages [PyApp](https://ofek.dev/pyapp/latest/), a wrapper for Python applications that bootstrap themselves at runtime. In our case, we wrap `invoke` itself and include the dependencies needed to work on the Agent.\n+\n+To install `deva`, you'll need to:\n+\n+1. Download the binary for your platform from the [releases page](https://github.com/DataDog/datadog-agent-devtools/releases/latest),\n+2. Make it executable (and optionally add it to your PATH),\n+3. Run the invoke command you need, using `deva` in place of `invoke` or `inv`.\n+\n+The Python environment will automatically be created on the first run. and will be reused for subsequent runs. For example:\n+\n+```shell\n+$ cd datadog-agent\n+$ curl -L -o deva https://github.com/DataDog/datadog-agent-devtools/releases/download/deva-v1.0.0/deva-aarch64-unknown-linux-gnu-1.0.0\n+$ chmod +x deva\n+$ ./deva linter.go\n+```\n+\n+Below a live demo of how the tool works:\n+\n+![deva_install](../public/assets/images/deva.gif)\n+\n+If you want to uninstall `deva`, you can simply run the `./deva self remove` command, which will remove the virtual environment from your system, and remove the binary. That's it.\n+\n+##### Manual Installation\n+\n+###### Virtual Environment\n+\n+To protect and isolate your system-wide python installation, a python virtual environment is _highly_ recommended (though optional). It will help keep a self-contained development environment and ensure a clean system Python.\n \n **Please note that due to the [way\n some virtual environments handle executable paths](https://bugs.python.org/issue22213)\n (e.g. `python -m venv`), not all virtual environment options will be able to run the built\n-agent correctly. At this time, the only confirmed virtual enviroment that is known for\n+agent correctly. At this time, the only confirmed virtual environment that is known for\n sure to work is `virtualenv`.**\n \n - Install the virtualenv module:\n-`python3 -m pip install virtualenv`\n+    ```\n+    python3 -m pip install virtualenv\n+    ```\n - Create the virtual environment:\n-`virtualenv $GOPATH/src/github.com/DataDog/datadog-agent/venv`\n-- [Activate the virtualenv](https://virtualenv.pypa.io/en/latest/user_guide.html#activators) (OS-dependent).\n-  This must be done for every new terminal before you start.\n-\n-If using virtual environments when running the built Agent, you may need to override the built\n-Agent's search path for Python check packages using the `PYTHONPATH` variable (your target path\n-must have the [pre-requisite core integration packages installed](https://datadoghq.dev/integrations-core/setup/)\n-though).\n+    ```\n+    virtualenv $GOPATH/src/github.com/DataDog/datadog-agent/venv\n+    ```\n+- [Activate the virtualenv](https://virtualenv.pypa.io/en/latest/user_guide.html#activators) (OS-dependent). This must be done for every new terminal before you start.\n+\n+If using virtual environments when running the built Agent, you may need to override the built Agent's search path for Python check packages using the `PYTHONPATH` variable (your target path must have the [pre-requisite core integration packages installed](https://datadoghq.dev/integrations-core/setup/) though).\n+\n ```sh\n-PYTHONPATH=\"./venv/lib/python3.9/site-packages:$PYTHONPATH\" ./agent run ...\n+PYTHONPATH=\"./venv/lib/python3.11/site-packages:$PYTHONPATH\" ./agent run ...\n ```\n \n-See also some notes in [./checks](./checks) about running custom python checks.\n+See also some notes in [./checks](https://github.com/DataDog/datadog-agent/tree/main/docs/dev/checks) about running custom python checks.\n \n-#### Invoke\n+###### Install Invoke and its dependencies\n \n-[Invoke](http://www.pyinvoke.org/) is a task runner written in Python\n-that is extensively used in this project to orchestrate builds and test\n-runs. Our invoke tasks are only compatible with Python 3, thus you will\n-need to use Python 3 to run them.\n+Our invoke tasks are only compatible with Python 3, thus you will need to use Python 3 to run them.\n \n-Though you may install invoke in a variety of way we suggest you use\n-the provided [requirements](https://github.com/DataDog/datadog-agent/blob/main/requirements.txt)\n-file and `pip`:\n+Though you may install invoke in a variety of way we suggest you use the provided [requirements](https://github.com/DataDog/datadog-agent/blob/main/requirements.txt) file and `pip`:\n \n ```bash\n-pip install -r requirements.txt\n+pip install -r tasks/requirements.txt\n ```\n \n-This procedure ensures you not only get the correct version of `invoke`, but\n-also any additional python dependencies our development workflow may require,\n-at their expected versions.\n-It will also pull other handy development tools/deps (`reno`, or `docker`).\n+This procedure ensures you not only get the correct version of `invoke`, but also any additional python dependencies our development workflow may require, at their expected versions. It will also pull other handy development tools/deps (`reno`, or `docker`).\n+\n \n ### Golang\n \n@@ -97,7 +120,7 @@ binary properly.**\n \n ### Installing tooling\n \n-From the root of `datadog-agent`, run `invoke install-tools` to install go tooling. This uses `go` to install the necessary dependencies.\n+From the root of `datadog-agent`, run `deva install-tools` to install go tooling. This uses `go` to install the necessary dependencies.\n \n ### System or Embedded?\n \n@@ -170,7 +193,7 @@ dev environment.\n \n We use [Doxygen](http://www.doxygen.nl/) to generate the documentation for the `rtloader` part of the Agent.\n \n-To generate it (using the `invoke rtloader.generate-doc` command), you'll need to have Doxygen installed on your system and available in your `$PATH`. You can compile and install Doxygen from source with the instructions available [here](http://www.doxygen.nl/manual/install.html).\n+To generate it (using the `deva rtloader.generate-doc` command), you'll need to have Doxygen installed on your system and available in your `$PATH`. You can compile and install Doxygen from source with the instructions available [here](http://www.doxygen.nl/manual/install.html).\n Alternatively, you can use already-compiled Doxygen binaries from [here](http://www.doxygen.nl/download.html).\n \n To get the dependency graphs, you may also need to install the `dot` executable from [graphviz](http://www.graphviz.org/) and add it to your `$PATH`.\n@@ -192,7 +215,7 @@ The `shellcheck` pre-commit hook requires having the `shellcheck` binary install\n To install it, run:\n \n ```sh\n-inv install-shellcheck --destination <path>\n+deva install-shellcheck --destination <path>\n ```\n \n (by default, the shellcheck binary is installed in `/usr/local/bin`).\n@@ -220,7 +243,7 @@ the dependencies needed to develop in this repository.\n To configure the vscode editor to use a container as remote development environment you need to:\n \n - Install the [devcontainer plugin](https://code.visualstudio.com/docs/remote/containers) and the [golang language plugin](https://code.visualstudio.com/docs/languages/go).\n-- Run the following invoke command `invoke vscode.setup-devcontainer --image \"<image name>\"`.\n+- Run the following invoke command `deva vscode.setup-devcontainer --image \"<image name>\"`.\n   This command will create the devcontainer configuration file `./devcontainer/devcontainer.json`.\n - Start or restart your vscode editor.\n - A pop-up should show-up to propose to \"reopen in container\" your workspace."
+      },
+      {
+        "sha": "d5960c47f8b09c9f6c43b03fa673490086b6ac03",
+        "filename": "docs/dev/agent_omnibus.md",
+        "status": "modified",
+        "additions": 4,
+        "deletions": 4,
+        "changes": 8,
+        "blob_url": "https://github.com/DataDog/datadog-agent/blob/dcae0b8602384b11cb9819651f10786f0ff1fcd3/docs%2Fdev%2Fagent_omnibus.md",
+        "raw_url": "https://github.com/DataDog/datadog-agent/raw/dcae0b8602384b11cb9819651f10786f0ff1fcd3/docs%2Fdev%2Fagent_omnibus.md",
+        "contents_url": "https://api.github.com/repos/DataDog/datadog-agent/contents/docs%2Fdev%2Fagent_omnibus.md?ref=dcae0b8602384b11cb9819651f10786f0ff1fcd3",
+        "patch": "@@ -19,7 +19,7 @@ From the `datadog-agent` source folder, use the following command to run the\n `omnibus.build` task in a Docker container:\n \n ```\n-docker run -v \"$PWD:/go/src/github.com/DataDog/datadog-agent\" -v \"/tmp/omnibus:/omnibus\" -v \"/tmp/opt/datadog-agent:/opt/datadog-agent\" -v\"/tmp/gems:/gems\" --workdir=/go/src/github.com/DataDog/datadog-agent datadog/agent-buildimages-deb_x64 inv -e omnibus.build --base-dir=/omnibus --gem-path=/gems\n+docker run -v \"$PWD:/go/src/github.com/DataDog/datadog-agent\" -v \"/tmp/omnibus:/omnibus\" -v \"/tmp/opt/datadog-agent:/opt/datadog-agent\" -v\"/tmp/gems:/gems\" --workdir=/go/src/github.com/DataDog/datadog-agent datadog/agent-buildimages-deb_x64 deva -e omnibus.build --base-dir=/omnibus --gem-path=/gems\n ```\n \n The container will share 3 volumes with the host to avoid starting from scratch\n@@ -60,20 +60,20 @@ the filesystem without disrupting anything.\n To run Omnibus and build the package, make the `/opt` folder world readable and run:\n \n ```\n-inv omnibus.build --base-dir=$HOME/.omnibus\n+deva omnibus.build --base-dir=$HOME/.omnibus\n ```\n \n On Mac, you might want to skip the signing step by running:\n \n ```\n-inv omnibus.build --base-dir=$HOME/.omnibus --skip-sign\n+deva omnibus.build --base-dir=$HOME/.omnibus --skip-sign\n ```\n \n The path you pass with the `--base-dir` option will contain the sources\n downloaded by Omnibus in the `src` folder, the binaries cached after building\n those sources in the `cache` folder and the final deb/rpm/dmg artifacts in the\n `pkg` folder. You can fine tune an Omnibus run passing more options, see\n-`inv omnibus.build --help` for the list of all the available options.\n+`deva omnibus.build --help` for the list of all the available options.\n \n **Note:** it's strongly advised to pass `--base-dir` and point to a directory\n outside the Agent repo. By default Omnibus stores packages in the project folder"
+      },
+      {
+        "sha": "f5de45baf8bbc1615e59a4c2afef96d9d0b58e95",
+        "filename": "docs/dev/checks/README.md",
+        "status": "modified",
+        "additions": 4,
+        "deletions": 4,
+        "changes": 8,
+        "blob_url": "https://github.com/DataDog/datadog-agent/blob/dcae0b8602384b11cb9819651f10786f0ff1fcd3/docs%2Fdev%2Fchecks%2FREADME.md",
+        "raw_url": "https://github.com/DataDog/datadog-agent/raw/dcae0b8602384b11cb9819651f10786f0ff1fcd3/docs%2Fdev%2Fchecks%2FREADME.md",
+        "contents_url": "https://api.github.com/repos/DataDog/datadog-agent/contents/docs%2Fdev%2Fchecks%2FREADME.md?ref=dcae0b8602384b11cb9819651f10786f0ff1fcd3",
+        "patch": "@@ -146,7 +146,7 @@ class MyCheck(AgentCheck):\n \n 1. Place the configuration file `hello_world.yaml` in the `dev/dist/conf.d/` folder.\n 1. Place your Python code in the `dev/dist/` folder.\n-1. Run `inv agent.build` as usual. This step copies the contents\n+1. Run `deva agent.build` as usual. This step copies the contents\n    of `dev/dist` into `bin/agent/dist`, which is where the Agent looks\n    for your code.\n \n@@ -184,12 +184,12 @@ correctly.\n        `python3` bins.\n 1. Activate the virtualenv (OS-dependent)\n 1. `python3 -m pip install '/path/to/integrations-core/datadog_checks_base[deps]'`\n-1. `PYTHONPATH=\"$PWD/venv/lib/python3.10/site-packages:$PYTHONPATH\" inv agent.run`\n+1. `PYTHONPATH=\"$PWD/venv/lib/python3.10/site-packages:$PYTHONPATH\" deva agent.run`\n \n \n #### Example for user install\n 1. `python3 -m pip install --user '/path/to//integrations-core/datadog_checks_base[deps]'`\n-1. `PYTHONPATH=\"$HOME/.local/lib/python3.10/site-packages:$PYTHONPATH\" inv agent.run`\n+1. `PYTHONPATH=\"$HOME/.local/lib/python3.10/site-packages:$PYTHONPATH\" deva agent.run`\n \n #### Getting the right `PYTHONPATH`\n You want the `site-packages` directory that the `datadog_checks_base` got\n@@ -266,7 +266,7 @@ depending on your configuration) from the `PATH` that is used to run the Agent.\n > in `pkg/collector/python/init.go`.\n \n ### \"Could not initialize Python\"\n-Out of the box, after an `inv agent.build`, you may see the following error on\n+Out of the box, after an `deva agent.build`, you may see the following error on\n Linux when trying to run the resulting `agent` binary:\n \n `Could not initialize Python: could not load runtime python for version 3: Unable to open three library: libdatadog-agent-three.so: cannot open shared object file: No such file or directory`"
+      },
+      {
+        "sha": "34e6142fee9af93c9337b74667d994e24d68d5c2",
+        "filename": "docs/dev/checks/jmxfetch.md",
+        "status": "modified",
+        "additions": 3,
+        "deletions": 3,
+        "changes": 6,
+        "blob_url": "https://github.com/DataDog/datadog-agent/blob/dcae0b8602384b11cb9819651f10786f0ff1fcd3/docs%2Fdev%2Fchecks%2Fjmxfetch.md",
+        "raw_url": "https://github.com/DataDog/datadog-agent/raw/dcae0b8602384b11cb9819651f10786f0ff1fcd3/docs%2Fdev%2Fchecks%2Fjmxfetch.md",
+        "contents_url": "https://api.github.com/repos/DataDog/datadog-agent/contents/docs%2Fdev%2Fchecks%2Fjmxfetch.md?ref=dcae0b8602384b11cb9819651f10786f0ff1fcd3",
+        "patch": "@@ -12,7 +12,7 @@ version of JMXFetch, follow the instructions below:\n 1. Download the `-jar-with-dependencies.jar` build of the latest version of JMXFetch from\n    [`maven`](https://repo1.maven.org/maven2/com/datadoghq/jmxfetch/)\n 2. Copy the jar file and rename it to `$GOPATH/src/github.com/DataDog/datadog-agent/dev/dist/jmx/jmxfetch.jar`.\n-3. Run `inv agent.run`.\n+3. Run `deva agent.run`.\n 4. Validate that the JMXFetch section appears in `agent status`.\n \n If you have a JMX-based integration configured to run, it automatically\n@@ -22,7 +22,7 @@ runs in your local JMXFetch instance.\n ## Custom Build of JMXFetch\n 1. [Build JMXFetch](https://github.com/DataDog/jmxfetch/#building-from-source).\n 2. Copy the resulting jar into `$GOPATH/src/github.com/DataDog/datadog-agent/dev/dist/jmx/jmxfetch.jar`.\n-3. Run `inv agent.run`.\n+3. Run `deva agent.run`.\n 4. Validate that the JMXFetch section appears in `agent status`.\n \n If you have a JMX-based integration configured to run, it should automatically\n@@ -36,5 +36,5 @@ be run in your local JMXFetch instance.\n    - An example for the above test server can be found\n    [in the jmxfetch repo](https://github.com/DataDog/jmxfetch/blob/master/tools/misbehaving-jmx-server/misbehaving-jmxfetch-conf.yaml).\n    - This config should live in `dev/dist/conf.d/jmx-test-server.d/conf.yaml`.\n-3. Run `inv agent.run`.\n+3. Run `deva agent.run`.\n 4. Validate that the check appears as scheduled in `agent status`."
+      },
+      {
+        "sha": "ee1d44b4889424643093e0624e35ad4e64754a22",
+        "filename": "docs/dev/linters.md",
+        "status": "modified",
+        "additions": 3,
+        "deletions": 3,
+        "changes": 6,
+        "blob_url": "https://github.com/DataDog/datadog-agent/blob/dcae0b8602384b11cb9819651f10786f0ff1fcd3/docs%2Fdev%2Flinters.md",
+        "raw_url": "https://github.com/DataDog/datadog-agent/raw/dcae0b8602384b11cb9819651f10786f0ff1fcd3/docs%2Fdev%2Flinters.md",
+        "contents_url": "https://api.github.com/repos/DataDog/datadog-agent/contents/docs%2Fdev%2Flinters.md?ref=dcae0b8602384b11cb9819651f10786f0ff1fcd3",
+        "patch": "@@ -13,7 +13,7 @@ For Go, we're using [golangci-lint](https://golangci-lint.run/), a Go linters ag\n The `linters` key defines the list of linters we're using:\n https://github.com/DataDog/datadog-agent/blob/dffd3262934a5540b9bf8e4bd3a743732637ef37/.golangci.yml#L65-L79\n \n-To run the linters locally, run `inv linter.go`.\n+To run the linters locally, run `deva linter.go`.\n \n > [!TIP]\n > In your code, you can ignore linter issues on a line by prepending it with [the nolint directive](https://golangci-lint.run/usage/false-positives/#nolint-directive), for example,  `//nolint:linter_name`.\n@@ -28,7 +28,7 @@ For Python, we're using ([see invoke task](https://github.com/DataDog/datadog-ag\n \n Their configuration is defined in both the [setup.cfg](https://github.com/DataDog/datadog-agent/blob/dffd3262934a5540b9bf8e4bd3a743732637ef37/setup.cfg) and the [pyproject.toml](https://github.com/DataDog/datadog-agent/blob/dffd3262934a5540b9bf8e4bd3a743732637ef37/pyproject.toml) files.\n \n-To run the linters locally, run `inv linter.python`.\n+To run the linters locally, run `deva linter.python`.\n \n > [!TIP]\n > In your code, you can ignore linter issues on a line by prepending it with `# noqa: error_code`.\n@@ -45,7 +45,7 @@ A: This could have several causes:\n     - `go version` should output the same as [the repository .go-version](https://github.com/DataDog/datadog-agent/blob/dffd3262934a5540b9bf8e4bd3a743732637ef37/.go-version).\n     - `golangci-lint --version` should output the same as [the repository internal/tools/go.mod](https://github.com/DataDog/datadog-agent/blob/dffd3262934a5540b9bf8e4bd3a743732637ef37/internal/tools/go.mod/#L8).\n - You're testing OS specific code; running locally, the linters only get the results for your local OS.\n-- You didn't run `inv tidy-all` in the repository, making some dependencies in the remote env outdated compared to your local env.\n+- You didn't run `deva tidy` in the repository, making some dependencies in the remote env outdated compared to your local env.\n \n ### About the new-from-rev golangci-lint parameter\n "
+      },
+      {
+        "sha": "cfa6f393c61c596153bf6834cbf4bc0eb6e11719",
+        "filename": "docs/public/assets/images/deva.gif",
+        "status": "added",
+        "additions": 0,
+        "deletions": 0,
+        "changes": 0,
+        "blob_url": "https://github.com/DataDog/datadog-agent/blob/dcae0b8602384b11cb9819651f10786f0ff1fcd3/docs%2Fpublic%2Fassets%2Fimages%2Fdeva.gif",
+        "raw_url": "https://github.com/DataDog/datadog-agent/raw/dcae0b8602384b11cb9819651f10786f0ff1fcd3/docs%2Fpublic%2Fassets%2Fimages%2Fdeva.gif",
+        "contents_url": "https://api.github.com/repos/DataDog/datadog-agent/contents/docs%2Fpublic%2Fassets%2Fimages%2Fdeva.gif?ref=dcae0b8602384b11cb9819651f10786f0ff1fcd3"
+      },
+      {
+        "sha": "fc4af2e358ccc9e48f65c9fcfa298134bb62d040",
+        "filename": "docs/public/components/creating-components.md",
+        "status": "modified",
+        "additions": 1,
+        "deletions": 1,
+        "changes": 2,
+        "blob_url": "https://github.com/DataDog/datadog-agent/blob/dcae0b8602384b11cb9819651f10786f0ff1fcd3/docs%2Fpublic%2Fcomponents%2Fcreating-components.md",
+        "raw_url": "https://github.com/DataDog/datadog-agent/raw/dcae0b8602384b11cb9819651f10786f0ff1fcd3/docs%2Fpublic%2Fcomponents%2Fcreating-components.md",
+        "contents_url": "https://api.github.com/repos/DataDog/datadog-agent/contents/docs%2Fpublic%2Fcomponents%2Fcreating-components.md?ref=dcae0b8602384b11cb9819651f10786f0ff1fcd3",
+        "patch": "@@ -53,7 +53,7 @@ This file hierarchy aims to solve a few problems:\n \n ## Bootstrapping components\n \n-You can use the [invoke](../setup.md#invoke) task `inv components.new-component comp/<component>` to generate a scaffold for your new component.\n+You can use the [invoke](../setup.md#preface) task `deva components.new-component comp/<component>` to generate a scaffold for your new component.\n \n Every public variable, function, struct, and interface of your component **must** be documented. Refer to the [Documentation](#documentation) section below for details.\n "
+      },
+      {
+        "sha": "c272bbce5fa83f876130d96923062c9bae5e7f44",
+        "filename": "docs/public/guidelines/deprecated-components-documentation/defining-bundles.md",
+        "status": "modified",
+        "additions": 1,
+        "deletions": 1,
+        "changes": 2,
+        "blob_url": "https://github.com/DataDog/datadog-agent/blob/dcae0b8602384b11cb9819651f10786f0ff1fcd3/docs%2Fpublic%2Fguidelines%2Fdeprecated-components-documentation%2Fdefining-bundles.md",
+        "raw_url": "https://github.com/DataDog/datadog-agent/raw/dcae0b8602384b11cb9819651f10786f0ff1fcd3/docs%2Fpublic%2Fguidelines%2Fdeprecated-components-documentation%2Fdefining-bundles.md",
+        "contents_url": "https://api.github.com/repos/DataDog/datadog-agent/contents/docs%2Fpublic%2Fguidelines%2Fdeprecated-components-documentation%2Fdefining-bundles.md?ref=dcae0b8602384b11cb9819651f10786f0ff1fcd3",
+        "patch": "@@ -13,7 +13,7 @@ A bundle is defined in a dedicated package named `comp/<bundleName>`. The packag\n \n Typically, a bundle will automatically instantiate the top-level components that represent the bundle's purpose. For example, the trace-agent bundle `comp/trace` might automatically instantiate `comp/trace/agent`.\n \n-You can use the invoke task `inv components.new-bundle comp/<bundleName>` to generate a pre-filled `bundle.go` file for the given bundle.\n+You can use the invoke task `deva components.new-bundle comp/<bundleName>` to generate a pre-filled `bundle.go` file for the given bundle.\n \n ## Bundle Parameters\n "
+      },
+      {
+        "sha": "f8efe306282a143838e2d0e5a83e092d71dfb4b3",
+        "filename": "docs/public/guidelines/docs.md",
+        "status": "modified",
+        "additions": 1,
+        "deletions": 1,
+        "changes": 2,
+        "blob_url": "https://github.com/DataDog/datadog-agent/blob/dcae0b8602384b11cb9819651f10786f0ff1fcd3/docs%2Fpublic%2Fguidelines%2Fdocs.md",
+        "raw_url": "https://github.com/DataDog/datadog-agent/raw/dcae0b8602384b11cb9819651f10786f0ff1fcd3/docs%2Fpublic%2Fguidelines%2Fdocs.md",
+        "contents_url": "https://api.github.com/repos/DataDog/datadog-agent/contents/docs%2Fpublic%2Fguidelines%2Fdocs.md?ref=dcae0b8602384b11cb9819651f10786f0ff1fcd3",
+        "patch": "@@ -2,7 +2,7 @@\n \n This site is built by [MkDocs](https://github.com/mkdocs/mkdocs) and uses the [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/) theme.\n \n-You can serve documentation locally with the `docs.serve` [invoke task](../setup.md#invoke).\n+You can serve documentation locally with the `docs.serve` [invoke task](../setup.md#preface).\n \n ## Organization\n "
+      },
+      {
+        "sha": "957c2ef7c14a0b6f873e30e44503e9f541e060e3",
+        "filename": "docs/public/setup.md",
+        "status": "modified",
+        "additions": 36,
+        "deletions": 5,
+        "changes": 41,
+        "blob_url": "https://github.com/DataDog/datadog-agent/blob/dcae0b8602384b11cb9819651f10786f0ff1fcd3/docs%2Fpublic%2Fsetup.md",
+        "raw_url": "https://github.com/DataDog/datadog-agent/raw/dcae0b8602384b11cb9819651f10786f0ff1fcd3/docs%2Fpublic%2Fsetup.md",
+        "contents_url": "https://api.github.com/repos/DataDog/datadog-agent/contents/docs%2Fpublic%2Fsetup.md?ref=dcae0b8602384b11cb9819651f10786f0ff1fcd3",
+        "patch": "@@ -33,10 +33,41 @@ On Windows, install Python 2.7 and/or 3.11 via the [official installer](https://\n \n ##### Preface\n \n+[Invoke](http://www.pyinvoke.org) is a task runner written in Python that is extensively used in this project to orchestrate builds and test runs. To run the tasks, you need to have it installed on your machine. We offer two different ways to run our invoke tasks.\n+\n+##### `deva` (recommended)\n+\n+The `deva` CLI tool is a single binary that can be used to install and manage the development environment for the Agent, built by the Datadog team. It will install all the necessary Python dependencies for you. The development environment will be completely independent of your system Python installation. This tool leverages [PyApp](https://ofek.dev/pyapp/latest/), a wrapper for Python applications that bootstrap themselves at runtime. In our case, we wrap `invoke` itself and include the dependencies needed to work on the Agent.\n+\n+To install `deva`, you'll need to:\n+\n+1. Download the binary for your platform from the [releases page](https://github.com/DataDog/datadog-agent-devtools/releases/latest),\n+2. Make it executable (and optionally add it to your PATH),\n+3. Run the invoke command you need, using `deva` in place of `invoke` or `inv`.\n+\n+The Python environment will automatically be created on the first run. and will be reused for subsequent runs. For example:\n+\n+```shell\n+$ cd datadog-agent\n+$ curl -L -o deva https://github.com/DataDog/datadog-agent-devtools/releases/download/deva-v1.0.0/deva-aarch64-unknown-linux-gnu-1.0.0\n+$ chmod +x deva\n+$ ./deva linter.go\n+```\n+\n+Below a live demo of how the tool works:\n+\n+![deva_install](./assets/images/deva.gif)\n+\n+If you want to uninstall `deva`, you can simply run the `./deva self remove` command, which will remove the virtual environment from your system, and remove the binary. That's it.\n+\n+##### Manual Installation\n+\n+###### Virtual Environment\n+\n To protect and isolate your system-wide python installation, a python virtual environment is _highly_ recommended (though optional). It will help keep a self-contained development environment and ensure a clean system Python.\n \n !!! note\n-    Due to the [way some virtual environments handle executable paths](https://bugs.python.org/issue22213) (e.g. `python -m venv`), not all virtual environment options will be able to run the built Agent correctly. At this time, the only confirmed virtual enviroment creator that is known for sure to work is `virtualenv`.\n+    Due to the [way some virtual environments handle executable paths](https://bugs.python.org/issue22213) (e.g. `python -m venv`), not all virtual environment options will be able to run the built Agent correctly. At this time, the only confirmed virtual environment creator that is known for sure to work is `virtualenv`.\n \n - Install the virtualenv module:\n     ```\n@@ -56,9 +87,9 @@ PYTHONPATH=\"./venv/lib/python3.11/site-packages:$PYTHONPATH\" ./agent run ...\n \n See also some notes in [./checks](https://github.com/DataDog/datadog-agent/tree/main/docs/dev/checks) about running custom python checks.\n \n-#### Invoke\n+###### Install Invoke and its dependencies\n \n-[Invoke](http://www.pyinvoke.org) is a task runner written in Python that is extensively used in this project to orchestrate builds and test runs. Our invoke tasks are only compatible with Python 3, thus you will need to use Python 3 to run them.\n+Our invoke tasks are only compatible with Python 3, thus you will need to use Python 3 to run them.\n \n Though you may install invoke in a variety of way we suggest you use the provided [requirements](https://github.com/DataDog/datadog-agent/blob/main/requirements.txt) file and `pip`:\n \n@@ -141,7 +172,7 @@ pre-commit install\n The `shellcheck` pre-commit hook requires having the `shellcheck` binary installed and in your `$PATH`. To install it, run:\n \n ```sh\n-inv install-shellcheck --destination <path>\n+deva install-shellcheck --destination <path>\n ```\n \n (by default, the shellcheck binary is installed in `/usr/local/bin`).\n@@ -169,7 +200,7 @@ See `pre-commit run --help` for further options.\n To configure the vscode editor to use a container as remote development environment you need to:\n \n - Install the [devcontainer plugin](https://code.visualstudio.com/docs/remote/containers) and the [golang language plugin](https://code.visualstudio.com/docs/languages/go).\n-- Run the following invoke command `invoke vscode.setup-devcontainer --image \"<image name>\"`. This command will create the devcontainer configuration file `./devcontainer/devcontainer.json`.\n+- Run the following invoke command `deva vscode.setup-devcontainer --image \"<image name>\"`. This command will create the devcontainer configuration file `./devcontainer/devcontainer.json`.\n - Start or restart your vscode editor.\n - A pop-up should show-up to propose to \"reopen in container\" your workspace.\n - The first start, it might propose you to install the golang plugin dependencies/tooling."
+      }
+    ]
+  }
