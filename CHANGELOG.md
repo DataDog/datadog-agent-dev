@@ -8,19 +8,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+***Changed:***
+
+- Rename `build bazel` command to `bzl`
+
+***Added:***
+
+- Methods on the `app.tools.bazel` tool now prevent exceeding platform-specific command line length limits
+
 ## 0.27.0 - 2025-09-22
 
 ***Changed:***
 
-- Rename the `[git.user]` section to `[tools.git.author]`
+- Rename the `[git.user]` config section to `[tools.git.author]`
 - The `Tool` interface now uses a single execution context instead of the dedicated methods `format_command` and `env_vars`
-- Updated Atlassian API to 4.0.7
 
 ***Added:***
 
 - Add `git` tool
 - Add `[user]` section to the configuration
 - Add abstract context manager `execution_context` method to the `Tool` interface
+- Updated Atlassian API to 4.0.7
 
 ## 0.26.0 - 2025-09-09
 

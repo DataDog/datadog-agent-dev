@@ -10,11 +10,13 @@ from dda.utils.process import EnvVars
 
 
 def test_default_download(dda, helpers, isolation, mocker):
+    args = ["build", "//..."]
+    mocker.patch("dda.cli.base._get_argv", return_value=["dda", "bzl", *args])
     downloader = mocker.patch("dda.utils.network.http.manager.HTTPClientManager.download")
     subprocess_runner = mocker.patch("subprocess.run", return_value=subprocess.CompletedProcess(args=[], returncode=0))
 
     with EnvVars(exclude=["PATH"]):
-        result = dda("build", "bazel", "build", "//...")
+        result = dda("bzl", *args)
 
     assert result.exit_code == 0, result.output
     assert result.output == helpers.dedent(
@@ -28,24 +30,26 @@ def test_default_download(dda, helpers, isolation, mocker):
         get_download_url(),
         path=internal_bazel_path,
     )
-    subprocess_runner.assert_called_once_with([str(internal_bazel_path), "build", "//..."])
+    subprocess_runner.assert_called_once_with([str(internal_bazel_path), *args])
 
 
 def test_default_exists(dda, helpers, temp_dir, mocker):
     external_bazel_path = temp_dir.joinpath("bazel").as_exe()
     helpers.create_binary(external_bazel_path)
 
+    args = ["build", "//..."]
+    mocker.patch("dda.cli.base._get_argv", return_value=["dda", "bzl", *args])
     downloader = mocker.patch("dda.utils.network.http.manager.HTTPClientManager.download")
     subprocess_runner = mocker.patch("subprocess.run", return_value=subprocess.CompletedProcess(args=[], returncode=0))
 
     with EnvVars({"PATH": str(temp_dir)}):
-        result = dda("build", "bazel", "build", "//...")
+        result = dda("bzl", *args)
 
     assert result.exit_code == 0, result.output
     assert not result.output
 
     downloader.assert_not_called()
-    subprocess_runner.assert_called_once_with([str(external_bazel_path), "build", "//..."])
+    subprocess_runner.assert_called_once_with([str(external_bazel_path), *args])
 
 
 def test_config_force_managed(dda, helpers, isolation, config_file, temp_dir, mocker):
@@ -55,11 +59,13 @@ def test_config_force_managed(dda, helpers, isolation, config_file, temp_dir, mo
     external_bazel_path = temp_dir.joinpath("bazel").as_exe()
     helpers.create_binary(external_bazel_path)
 
+    args = ["build", "//..."]
+    mocker.patch("dda.cli.base._get_argv", return_value=["dda", "bzl", *args])
     downloader = mocker.patch("dda.utils.network.http.manager.HTTPClientManager.download")
     subprocess_runner = mocker.patch("subprocess.run", return_value=subprocess.CompletedProcess(args=[], returncode=0))
 
     with EnvVars({"PATH": str(temp_dir)}):
-        result = dda("build", "bazel", "build", "//...")
+        result = dda("bzl", *args)
 
     assert result.exit_code == 0, result.output
     assert result.output == helpers.dedent(
@@ -73,17 +79,19 @@ def test_config_force_managed(dda, helpers, isolation, config_file, temp_dir, mo
         get_download_url(),
         path=internal_bazel_path,
     )
-    subprocess_runner.assert_called_once_with([str(internal_bazel_path), "build", "//..."])
+    subprocess_runner.assert_called_once_with([str(internal_bazel_path), *args])
 
 
 def test_config_force_unmanaged(dda, helpers, config_file, mocker):
     config_file.data["tools"]["bazel"]["managed"] = False
     config_file.save()
 
+    args = ["build", "//..."]
+    mocker.patch("dda.cli.base._get_argv", return_value=["dda", "bzl", *args])
     downloader = mocker.patch("dda.utils.network.http.manager.HTTPClientManager.download")
 
     with EnvVars(exclude=["PATH"]):
-        result = dda("build", "bazel", "build", "//...")
+        result = dda("bzl", *args)
 
     assert result.exit_code == 1, result.output
     assert result.output == helpers.dedent(
@@ -91,5 +99,22 @@ def test_config_force_unmanaged(dda, helpers, config_file, mocker):
         Executable `bazel` not found: ['bazel', 'build', '//...']
         """
     )
+
+    downloader.assert_not_called()
+
+
+def test_arg_interception(dda, config_file, mocker):
+    config_file.data["tools"]["bazel"]["managed"] = False
+    config_file.save()
+
+    args = ["build", "--", "//..."]
+    mocker.patch("dda.cli.base._get_argv", return_value=["dda", "bzl", *args])
+    downloader = mocker.patch("dda.utils.network.http.manager.HTTPClientManager.download")
+
+    with EnvVars(exclude=["PATH"]):
+        result = dda("bzl", *args)
+
+    assert result.exit_code == 1, result.output
+    assert result.output.startswith("Executable `bazel` not found: ['bazel', 'build', '--target_pattern_file', '")
 
     downloader.assert_not_called()
