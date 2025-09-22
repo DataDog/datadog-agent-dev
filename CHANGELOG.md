@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+## 0.28.0 - 2025-09-22
+
 ***Changed:***
 
 - Rename `build bazel` command to `bzl`
