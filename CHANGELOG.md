@@ -8,10 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+## 0.27.0 - 2025-09-22
+
 ***Changed:***
 
 - Rename the `[git.user]` section to `[tools.git.author]`
 - The `Tool` interface now uses a single execution context instead of the dedicated methods `format_command` and `env_vars`
+- Updated Atlassian API to 4.0.7
 
 ***Added:***
 
