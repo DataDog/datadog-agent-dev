@@ -502,6 +502,16 @@ def ensure_features_installed(
         app.tools.uv.wait(command, message="Synchronizing dependencies", cwd=str(temp_dir), env=env_vars)
 
 
+def get_raw_args(ctx: click.Context) -> list[str]:
+    level = len(ctx.command_path.split())
+    return _get_argv()[level:]
+
+
+def _get_argv() -> list[str]:
+    # This is used for test assertions only
+    return sys.argv
+
+
 def _get_root_ctx(ctx: click.Context) -> DynamicContext:
     while ctx.parent is not None:
         ctx = ctx.parent
