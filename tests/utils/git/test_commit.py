@@ -5,7 +5,6 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-import pytest
 from httpx import Response
 
 from dda.utils.fs import Path
@@ -22,52 +21,7 @@ class TestCommitClass:
         commit1 = Commit(sha1="82ee754ca931816902ac7e6e38f66a51e65912f9")
         commit2 = Commit(sha1="82ee754ca931816902ac7e6e38f66a51e65912f9")
 
-        # Basic equality
         assert commit1 == commit2
-
-        # Add details to one of the commits
-        commit1.__dict__["details"] = CommitDetails(
-            author_name="John Doe",
-            author_email="john.doe@example.com",
-            datetime=datetime.now(tz=UTC),
-            message="This is a test message",
-            parent_shas=["1234567890" * 4],
-        )
-        # Should still be equal
-        with pytest.raises(AttributeError):
-            commit2.details  # noqa: B018
-        assert commit1 == commit2
-
-    # Already tested in tools/test_git.py
-    def test_head(self):
-        pass
-
-    # Already tested in tools/test_git.py
-    def test_compare_to(self, app):
-        pass
-
-    # Already tested in test_remote.py
-    def test_get_commit_details_from_remote(self):
-        pass
-
-    # Already tested in tools/test_git.py
-    def test_get_commit_details_from_git(self):
-        pass
-
-    def test_properties_proxying(self):
-        commit = Commit("1425a34f443f0b468e1739a06fcf97dfbf632594")
-        details_dict = {
-            "author_name": "John Doe",
-            "author_email": "john.doe@example.com",
-            "datetime": datetime(2023, 1, 15, 10, 30, 0, tzinfo=UTC),
-            "message": "Add new feature for testing",
-            "parent_shas": ["82ee754ca931816902ac7e6e38f66a51e65912f9"],
-        }
-        commit_details = CommitDetails(**details_dict)
-        commit.__dict__["details"] = commit_details
-        for prop, expected_value in details_dict.items():
-            assert getattr(commit, prop) == getattr(commit_details, prop)
-            assert getattr(commit, prop) == expected_value
 
 
 class TestCommitDetailsClass:
@@ -97,7 +51,7 @@ class TestCommitDetailsClass:
             "dda.utils.network.http.client.HTTPClient.get",
             return_value=Response(status_code=200, content=github_payload_str),
         )
-        github_details = commit.get_details_from_remote(Remote.from_url("https://github.com/foo/bar"))
+        github_details = Remote.from_url("https://github.com/foo/bar").get_details_and_changes_for_commit(commit)[0]
 
         # Mock Git.capture to return payload from file
         git_output_file = Path(__file__).parent / "fixtures" / "git_show_dda_1425a34.txt"
@@ -108,5 +62,5 @@ class TestCommitDetailsClass:
         )
 
         # Get details from Git
-        git_details = commit.get_details_from_git(app)
+        git_details = app.tools.git.get_commit_details(commit.sha1)
         assert github_details == git_details
