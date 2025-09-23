@@ -29,11 +29,6 @@ class Commit(Struct, frozen=True, dict=True):
         if len(self.sha1) != 40:  # noqa: PLR2004
             msg = "SHA-1 hash must be 40 characters long"
             raise ValueError(msg)
-        for c in self.sha1:
-            code = ord(c)
-            if code not in range(48, 58) and code not in range(97, 103):
-                msg = "SHA-1 hash must contain only hexadecimal characters"
-                raise ValueError(msg)
 
     def __str__(self) -> str:
         return self.sha1
