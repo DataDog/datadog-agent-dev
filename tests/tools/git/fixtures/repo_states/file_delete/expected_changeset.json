@@ -1,1 +1,10 @@
-{"_changes":{"Path('file2.txt')":{"file":"Path('file2.txt')","type":"D","binary":false,"patch":"@@ -1,3 +0,0 @@\n-file2\n-I will be deleted, unfortunately.\n-That's quite sad."}}}
+{
+    "changes": {
+        "Path('file2.txt')": {
+            "file": "Path('file2.txt')",
+            "type": "D",
+            "binary": false,
+            "patch": "@@ -1,3 +0,0 @@\n-file2\n-I will be deleted, unfortunately.\n-That's quite sad."
+        }
+    }
+}

@@ -6,6 +6,7 @@ from __future__ import annotations
 import random
 import re
 from datetime import datetime
+from types import MappingProxyType
 from typing import TYPE_CHECKING, Any
 
 import pytest
@@ -196,11 +197,13 @@ def test_get_changes_with_base(app: Application, mocker: Any, repo_testcase: str
     assert_changesets_equal(changeset, expected_changeset)
 
     # Test with working tree changes
-    working_tree_changes = ChangeSet({
-        Path("test.txt"): ChangedFile(
-            file=Path("test.txt"), type=ChangeType.ADDED, binary=False, patch="@@ -0,0 +1 @@\n+test"
-        )
-    })
+    working_tree_changes = ChangeSet(
+        changes=MappingProxyType({
+            Path("test.txt"): ChangedFile(
+                file=Path("test.txt"), type=ChangeType.ADDED, binary=False, patch="@@ -0,0 +1 @@\n+test"
+            )
+        })
+    )
     mocker.patch("dda.tools.git.Git.get_working_tree_changes", return_value=working_tree_changes)
 
     changeset_with_working_tree = git.get_changes_with_base(base_commit.sha1, include_working_tree=True)

@@ -6,15 +6,15 @@ from __future__ import annotations
 
 from enum import StrEnum
 from functools import cached_property
+from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, Self
 
-from msgspec import Struct, field
+from msgspec import Struct
 
 from dda.utils.fs import Path
 
 if TYPE_CHECKING:
-    from _collections_abc import dict_items, dict_keys, dict_values
-    from collections.abc import Generator, Iterable, Iterator
+    from collections.abc import Generator, ItemsView, Iterable, Iterator, KeysView, ValuesView
 
 
 class ChangeType(StrEnum):
@@ -115,7 +115,7 @@ class ChangedFile(Struct, frozen=True):
 
 # Need dict=True so that cached_property can be used
 class ChangeSet(Struct, dict=True, frozen=True):
-    _changes: dict[Path, ChangedFile] = field(default_factory=dict)
+    changes: MappingProxyType[Path, ChangedFile]
 
     """
     Represents a set of changes to files in a git repository.
@@ -125,26 +125,26 @@ class ChangeSet(Struct, dict=True, frozen=True):
     """
 
     # == dict proxy methods == #
-    def keys(self) -> dict_keys[Path, ChangedFile]:
-        return self._changes.keys()
+    def keys(self) -> KeysView[Path]:
+        return self.changes.keys()
 
-    def values(self) -> dict_values[Path, ChangedFile]:
-        return self._changes.values()
+    def values(self) -> ValuesView[ChangedFile]:
+        return self.changes.values()
 
-    def items(self) -> dict_items[Path, ChangedFile]:
-        return self._changes.items()
+    def items(self) -> ItemsView[Path, ChangedFile]:
+        return self.changes.items()
 
     def __getitem__(self, key: Path) -> ChangedFile:
-        return self._changes[key]
+        return self.changes[key]
 
     def __contains__(self, key: Path) -> bool:
-        return key in self._changes
+        return key in self.changes
 
     def __len__(self) -> int:
-        return len(self._changes)
+        return len(self.changes)
 
     def __iter__(self) -> Iterator[Path]:
-        return iter(self._changes.keys())
+        return iter(self.changes.keys())
 
     def __or__(self, other: Self) -> Self:
         return self.from_iter(list(self.values()) + list(other.values()))
@@ -187,7 +187,7 @@ class ChangeSet(Struct, dict=True, frozen=True):
     def from_iter(cls, data: Iterable[ChangedFile]) -> Self:
         """Create a ChangeSet from an iterable of FileChanges."""
         items = {change.file: change for change in data}
-        return cls(_changes=items)
+        return cls(changes=MappingProxyType(items))
 
     @classmethod
     def generate_from_diff_output(cls, diff_output: str | list[str]) -> Self:
@@ -199,13 +199,36 @@ class ChangeSet(Struct, dict=True, frozen=True):
 
     @classmethod
     def enc_hook(cls, obj: Any) -> Any:
-        # Only unsupported objects are Path objects
-        return Path.enc_hook(obj)
+        # Encode MappingProxy objects as dicts
+        if isinstance(obj, MappingProxyType):
+            return dict(obj)
+
+        if isinstance(obj, Path):
+            return Path.enc_hook(obj)
+
+        msg = f"Cannot encode object of type {type(obj)}"
+        raise NotImplementedError(msg)
 
     @classmethod
     def dec_hook(cls, obj_type: type, obj: Any) -> Any:
-        # Only unsupported objects are Path objects
-        return Path.dec_hook(obj_type, obj)
+        from msgspec import convert
+
+        changes_type = MappingProxyType[Path, ChangedFile]
+
+        if obj_type == changes_type:
+            # Since the dict decode logic from msgspec is not called here we have to manually decode the keys and values
+            decoded_obj = {}
+            for key, value in obj.items():
+                decoded_key = Path.dec_hook(Path, key)
+                decoded_value = convert(value, ChangedFile, dec_hook=cls.dec_hook)
+                decoded_obj[decoded_key] = decoded_value
+            return MappingProxyType(decoded_obj)
+
+        if obj_type is Path:
+            return Path.dec_hook(obj_type, obj)
+
+        msg = f"Cannot decode object of type {obj_type}"
+        raise NotImplementedError(msg)
 
 
 def _determine_change_type(before_filename: str, after_filename: str) -> ChangeType:
