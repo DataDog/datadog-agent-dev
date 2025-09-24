@@ -68,9 +68,9 @@ def test_author_details(app: Application, mocker, default_git_author: GitAuthorC
         assert app.tools.git.author_email == "foo@bar2.baz"
 
 
-def test_get_remote_details(app: Application, temp_repo_with_remote: Path) -> None:
+def test_get_remote(app: Application, temp_repo_with_remote: Path) -> None:
     with temp_repo_with_remote.as_cwd():
-        assert app.tools.git.get_remote_details().url == "https://github.com/foo/bar"
+        assert app.tools.git.get_remote().url == "https://github.com/foo/bar"
 
 
 def test_get_head_commit(app: Application, temp_repo_with_remote: Path) -> None:

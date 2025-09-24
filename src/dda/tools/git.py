@@ -77,7 +77,7 @@ class Git(Tool):
         return self.capture(["config", "--get", "user.email"]).strip()
 
     # === PRETEMPLATED COMMANDS === #
-    def get_remote_details(self, remote_name: str = "origin") -> Remote:
+    def get_remote(self, remote_name: str = "origin") -> Remote:
         """
         Get the details of the given remote for the Git repository in the current working directory.
         """
