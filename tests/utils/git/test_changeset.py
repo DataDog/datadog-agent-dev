@@ -72,7 +72,7 @@ class TestChangeSetClass:
             ChangedFile(file=Path("/path/../file3"), type=ChangeType.DELETED, binary=False, patch="patch3"),
         ]
         changeset = ChangeSet.from_iter(changes)
-        assert changeset.digest() == "95a9fe4d808bdda19da9285b6d1a31a6e29ddbfa"
+        assert changeset.digest() == "aa2369871b3934e0dae9f141b5224704a7dffe5af614f8a31789322837fdcd85"
 
     def test_properties(self):
         changes = [

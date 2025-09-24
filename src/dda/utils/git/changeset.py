@@ -173,9 +173,9 @@ class ChangeSet(Struct, dict=True, frozen=True):
     # == methods == #
     def digest(self) -> str:
         """Compute a hash of the changeset."""
-        from hashlib import sha1
+        from hashlib import sha256
 
-        digester = sha1()  # noqa: S324
+        digester = sha256()
         for change in sorted(self.values(), key=lambda x: x.file.as_posix()):
             digester.update(change.file.as_posix().encode())
             digester.update(change.type.value.encode())
