@@ -14,7 +14,7 @@ from msgspec import Struct
 from dda.utils.fs import Path
 
 if TYPE_CHECKING:
-    from collections.abc import Generator, ItemsView, Iterable, Iterator, KeysView, ValuesView
+    from collections.abc import ItemsView, Iterable, Iterator, KeysView, ValuesView
 
 
 class ChangeType(StrEnum):
@@ -50,7 +50,7 @@ class ChangedFile(Struct, frozen=True):
     """
 
 
-class ChangeSet:
+class ChangeSet:  # noqa: PLW1641
     def __init__(self, changes: dict[Path, ChangedFile]) -> None:
         self.__changes = MappingProxyType(changes)
 
