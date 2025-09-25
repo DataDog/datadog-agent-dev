@@ -10,14 +10,13 @@ from typing import TYPE_CHECKING, Any
 from dda.tools.base import ExecutionContext, Tool
 from dda.utils.git.changeset import ChangeSet
 from dda.utils.git.commit import GitPersonDetails
-from dda.utils.git.constants import GitEnvVars
-from dda.utils.git.remote import Remote
 
 if TYPE_CHECKING:
     from collections.abc import Generator, Iterable
 
     from dda.utils.fs import Path
     from dda.utils.git.commit import Commit
+    from dda.utils.git.remote import Remote
 
 
 class Git(Tool):
@@ -31,6 +30,8 @@ class Git(Tool):
 
     @contextmanager
     def execution_context(self, command: list[str]) -> Generator[ExecutionContext, None, None]:
+        from dda.utils.git.constants import GitEnvVars
+
         author_name = self.app.config.tools.git.author.name.strip()
         author_email = self.app.config.tools.git.author.email.strip()
         env_vars = {}
@@ -57,6 +58,8 @@ class Git(Tool):
         """
         from os import environ
 
+        from dda.utils.git.constants import GitEnvVars
+
         if env_username := environ.get(GitEnvVars.AUTHOR_NAME):
             return env_username
 
@@ -72,16 +75,18 @@ class Git(Tool):
         """
         from os import environ
 
+        from dda.utils.git.constants import GitEnvVars
+
         if env_email := environ.get(GitEnvVars.AUTHOR_EMAIL):
             return env_email
 
         return self.capture(["config", "--get", "user.email"]).strip()
 
-    # === PRETEMPLATED COMMANDS === #
     def get_remote(self, remote_name: str = "origin") -> Remote:
         """
         Get the details of the given remote for the Git repository in the current working directory.
         """
+        from dda.utils.git.remote import Remote
 
         remote_url = self.capture(
             ["config", "--get", f"remote.{remote_name}.url"],

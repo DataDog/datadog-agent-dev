@@ -124,7 +124,6 @@ class ChangeSet(Struct, dict=True, frozen=True):
     When considering the changes to the working directory, the untracked files are considered as added files.
     """
 
-    # == dict proxy methods == #
     def keys(self) -> KeysView[Path]:
         return self.changes.keys()
 
@@ -149,7 +148,6 @@ class ChangeSet(Struct, dict=True, frozen=True):
     def __or__(self, other: Self) -> Self:
         return self.from_iter(list(self.values()) + list(other.values()))
 
-    # == properties == #
     @cached_property
     def added(self) -> set[Path]:
         """List of files that were added."""
@@ -170,7 +168,6 @@ class ChangeSet(Struct, dict=True, frozen=True):
         """List of files that were changed (added, modified, or deleted)."""
         return set(self.keys())
 
-    # == methods == #
     def digest(self) -> str:
         """Compute a hash of the changeset."""
         from hashlib import sha256
