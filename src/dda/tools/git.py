@@ -102,7 +102,7 @@ class Git(Tool):
             "--no-patch",
             "--quiet",
             # Use a format that is easy to parse
-            # fmt: commit hash, commit subject, commit body, commiter name, commiter email, commiter date, author name, author email, author date
+            # fmt: commit hash, commit subject, commit body, committer name, committer email, committer date, author name, author email, author date
             "--format=%H%x00%s%x00%b%x00%cn%x00%ce%x00%ct%x00%an%x00%ae%x00%at",
             f"{ref}^{{commit}}",
         ])
@@ -111,7 +111,7 @@ class Git(Tool):
         parts = raw_details.split("\0")
         sha1, *parts = parts
         commit_subject, commit_body, *parts = parts
-        commiter_name, commiter_email, commit_date, *parts = parts
+        committer_name, committer_email, commit_date, *parts = parts
         author_name, author_email, author_date = parts
 
         # Process parts
@@ -125,12 +125,12 @@ class Git(Tool):
         message = (commit_subject + "\n\n" + commit_body).strip()
 
         author_details = GitPersonDetails(author_name, author_email, author_timestamp)
-        commiter_details = GitPersonDetails(commiter_name, commiter_email, commit_timestamp)
+        committer_details = GitPersonDetails(committer_name, committer_email, commit_timestamp)
 
         return Commit(
             sha1=sha1,
             author=author_details,
-            committer=commiter_details,
+            committer=committer_details,
             message=message,
         )
 

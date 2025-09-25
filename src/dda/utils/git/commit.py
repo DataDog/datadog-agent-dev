@@ -31,7 +31,7 @@ class Commit(Struct, frozen=True, dict=True):  # noqa: PLW1641
         return isinstance(other, Commit) and self.sha1 == other.sha1
 
     @cached_property
-    def commiter_datetime(self) -> datetime:
+    def committer_datetime(self) -> datetime:
         return datetime.fromtimestamp(self.committer.timestamp, tz=UTC)
 
     @cached_property

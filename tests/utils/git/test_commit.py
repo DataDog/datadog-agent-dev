@@ -45,7 +45,7 @@ class TestCommitClass:
             committer=GitPersonDetails(name="Jane Doe", email="jane.doe@example.com", timestamp=now),
             message="This is a test message",
         )
-        assert commit.commiter_datetime == datetime.fromtimestamp(now, tz=UTC)
+        assert commit.committer_datetime == datetime.fromtimestamp(now, tz=UTC)
 
     def test_details_github_git_equality(self, app, mocker, helpers):
         # Initialize referenced commit object
