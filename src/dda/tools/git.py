@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any
 
 from dda.tools.base import ExecutionContext, Tool
 from dda.utils.git.changeset import ChangeSet
+from dda.utils.git.commit import GitPersonDetails
 from dda.utils.git.constants import GitEnvVars
 from dda.utils.git.remote import Remote
 
@@ -111,23 +112,25 @@ class Git(Tool):
         sha1, *parts = parts
         commit_subject, commit_body, *parts = parts
         commiter_name, commiter_email, commit_date, *parts = parts
-        author_name, author_email, _author_date = parts
+        author_name, author_email, author_date = parts
 
         # Process parts
-        author_details = (author_name, author_email)
-        commiter_details = (commiter_name, commiter_email)
 
         # Will give a timestamp in UTC
         # we don't care what tz the author was in as long as we stay consistent and are able to display all times in the user's timezone
-        timestamp_str = commit_date.split(" ")[0]
-        timestamp = int(timestamp_str)
+        commit_timestamp_str = commit_date.split(" ")[0]
+        commit_timestamp = int(commit_timestamp_str)
+        author_timestamp_str = author_date.split(" ")[0]
+        author_timestamp = int(author_timestamp_str)
         message = (commit_subject + "\n\n" + commit_body).strip()
+
+        author_details = GitPersonDetails(author_name, author_email, author_timestamp)
+        commiter_details = GitPersonDetails(commiter_name, commiter_email, commit_timestamp)
 
         return Commit(
             sha1=sha1,
-            author_details=author_details,
-            commiter_details=commiter_details,
-            timestamp=timestamp,
+            author=author_details,
+            committer=commiter_details,
             message=message,
         )
 

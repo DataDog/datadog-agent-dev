@@ -12,7 +12,7 @@ import pytest
 
 from dda.utils.fs import Path
 from dda.utils.git.changeset import ChangedFile, ChangeSet, ChangeType
-from dda.utils.git.commit import Commit
+from dda.utils.git.commit import Commit, GitPersonDetails
 from dda.utils.git.constants import GitEnvVars
 from dda.utils.process import EnvVars
 from tests.tools.git.conftest import REPO_TESTCASES, _load_changeset
@@ -82,9 +82,8 @@ def test_get_commit(app: Application, temp_repo_with_remote: Path) -> None:
         commit = app.tools.git.get_commit()
 
         assert commit.sha1 == sha1
-        assert commit.author_details == (app.tools.git.author_name, app.tools.git.author_email)
-        assert commit.commiter_details == (app.tools.git.author_name, app.tools.git.author_email)
-        assert commit.timestamp == timestamp
+        assert commit.author == GitPersonDetails(app.tools.git.author_name, app.tools.git.author_email, timestamp)
+        assert commit.committer == GitPersonDetails(app.tools.git.author_name, app.tools.git.author_email, timestamp)
         assert commit.message == f"Brand-new commit: {random_key}"
 
 
@@ -147,8 +146,9 @@ def test_get_changes_between_commits(app: Application, mocker: Any, repo_testcas
     expected_changeset = _load_changeset(testcase_dir / "expected_changeset.json")
 
     mocker.patch("dda.tools.git.Git._compare_refs", return_value=expected_changeset)
-    commit1 = Commit(sha1="a" * 40, author_details=("a", "a"), commiter_details=("a", "a"), timestamp=0, message="a")
-    commit2 = Commit(sha1="b" * 40, author_details=("b", "b"), commiter_details=("b", "b"), timestamp=0, message="b")
+    author = GitPersonDetails(name="a", email="a", timestamp=0)
+    commit1 = Commit(sha1="a" * 40, author=author, committer=author, message="a")
+    commit2 = Commit(sha1="b" * 40, author=author, committer=author, message="b")
     result = app.tools.git.get_changes_between_commits(commit1.sha1, commit2.sha1)
     assert_changesets_equal(result, expected_changeset)
 
@@ -173,12 +173,9 @@ def test_get_changes_with_base(app: Application, mocker: Any, repo_testcase: str
     expected_changeset = _load_changeset(testcase_dir / "expected_changeset.json")
 
     git: Git = app.tools.git
-    base_commit = Commit(
-        sha1="a" * 40, author_details=("a", "a"), commiter_details=("a", "a"), timestamp=0, message="a"
-    )
-    head_commit = Commit(
-        sha1="b" * 40, author_details=("b", "b"), commiter_details=("b", "b"), timestamp=0, message="b"
-    )
+    author = GitPersonDetails(name="a", email="a", timestamp=0)
+    base_commit = Commit(sha1="a" * 40, author=author, committer=author, message="a")
+    head_commit = Commit(sha1="b" * 40, author=author, committer=author, message="b")
 
     # Mock the underlying functions
     mocker.patch("dda.tools.git.Git.get_commit", return_value=head_commit)

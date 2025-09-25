@@ -15,9 +15,8 @@ class Commit(Struct, frozen=True, dict=True):  # noqa: PLW1641
     """
 
     sha1: str
-    author_details: tuple[str, str]
-    commiter_details: tuple[str, str]
-    timestamp: int
+    author: GitPersonDetails
+    committer: GitPersonDetails
     message: str
 
     def __post_init__(self) -> None:
@@ -32,5 +31,19 @@ class Commit(Struct, frozen=True, dict=True):  # noqa: PLW1641
         return isinstance(other, Commit) and self.sha1 == other.sha1
 
     @cached_property
-    def commit_datetime(self) -> datetime:
-        return datetime.fromtimestamp(self.timestamp, tz=UTC)
+    def commiter_datetime(self) -> datetime:
+        return datetime.fromtimestamp(self.committer.timestamp, tz=UTC)
+
+    @cached_property
+    def author_datetime(self) -> datetime:
+        return datetime.fromtimestamp(self.author.timestamp, tz=UTC)
+
+
+class GitPersonDetails(Struct, frozen=True):
+    """
+    Details of a person in Git (author or committer), including their name, email, and timestamp.
+    """
+
+    name: str
+    email: str
+    timestamp: int

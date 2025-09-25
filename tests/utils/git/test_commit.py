@@ -8,34 +8,32 @@ from datetime import UTC, datetime
 from httpx import Response
 
 from dda.utils.fs import Path
-from dda.utils.git.commit import Commit
+from dda.utils.git.commit import Commit, GitPersonDetails
 from dda.utils.git.remote import Remote
 
 
 class TestCommitClass:
     def test_basic(self):
         now = int(datetime.now(tz=UTC).timestamp())
+        author = GitPersonDetails(name="John Doe", email="john.doe@example.com", timestamp=now)
+        committer = GitPersonDetails(name="Jane Doe", email="jane.doe@example.com", timestamp=now)
         commit = Commit(
             sha1="82ee754ca931816902ac7e6e38f66a51e65912f9",
-            author_details=("John Doe", "john.doe@example.com"),
-            commiter_details=("Jane Doe", "jane.doe@example.com"),
-            timestamp=now,
+            author=author,
+            committer=committer,
             message="This is a test message",
         )
         assert commit.sha1 == "82ee754ca931816902ac7e6e38f66a51e65912f9"
-        assert commit.author_details == ("John Doe", "john.doe@example.com")
-        assert commit.commiter_details == ("Jane Doe", "jane.doe@example.com")
-        assert commit.timestamp == now
+        assert commit.author == author
+        assert commit.committer == committer
         assert commit.message == "This is a test message"
 
     def test_equality(self):
         # Should stay equal with different details as long as the sha1 is the same
-        commit1 = Commit(
-            sha1="a" * 40, author_details=("a", "a"), commiter_details=("a", "a"), timestamp=0, message="a"
-        )
-        commit2 = Commit(
-            sha1="a" * 40, author_details=("b", "b"), commiter_details=("b", "b"), timestamp=0, message="b"
-        )
+        author1 = GitPersonDetails(name="a", email="a", timestamp=0)
+        author2 = GitPersonDetails(name="b", email="b", timestamp=500)
+        commit1 = Commit(sha1="a" * 40, author=author1, committer=author1, message="a")
+        commit2 = Commit(sha1="a" * 40, author=author2, committer=author2, message="b")
 
         assert commit1 == commit2
 
@@ -43,20 +41,20 @@ class TestCommitClass:
         now = int(datetime.now(tz=UTC).timestamp())
         commit = Commit(
             sha1="82ee754ca931816902ac7e6e38f66a51e65912f9",
-            author_details=("John Doe", "john.doe@example.com"),
-            commiter_details=("Jane Doe", "jane.doe@example.com"),
-            timestamp=now,
+            author=GitPersonDetails(name="John Doe", email="john.doe@example.com", timestamp=now),
+            committer=GitPersonDetails(name="Jane Doe", email="jane.doe@example.com", timestamp=now),
             message="This is a test message",
         )
-        assert commit.commit_datetime == datetime.fromtimestamp(now, tz=UTC)
+        assert commit.commiter_datetime == datetime.fromtimestamp(now, tz=UTC)
 
     def test_details_github_git_equality(self, app, mocker, helpers):
         # Initialize referenced commit object
         reference_commit = Commit(
             sha1="1425a34f443f0b468e1739a06fcf97dfbf632594",
-            author_details=("Pierre-Louis Veyrenc", "pierrelouis.veyrenc@datadoghq.com"),
-            commiter_details=("GitHub", "noreply@github.com"),
-            timestamp=1755873573,
+            author=GitPersonDetails(
+                name="Pierre-Louis Veyrenc", email="pierrelouis.veyrenc@datadoghq.com", timestamp=1755873573
+            ),
+            committer=GitPersonDetails(name="GitHub", email="noreply@github.com", timestamp=1755873573),
             message=helpers.dedent(
                 """
                 [ACIX-973] Implement `info owners code` command (#167)
@@ -127,5 +125,5 @@ class TestCommitClass:
         git_commit = app.tools.git.get_commit(reference_commit.sha1)
 
         # Check all fields
-        for field in ["sha1", "author_details", "commiter_details", "timestamp", "message"]:
+        for field in ["sha1", "author", "committer", "message"]:
             assert getattr(reference_commit, field) == getattr(github_commit, field) == getattr(git_commit, field)

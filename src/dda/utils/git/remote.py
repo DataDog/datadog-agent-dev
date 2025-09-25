@@ -8,7 +8,7 @@ from functools import cached_property
 from typing import TYPE_CHECKING, ClassVar, Literal
 
 from dda.utils.git.changeset import ChangeType
-from dda.utils.git.commit import Commit
+from dda.utils.git.commit import Commit, GitPersonDetails
 
 if TYPE_CHECKING:
     from dda.utils.git.changeset import ChangeSet
@@ -73,19 +73,18 @@ class Remote(ABC):
             for file_obj in data["files"]
         )
 
-        author_details = (data["commit"]["author"]["name"], data["commit"]["author"]["email"])
-        commiter_details = (
-            data["commit"]["committer"]["name"],
-            data["commit"]["committer"]["email"],
+        author_timestamp = int(datetime.fromisoformat(data["commit"]["author"]["date"]).timestamp())
+        author = GitPersonDetails(data["commit"]["author"]["name"], data["commit"]["author"]["email"], author_timestamp)
+        commit_timestamp = int(datetime.fromisoformat(data["commit"]["committer"]["date"]).timestamp())
+        committer = GitPersonDetails(
+            data["commit"]["committer"]["name"], data["commit"]["committer"]["email"], commit_timestamp
         )
-        timestamp = int(datetime.fromisoformat(data["commit"]["author"]["date"]).timestamp())
         message = data["commit"]["message"]
 
         details = Commit(
             sha1=sha1,
-            author_details=author_details,
-            commiter_details=commiter_details,
-            timestamp=timestamp,
+            author=author,
+            committer=committer,
             message=message,
         )
 

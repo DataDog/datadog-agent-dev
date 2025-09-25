@@ -11,7 +11,7 @@ from httpx import Response
 
 from dda.utils.fs import Path
 from dda.utils.git.changeset import ChangedFile, ChangeSet
-from dda.utils.git.commit import Commit
+from dda.utils.git.commit import Commit, GitPersonDetails
 from dda.utils.git.remote import HTTPSRemote, Remote, SSHRemote, get_change_type_from_github_status
 
 
@@ -56,24 +56,23 @@ class TestRemoteClass:
         )
 
         # Create a commit object with details from the payload
-        github_payload = json.loads(github_payload_str)
-        sha1 = github_payload["sha"]
-        commit_url = github_payload["commit"]["url"]
+        data = json.loads(github_payload_str)
+        sha1 = data["sha"]
+        commit_url = data["commit"]["url"]
         remote = Remote.from_url(url=commit_url)
 
-        author_details = (github_payload["commit"]["author"]["name"], github_payload["commit"]["author"]["email"])
-        commiter_details = (
-            github_payload["commit"]["committer"]["name"],
-            github_payload["commit"]["committer"]["email"],
+        author_timestamp = int(datetime.fromisoformat(data["commit"]["author"]["date"]).timestamp())
+        author = GitPersonDetails(data["commit"]["author"]["name"], data["commit"]["author"]["email"], author_timestamp)
+        commit_timestamp = int(datetime.fromisoformat(data["commit"]["committer"]["date"]).timestamp())
+        committer = GitPersonDetails(
+            data["commit"]["committer"]["name"], data["commit"]["committer"]["email"], commit_timestamp
         )
-        timestamp = datetime.fromisoformat(github_payload["commit"]["author"]["date"]).timestamp()
-        message = github_payload["commit"]["message"]
+        message = data["commit"]["message"]
 
         expected_commit = Commit(
             sha1=sha1,
-            author_details=author_details,
-            commiter_details=commiter_details,
-            timestamp=timestamp,
+            author=author,
+            committer=committer,
             message=message,
         )
         # Create a ChangeSet object
@@ -84,7 +83,7 @@ class TestRemoteClass:
                 binary="patch" not in file,
                 patch=file.get("patch", ""),
             )
-            for file in github_payload["files"]
+            for file in data["files"]
         ]
         expected_commit_changes = ChangeSet.from_iter(changes)
 
@@ -93,5 +92,5 @@ class TestRemoteClass:
         assert commit_changes == expected_commit_changes
 
         # Check all fields
-        for field in ["sha1", "author_details", "commiter_details", "timestamp", "message"]:
+        for field in ["sha1", "author", "committer", "message"]:
             assert getattr(expected_commit, field) == getattr(remote_commit, field)
