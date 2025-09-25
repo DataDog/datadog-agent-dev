@@ -19,33 +19,6 @@ class TestFileChangesClass:
         assert file_changes.type == ChangeType.ADDED
         assert file_changes.patch == "patch"
 
-    @pytest.mark.parametrize(
-        "repo_testcase",
-        REPO_TESTCASES,
-    )
-    def test_generate_from_diff_output(self, repo_testcase):
-        fixtures_dir = (
-            Path(__file__).parent.parent.parent / "tools" / "git" / "fixtures" / "repo_states" / repo_testcase
-        )
-        with open(fixtures_dir / "diff_output.txt", encoding="utf-8") as f:
-            diff_output = f.read()
-
-        with open(fixtures_dir / "expected_changeset.json", encoding="utf-8") as f:
-            expected_changeset = msgspec.json.decode(f.read(), type=ChangeSet, dec_hook=dec_hook)
-
-        expected_filechanges = sorted(
-            expected_changeset.values(),
-            key=lambda x: x.path.as_posix(),
-        )
-
-        seen_filechanges = sorted(ChangedFile.generate_from_diff_output(diff_output), key=lambda x: x.path.as_posix())
-
-        assert len(seen_filechanges) == len(expected_filechanges)
-        for seen, expected in zip(seen_filechanges, expected_filechanges, strict=True):
-            assert seen.path == expected.path
-            assert seen.type == expected.type
-            assert seen.patch == expected.patch
-
     def test_encode_decode(self):
         file_changes = ChangedFile(path=Path("/path/to/file"), type=ChangeType.ADDED, binary=False, patch="patch")
         encoded_file_changes = msgspec.json.encode(file_changes, enc_hook=enc_hook)

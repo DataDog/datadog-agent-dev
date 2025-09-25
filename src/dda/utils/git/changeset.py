@@ -49,59 +49,6 @@ class ChangedFile(Struct, frozen=True):
     ```
     """
 
-    # TODO: This might be a bit brittle - or we might want to move this to a separate file ?
-    @classmethod
-    def generate_from_diff_output(cls, diff_output: str | list[str]) -> Generator[Self, None, None]:
-        """
-        Generate a list of FileChanges from the output of _some_ git diff commands.
-        Not all outputs from `git diff` are supported (ex: renames), see set of args in [Git._capture_diff_lines](dda.tools.git.Git._capture_diff_lines) method.
-        """
-        import re
-
-        if isinstance(diff_output, list):
-            diff_output = "\n".join(diff_output)
-
-        for modification in re.split(r"^diff --git ", diff_output, flags=re.MULTILINE):
-            if not modification:
-                continue
-
-            # Extract metadata. It can be in two formats, depending on if the file is a binary file or not.
-
-            # Binary files:
-            # (new file mode 100644) - not always present
-            # index 0000000000..089fd64579
-            # Binary files /dev/null and foo/archive.tar.gz differ
-
-            # Regular files:
-            # (new file mode 100644) - not always present
-            # index 0000000000..089fd64579
-            # --- a/file
-            # +++ b/file
-            # @@ ... @@ (start of hunks)
-            sep = "@@ "
-            metadata, *blocks = re.split(rf"^{sep}", modification, flags=re.MULTILINE)
-            metadata_lines = metadata.strip().splitlines()
-
-            # Determine if the file is a binary file
-            binary = metadata_lines[-1].startswith("Binary files ")
-
-            # Extract old and new file paths
-            if binary:
-                line = metadata_lines[-1].removeprefix("Binary files ")
-                # This might raise an error if one of the files contains the string " and "
-                before_filename, after_filename = line.split(" and ")
-            else:
-                before_filename = metadata_lines[-2].split(maxsplit=1)[1]
-                after_filename = metadata_lines[-1].split(maxsplit=1)[1]
-
-            # Determine changetype
-            current_type = _determine_change_type(before_filename, after_filename)
-            current_file = Path(after_filename) if current_type == ChangeType.ADDED else Path(before_filename)
-
-            # Strip every "block" and add the missing separator
-            patch = "" if binary else "\n".join([sep + block.strip() for block in blocks]).strip()
-            yield cls(path=current_file, type=current_type, binary=binary, patch=patch)
-
 
 class ChangeSet:
     def __init__(self, changes: dict[Path, ChangedFile]) -> None:
@@ -186,10 +133,56 @@ class ChangeSet:
     @classmethod
     def generate_from_diff_output(cls, diff_output: str | list[str]) -> Self:
         """
-        Generate a changeset from the output of a git diff command.
-        The output should be passed as a string or a list of lines.
+        Generate a ChangeSet from the output of _some_ git diff commands.
+        Not all outputs from `git diff` are supported (ex: renames), see set of args in [Git._capture_diff_lines](dda.tools.git.Git._capture_diff_lines) method.
         """
-        return cls.from_iter(ChangedFile.generate_from_diff_output(diff_output))
+        import re
+
+        if isinstance(diff_output, list):
+            diff_output = "\n".join(diff_output)
+
+        changes = []
+        for modification in re.split(r"^diff --git ", diff_output, flags=re.MULTILINE):
+            if not modification:
+                continue
+
+            # Extract metadata. It can be in two formats, depending on if the file is a binary file or not.
+
+            # Binary files:
+            # (new file mode 100644) - not always present
+            # index 0000000000..089fd64579
+            # Binary files /dev/null and foo/archive.tar.gz differ
+
+            # Regular files:
+            # (new file mode 100644) - not always present
+            # index 0000000000..089fd64579
+            # --- a/file
+            # +++ b/file
+            # @@ ... @@ (start of hunks)
+            sep = "@@ "
+            metadata, *blocks = re.split(rf"^{sep}", modification, flags=re.MULTILINE)
+            metadata_lines = metadata.strip().splitlines()
+
+            # Determine if the file is a binary file
+            binary = metadata_lines[-1].startswith("Binary files ")
+
+            # Extract old and new file paths
+            if binary:
+                line = metadata_lines[-1].removeprefix("Binary files ")
+                # This might raise an error if one of the files contains the string " and "
+                before_filename, after_filename = line.split(" and ")
+            else:
+                before_filename = metadata_lines[-2].split(maxsplit=1)[1]
+                after_filename = metadata_lines[-1].split(maxsplit=1)[1]
+
+            # Determine changetype
+            current_type = _determine_change_type(before_filename, after_filename)
+            current_file = Path(after_filename) if current_type == ChangeType.ADDED else Path(before_filename)
+
+            # Strip every "block" and add the missing separator
+            patch = "" if binary else "\n".join([sep + block.strip() for block in blocks]).strip()
+            changes.append(ChangedFile(path=current_file, type=current_type, binary=binary, patch=patch))
+        return cls.from_iter(changes)
 
 
 def _determine_change_type(before_filename: str, after_filename: str) -> ChangeType:
