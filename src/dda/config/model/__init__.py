@@ -40,7 +40,7 @@ class RootConfig(Struct, frozen=True, omit_defaults=True):
 
 
 def construct_model(data: dict[str, Any]) -> RootConfig:
-    return convert(data, RootConfig, dec_hook=__dec_hook)
+    return convert(data, RootConfig, dec_hook=dec_hook)
 
 
 def get_default_toml_data() -> dict[str, Any]:
@@ -50,21 +50,44 @@ def get_default_toml_data() -> dict[str, Any]:
         RootConfig(),
         str_keys=True,
         builtin_types=(datetime.datetime, datetime.date, datetime.time),
-        enc_hook=__enc_hook,
+        enc_hook=enc_hook,
     )
 
 
-def __dec_hook(type: type[Any], obj: Any) -> Any:  # noqa: A002
+def dec_hook(type: type[Any], obj: Any) -> Any:  # noqa: A002
     if type is Path:
         return Path(obj)
+
+    from types import MappingProxyType
+
+    from msgspec import convert
+
+    from dda.utils.git.changeset import ChangedFile
+
+    changes_type = MappingProxyType[Path, ChangedFile]
+
+    if type == changes_type:
+        # Since the dict decode logic from msgspec is not called here we have to manually decode the keys and values
+        decoded_obj = {}
+        for key, value in obj.items():
+            decoded_key = dec_hook(Path, key)
+            decoded_value = convert(value, ChangedFile, dec_hook=dec_hook)
+            decoded_obj[decoded_key] = decoded_value
+        return MappingProxyType(decoded_obj)
 
     message = f"Cannot decode: {obj!r}"
     raise ValueError(message)
 
 
-def __enc_hook(obj: Any) -> Any:
+def enc_hook(obj: Any) -> Any:
     if isinstance(obj, Path):
         return str(obj)
+
+    from types import MappingProxyType
+
+    # Encode MappingProxy objects as dicts
+    if isinstance(obj, MappingProxyType):
+        return dict(obj)
 
     message = f"Cannot encode: {obj!r}"
     raise NotImplementedError(message)

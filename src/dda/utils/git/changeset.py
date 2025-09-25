@@ -7,7 +7,7 @@ from __future__ import annotations
 from enum import StrEnum
 from functools import cached_property
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Self
 
 from msgspec import Struct
 
@@ -102,16 +102,6 @@ class ChangedFile(Struct, frozen=True):
             patch = "" if binary else "\n".join([sep + block.strip() for block in blocks]).strip()
             yield cls(file=current_file, type=current_type, binary=binary, patch=patch)
 
-    @classmethod
-    def enc_hook(cls, obj: Any) -> Any:
-        # Only unsupported objects are Path objects
-        return Path.enc_hook(obj)
-
-    @classmethod
-    def dec_hook(cls, obj_type: type, obj: Any) -> Any:  # type: ignore[valid-type]
-        # Only unsupported objects are Path objects
-        return Path.dec_hook(obj_type, obj)
-
 
 # Need dict=True so that cached_property can be used
 class ChangeSet(Struct, dict=True, frozen=True):
@@ -193,39 +183,6 @@ class ChangeSet(Struct, dict=True, frozen=True):
         The output should be passed as a string or a list of lines.
         """
         return cls.from_iter(ChangedFile.generate_from_diff_output(diff_output))
-
-    @classmethod
-    def enc_hook(cls, obj: Any) -> Any:
-        # Encode MappingProxy objects as dicts
-        if isinstance(obj, MappingProxyType):
-            return dict(obj)
-
-        if isinstance(obj, Path):
-            return Path.enc_hook(obj)
-
-        msg = f"Cannot encode object of type {type(obj)}"
-        raise NotImplementedError(msg)
-
-    @classmethod
-    def dec_hook(cls, obj_type: type, obj: Any) -> Any:
-        from msgspec import convert
-
-        changes_type = MappingProxyType[Path, ChangedFile]
-
-        if obj_type == changes_type:
-            # Since the dict decode logic from msgspec is not called here we have to manually decode the keys and values
-            decoded_obj = {}
-            for key, value in obj.items():
-                decoded_key = Path.dec_hook(Path, key)
-                decoded_value = convert(value, ChangedFile, dec_hook=cls.dec_hook)
-                decoded_obj[decoded_key] = decoded_value
-            return MappingProxyType(decoded_obj)
-
-        if obj_type is Path:
-            return Path.dec_hook(obj_type, obj)
-
-        msg = f"Cannot decode object of type {obj_type}"
-        raise NotImplementedError(msg)
 
 
 def _determine_change_type(before_filename: str, after_filename: str) -> ChangeType:

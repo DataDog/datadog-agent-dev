@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 import msgspec
 import pytest
 
+from dda.config.model import dec_hook
 from dda.utils.fs import Path
 from dda.utils.git.changeset import ChangeSet
 
@@ -66,7 +67,7 @@ def _make_repo_changes(
 
 def _load_changeset(filepath: Path) -> ChangeSet:
     with open(filepath, encoding="utf-8") as f:
-        return msgspec.json.decode(f.read(), type=ChangeSet, dec_hook=ChangeSet.dec_hook)
+        return msgspec.json.decode(f.read(), type=ChangeSet, dec_hook=dec_hook)
 
 
 @pytest.fixture(params=REPO_TESTCASES)

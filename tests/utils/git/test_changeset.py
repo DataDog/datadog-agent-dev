@@ -6,6 +6,7 @@ from __future__ import annotations
 import msgspec
 import pytest
 
+from dda.config.model import dec_hook, enc_hook
 from dda.utils.fs import Path
 from dda.utils.git.changeset import ChangedFile, ChangeSet, ChangeType
 from tests.tools.git.conftest import REPO_TESTCASES
@@ -30,7 +31,7 @@ class TestFileChangesClass:
             diff_output = f.read()
 
         with open(fixtures_dir / "expected_changeset.json", encoding="utf-8") as f:
-            expected_changeset = msgspec.json.decode(f.read(), type=ChangeSet, dec_hook=ChangeSet.dec_hook)
+            expected_changeset = msgspec.json.decode(f.read(), type=ChangeSet, dec_hook=dec_hook)
 
         expected_filechanges = sorted(
             expected_changeset.values(),
@@ -47,10 +48,8 @@ class TestFileChangesClass:
 
     def test_encode_decode(self):
         file_changes = ChangedFile(file=Path("/path/to/file"), type=ChangeType.ADDED, binary=False, patch="patch")
-        encoded_file_changes = msgspec.json.encode(file_changes, enc_hook=ChangedFile.enc_hook)
-        decoded_file_changes = msgspec.json.decode(
-            encoded_file_changes, type=ChangedFile, dec_hook=ChangedFile.dec_hook
-        )
+        encoded_file_changes = msgspec.json.encode(file_changes, enc_hook=enc_hook)
+        decoded_file_changes = msgspec.json.decode(encoded_file_changes, type=ChangedFile, dec_hook=dec_hook)
         assert decoded_file_changes == file_changes
 
 
@@ -98,7 +97,7 @@ class TestChangeSetClass:
             diff_output = f.read()
 
         with open(fixtures_dir / "expected_changeset.json", encoding="utf-8") as f:
-            expected_changeset = msgspec.json.decode(f.read(), type=ChangeSet, dec_hook=ChangeSet.dec_hook)
+            expected_changeset = msgspec.json.decode(f.read(), type=ChangeSet, dec_hook=dec_hook)
 
         seen_changeset = ChangeSet.generate_from_diff_output(diff_output)
 
@@ -116,6 +115,6 @@ class TestChangeSetClass:
             ChangedFile(file=Path("/path/../file3"), type=ChangeType.DELETED, binary=False, patch="patch3"),
         ]
         changeset = ChangeSet.from_iter(changes)
-        encoded_changeset = msgspec.json.encode(changeset, enc_hook=ChangeSet.enc_hook)
-        decoded_changeset = msgspec.json.decode(encoded_changeset, type=ChangeSet, dec_hook=ChangeSet.dec_hook)
+        encoded_changeset = msgspec.json.encode(changeset, enc_hook=enc_hook)
+        decoded_changeset = msgspec.json.decode(encoded_changeset, type=ChangeSet, dec_hook=dec_hook)
         assert decoded_changeset == changeset

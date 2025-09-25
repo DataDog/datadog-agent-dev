@@ -1,31 +1,31 @@
 {
     "changes": {
-        "Path('added_lines.txt')": {
-            "file": "Path('added_lines.txt')",
+        "added_lines.txt": {
+            "file": "added_lines.txt",
             "type": "M",
             "binary": false,
             "patch": "@@ -2,0 +3,4 @@ I wonder what that could mean ?\n+\n+But of course !\n+I get some added lines.\n+That makes sense."
         },
-        "Path('added_lines_middle.txt')": {
-            "file": "Path('added_lines_middle.txt')",
+        "added_lines_middle.txt": {
+            "file": "added_lines_middle.txt",
             "type": "M",
             "binary": false,
             "patch": "@@ -2,0 +3,2 @@ I have a bit more text than added_lines.\n+Nobody expects the Spanish Inquisition !\n+My developer really wonders if cracking jokes in test data is against company policy."
         },
-        "Path('deleted_lines.txt')": {
-            "file": "Path('deleted_lines.txt')",
+        "deleted_lines.txt": {
+            "file": "deleted_lines.txt",
             "type": "M",
             "binary": false,
             "patch": "@@ -2,2 +2 @@ Hmm, my name is deleted_lines.\n-I wonder what that could mean ?\n-I don't want to be shortened, that does not seem fun.\n+"
         },
-        "Path('deleted_lines_middle.txt')": {
-            "file": "Path('deleted_lines_middle.txt')",
+        "deleted_lines_middle.txt": {
+            "file": "deleted_lines_middle.txt",
             "type": "M",
             "binary": false,
             "patch": "@@ -2,3 +1,0 @@ Hmm, my name is deleted_lines_middle.\n-I wonder what that could mean ?\n-I don't want to be shortened, that does not seem fun.\n-Thinking about it, being short is also kind of nice though."
         },
-        "Path('edited_lines.txt')": {
-            "file": "Path('edited_lines.txt')",
+        "edited_lines.txt": {
+            "file": "edited_lines.txt",
             "type": "M",
             "binary": false,
             "patch": "@@ -4,8 +4,5 @@ I have a big block of text here:\n-Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n-Vestibulum ornare cursus diam, quis hendrerit nibh.\n-Donec sollicitudin neque in tempus ornare.\n-Integer sit amet pretium quam.\n-Maecenas lacinia augue id est malesuada, vitae fermentum justo faucibus.\n-Aenean posuere nisi tincidunt nisi pharetra blandit.\n-Integer sed nulla sed eros aliquet eleifend quis ac quam.\n-Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.\n+What kind of dev uses lorem ipsum ?\n+Keyboard mashing is where it's at !\n+Check this out:\n+phq w4q3t'p£tfnjklifewqkpjnoq23bjikkijq4ovikobjqv4kioblj;\n+vqpewkvnkqknbpjlo[iqervkb[jplofqvwer[kpjlqfp[okqolp[f;vn]]]]]"

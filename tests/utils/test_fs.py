@@ -9,6 +9,7 @@ import sys
 import msgspec
 import pytest
 
+from dda.config.model import dec_hook, enc_hook
 from dda.utils.fs import Path, temp_directory
 
 
@@ -40,8 +41,8 @@ class TestPath:
     )
     def test_encode_decode_unix(self, path_str):
         path = Path(path_str)
-        encoded_path = msgspec.json.encode(path, enc_hook=Path.enc_hook)
-        decoded_path = msgspec.json.decode(encoded_path, type=Path, dec_hook=Path.dec_hook)
+        encoded_path = msgspec.json.encode(path, enc_hook=enc_hook)
+        decoded_path = msgspec.json.decode(encoded_path, type=Path, dec_hook=dec_hook)
         assert decoded_path == path
 
     @pytest.mark.requires_windows
@@ -61,8 +62,8 @@ class TestPath:
     )
     def test_encode_decode_windows(self, path_str):
         path = Path(path_str)
-        encoded_path = msgspec.json.encode(path, enc_hook=Path.enc_hook)
-        decoded_path = msgspec.json.decode(encoded_path, type=Path, dec_hook=Path.dec_hook)
+        encoded_path = msgspec.json.encode(path, enc_hook=enc_hook)
+        decoded_path = msgspec.json.decode(encoded_path, type=Path, dec_hook=dec_hook)
         assert decoded_path == path
 
 
