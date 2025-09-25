@@ -58,22 +58,18 @@ def dec_hook(type: type[Any], obj: Any) -> Any:  # noqa: A002
     if type is Path:
         return Path(obj)
 
-    from types import MappingProxyType
-
     from msgspec import convert
 
-    from dda.utils.git.changeset import ChangedFile
+    from dda.utils.git.changeset import ChangedFile, ChangeSet
 
-    changes_type = MappingProxyType[Path, ChangedFile]
-
-    if type == changes_type:
+    if type is ChangeSet:
         # Since the dict decode logic from msgspec is not called here we have to manually decode the keys and values
         decoded_obj = {}
         for key, value in obj.items():
             decoded_key = dec_hook(Path, key)
             decoded_value = convert(value, ChangedFile, dec_hook=dec_hook)
             decoded_obj[decoded_key] = decoded_value
-        return MappingProxyType(decoded_obj)
+        return ChangeSet(changes=decoded_obj)
 
     message = f"Cannot decode: {obj!r}"
     raise ValueError(message)
@@ -83,11 +79,11 @@ def enc_hook(obj: Any) -> Any:
     if isinstance(obj, Path):
         return str(obj)
 
-    from types import MappingProxyType
+    from dda.utils.git.changeset import ChangeSet
 
-    # Encode MappingProxy objects as dicts
-    if isinstance(obj, MappingProxyType):
-        return dict(obj)
+    # Encode ChangeSet objects as dicts
+    if isinstance(obj, ChangeSet):
+        return dict(obj.changes)
 
     message = f"Cannot encode: {obj!r}"
     raise NotImplementedError(message)

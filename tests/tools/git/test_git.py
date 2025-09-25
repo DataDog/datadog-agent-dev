@@ -188,11 +188,11 @@ def test_get_changes_with_base(app: Application, mocker: Any, repo_testcase: str
 
     # Test with working tree changes
     working_tree_changes = ChangeSet(
-        changes=MappingProxyType({
+        changes={
             Path("test.txt"): ChangedFile(
                 path=Path("test.txt"), type=ChangeType.ADDED, binary=False, patch="@@ -0,0 +1 @@\n+test"
             )
-        })
+        }
     )
     mocker.patch("dda.tools.git.Git.get_working_tree_changes", return_value=working_tree_changes)
 

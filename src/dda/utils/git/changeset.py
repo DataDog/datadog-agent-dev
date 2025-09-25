@@ -103,9 +103,9 @@ class ChangedFile(Struct, frozen=True):
             yield cls(path=current_file, type=current_type, binary=binary, patch=patch)
 
 
-# Need dict=True so that cached_property can be used
-class ChangeSet(Struct, dict=True, frozen=True):
-    changes: MappingProxyType[Path, ChangedFile]
+class ChangeSet:
+    def __init__(self, changes: dict[Path, ChangedFile]) -> None:
+        self.__changes = MappingProxyType(changes)
 
     """
     Represents a set of changes to files in a git repository.
@@ -114,29 +114,36 @@ class ChangeSet(Struct, dict=True, frozen=True):
     When considering the changes to the working directory, the untracked files are considered as added files.
     """
 
+    @property
+    def changes(self) -> MappingProxyType[Path, ChangedFile]:
+        return self.__changes
+
     def keys(self) -> KeysView[Path]:
-        return self.changes.keys()
+        return self.__changes.keys()
 
     def values(self) -> ValuesView[ChangedFile]:
-        return self.changes.values()
+        return self.__changes.values()
 
     def items(self) -> ItemsView[Path, ChangedFile]:
-        return self.changes.items()
+        return self.__changes.items()
 
     def __getitem__(self, key: Path) -> ChangedFile:
-        return self.changes[key]
+        return self.__changes[key]
 
     def __contains__(self, key: Path) -> bool:
-        return key in self.changes
+        return key in self.__changes
 
     def __len__(self) -> int:
-        return len(self.changes)
+        return len(self.__changes)
 
     def __iter__(self) -> Iterator[Path]:
-        return iter(self.changes.keys())
+        return iter(self.__changes.keys())
 
     def __or__(self, other: Self) -> Self:
         return self.from_iter(list(self.values()) + list(other.values()))
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, ChangeSet) and self.__changes == other.__changes
 
     @cached_property
     def added(self) -> set[Path]:
@@ -174,7 +181,7 @@ class ChangeSet(Struct, dict=True, frozen=True):
     def from_iter(cls, data: Iterable[ChangedFile]) -> Self:
         """Create a ChangeSet from an iterable of FileChanges."""
         items = {change.path: change for change in data}
-        return cls(changes=MappingProxyType(items))
+        return cls(changes=items)
 
     @classmethod
     def generate_from_diff_output(cls, diff_output: str | list[str]) -> Self:

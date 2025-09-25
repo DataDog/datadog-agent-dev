@@ -1,28 +1,26 @@
 {
-    "changes": {
-        "file1.txt": {
-            "path": "file1.txt",
-            "type": "D",
-            "binary": false,
-            "patch": "@@ -1,3 +0,0 @@\n-I am a humble file.\n-Soon I will change name.\n-But that won't change who I am, my contents !"
-        },
-        "file1_new.txt": {
-            "path": "file1_new.txt",
-            "type": "A",
-            "binary": false,
-            "patch": "@@ -0,0 +1,3 @@\n+I am a humble file.\n+Soon I will change name.\n+But that won't change who I am, my contents !"
-        },
-        "file2.txt": {
-            "path": "file2.txt",
-            "type": "D",
-            "binary": false,
-            "patch": "@@ -1,5 +0,0 @@\n-I am a humble file.\n-Soon I will change name.\n-I think I'll also take this as an opportunity to change myself.\n-New name, new me !\n-Or is that not how the saying goes ?"
-        },
-        "file2_new.txt": {
-            "path": "file2_new.txt",
-            "type": "A",
-            "binary": false,
-            "patch": "@@ -0,0 +1,5 @@\n+I am a humble file.\n+Hey I have a new name !\n+Wow, I feel much better now.\n+New name, new me !\n+Or is that not how the saying goes ?"
-        }
+    "file1.txt": {
+        "path": "file1.txt",
+        "type": "D",
+        "binary": false,
+        "patch": "@@ -1,3 +0,0 @@\n-I am a humble file.\n-Soon I will change name.\n-But that won't change who I am, my contents !"
+    },
+    "file1_new.txt": {
+        "path": "file1_new.txt",
+        "type": "A",
+        "binary": false,
+        "patch": "@@ -0,0 +1,3 @@\n+I am a humble file.\n+Soon I will change name.\n+But that won't change who I am, my contents !"
+    },
+    "file2.txt": {
+        "path": "file2.txt",
+        "type": "D",
+        "binary": false,
+        "patch": "@@ -1,5 +0,0 @@\n-I am a humble file.\n-Soon I will change name.\n-I think I'll also take this as an opportunity to change myself.\n-New name, new me !\n-Or is that not how the saying goes ?"
+    },
+    "file2_new.txt": {
+        "path": "file2_new.txt",
+        "type": "A",
+        "binary": false,
+        "patch": "@@ -0,0 +1,5 @@\n+I am a humble file.\n+Hey I have a new name !\n+Wow, I feel much better now.\n+New name, new me !\n+Or is that not how the saying goes ?"
     }
 }
