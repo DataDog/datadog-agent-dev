@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import random
 import re
-from datetime import datetime
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any
 
@@ -84,19 +83,16 @@ def test_get_head_commit(app: Application, temp_repo_with_remote: Path) -> None:
 def test_get_commit_details(app: Application, temp_repo: Path, default_git_author: GitAuthorConfig) -> None:
     with temp_repo.as_cwd():
         app.tools.git.commit_file(Path("dummy"), content="dummy content", commit_message="Initial commit")
-        parent_sha1 = app.tools.git.capture(["rev-parse", "HEAD"]).strip()
 
         random_key = random.randint(1, 1000000)
         app.tools.git.commit_file(Path("hello.txt"), content="world", commit_message=f"Brand-new commit: {random_key}")
         sha1 = app.tools.git.capture(["rev-parse", "HEAD"]).strip()
-        commit_time = datetime.fromisoformat(app.tools.git.capture(["show", "-s", "--format=%cI", sha1]).strip())
+        timestamp = int(app.tools.git.capture(["show", "-s", "--format=%ct", sha1]).strip())
 
         details = app.tools.git.get_commit_details(sha1)
-        assert details.author_name == default_git_author.name
-        assert details.author_email == default_git_author.email
-        assert details.datetime == commit_time
+        assert details.author_details == (default_git_author.name, default_git_author.email)
+        assert details.timestamp == timestamp
         assert details.message == f"Brand-new commit: {random_key}"
-        assert details.parent_shas == [parent_sha1]
 
 
 def test_commit_file(app: Application, temp_repo: Path) -> None:

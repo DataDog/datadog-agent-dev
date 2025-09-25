@@ -73,12 +73,19 @@ class Remote(ABC):
             for file_obj in data["files"]
         )
 
+        author_details = (data["commit"]["author"]["name"], data["commit"]["author"]["email"])
+        commiter_details = (
+            data["commit"]["committer"]["name"],
+            data["commit"]["committer"]["email"],
+        )
+        timestamp = int(datetime.fromisoformat(data["commit"]["author"]["date"]).timestamp())
+        message = data["commit"]["message"]
+
         details = CommitDetails(
-            author_name=data["commit"]["author"]["name"],
-            author_email=data["commit"]["author"]["email"],
-            datetime=datetime.fromisoformat(data["commit"]["author"]["date"]),
-            message=data["commit"]["message"],
-            parent_shas=[parent["sha"] for parent in data.get("parents", [])],
+            author_details=author_details,
+            commiter_details=commiter_details,
+            timestamp=timestamp,
+            message=message,
         )
 
         return details, changes

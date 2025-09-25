@@ -3,13 +3,10 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
-from datetime import datetime
-from typing import TYPE_CHECKING
+from datetime import UTC, datetime
+from functools import cached_property
 
 from msgspec import Struct
-
-if TYPE_CHECKING:
-    from datetime import datetime
 
 
 class Commit(Struct, frozen=True):
@@ -28,9 +25,12 @@ class Commit(Struct, frozen=True):
         return self.sha1
 
 
-class CommitDetails(Struct):
-    author_name: str
-    author_email: str
-    datetime: datetime
+class CommitDetails(Struct, dict=True):
+    author_details: tuple[str, str]
+    commiter_details: tuple[str, str]
+    timestamp: int
     message: str
-    parent_shas: list[str]
+
+    @cached_property
+    def commit_datetime(self) -> datetime:
+        return datetime.fromtimestamp(self.timestamp, tz=UTC)

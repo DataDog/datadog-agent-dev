@@ -62,15 +62,20 @@ class TestRemoteClass:
         remote = Remote.from_url(url=commit_url)
         commit = Commit(sha1=sha1)
 
-        # Create a CommitDetails object
-        expected_commit_details = CommitDetails(
-            author_name=github_payload["commit"]["author"]["name"],
-            author_email=github_payload["commit"]["author"]["email"],
-            datetime=datetime.fromisoformat(github_payload["commit"]["author"]["date"]),
-            message=github_payload["commit"]["message"],
-            parent_shas=[parent["sha"] for parent in github_payload["parents"]],
+        author_details = (github_payload["commit"]["author"]["name"], github_payload["commit"]["author"]["email"])
+        commiter_details = (
+            github_payload["commit"]["committer"]["name"],
+            github_payload["commit"]["committer"]["email"],
         )
+        timestamp = datetime.fromisoformat(github_payload["commit"]["author"]["date"]).timestamp()
+        message = github_payload["commit"]["message"]
 
+        expected_commit_details = CommitDetails(
+            author_details=author_details,
+            commiter_details=commiter_details,
+            timestamp=timestamp,
+            message=message,
+        )
         # Create a ChangeSet object
         changes = [
             ChangedFile(

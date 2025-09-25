@@ -98,31 +98,46 @@ class Git(Tool):
 
         return Commit(sha1=sha1)
 
-    def get_commit_details(self, sha1: str) -> CommitDetails:
+    def get_commit_details(self, ref: str) -> CommitDetails:
         """
         Get the details of the given commit in the Git repository in the current working directory.
         """
-        from datetime import datetime
 
         from dda.utils.git.commit import CommitDetails
 
         raw_details = self.capture([
+            "--no-pager",
             "show",
+            "--no-color",
+            "--no-patch",
             "--quiet",
             # Use a format that is easy to parse
-            # fmt: author name, author email, author date, parent SHAs, commit message body
-            "--format=%an%n%ae%n%ad%n%P%n%B",
-            "--date=iso-strict",
-            sha1,
+            # fmt: commit subject, commit body, commiter name, commiter email, commiter date, author name, author email, author date
+            "--format=%s%x00%b%x00%cn%x00%ce%x00%ct%x00%an%x00%ae%x00%at",
+            f"{ref}^{{commit}}",
         ])
-        author_name, author_email, date_str, parents_str, *message_lines = raw_details.splitlines()
+
+        # Extract parts
+        parts = raw_details.split("\0")
+        commit_subject, commit_body, *parts = parts
+        commiter_name, commiter_email, commit_date, *parts = parts
+        author_name, author_email, _author_date = parts
+
+        # Process parts
+        author_details = (author_name, author_email)
+        commiter_details = (commiter_name, commiter_email)
+
+        # Will give a timestamp in UTC
+        # we don't care what tz the author was in as long as we stay consistent and are able to display all times in the user's timezone
+        timestamp_str = commit_date.split(" ")[0]
+        timestamp = int(timestamp_str)
+        message = (commit_subject + "\n\n" + commit_body).strip()
 
         return CommitDetails(
-            author_name=author_name,
-            author_email=author_email,
-            datetime=datetime.fromisoformat(date_str),
-            message="\n".join(message_lines).strip().strip('"'),
-            parent_shas=list(parents_str.split()),
+            author_details=author_details,
+            commiter_details=commiter_details,
+            timestamp=timestamp,
+            message=message,
         )
 
     def add(self, paths: Iterable[Path]) -> None:

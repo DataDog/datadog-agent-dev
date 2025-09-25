@@ -26,19 +26,27 @@ class TestCommitClass:
 
 class TestCommitDetailsClass:
     def test_details(self):
-        now = datetime.now(tz=UTC)
+        now = int(datetime.now(tz=UTC).timestamp())
         commit_details = CommitDetails(
-            author_name="John Doe",
-            author_email="john.doe@example.com",
-            datetime=now,
+            author_details=("John Doe", "john.doe@example.com"),
+            commiter_details=("Jane Doe", "jane.doe@example.com"),
+            timestamp=now,
             message="This is a test message",
-            parent_shas=["82ee754ca931816902ac7e6e38f66a51e65912f9"],
         )
-        assert commit_details.author_name == "John Doe"
-        assert commit_details.author_email == "john.doe@example.com"
-        assert commit_details.datetime == now
+        assert commit_details.author_details == ("John Doe", "john.doe@example.com")
+        assert commit_details.commiter_details == ("Jane Doe", "jane.doe@example.com")
+        assert commit_details.timestamp == now
         assert commit_details.message == "This is a test message"
-        assert commit_details.parent_shas == ["82ee754ca931816902ac7e6e38f66a51e65912f9"]
+
+    def test_commit_datetime(self):
+        now = int(datetime.now(tz=UTC).timestamp())
+        commit_details = CommitDetails(
+            author_details=("John Doe", "john.doe@example.com"),
+            commiter_details=("Jane Doe", "jane.doe@example.com"),
+            timestamp=now,
+            message="This is a test message",
+        )
+        assert commit_details.commit_datetime == datetime.fromtimestamp(now, tz=UTC)
 
     def test_details_github_git_equality(self, app, mocker):
         # Initialize commit object
