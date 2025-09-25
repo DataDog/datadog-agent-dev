@@ -78,7 +78,7 @@ class TestRemoteClass:
         # Create a ChangeSet object
         changes = [
             ChangedFile(
-                file=Path(file["filename"]),
+                path=Path(file["filename"]),
                 type=get_change_type_from_github_status(file["status"]),
                 binary="patch" not in file,
                 patch=file.get("patch", ""),

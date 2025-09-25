@@ -26,7 +26,7 @@ class ChangeType(StrEnum):
 class ChangedFile(Struct, frozen=True):
     """Represents changes to a single file in a git repository."""
 
-    file: Path
+    path: Path
     """The path to the file that was changed."""
     type: ChangeType
     """The type of change that was made to the file: added, modified, or deleted."""
@@ -100,7 +100,7 @@ class ChangedFile(Struct, frozen=True):
 
             # Strip every "block" and add the missing separator
             patch = "" if binary else "\n".join([sep + block.strip() for block in blocks]).strip()
-            yield cls(file=current_file, type=current_type, binary=binary, patch=patch)
+            yield cls(path=current_file, type=current_type, binary=binary, patch=patch)
 
 
 # Need dict=True so that cached_property can be used
@@ -141,17 +141,17 @@ class ChangeSet(Struct, dict=True, frozen=True):
     @cached_property
     def added(self) -> set[Path]:
         """List of files that were added."""
-        return {change.file for change in self.values() if change.type == ChangeType.ADDED}
+        return {change.path for change in self.values() if change.type == ChangeType.ADDED}
 
     @cached_property
     def modified(self) -> set[Path]:
         """List of files that were modified."""
-        return {change.file for change in self.values() if change.type == ChangeType.MODIFIED}
+        return {change.path for change in self.values() if change.type == ChangeType.MODIFIED}
 
     @cached_property
     def deleted(self) -> set[Path]:
         """List of files that were deleted."""
-        return {change.file for change in self.values() if change.type == ChangeType.DELETED}
+        return {change.path for change in self.values() if change.type == ChangeType.DELETED}
 
     @cached_property
     def changed(self) -> set[Path]:
@@ -163,8 +163,8 @@ class ChangeSet(Struct, dict=True, frozen=True):
         from hashlib import sha256
 
         digester = sha256()
-        for change in sorted(self.values(), key=lambda x: x.file.as_posix()):
-            digester.update(change.file.as_posix().encode())
+        for change in sorted(self.values(), key=lambda x: x.path.as_posix()):
+            digester.update(change.path.as_posix().encode())
             digester.update(change.type.value.encode())
             digester.update(change.patch.encode())
 
@@ -173,7 +173,7 @@ class ChangeSet(Struct, dict=True, frozen=True):
     @classmethod
     def from_iter(cls, data: Iterable[ChangedFile]) -> Self:
         """Create a ChangeSet from an iterable of FileChanges."""
-        items = {change.file: change for change in data}
+        items = {change.path: change for change in data}
         return cls(changes=MappingProxyType(items))
 
     @classmethod

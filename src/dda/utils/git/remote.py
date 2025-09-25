@@ -64,7 +64,7 @@ class Remote(ABC):
         # Compute ChangeSet
         changes = ChangeSet.from_iter(
             ChangedFile(
-                file=Path(file_obj["filename"]),
+                path=Path(file_obj["filename"]),
                 type=get_change_type_from_github_status(file_obj["status"]),
                 # GitHub does not have anything else to indicate binary files
                 binary="patch" not in file_obj,

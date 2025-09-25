@@ -35,7 +35,7 @@ def assert_changesets_equal(actual: ChangeSet, expected: ChangeSet) -> None:
     assert actual.keys() == expected.keys()
     for file in actual:
         seen, expected_change = actual[file], expected[file]
-        assert seen.file == expected_change.file
+        assert seen.path == expected_change.path
         assert seen.type == expected_change.type
         assert seen.patch == expected_change.patch
 
@@ -190,7 +190,7 @@ def test_get_changes_with_base(app: Application, mocker: Any, repo_testcase: str
     working_tree_changes = ChangeSet(
         changes=MappingProxyType({
             Path("test.txt"): ChangedFile(
-                file=Path("test.txt"), type=ChangeType.ADDED, binary=False, patch="@@ -0,0 +1 @@\n+test"
+                path=Path("test.txt"), type=ChangeType.ADDED, binary=False, patch="@@ -0,0 +1 @@\n+test"
             )
         })
     )
@@ -198,6 +198,6 @@ def test_get_changes_with_base(app: Application, mocker: Any, repo_testcase: str
 
     changeset_with_working_tree = git.get_changes_with_base(base_commit.sha1, include_working_tree=True)
     expected_changeset_with_working_tree = expected_changeset | ChangeSet.from_iter([
-        ChangedFile(file=Path("test.txt"), type=ChangeType.ADDED, binary=False, patch="@@ -0,0 +1 @@\n+test")
+        ChangedFile(path=Path("test.txt"), type=ChangeType.ADDED, binary=False, patch="@@ -0,0 +1 @@\n+test")
     ])
     assert_changesets_equal(changeset_with_working_tree, expected_changeset_with_working_tree)
