@@ -145,7 +145,7 @@ class Git(Tool):
         Add the given paths to the index.
         Will fail if any path is not under cwd.
         """
-        self.run(["add", *[str(path) for path in paths]])
+        self.capture(["add", *map(str, paths)])
 
     def commit(self, message: str, *, allow_empty: bool = False) -> None:
         """
@@ -154,7 +154,7 @@ class Git(Tool):
         args = ["commit", "-m", message]
         if allow_empty:
             args.append("--allow-empty")
-        self.run(args)
+        self.capture(args)
 
     def commit_file(self, path: Path, *, content: str, commit_message: str) -> None:
         """
