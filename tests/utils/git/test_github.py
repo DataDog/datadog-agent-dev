@@ -63,8 +63,9 @@ def test_get_commit_and_changes_from_github(mocker, github_payload_file):
     # Create a commit object with details from the payload
     data = json.loads(github_payload_str)
     sha1 = data["sha"]
-    commit_url = data["commit"]["url"]
-    remote = Remote.from_url(url=commit_url)
+    commit_url = data["html_url"]
+    remote_url = commit_url.split("/commit/")[0]
+    remote = Remote.from_url(url=remote_url)
 
     author_timestamp = int(datetime.fromisoformat(data["commit"]["author"]["date"]).timestamp())
     author = GitPersonDetails(data["commit"]["author"]["name"], data["commit"]["author"]["email"], author_timestamp)
