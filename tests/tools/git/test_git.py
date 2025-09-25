@@ -5,16 +5,13 @@ from __future__ import annotations
 
 import random
 import re
-from typing import TYPE_CHECKING, Any
-
-import pytest
+from typing import TYPE_CHECKING
 
 from dda.utils.fs import Path
 from dda.utils.git.changeset import ChangedFile, ChangeSet, ChangeType
-from dda.utils.git.commit import Commit, GitPersonDetails
+from dda.utils.git.commit import GitPersonDetails
 from dda.utils.git.constants import GitEnvVars
 from dda.utils.process import EnvVars
-from tests.tools.git.conftest import REPO_TESTCASES, _load_changeset
 
 if TYPE_CHECKING:
     from dda.cli.application import Application
@@ -93,13 +90,13 @@ def test_commit_file(app: Application, temp_repo: Path) -> None:
         assert Path("hello.txt").read_text() == "world"
 
 
-def test_capture_diff_lines(app: Application, temp_repo: Path) -> None:
+def test_get_patch(app: Application, temp_repo: Path) -> None:
     with temp_repo.as_cwd():
         contents = "hello, world\n"
         # Need to make an initial commit to have a valid diff
         app.tools.git.commit_file(Path("dummy"), content="", commit_message="Initial commit")
         app.tools.git.commit_file(Path("hello.txt"), content=contents, commit_message="New commit")
-        diff_lines = app.tools.git._capture_diff_lines("HEAD^", "HEAD")  # noqa: SLF001
+        diff_lines = app.tools.git._get_patch("HEAD^", "HEAD").splitlines()  # noqa: SLF001
         expected_patterns = [
             "diff --git hello.txt hello.txt",
             "new file mode 100644",
@@ -117,86 +114,39 @@ def test_capture_diff_lines(app: Application, temp_repo: Path) -> None:
                 assert line == pattern
 
 
-@pytest.mark.parametrize("repo_testcase", REPO_TESTCASES)
-def test_compare_refs(app: Application, mocker: Any, repo_testcase: str) -> None:
-    testcase_dir = Path(__file__).parent / "fixtures" / "repo_states" / repo_testcase
-    with open(testcase_dir / "diff_output.txt", encoding="utf-8") as f:
-        diff_output = f.read()
-    mocker.patch("dda.tools.git.Git._capture_diff_lines", return_value=diff_output.splitlines())
-    result = app.tools.git._compare_refs("", "")  # noqa: SLF001
-    expected_changeset = _load_changeset(testcase_dir / "expected_changeset.json")
-    assert_changesets_equal(result, expected_changeset)
-
-
-# These tests are quite slow (the setup fixtures are quite heavy), and mostly replicated in the utils/git/test_changeset.py tests
-# Thus we only run them in CI
-@pytest.mark.requires_ci
-def test_get_commit_changes(app: Application, repo_setup: tuple[Path, ChangeSet]) -> None:
-    git: Git = app.tools.git
-    temp_repo, expected_changeset = repo_setup
-    with temp_repo.as_cwd():
-        changeset = git.get_commit_changes(git.capture(["rev-parse", "HEAD"]).strip())
-        assert_changesets_equal(changeset, expected_changeset)
-
-
-@pytest.mark.parametrize("repo_testcase", REPO_TESTCASES)
-def test_get_changes_between_commits(app: Application, mocker: Any, repo_testcase: str) -> None:
-    testcase_dir = Path(__file__).parent / "fixtures" / "repo_states" / repo_testcase
-    expected_changeset = _load_changeset(testcase_dir / "expected_changeset.json")
-
-    mocker.patch("dda.tools.git.Git._compare_refs", return_value=expected_changeset)
-    author = GitPersonDetails(name="a", email="a", timestamp=0)
-    commit1 = Commit(sha1="a" * 40, author=author, committer=author, message="a")
-    commit2 = Commit(sha1="b" * 40, author=author, committer=author, message="b")
-    result = app.tools.git.get_changes_between_commits(commit1.sha1, commit2.sha1)
-    assert_changesets_equal(result, expected_changeset)
-
-
-# @pytest.mark.requires_ci
-def test_get_working_tree_changes(app: Application, repo_setup_working_tree: tuple[Path, ChangeSet]) -> None:
+def test_get_changes(app: Application, repo_setup_working_tree: tuple[Path, ChangeSet]) -> None:
     git: Git = app.tools.git
     temp_repo, expected_changeset = repo_setup_working_tree
     with temp_repo.as_cwd():
-        changeset = git.get_working_tree_changes()
+        # Setup: get the SHA1 of the HEAD commit
+        root_sha1 = git.capture(["rev-parse", "HEAD"]).strip()
+
+        # Case 1: Get the changes in the working tree
+        changeset = git.get_changes("HEAD", start="HEAD", working_tree=True)
         assert_changesets_equal(changeset, expected_changeset)
 
+        # Case 2: Get the changes of the HEAD commit - should have the same changeset as the working tree
+        git.run(["add", "."])
+        git.commit("New commit")
+        head_sha1 = git.capture(["rev-parse", "HEAD"]).strip()
+        changeset = git.get_changes()
+        assert_changesets_equal(changeset, expected_changeset)
 
-# TODO: Add a test for this - seems a bit complicated to test
-def test_get_merge_base(app: Application) -> None:
+        # Case 3: Get the changes between two arbitrary commits
+        # Here it just happens to be HEAD but that should not matter
+        changeset = git.get_changes(head_sha1, start=root_sha1)
+        assert_changesets_equal(changeset, expected_changeset)
+
+        # Case 4: Get changes from HEAD with working tree changes
+        new_file = Path("new_file.txt")
+        new_file.write_text("new file\n")
+        changeset = git.get_changes(working_tree=True)
+        new_expected_changeset = expected_changeset | ChangeSet({
+            new_file: ChangedFile(path=new_file, type=ChangeType.ADDED, binary=False, patch="@@ -0,0 +1 @@\n+new file")
+        })
+        assert_changesets_equal(changeset, new_expected_changeset)
+
+
+# TODO: Implement this test - diffing with a merge base
+def test_get_changes_merge_base() -> None:
     pass
-
-
-@pytest.mark.parametrize("repo_testcase", REPO_TESTCASES)
-def test_get_changes_with_base(app: Application, mocker: Any, repo_testcase: str) -> None:
-    testcase_dir = Path(__file__).parent / "fixtures" / "repo_states" / repo_testcase
-    expected_changeset = _load_changeset(testcase_dir / "expected_changeset.json")
-
-    git: Git = app.tools.git
-    author = GitPersonDetails(name="a", email="a", timestamp=0)
-    base_commit = Commit(sha1="a" * 40, author=author, committer=author, message="a")
-    head_commit = Commit(sha1="b" * 40, author=author, committer=author, message="b")
-
-    # Mock the underlying functions
-    mocker.patch("dda.tools.git.Git.get_commit", return_value=head_commit)
-    mocker.patch("dda.utils.git.changeset.ChangeSet.generate_from_diff_output", return_value=expected_changeset)
-    mocker.patch("dda.tools.git.Git._capture_diff_lines")  # Would fail if called for real as we are not in a git repo
-
-    # Test without working tree changes
-    changeset = git.get_changes_with_base(base_commit.sha1, include_working_tree=False)
-    assert_changesets_equal(changeset, expected_changeset)
-
-    # Test with working tree changes
-    working_tree_changes = ChangeSet(
-        changes={
-            Path("test.txt"): ChangedFile(
-                path=Path("test.txt"), type=ChangeType.ADDED, binary=False, patch="@@ -0,0 +1 @@\n+test"
-            )
-        }
-    )
-    mocker.patch("dda.tools.git.Git.get_working_tree_changes", return_value=working_tree_changes)
-
-    changeset_with_working_tree = git.get_changes_with_base(base_commit.sha1, include_working_tree=True)
-    expected_changeset_with_working_tree = expected_changeset | ChangeSet.from_iter([
-        ChangedFile(path=Path("test.txt"), type=ChangeType.ADDED, binary=False, patch="@@ -0,0 +1 @@\n+test")
-    ])
-    assert_changesets_equal(changeset_with_working_tree, expected_changeset_with_working_tree)

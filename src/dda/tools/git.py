@@ -163,7 +163,7 @@ class Git(Tool):
         self.add((path,))
         self.commit(commit_message)
 
-    def _capture_diff_lines(self, *args: str, **kwargs: Any) -> list[str]:
+    def _get_patch(self, *args: str, **kwargs: Any) -> str:
         diff_args = [
             "-c",
             "core.quotepath=false",
@@ -174,27 +174,69 @@ class Git(Tool):
             "--no-renames",
             "--no-ext-diff",
         ]
-        return self.capture([*diff_args, *args], **kwargs).strip().splitlines()
+        return self.capture([*diff_args, *args], **kwargs).strip()
 
-    def _compare_refs(self, ref1: str, ref2: str) -> ChangeSet:
-        return ChangeSet.generate_from_diff_output(self._capture_diff_lines(ref1, ref2))
+    def get_changes(
+        self,
+        ref: str = "HEAD",
+        /,
+        *,
+        start: str | None = None,
+        merge_base: bool = False,
+        working_tree: bool = False,
+        remote_name: str = "origin",
+    ) -> ChangeSet:
+        """
+        Use `git` to compute a ChangeSet between two refs.
 
-    def get_commit_changes(self, sha1: str) -> ChangeSet:
-        """
-        Get the changes of the given commit in the Git repository in the current working directory.
-        """
-        return self._compare_refs(f"{sha1}^", sha1)
+        Parameters:
+            ref: The reference to compare to. Default is HEAD.
+            start: The reference to compare from.
+                Default is None, in which case the parent commit of the ref is used.
+                If merge_base is also True, the merge base is used instead of the parent commit.
+            merge_base: Whether to compute the differences between the refs starting from the merge base.
+            working_tree: Whether to include the working tree changes. Default is False.
+            remote_name: The name of the remote to compare to. Default is origin.
 
-    def get_changes_between_commits(self, a: str, b: str) -> ChangeSet:
-        """
-        Get the changes between two commits, identified by their SHA-1 hashes.
-        """
-        return self._compare_refs(a, b)
+        Returns:
+            A ChangeSet representing the differences between the refs.
 
-    def get_working_tree_changes(self) -> ChangeSet:
+        Examples:
+            ```python
+            # Get the changes of the HEAD commit
+            changes = git.get_changes(ref="HEAD")
+
+            # Get the changes between two commits
+            changes = git.get_changes(ref=commit1.sha1, start=commit2.sha1)
+
+            # Get the changes between the HEAD commit and the main branch
+            changes = git.get_changes(ref="HEAD", start="origin/main")
+
+            # Get the changes between the HEAD commit and the main branch starting from the merge base
+            changes = git.get_changes(ref="HEAD", start="origin/main", merge_base=True)
+
+            # Get _only_ the working tree changes
+            changes = git.get_changes(ref="HEAD", start="HEAD", working_tree=True)
+            ```
         """
-        Get the changes in the working tree of the Git repository in the current working directory.
-        """
+        if start is None:
+            revspec = f"{remote_name}...{ref}" if merge_base else f"{ref}^!"
+        elif merge_base:
+            revspec = f"{start}...{ref}"
+        else:
+            revspec = f"{start}..{ref}"
+
+        patches = [self._get_patch(revspec)]
+
+        if working_tree:
+            patches.append(self._get_working_tree_patch())
+
+        # Filter out any empty patches
+        patches = [patch.strip() for patch in patches if patch.strip()]
+
+        return ChangeSet.generate_from_diff_output(patches)
+
+    def _get_working_tree_patch(self) -> str:
         from os import environ
 
         from dda.utils.fs import temp_file
@@ -216,40 +258,4 @@ class Git(Tool):
                 self.run(["add", "--intent-to-add", *untracked_files], env=temp_env)
 
             # Get all changes (tracked + untracked) with a single diff command
-            diff_lines = self._capture_diff_lines("HEAD", env=temp_env)
-
-            return ChangeSet.generate_from_diff_output(diff_lines)
-
-    def get_merge_base(self, remote_name: str = "origin") -> str:
-        """
-        Get the merge base of the current branch.
-        """
-        res = self.capture(["merge-base", "HEAD", remote_name], check=False).strip()
-        if not res:
-            self.app.display_warning("Could not determine merge base for current branch. Using `main` instead.")
-            return "main"
-        return res
-
-    def get_changes_with_base(
-        self,
-        base: str | None = None,
-        *,
-        include_working_tree: bool = True,
-        remote_name: str = "origin",
-    ) -> ChangeSet:
-        """
-        Get the changes with the given base.
-        By default, this base is the merge base of the current branch.
-        If it cannot be determined, `main` will be used instead.
-
-        If `include_working_tree` is True, the changes in the working tree will be included.
-        If `remote_name` is provided, the changes will be compared to the branch in the remote with this name.
-        """
-        if base is None:
-            base = self.get_merge_base(remote_name)
-
-        head = self.get_commit()
-        changes = ChangeSet.generate_from_diff_output(self._capture_diff_lines(f"{base}...{head.sha1}"))
-        if include_working_tree:
-            changes |= self.get_working_tree_changes()
-        return changes
+            return self._get_patch("HEAD", env=temp_env)
