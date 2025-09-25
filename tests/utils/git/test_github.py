@@ -19,12 +19,12 @@ def test_get_github_api_url():
 def test_get_commit_github_url():
     remote = Remote.from_url(url="https://github.com/foo/bar")
     sha1 = "1234567890" * 4
-    commit = Commit(sha1=sha1)
+    commit = Commit(sha1=sha1, author_details=("a", "a"), commiter_details=("a", "a"), timestamp=0, message="a")
     assert get_commit_github_url(remote, commit) == f"https://github.com/foo/bar/commit/{sha1}"
 
 
 def test_get_commit_github_api_url():
     remote = Remote.from_url(url="https://github.com/foo/bar")
     sha1 = "1234567890" * 4
-    commit = Commit(sha1=sha1)
+    commit = Commit(sha1=sha1, author_details=("a", "a"), commiter_details=("a", "a"), timestamp=0, message="a")
     assert get_commit_github_api_url(remote, commit) == f"https://api.github.com/repos/foo/bar/commits/{sha1}"

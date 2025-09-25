@@ -11,7 +11,7 @@ from httpx import Response
 
 from dda.utils.fs import Path
 from dda.utils.git.changeset import ChangedFile, ChangeSet
-from dda.utils.git.commit import Commit, CommitDetails
+from dda.utils.git.commit import Commit
 from dda.utils.git.remote import HTTPSRemote, Remote, SSHRemote, get_change_type_from_github_status
 
 
@@ -46,7 +46,7 @@ class TestRemoteClass:
         "github_payload_file",
         ["commit_example_dda_1425a34.json", "commit_example_multiple_parents.json", "commit_example_binary_files.json"],
     )
-    def test_get_commit_details_and_changes_from_remote(self, mocker, github_payload_file):
+    def test_get_commit_and_changes_from_remote(self, mocker, github_payload_file):
         # Mock http client to return a known payload
         fixtures_file = Path(__file__).parent / "fixtures" / "github_payloads" / github_payload_file
         github_payload_str = fixtures_file.read_text(encoding="utf-8")
@@ -60,7 +60,6 @@ class TestRemoteClass:
         sha1 = github_payload["sha"]
         commit_url = github_payload["commit"]["url"]
         remote = Remote.from_url(url=commit_url)
-        commit = Commit(sha1=sha1)
 
         author_details = (github_payload["commit"]["author"]["name"], github_payload["commit"]["author"]["email"])
         commiter_details = (
@@ -70,7 +69,8 @@ class TestRemoteClass:
         timestamp = datetime.fromisoformat(github_payload["commit"]["author"]["date"]).timestamp()
         message = github_payload["commit"]["message"]
 
-        expected_commit_details = CommitDetails(
+        expected_commit = Commit(
+            sha1=sha1,
             author_details=author_details,
             commiter_details=commiter_details,
             timestamp=timestamp,
@@ -89,6 +89,9 @@ class TestRemoteClass:
         expected_commit_changes = ChangeSet.from_iter(changes)
 
         # Make the comparisons
-        commit_details, commit_changes = remote.get_details_and_changes_for_commit(commit)
-        assert commit_details == expected_commit_details
+        remote_commit, commit_changes = remote.get_commit_and_changes(sha1)
         assert commit_changes == expected_commit_changes
+
+        # Check all fields
+        for field in ["sha1", "author_details", "commiter_details", "timestamp", "message"]:
+            assert getattr(expected_commit, field) == getattr(remote_commit, field)

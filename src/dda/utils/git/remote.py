@@ -8,7 +8,7 @@ from functools import cached_property
 from typing import TYPE_CHECKING, ClassVar, Literal
 
 from dda.utils.git.changeset import ChangeType
-from dda.utils.git.commit import Commit, CommitDetails
+from dda.utils.git.commit import Commit
 
 if TYPE_CHECKING:
     from dda.utils.git.changeset import ChangeSet
@@ -47,7 +47,7 @@ class Remote(ABC):
     def full_repo(self) -> str:
         return f"{self.org}/{self.repo}"
 
-    def get_details_and_changes_for_commit(self, commit: Commit) -> tuple[CommitDetails, ChangeSet]:
+    def get_commit_and_changes(self, sha1: str) -> tuple[Commit, ChangeSet]:
         """
         Get the details and set of changes for a given commit by querying the remote.
         """
@@ -59,7 +59,7 @@ class Remote(ABC):
         from dda.utils.network.http.client import get_http_client
 
         client = get_http_client()
-        data = client.get(get_commit_github_api_url(self, commit)).json()
+        data = client.get(get_commit_github_api_url(self, sha1)).json()
 
         # Compute ChangeSet
         changes = ChangeSet.from_iter(
@@ -81,7 +81,8 @@ class Remote(ABC):
         timestamp = int(datetime.fromisoformat(data["commit"]["author"]["date"]).timestamp())
         message = data["commit"]["message"]
 
-        details = CommitDetails(
+        details = Commit(
+            sha1=sha1,
             author_details=author_details,
             commiter_details=commiter_details,
             timestamp=timestamp,

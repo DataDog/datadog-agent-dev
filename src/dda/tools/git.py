@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from collections.abc import Generator, Iterable
 
     from dda.utils.fs import Path
-    from dda.utils.git.commit import Commit, CommitDetails
+    from dda.utils.git.commit import Commit
 
 
 class Git(Tool):
@@ -88,22 +88,11 @@ class Git(Tool):
 
         return Remote.from_url(remote_url)
 
-    def get_head_commit(self) -> Commit:
+    def get_commit(self, ref: str = "HEAD") -> Commit:
         """
-        Get the current HEAD commit of the Git repository in the current working directory.
+        Get a Commit object from the Git repository in the current working directory for the given reference (default: HEAD).
         """
         from dda.utils.git.commit import Commit
-
-        sha1 = self.capture(["rev-parse", "HEAD"]).strip()
-
-        return Commit(sha1=sha1)
-
-    def get_commit_details(self, ref: str) -> CommitDetails:
-        """
-        Get the details of the given commit in the Git repository in the current working directory.
-        """
-
-        from dda.utils.git.commit import CommitDetails
 
         raw_details = self.capture([
             "--no-pager",
@@ -112,13 +101,14 @@ class Git(Tool):
             "--no-patch",
             "--quiet",
             # Use a format that is easy to parse
-            # fmt: commit subject, commit body, commiter name, commiter email, commiter date, author name, author email, author date
-            "--format=%s%x00%b%x00%cn%x00%ce%x00%ct%x00%an%x00%ae%x00%at",
+            # fmt: commit hash, commit subject, commit body, commiter name, commiter email, commiter date, author name, author email, author date
+            "--format=%H%x00%s%x00%b%x00%cn%x00%ce%x00%ct%x00%an%x00%ae%x00%at",
             f"{ref}^{{commit}}",
         ])
 
         # Extract parts
         parts = raw_details.split("\0")
+        sha1, *parts = parts
         commit_subject, commit_body, *parts = parts
         commiter_name, commiter_email, commit_date, *parts = parts
         author_name, author_email, _author_date = parts
@@ -133,7 +123,8 @@ class Git(Tool):
         timestamp = int(timestamp_str)
         message = (commit_subject + "\n\n" + commit_body).strip()
 
-        return CommitDetails(
+        return Commit(
+            sha1=sha1,
             author_details=author_details,
             commiter_details=commiter_details,
             timestamp=timestamp,
@@ -249,7 +240,7 @@ class Git(Tool):
         if base is None:
             base = self.get_merge_base(remote_name)
 
-        head = self.get_head_commit()
+        head = self.get_commit()
         changes = ChangeSet.generate_from_diff_output(self._capture_diff_lines(f"{base}...{head.sha1}"))
         if include_working_tree:
             changes |= self.get_working_tree_changes()

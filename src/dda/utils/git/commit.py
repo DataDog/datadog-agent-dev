@@ -9,12 +9,16 @@ from functools import cached_property
 from msgspec import Struct
 
 
-class Commit(Struct, frozen=True):
+class Commit(Struct, frozen=True, dict=True):  # noqa: PLW1641
     """
     A Git commit, identified by its SHA-1 hash.
     """
 
     sha1: str
+    author_details: tuple[str, str]
+    commiter_details: tuple[str, str]
+    timestamp: int
+    message: str
 
     def __post_init__(self) -> None:
         if len(self.sha1) != 40:  # noqa: PLR2004
@@ -24,12 +28,8 @@ class Commit(Struct, frozen=True):
     def __str__(self) -> str:
         return self.sha1
 
-
-class CommitDetails(Struct, dict=True):
-    author_details: tuple[str, str]
-    commiter_details: tuple[str, str]
-    timestamp: int
-    message: str
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, Commit) and self.sha1 == other.sha1
 
     @cached_property
     def commit_datetime(self) -> datetime:

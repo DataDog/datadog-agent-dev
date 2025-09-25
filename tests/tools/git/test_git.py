@@ -72,27 +72,20 @@ def test_get_remote(app: Application, temp_repo_with_remote: Path) -> None:
         assert app.tools.git.get_remote().url == "https://github.com/foo/bar"
 
 
-def test_get_head_commit(app: Application, temp_repo_with_remote: Path) -> None:
+# TODO: Add more testcases here with different refs
+def test_get_commit(app: Application, temp_repo_with_remote: Path) -> None:
     with temp_repo_with_remote.as_cwd():
-        app.tools.git.commit_file(Path("hello.txt"), content="world", commit_message="Brand-new commit")
-        sha1 = app.tools.git.capture(["rev-parse", "HEAD"]).strip()
-
-        assert app.tools.git.get_head_commit() == Commit(sha1=sha1)
-
-
-def test_get_commit_details(app: Application, temp_repo: Path, default_git_author: GitAuthorConfig) -> None:
-    with temp_repo.as_cwd():
-        app.tools.git.commit_file(Path("dummy"), content="dummy content", commit_message="Initial commit")
-
         random_key = random.randint(1, 1000000)
         app.tools.git.commit_file(Path("hello.txt"), content="world", commit_message=f"Brand-new commit: {random_key}")
         sha1 = app.tools.git.capture(["rev-parse", "HEAD"]).strip()
         timestamp = int(app.tools.git.capture(["show", "-s", "--format=%ct", sha1]).strip())
+        commit = app.tools.git.get_commit()
 
-        details = app.tools.git.get_commit_details(sha1)
-        assert details.author_details == (default_git_author.name, default_git_author.email)
-        assert details.timestamp == timestamp
-        assert details.message == f"Brand-new commit: {random_key}"
+        assert commit.sha1 == sha1
+        assert commit.author_details == (app.tools.git.author_name, app.tools.git.author_email)
+        assert commit.commiter_details == (app.tools.git.author_name, app.tools.git.author_email)
+        assert commit.timestamp == timestamp
+        assert commit.message == f"Brand-new commit: {random_key}"
 
 
 def test_commit_file(app: Application, temp_repo: Path) -> None:
@@ -154,8 +147,8 @@ def test_get_changes_between_commits(app: Application, mocker: Any, repo_testcas
     expected_changeset = _load_changeset(testcase_dir / "expected_changeset.json")
 
     mocker.patch("dda.tools.git.Git._compare_refs", return_value=expected_changeset)
-    commit1 = Commit(sha1="a" * 40)
-    commit2 = Commit(sha1="b" * 40)
+    commit1 = Commit(sha1="a" * 40, author_details=("a", "a"), commiter_details=("a", "a"), timestamp=0, message="a")
+    commit2 = Commit(sha1="b" * 40, author_details=("b", "b"), commiter_details=("b", "b"), timestamp=0, message="b")
     result = app.tools.git.get_changes_between_commits(commit1.sha1, commit2.sha1)
     assert_changesets_equal(result, expected_changeset)
 
@@ -180,11 +173,15 @@ def test_get_changes_with_base(app: Application, mocker: Any, repo_testcase: str
     expected_changeset = _load_changeset(testcase_dir / "expected_changeset.json")
 
     git: Git = app.tools.git
-    base_commit = Commit(sha1="a" * 40)
-    head_commit = Commit(sha1="b" * 40)
+    base_commit = Commit(
+        sha1="a" * 40, author_details=("a", "a"), commiter_details=("a", "a"), timestamp=0, message="a"
+    )
+    head_commit = Commit(
+        sha1="b" * 40, author_details=("b", "b"), commiter_details=("b", "b"), timestamp=0, message="b"
+    )
 
     # Mock the underlying functions
-    mocker.patch("dda.tools.git.Git.get_head_commit", return_value=head_commit)
+    mocker.patch("dda.tools.git.Git.get_commit", return_value=head_commit)
     mocker.patch("dda.utils.git.changeset.ChangeSet.generate_from_diff_output", return_value=expected_changeset)
     mocker.patch("dda.tools.git.Git._capture_diff_lines")  # Would fail if called for real as we are not in a git repo
 
