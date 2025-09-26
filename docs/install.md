@@ -18,6 +18,24 @@ You can upgrade to the latest version by running the following command.
 brew upgrade --cask dda
 ```
 
+### WinGet
+
+Install the `Datadog.dda` [package](https://github.com/microsoft/winget-pkgs/tree/master/manifests/d/Datadog/dda) using [WinGet](https://learn.microsoft.com/en-us/windows/package-manager/winget/).
+
+```
+winget install --id Datadog.dda
+```
+
+You can upgrade to the latest version by running the following command.
+
+```
+winget upgrade --id Datadog.dda
+```
+
+/// note
+`dda` is the name of both the package and binary placed on PATH; the ID selection is for safety.
+///
+
 ## Installers
 
 /// tab | macOS
