@@ -1,0 +1,185 @@
+{
+    "sha": "1425a34f443f0b468e1739a06fcf97dfbf632594",
+    "node_id": "C_kwDOM2tirNoAKDE0MjVhMzRmNDQzZjBiNDY4ZTE3MzlhMDZmY2Y5N2RmYmY2MzI1OTQ",
+    "commit": {
+        "author": {
+            "name": "Pierre-Louis Veyrenc",
+            "email": "pierrelouis.veyrenc@datadoghq.com",
+            "date": "2025-08-22T14:39:33Z"
+        },
+        "committer": {
+            "name": "GitHub",
+            "email": "noreply@github.com",
+            "date": "2025-08-22T14:39:33Z"
+        },
+        "message": "[ACIX-973] Implement `info owners code` command (#167)\n\n* feat(info): Add stub for new `info owners code` command and groups\n\n* feat(info): Add and require new `codeowners` dep group\n\n* feat(info): Basic body for the task\n\n* feat(info): Support getting codeowners for multiple files at once\n\n* feat(info): Add pretty-printing mechanism\n\n* feat(tests): Add test helper functions and first test for `dda info owners code`\n\n* feat(tests): Add more tests for `dda info owners code`\n\n* chore: Linter and formatter fixes\n\n* refactor: Address review comments\n\n* fix(info): Human output on `stdout`\n\n* feat(tests): Add a couple more tests\n\n* fix(info): Always use POSIX paths with codeowners library\n\nThis was causing test failures on Windows, as the codeowners library expects paths to be in POSIX format.\nAlso some tests were not using the correct path separator, which was causing issues on Windows.\n\n* refactor(info): Post-review code style tweaks\n\n* use `Path.read_text` instead of manually `open`ing\n* Use walrus operator instead of intermediary list\n* Use pytest fixtures and `dedent` helper function in test code\n\n* refactor(info): Rename `--config` argument to `--owners`\n\n* feat(tests): Use pytest features for `test_code.py`\n\n* Use fixtures, and in particular the \"Factories as fixtures\" pattern\n* Use parametrization for better defining test cases\n* Improve cleanup logic by including it in the fixtures\n\n* chore(tests): Add extra typing info and address linter complains",
+        "tree": {
+            "sha": "d7b1ddf6f97701fca2a6db431387409dadbfbe27",
+            "url": "https://api.github.com/repos/DataDog/datadog-agent-dev/git/trees/d7b1ddf6f97701fca2a6db431387409dadbfbe27"
+        },
+        "url": "https://api.github.com/repos/DataDog/datadog-agent-dev/git/commits/1425a34f443f0b468e1739a06fcf97dfbf632594",
+        "comment_count": 0,
+        "verification": {
+            "verified": true,
+            "reason": "valid",
+            "signature": "-----BEGIN PGP SIGNATURE-----\n\nwsFcBAABCAAQBQJoqIElCRC1aQ7uu5UhlAAAYTIQABBAK9pceB/SiJ7fgv+3POzz\ngBOOGWJhigfFTNYsUAuT0UtrjGJ/ZRB1dNNkT16jPrPMzDbWxl/agEfX3ALQ2rjZ\nDBaF4LsVPzFg/eNEugOnz3hXefTM1OlT+cwd9I5FTXPFMZ1cI2SYSXJeWiVgkTDr\nAhj8pzGJTasNgDm8/fuHv0WYm7bKXytnED0OMhmM0vKJg1rzVUZj+HZHjIdnQ5kc\nLiSesqHFsHbCyfDiHw9COJJzwW1OYNZv13jYaTvSL0YbrdBtMu3B3YW8jPfTbDL2\n5ZTl2k8DsuGEaHPf2016h9hQjyiT1hWplK5SPz+tgNs+QniocPefAzlIV2l7D6w+\nDNIqSZfQBdl6GbtEy20dw3wep4ftvS8ui6M8Ya/llr0bGppBv/VVhO4BCNeggEQP\nrB9NmZn70HTavvRbe1s5N1R6YmGCZK6WHBp28sWCvF3iFGXUbBBCip/EtJeg2+gu\nWP8JPYRKgvDrcJ5RrV/+YHPWV9UXLk2YUvzqIXasmh03gZYpPo5zyZ+jhTQOTVoZ\nGJEtHhHGlEGL2vj4NO+3aTb5e7YT9RcztcYQ5UFue9LPmjhNSLIBLttdKZUpzfGH\nHi393tdElBVFAadu1CDJu84mT4p4m8lyJ6aXUe8eDcl5l6ka1II6wbRTM4//PSCG\nmebIdzfR27S3W7b6wtDG\n=4dZh\n-----END PGP SIGNATURE-----\n",
+            "payload": "tree d7b1ddf6f97701fca2a6db431387409dadbfbe27\nparent f8026d5d3566f06f719a317d64b04c2c370e11b2\nauthor Pierre-Louis Veyrenc <pierrelouis.veyrenc@datadoghq.com> 1755873573 +0200\ncommitter GitHub <noreply@github.com> 1755873573 +0200\n\n[ACIX-973] Implement `info owners code` command (#167)\n\n* feat(info): Add stub for new `info owners code` command and groups\n\n* feat(info): Add and require new `codeowners` dep group\n\n* feat(info): Basic body for the task\n\n* feat(info): Support getting codeowners for multiple files at once\n\n* feat(info): Add pretty-printing mechanism\n\n* feat(tests): Add test helper functions and first test for `dda info owners code`\n\n* feat(tests): Add more tests for `dda info owners code`\n\n* chore: Linter and formatter fixes\n\n* refactor: Address review comments\n\n* fix(info): Human output on `stdout`\n\n* feat(tests): Add a couple more tests\n\n* fix(info): Always use POSIX paths with codeowners library\n\nThis was causing test failures on Windows, as the codeowners library expects paths to be in POSIX format.\nAlso some tests were not using the correct path separator, which was causing issues on Windows.\n\n* refactor(info): Post-review code style tweaks\n\n* use `Path.read_text` instead of manually `open`ing\n* Use walrus operator instead of intermediary list\n* Use pytest fixtures and `dedent` helper function in test code\n\n* refactor(info): Rename `--config` argument to `--owners`\n\n* feat(tests): Use pytest features for `test_code.py`\n\n* Use fixtures, and in particular the \"Factories as fixtures\" pattern\n* Use parametrization for better defining test cases\n* Improve cleanup logic by including it in the fixtures\n\n* chore(tests): Add extra typing info and address linter complains",
+            "verified_at": "2025-08-22T14:39:34Z"
+        }
+    },
+    "url": "https://api.github.com/repos/DataDog/datadog-agent-dev/commits/1425a34f443f0b468e1739a06fcf97dfbf632594",
+    "html_url": "https://github.com/DataDog/datadog-agent-dev/commit/1425a34f443f0b468e1739a06fcf97dfbf632594",
+    "comments_url": "https://api.github.com/repos/DataDog/datadog-agent-dev/commits/1425a34f443f0b468e1739a06fcf97dfbf632594/comments",
+    "author": {
+        "login": "Ishirui",
+        "id": 70032915,
+        "node_id": "MDQ6VXNlcjcwMDMyOTE1",
+        "avatar_url": "https://avatars.githubusercontent.com/u/70032915?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/Ishirui",
+        "html_url": "https://github.com/Ishirui",
+        "followers_url": "https://api.github.com/users/Ishirui/followers",
+        "following_url": "https://api.github.com/users/Ishirui/following{/other_user}",
+        "gists_url": "https://api.github.com/users/Ishirui/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/Ishirui/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/Ishirui/subscriptions",
+        "organizations_url": "https://api.github.com/users/Ishirui/orgs",
+        "repos_url": "https://api.github.com/users/Ishirui/repos",
+        "events_url": "https://api.github.com/users/Ishirui/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/Ishirui/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+    },
+    "committer": {
+        "login": "web-flow",
+        "id": 19864447,
+        "node_id": "MDQ6VXNlcjE5ODY0NDQ3",
+        "avatar_url": "https://avatars.githubusercontent.com/u/19864447?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/web-flow",
+        "html_url": "https://github.com/web-flow",
+        "followers_url": "https://api.github.com/users/web-flow/followers",
+        "following_url": "https://api.github.com/users/web-flow/following{/other_user}",
+        "gists_url": "https://api.github.com/users/web-flow/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/web-flow/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/web-flow/subscriptions",
+        "organizations_url": "https://api.github.com/users/web-flow/orgs",
+        "repos_url": "https://api.github.com/users/web-flow/repos",
+        "events_url": "https://api.github.com/users/web-flow/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/web-flow/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+    },
+    "parents": [
+        {
+            "sha": "f8026d5d3566f06f719a317d64b04c2c370e11b2",
+            "url": "https://api.github.com/repos/DataDog/datadog-agent-dev/commits/f8026d5d3566f06f719a317d64b04c2c370e11b2",
+            "html_url": "https://github.com/DataDog/datadog-agent-dev/commit/f8026d5d3566f06f719a317d64b04c2c370e11b2"
+        }
+    ],
+    "stats": {
+        "total": 318,
+        "additions": 318,
+        "deletions": 0
+    },
+    "files": [
+        {
+            "sha": "33c3a14bebec88bc6a398e94e72c597ae8cb7857",
+            "filename": "pyproject.toml",
+            "status": "modified",
+            "additions": 3,
+            "deletions": 0,
+            "changes": 3,
+            "blob_url": "https://github.com/DataDog/datadog-agent-dev/blob/1425a34f443f0b468e1739a06fcf97dfbf632594/pyproject.toml",
+            "raw_url": "https://github.com/DataDog/datadog-agent-dev/raw/1425a34f443f0b468e1739a06fcf97dfbf632594/pyproject.toml",
+            "contents_url": "https://api.github.com/repos/DataDog/datadog-agent-dev/contents/pyproject.toml?ref=1425a34f443f0b468e1739a06fcf97dfbf632594",
+            "patch": "@@ -64,6 +64,9 @@ gcp = [\n github = [\n     \"pygithub\",\n ]\n+codeowners = [\n+    \"codeowners\",\n+]\n gitlab = [\n     \"python-gitlab\",\n ]"
+        },
+        {
+            "sha": "0b2df09f25d10e0d2820a69e0907f81efc390797",
+            "filename": "src/dda/cli/info/__init__.py",
+            "status": "added",
+            "additions": 13,
+            "deletions": 0,
+            "changes": 13,
+            "blob_url": "https://github.com/DataDog/datadog-agent-dev/blob/1425a34f443f0b468e1739a06fcf97dfbf632594/src%2Fdda%2Fcli%2Finfo%2F__init__.py",
+            "raw_url": "https://github.com/DataDog/datadog-agent-dev/raw/1425a34f443f0b468e1739a06fcf97dfbf632594/src%2Fdda%2Fcli%2Finfo%2F__init__.py",
+            "contents_url": "https://api.github.com/repos/DataDog/datadog-agent-dev/contents/src%2Fdda%2Fcli%2Finfo%2F__init__.py?ref=1425a34f443f0b468e1739a06fcf97dfbf632594",
+            "patch": "@@ -0,0 +1,13 @@\n+# SPDX-FileCopyrightText: 2025-present Datadog, Inc. <dev@datadoghq.com>\n+#\n+# SPDX-License-Identifier: MIT\n+from __future__ import annotations\n+\n+from dda.cli.base import dynamic_group\n+\n+\n+@dynamic_group(\n+    short_help=\"Get information about the repo, CI and more\",\n+)\n+def cmd() -> None:\n+    pass"
+        },
+        {
+            "sha": "973ac2d14c84c3c370fa640e5128e995187cdd88",
+            "filename": "src/dda/cli/info/owners/__init__.py",
+            "status": "added",
+            "additions": 13,
+            "deletions": 0,
+            "changes": 13,
+            "blob_url": "https://github.com/DataDog/datadog-agent-dev/blob/1425a34f443f0b468e1739a06fcf97dfbf632594/src%2Fdda%2Fcli%2Finfo%2Fowners%2F__init__.py",
+            "raw_url": "https://github.com/DataDog/datadog-agent-dev/raw/1425a34f443f0b468e1739a06fcf97dfbf632594/src%2Fdda%2Fcli%2Finfo%2Fowners%2F__init__.py",
+            "contents_url": "https://api.github.com/repos/DataDog/datadog-agent-dev/contents/src%2Fdda%2Fcli%2Finfo%2Fowners%2F__init__.py?ref=1425a34f443f0b468e1739a06fcf97dfbf632594",
+            "patch": "@@ -0,0 +1,13 @@\n+# SPDX-FileCopyrightText: 2025-present Datadog, Inc. <dev@datadoghq.com>\n+#\n+# SPDX-License-Identifier: MIT\n+from __future__ import annotations\n+\n+from dda.cli.base import dynamic_group\n+\n+\n+@dynamic_group(\n+    short_help=\"Find owners of repo content\",\n+)\n+def cmd() -> None:\n+    pass"
+        },
+        {
+            "sha": "e398d70c0e2db76359879b8ea622dfd46289b383",
+            "filename": "src/dda/cli/info/owners/code/__init__.py",
+            "status": "added",
+            "additions": 56,
+            "deletions": 0,
+            "changes": 56,
+            "blob_url": "https://github.com/DataDog/datadog-agent-dev/blob/1425a34f443f0b468e1739a06fcf97dfbf632594/src%2Fdda%2Fcli%2Finfo%2Fowners%2Fcode%2F__init__.py",
+            "raw_url": "https://github.com/DataDog/datadog-agent-dev/raw/1425a34f443f0b468e1739a06fcf97dfbf632594/src%2Fdda%2Fcli%2Finfo%2Fowners%2Fcode%2F__init__.py",
+            "contents_url": "https://api.github.com/repos/DataDog/datadog-agent-dev/contents/src%2Fdda%2Fcli%2Finfo%2Fowners%2Fcode%2F__init__.py?ref=1425a34f443f0b468e1739a06fcf97dfbf632594",
+            "patch": "@@ -0,0 +1,56 @@\n+# SPDX-FileCopyrightText: 2025-present Datadog, Inc. <dev@datadoghq.com>\n+#\n+# SPDX-License-Identifier: MIT\n+from __future__ import annotations\n+\n+from typing import TYPE_CHECKING\n+\n+import click\n+\n+from dda.cli.base import dynamic_command, pass_app\n+from dda.utils.fs import Path\n+\n+if TYPE_CHECKING:\n+    from dda.cli.application import Application\n+\n+\n+@dynamic_command(short_help=\"Find code owners of files and directories\", features=[\"codeowners\"])\n+@click.argument(\n+    \"paths\",\n+    type=click.Path(exists=True, path_type=Path),\n+    required=True,\n+    nargs=-1,\n+)\n+@click.option(\n+    \"--owners\",\n+    \"-f\",\n+    \"owners_filepath\",\n+    type=click.Path(exists=True, dir_okay=False, path_type=Path),\n+    help=\"Path to CODEOWNERS file\",\n+    default=\".github/CODEOWNERS\",\n+)\n+# TODO: Make this respect any --non-interactive flag or other way to detect CI environment\n+@click.option(\n+    \"--json\",\n+    is_flag=True,\n+    help=\"Format the output as JSON\",\n+)\n+@pass_app\n+def cmd(app: Application, paths: tuple[Path, ...], *, owners_filepath: Path, json: bool) -> None:\n+    \"\"\"\n+    Gets the code owners for the specified paths.\n+    \"\"\"\n+    import codeowners\n+\n+    owners = codeowners.CodeOwners(owners_filepath.read_text(encoding=\"utf-8\"))\n+\n+    # The codeowners library expects paths to be in POSIX format (even on Windows)\n+    res = {(posix_path := path.as_posix()): [owner[1] for owner in owners.of(posix_path)] for path in paths}\n+    if json:\n+        from json import dumps\n+\n+        app.output(dumps(res))\n+    else:\n+        # Note: paths here are in POSIX format, so they will use / even on Windows\n+        display_res = {path: \", \".join(owners) for path, owners in res.items()}\n+        app.display_table(display_res, stderr=False)"
+        },
+        {
+            "sha": "79ca6026d1bd38f58d4987dcdc2e70618f0ee415",
+            "filename": "tests/cli/info/__init__.py",
+            "status": "added",
+            "additions": 3,
+            "deletions": 0,
+            "changes": 3,
+            "blob_url": "https://github.com/DataDog/datadog-agent-dev/blob/1425a34f443f0b468e1739a06fcf97dfbf632594/tests%2Fcli%2Finfo%2F__init__.py",
+            "raw_url": "https://github.com/DataDog/datadog-agent-dev/raw/1425a34f443f0b468e1739a06fcf97dfbf632594/tests%2Fcli%2Finfo%2F__init__.py",
+            "contents_url": "https://api.github.com/repos/DataDog/datadog-agent-dev/contents/tests%2Fcli%2Finfo%2F__init__.py?ref=1425a34f443f0b468e1739a06fcf97dfbf632594",
+            "patch": "@@ -0,0 +1,3 @@\n+# SPDX-FileCopyrightText: 2025-present Datadog, Inc. <dev@datadoghq.com>\n+#\n+# SPDX-License-Identifier: MIT"
+        },
+        {
+            "sha": "79ca6026d1bd38f58d4987dcdc2e70618f0ee415",
+            "filename": "tests/cli/info/owners/__init__.py",
+            "status": "added",
+            "additions": 3,
+            "deletions": 0,
+            "changes": 3,
+            "blob_url": "https://github.com/DataDog/datadog-agent-dev/blob/1425a34f443f0b468e1739a06fcf97dfbf632594/tests%2Fcli%2Finfo%2Fowners%2F__init__.py",
+            "raw_url": "https://github.com/DataDog/datadog-agent-dev/raw/1425a34f443f0b468e1739a06fcf97dfbf632594/tests%2Fcli%2Finfo%2Fowners%2F__init__.py",
+            "contents_url": "https://api.github.com/repos/DataDog/datadog-agent-dev/contents/tests%2Fcli%2Finfo%2Fowners%2F__init__.py?ref=1425a34f443f0b468e1739a06fcf97dfbf632594",
+            "patch": "@@ -0,0 +1,3 @@\n+# SPDX-FileCopyrightText: 2025-present Datadog, Inc. <dev@datadoghq.com>\n+#\n+# SPDX-License-Identifier: MIT"
+        },
+        {
+            "sha": "dadeacc8e4618b11e26243293d873030648eee75",
+            "filename": "tests/cli/info/owners/test_code.py",
+            "status": "added",
+            "additions": 223,
+            "deletions": 0,
+            "changes": 223,
+            "blob_url": "https://github.com/DataDog/datadog-agent-dev/blob/1425a34f443f0b468e1739a06fcf97dfbf632594/tests%2Fcli%2Finfo%2Fowners%2Ftest_code.py",
+            "raw_url": "https://github.com/DataDog/datadog-agent-dev/raw/1425a34f443f0b468e1739a06fcf97dfbf632594/tests%2Fcli%2Finfo%2Fowners%2Ftest_code.py",
+            "contents_url": "https://api.github.com/repos/DataDog/datadog-agent-dev/contents/tests%2Fcli%2Finfo%2Fowners%2Ftest_code.py?ref=1425a34f443f0b468e1739a06fcf97dfbf632594",
+            "patch": "@@ -0,0 +1,223 @@\n+# SPDX-FileCopyrightText: 2025-present Datadog, Inc. <dev@datadoghq.com>\n+#\n+# SPDX-License-Identifier: MIT\n+from __future__ import annotations\n+\n+import json\n+from os import sep\n+from typing import TYPE_CHECKING\n+\n+import pytest\n+\n+from dda.utils.fs import Path\n+\n+if TYPE_CHECKING:\n+    from collections.abc import Callable, Iterable\n+    from types import ModuleType\n+\n+    from tests.conftest import CliRunner\n+\n+\n+# We prepend \"fixt_\" to the fixture names to avoid pylint complaining about name shadowing\n+# https://docs.pytest.org/en/stable/reference/reference.html#pytest-fixture\n+@pytest.fixture(name=\"default_codeowners_location\")\n+def fixt_default_codeowners_location() -> Path:\n+    return Path(\".github/CODEOWNERS\")\n+\n+\n+@pytest.fixture(name=\"create_temp_file_or_dir\")\n+def fixt_create_temp_file_or_dir():\n+    \"\"\"Fixture to create and clean up temporary files and directories.\"\"\"\n+    created_paths: list[Path] = []\n+\n+    def _create_temp_file_or_dir(location: Path, *, force_file: bool = False) -> None:\n+        for parent in reversed(location.parents):\n+            # Create and keep track of created parent directories for cleanup\n+            if not parent.exists():\n+                parent.mkdir()\n+                created_paths.append(parent)\n+\n+        # Create the requested file or directory and keep track of it for cleanup\n+        # Assume that if the file path does not have an extension, it is a directory\n+        # The force_file flag can be used to override this behavior\n+        if location.suffix == \"\" and not force_file:\n+            location.mkdir()\n+        else:\n+            location.touch()\n+        created_paths.append(location)\n+\n+    yield _create_temp_file_or_dir\n+    for path in reversed(created_paths):\n+        if path.exists():\n+            if path.is_dir():\n+                path.rmdir()\n+            else:\n+                path.unlink()\n+\n+\n+@pytest.fixture(name=\"create_codeowners_file\")\n+def fixt_create_codeowners_file(create_temp_file_or_dir):\n+    def _create_codeowners_file(ownership_data: dict[str, list[str]], location: Path) -> None:\n+        create_temp_file_or_dir(location, force_file=True)\n+        codeowners_content = \"\\n\".join(f\"{pattern} {' '.join(owners)}\" for pattern, owners in ownership_data.items())\n+        location.write_text(codeowners_content)\n+\n+    return _create_codeowners_file\n+\n+\n+@pytest.fixture(name=\"create_temp_items\")\n+def fixt_create_temp_items(create_temp_file_or_dir):\n+    def _create_temp_items(files: Iterable[str], temp_dir: Path) -> None:\n+        for file_str in files:\n+            # Always use forward slashes for paths, as that's what pathlib expects\n+            file_path = temp_dir / file_str.replace(sep, \"/\")\n+            create_temp_file_or_dir(file_path)\n+\n+    return _create_temp_items\n+\n+\n+@pytest.mark.parametrize(\n+    (\"ownership_data\", \"expected_result\"),\n+    [\n+        # Test case 1: Single owner for a single file\n+        (\n+            {\n+                \"testfile.txt\": [\"@owner1\"],\n+            },\n+            None,  # expected_result will default to ownership_data\n+        ),\n+        # Test case 2: Multiple owners for a single file\n+        (\n+            {\n+                \"testfile.txt\": [\"@owner1\", \"@owner2\"],\n+            },\n+            None,\n+        ),\n+        # Test case 3: Wildcard ownership\n+        (\n+            {\n+                \"*.txt\": [\"@owner1\"],\n+                \"testfile.txt\": [\"@owner2\"],\n+            },\n+            {\n+                \"testfile.txt\": [\"@owner2\"],\n+                \"otherfile.txt\": [\"@owner1\"],\n+            },\n+        ),\n+        # Test case 4: Directory ownership\n+        (\n+            {\n+                \"subdir1\": [\"@owner1\"],\n+                \"subdir2\": [\"@owner2\"],\n+                \"subdir2/testfile2.txt\": [\"@owner3\"],\n+            },\n+            {\n+                \"subdir1\": [\"@owner1\"],\n+                \"subdir1/testfile1.txt\": [\"@owner1\"],\n+                \"subdir2\": [\"@owner2\"],\n+                \"subdir2/testfile2.txt\": [\"@owner3\"],\n+            },\n+        ),\n+        # Test case 5: Complicated situation with multiple patterns\n+        (\n+            {\n+                \"*\": [\"@DataDog/team-everything\"],\n+                \"*.md\": [\"@DataDog/team-devops\", \"@DataDog/team-doc\"],\n+                \".gitlab\": [\"@DataDog/team-devops\"],\n+                \".gitlab/security.yml\": [\"@DataDog/team-security\"],\n+            },\n+            {\n+                \"test.txt\": [\"@DataDog/team-everything\"],\n+                \"README.md\": [\n+                    \"@DataDog/team-devops\",\n+                    \"@DataDog/team-doc\",\n+                ],\n+                \".gitlab\": [\"@DataDog/team-devops\"],\n+                \".gitlab/security.yml\": [\"@DataDog/team-security\"],\n+                \".gitlab/ci.yml\": [\"@DataDog/team-devops\"],\n+            },\n+        ),\n+    ],\n+)\n+def test_ownership_parsing(  # type: ignore[no-untyped-def]\n+    dda: CliRunner,\n+    temp_dir: Path,\n+    create_codeowners_file: Callable[[dict[str, list[str]], Path], None],\n+    create_temp_items: Callable[[Iterable[str], Path], None],\n+    default_codeowners_location: Path,\n+    ownership_data: dict[str, list[str]],\n+    expected_result: dict[str, list[str]] | None,\n+) -> None:\n+    if expected_result is None:\n+        expected_result = ownership_data\n+    files = expected_result.keys()\n+    create_codeowners_file(ownership_data, temp_dir / default_codeowners_location)\n+    create_temp_items(files, temp_dir)\n+\n+    with temp_dir.as_cwd():\n+        result = dda(\n+            \"info\",\n+            \"owners\",\n+            \"code\",\n+            \"--json\",\n+            *expected_result.keys(),\n+        )\n+    assert result.exit_code == 0, result.stdout\n+    assert json.loads(result.stdout) == expected_result\n+\n+\n+def test_ownership_location(\n+    dda: CliRunner,\n+    temp_dir: Path,\n+    create_codeowners_file: Callable[[dict[str, list[str]], Path], None],\n+    create_temp_items: Callable[[Iterable[str], Path], None],\n+) -> None:\n+    ownership_data = {\n+        \"testfile.txt\": [\"@owner1\"],\n+    }\n+    expected_result = ownership_data\n+    custom_location = Path(\"custom/CODEOWNERS\")\n+    create_codeowners_file(ownership_data, temp_dir / custom_location)\n+    create_temp_items(ownership_data.keys(), temp_dir)\n+    with temp_dir.as_cwd():\n+        result = dda(\n+            \"info\",\n+            \"owners\",\n+            \"code\",\n+            \"--json\",\n+            \"--owners\",\n+            custom_location.as_posix(),\n+            *expected_result.keys(),\n+        )\n+    assert result.exit_code == 0, result.stdout\n+    assert json.loads(result.stdout) == expected_result\n+\n+\n+def test_human_output(\n+    dda: CliRunner,\n+    temp_dir: Path,\n+    helpers: ModuleType,\n+    create_codeowners_file: Callable[[dict[str, list[str]], Path], None],\n+    create_temp_items: Callable[[Iterable[str], Path], None],\n+    default_codeowners_location: Path,\n+) -> None:\n+    ownership_data = {\n+        \"testfile.txt\": [\"@owner1\"],\n+        \"subdir/testfile2.txt\": [\"@owner2\"],\n+        \"subdir/anotherfile.txt\": [\"@owner1\", \"@owner3\"],\n+    }\n+\n+    create_codeowners_file(ownership_data, temp_dir / default_codeowners_location)\n+    create_temp_items(ownership_data.keys(), temp_dir)\n+    with temp_dir.as_cwd():\n+        result = dda(\"info\", \"owners\", \"code\", *ownership_data.keys())\n+    assert result.exit_code == 0, result.stdout\n+    assert result.stdout == helpers.dedent(\n+        \"\"\"\n+        ┌────────────────────────┬──────────────────┐\n+        │ testfile.txt           │ @owner1          │\n+        │ subdir/testfile2.txt   │ @owner2          │\n+        │ subdir/anotherfile.txt │ @owner1, @owner3 │\n+        └────────────────────────┴──────────────────┘\n+        \"\"\"\n+    )"
+        },
+        {
+            "sha": "09e48dc4963aadb435883030afb9ce93cc309c2f",
+            "filename": "uv.lock",
+            "status": "modified",
+            "additions": 4,
+            "deletions": 0,
+            "changes": 4,
+            "blob_url": "https://github.com/DataDog/datadog-agent-dev/blob/1425a34f443f0b468e1739a06fcf97dfbf632594/uv.lock",
+            "raw_url": "https://github.com/DataDog/datadog-agent-dev/raw/1425a34f443f0b468e1739a06fcf97dfbf632594/uv.lock",
+            "contents_url": "https://api.github.com/repos/DataDog/datadog-agent-dev/contents/uv.lock?ref=1425a34f443f0b468e1739a06fcf97dfbf632594",
+            "patch": "@@ -391,6 +391,9 @@ dependencies = [\n ]\n \n [package.dev-dependencies]\n+codeowners = [\n+    { name = \"codeowners\" },\n+]\n gcp = [\n     { name = \"google-api-python-client\" },\n     { name = \"oauth2client\" },\n@@ -584,6 +587,7 @@ requires-dist = [\n ]\n \n [package.metadata.requires-dev]\n+codeowners = [{ name = \"codeowners\" }]\n gcp = [\n     { name = \"google-api-python-client\", specifier = \"~=2.160.0\" },\n     { name = \"oauth2client\", specifier = \"~=4.1.3\" },"
+        }
+    ]
+}

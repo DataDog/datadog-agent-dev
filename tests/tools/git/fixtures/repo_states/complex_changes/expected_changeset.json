@@ -1,0 +1,32 @@
+{
+    "file2.txt": {
+        "path": "file2.txt",
+        "type": "D",
+        "binary": false,
+        "patch": "@@ -1,4 +0,0 @@\n-I am file2 !\n-I feel like I take up space for nothing...\n-I have a feeling like I won't exist pretty soon :/\n-"
+    },
+    "file3.txt": {
+        "path": "file3.txt",
+        "type": "A",
+        "binary": false,
+        "patch": "@@ -0,0 +1,2 @@\n+I am file3 !\n+I'm new around here, hopefully everyone treats me nice :)"
+    },
+    "file4.txt": {
+        "path": "file4.txt",
+        "type": "M",
+        "binary": false,
+        "patch": "@@ -2 +2 @@ I am file4.\n-People often tell me I am unreliable.\n+People often tell me I am THE BEST.\n@@ -4,3 +4,2 @@ Things like:\n-- You always change !\n-- I can never count on you...\n-- I didn't recognize you !\n+- You rock !\n+- I wish I were you !\n@@ -8 +7,3 @@ Do you think they have a point ?\n-I'd need to look at my own history to know...\n+Pah ! Who am I kidding, they're OBVIOUSLY RIGHT.\n+Arrogance ? What is that, an italian ice cream flavor ?\n+Get outta here !"
+    },
+    "file5.txt": {
+        "path": "file5.txt",
+        "type": "D",
+        "binary": false,
+        "patch": "@@ -1,5 +0,0 @@\n-I am a humble file.\n-Soon I will change name.\n-I think I'll also take this as an opportunity to change myself.\n-New name, new me !\n-Or is that not how the saying goes ?"
+    },
+    "file5_new.txt": {
+        "path": "file5_new.txt",
+        "type": "A",
+        "binary": false,
+        "patch": "@@ -0,0 +1,5 @@\n+I am a humble file.\n+Hey I have a new name !\n+Wow, I feel much better now.\n+New name, new me !\n+Or is that not how the saying goes ?"
+    }
+}

@@ -1,0 +1,3 @@
+file2
+I will be deleted, unfortunately.
+That's quite sad.

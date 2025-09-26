@@ -1,0 +1,3 @@
+file2
+I am a new file in the repo !
+That's incredible.

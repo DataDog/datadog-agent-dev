@@ -1,0 +1,8 @@
+{
+    "file2.txt": {
+        "path": "file2.txt",
+        "type": "A",
+        "binary": false,
+        "patch": "@@ -0,0 +1,3 @@\n+file2\n+I am a new file in the repo !\n+That's incredible."
+    }
+}

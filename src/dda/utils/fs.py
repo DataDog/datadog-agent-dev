@@ -170,3 +170,22 @@ def temp_directory() -> Generator[Path, None, None]:
 
     with TemporaryDirectory() as d:
         yield Path(d).resolve()
+
+
+@contextmanager
+def temp_file(suffix: str = "") -> Generator[Path, None, None]:
+    """
+    A context manager that creates a temporary file and yields a path to it. Example:
+
+    ```python
+    with temp_file() as temp_file:
+        ...
+    ```
+
+    Yields:
+        The resolved path to the temporary file, following all symlinks.
+    """
+    from tempfile import NamedTemporaryFile
+
+    with NamedTemporaryFile(suffix=suffix) as f:
+        yield Path(f.name).resolve()

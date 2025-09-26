@@ -1,0 +1,5 @@
+Hmm, my name is added_lines_middle.
+I have a bit more text than added_lines.
+That's interesting.
+I wonder what that could mean.
+
