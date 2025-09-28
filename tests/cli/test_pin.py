@@ -20,16 +20,17 @@ class TestVersionMismatch:
         version_file = temp_dir / ".dda-version"
         with temp_dir.as_cwd():
             version_file.write_text(next_major_version)
-
             result = dda("config")
 
-        assert result.exit_code == 1, result.output
-        assert result.output == helpers.dedent(
-            f"""
-            Repo requires at least dda version {next_major_version} but {__version__} is installed.
-            Run the following command:
-            dda self update
-            """
+        result.check(
+            exit_code=1,
+            output=helpers.dedent(
+                f"""
+                Repo requires at least dda version {next_major_version} but {__version__} is installed.
+                Run the following command:
+                dda self update
+                """
+            ),
         )
 
     def test_directory(self, dda, helpers, temp_dir, next_major_version):
@@ -40,11 +41,13 @@ class TestVersionMismatch:
 
             result = dda("config")
 
-        assert result.exit_code == 1, result.output
-        assert result.output == helpers.dedent(
-            f"""
-            Repo requires at least dda version {next_major_version} but {__version__} is installed.
-            Run the following command:
-            dda self update
-            """
+        result.check(
+            exit_code=1,
+            output=helpers.dedent(
+                f"""
+                Repo requires at least dda version {next_major_version} but {__version__} is installed.
+                Run the following command:
+                dda self update
+                """
+            ),
         )

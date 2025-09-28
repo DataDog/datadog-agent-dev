@@ -200,7 +200,7 @@ def dda(
         if current_version_parts < pinned_version_parts:
             app.display_critical(f"Repo requires at least dda version {pinned_version} but {__version__} is installed.")
             if app.managed_installation:
-                app.display("Run the following command:\ndda self update")
+                app.display_critical("Run the following command:\ndda self update")
 
             app.abort()
 

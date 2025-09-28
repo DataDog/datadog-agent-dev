@@ -18,11 +18,13 @@ def test_default_download(dda, helpers, isolation, mocker):
     with EnvVars(exclude=["PATH"]):
         result = dda("bzl", *args)
 
-    assert result.exit_code == 0, result.output
-    assert result.output == helpers.dedent(
-        """
-        Downloading Bazelisk
-        """
+    result.check(
+        exit_code=0,
+        output=helpers.dedent(
+            """
+            Downloading Bazelisk
+            """
+        ),
     )
 
     internal_bazel_path = isolation.joinpath("cache", "tools", "bazel", "bazelisk").as_exe()
@@ -45,8 +47,7 @@ def test_default_exists(dda, helpers, temp_dir, mocker):
     with EnvVars({"PATH": str(temp_dir)}):
         result = dda("bzl", *args)
 
-    assert result.exit_code == 0, result.output
-    assert not result.output
+    result.check(exit_code=0)
 
     downloader.assert_not_called()
     subprocess_runner.assert_called_once_with([str(external_bazel_path), *args])
@@ -67,11 +68,13 @@ def test_config_force_managed(dda, helpers, isolation, config_file, temp_dir, mo
     with EnvVars({"PATH": str(temp_dir)}):
         result = dda("bzl", *args)
 
-    assert result.exit_code == 0, result.output
-    assert result.output == helpers.dedent(
-        """
-        Downloading Bazelisk
-        """
+    result.check(
+        exit_code=0,
+        output=helpers.dedent(
+            """
+            Downloading Bazelisk
+            """
+        ),
     )
 
     internal_bazel_path = isolation.joinpath("cache", "tools", "bazel", "bazelisk").as_exe()
@@ -93,11 +96,13 @@ def test_config_force_unmanaged(dda, helpers, config_file, mocker):
     with EnvVars(exclude=["PATH"]):
         result = dda("bzl", *args)
 
-    assert result.exit_code == 1, result.output
-    assert result.output == helpers.dedent(
-        """
-        Executable `bazel` not found: ['bazel', 'build', '//...']
-        """
+    result.check(
+        exit_code=1,
+        output=helpers.dedent(
+            """
+            Executable `bazel` not found: ['bazel', 'build', '//...']
+            """
+        ),
     )
 
     downloader.assert_not_called()
@@ -114,7 +119,7 @@ def test_arg_interception(dda, config_file, mocker):
     with EnvVars(exclude=["PATH"]):
         result = dda("bzl", *args)
 
-    assert result.exit_code == 1, result.output
+    result.check_exit_code(exit_code=1)
     assert result.output.startswith("Executable `bazel` not found: ['bazel', 'build', '--target_pattern_file', '")
 
     downloader.assert_not_called()

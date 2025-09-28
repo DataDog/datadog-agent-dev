@@ -8,5 +8,5 @@ def test(dda, config_file, mocker):
     mock = mocker.patch("click.launch")
     result = dda("config", "explore")
 
-    assert result.exit_code == 0, result.output
+    result.check(exit_code=0)
     mock.assert_called_once_with(str(config_file.path), locate=True)

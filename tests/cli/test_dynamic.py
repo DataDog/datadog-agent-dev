@@ -54,19 +54,21 @@ def test_local_command(dda, helpers, temp_dir):
     with temp_dir.as_cwd():
         result = dda("config", "foo")
 
-    assert result.exit_code == 0, result.output
-    assert result.output == helpers.dedent(
-        """
-        foo.bar='baz'
-        bar.baz='qux'
-        """
+    result.check(
+        exit_code=0,
+        stdout=helpers.dedent(
+            """
+            foo.bar='baz'
+            bar.baz='qux'
+            """
+        ),
     )
 
     with temp_dir.as_cwd():
         result = dda()
 
-    assert result.exit_code == 0, result.output
-    assert "utils" not in result.output
+    result.check_exit_code(0)
+    assert "utils" not in result.stdout
 
 
 def test_dependencies(dda, helpers, temp_dir, uv_on_path, mocker):
@@ -91,12 +93,19 @@ def test_dependencies(dda, helpers, temp_dir, uv_on_path, mocker):
     with temp_dir.as_cwd():
         result = dda("foo")
 
-    assert result.exit_code == 0, result.output
-    assert result.output == helpers.dedent(
-        """
-        Synchronizing dependencies
-        foo
-        """
+    result.check(
+        exit_code=0,
+        stdout=helpers.dedent(
+            """
+            foo
+            """
+        ),
+        output=helpers.dedent(
+            """
+            Synchronizing dependencies
+            foo
+            """
+        ),
     )
 
     expected_path = str(uv_on_path.with_stem(f"{uv_on_path.stem}-{uv_on_path.id}"))

@@ -19,4 +19,4 @@ if TYPE_CHECKING:
 def cmd(app: Application, *, all_keys: bool) -> None:
     """Render the contents of the config file."""
     text = app.config_file.read() if all_keys else app.config_file.read_scrubbed()
-    app.display_syntax(text.rstrip(), "toml")
+    app.display_syntax(text.rstrip(), "toml", stderr=False)
