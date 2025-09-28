@@ -46,7 +46,7 @@ def test_default(dda, helpers, temp_dir, uv_on_path, mocker):
             ],
             encoding="utf-8",
             stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
+            stderr=subprocess.PIPE,
         ),
         mock.call(
             [
@@ -60,7 +60,7 @@ def test_default(dda, helpers, temp_dir, uv_on_path, mocker):
             ],
             encoding="utf-8",
             stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
+            stderr=subprocess.PIPE,
             cwd=mock.ANY,
             env=mock.ANY,
         ),

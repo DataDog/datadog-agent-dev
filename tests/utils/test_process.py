@@ -140,17 +140,6 @@ f.write_text("foo")
         assert output_file.is_file()
         assert output_file.read_text() == "foo"
 
-    def test_capture_cross_streams(self, app):
-        script = """\
-import sys
-
-print("foo", file=sys.stdout, flush=True, end="")
-print("bar", file=sys.stderr, flush=True, end="")
-print("baz", file=sys.stdout, flush=True, end="")
-"""
-        output = app.subprocess.capture([sys.executable, "-c", script])
-        assert output == "foobarbaz"
-
     def test_capture_separate_streams(self, app):
         script = """\
 import sys
@@ -159,8 +148,19 @@ print("foo", file=sys.stdout, flush=True, end="")
 print("bar", file=sys.stderr, flush=True, end="")
 print("baz", file=sys.stdout, flush=True, end="")
 """
-        output = app.subprocess.capture([sys.executable, "-c", script], cross_streams=False)
+        output = app.subprocess.capture([sys.executable, "-c", script])
         assert output == "foobaz"
+
+    def test_capture_cross_streams(self, app):
+        script = """\
+import sys
+
+print("foo", file=sys.stdout, flush=True, end="")
+print("bar", file=sys.stderr, flush=True, end="")
+print("baz", file=sys.stdout, flush=True, end="")
+"""
+        output = app.subprocess.capture([sys.executable, "-c", script], cross_streams=True)
+        assert output == "foobarbaz"
 
     def test_capture_show(self, app):
         script = """\
@@ -180,7 +180,7 @@ print("baz", file=sys.stdout, flush=True, end="")
         ):
             app.subprocess.capture([], show=True, foo="bar")
 
-    def test_redirect(self, app, tmp_path):
+    def test_redirect_separate_streams(self, app, tmp_path):
         script = """\
 import sys
 
@@ -191,6 +191,21 @@ print("baz", file=sys.stdout, flush=True, end="")
         output_file = tmp_path / "output.txt"
         with open(output_file, "wb") as stream:
             app.subprocess.redirect([sys.executable, "-c", script], stream=stream)
+
+        assert output_file.is_file()
+        assert output_file.read_bytes() == b"foobaz"
+
+    def test_redirect_cross_streams(self, app, tmp_path):
+        script = """\
+import sys
+
+print("foo", file=sys.stdout, flush=True, end="")
+print("bar", file=sys.stderr, flush=True, end="")
+print("baz", file=sys.stdout, flush=True, end="")
+"""
+        output_file = tmp_path / "output.txt"
+        with open(output_file, "wb") as stream:
+            app.subprocess.redirect([sys.executable, "-c", script], stream=stream, cross_streams=True)
 
         assert output_file.is_file()
         assert output_file.read_bytes() == b"foobarbaz"

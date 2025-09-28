@@ -202,7 +202,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
 
         from dda.env.models import EnvironmentState, EnvironmentStatus
 
-        output = self.docker.capture(["inspect", self.container_name], check=False, cross_streams=False)
+        output = self.docker.capture(["inspect", self.container_name], check=False)
         items = json.loads(output)
         if not items:
             return EnvironmentStatus(state=EnvironmentState.NONEXISTENT)
