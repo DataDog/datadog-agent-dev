@@ -198,7 +198,7 @@ class TestStart:
         assert calls == [
             (
                 ([helpers.locate("docker"), "pull", "datadog/agent-dev-env-linux"],),
-                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT, "env": mocker.ANY},
+                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": mocker.ANY},
             ),
             (
                 (
@@ -234,7 +234,7 @@ class TestStart:
                         "datadog/agent-dev-env-linux",
                     ],
                 ),
-                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT, "env": mocker.ANY},
+                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": mocker.ANY},
             ),
         ]
 
@@ -276,7 +276,7 @@ class TestStart:
         assert calls == [
             (
                 ([helpers.locate("docker"), "pull", "datadog/agent-dev-env-linux"],),
-                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT, "env": mocker.ANY},
+                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": mocker.ANY},
             ),
             (
                 (
@@ -310,7 +310,7 @@ class TestStart:
                         "datadog/agent-dev-env-linux",
                     ],
                 ),
-                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT, "env": mocker.ANY},
+                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": mocker.ANY},
             ),
             (
                 (
@@ -326,7 +326,7 @@ class TestStart:
                         "cd /root && git dd-clone datadog-agent",
                     ],
                 ),
-                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT},
+                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE},
             ),
         ]
 
@@ -404,7 +404,7 @@ class TestStart:
                         "datadog/agent-dev-env-linux",
                     ],
                 ),
-                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT, "env": mocker.ANY},
+                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": mocker.ANY},
             ),
         ]
 
@@ -454,7 +454,7 @@ class TestStart:
         assert calls == [
             (
                 ([helpers.locate("docker"), "pull", "datadog/agent-dev-env-linux"],),
-                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT, "env": mocker.ANY},
+                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": mocker.ANY},
             ),
             (
                 (
@@ -492,7 +492,7 @@ class TestStart:
                         "datadog/agent-dev-env-linux",
                     ],
                 ),
-                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT, "env": mocker.ANY},
+                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": mocker.ANY},
             ),
         ]
 
@@ -535,7 +535,7 @@ class TestStart:
         assert calls == [
             (
                 ([helpers.locate("docker"), "pull", "datadog/agent-dev-env-linux"],),
-                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT, "env": mocker.ANY},
+                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": mocker.ANY},
             ),
             (
                 (
@@ -569,7 +569,7 @@ class TestStart:
                         "datadog/agent-dev-env-linux",
                     ],
                 ),
-                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT, "env": mocker.ANY},
+                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": mocker.ANY},
             ),
             (
                 (
@@ -585,7 +585,7 @@ class TestStart:
                         "cd /root && git dd-clone datadog-agent tag",
                     ],
                 ),
-                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT},
+                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE},
             ),
             (
                 (
@@ -601,7 +601,7 @@ class TestStart:
                         "cd /root && git dd-clone integrations-core",
                     ],
                 ),
-                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT},
+                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE},
             ),
         ]
 
@@ -643,7 +643,7 @@ class TestStop:
         assert calls == [
             (
                 ([helpers.locate("docker"), "stop", "-t", "0", "dda-linux-container-default"],),
-                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT, "env": mocker.ANY},
+                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": mocker.ANY},
             ),
         ]
 
@@ -687,7 +687,7 @@ class TestRemove:
         assert calls == [
             (
                 ([helpers.locate("docker"), "rm", "-f", "dda-linux-container-default"],),
-                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT, "env": mocker.ANY},
+                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": mocker.ANY},
             ),
         ]
 
@@ -935,7 +935,7 @@ class TestRemoveCache:
         assert calls == [
             (
                 ([helpers.locate("docker"), "volume", "rm", "dda-env-dev-linux-container-go_build_cache"],),
-                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT, "env": mocker.ANY},
+                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": mocker.ANY},
             ),
         ]
 

@@ -121,7 +121,7 @@ def test_dependencies(dda, helpers, temp_dir, uv_on_path, mocker):
                 mocker.ANY,
             ],
             stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
+            stderr=subprocess.PIPE,
             encoding="utf-8",
         ),
     ]

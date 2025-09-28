@@ -106,7 +106,7 @@ class SubprocessRunner:
         command: list[str] | str,
         *,
         stream: BinaryIO,
-        cross_streams: bool = True,
+        cross_streams: bool = False,
         **kwargs: Any,
     ) -> subprocess.CompletedProcess:
         """
@@ -123,6 +123,7 @@ class SubprocessRunner:
         Parameters:
             command: The command to run.
             stream: The binary stream with which to redirect the command's output.
+            cross_streams: Whether to merge the command's standard error stream into its standard output stream.
 
         Returns:
             The completed process.
@@ -142,7 +143,7 @@ class SubprocessRunner:
         self,
         command: list[str],
         *,
-        cross_streams: bool = True,
+        cross_streams: bool = False,
         show: bool = False,
         check: bool = True,
         env: dict[str, str] | None = None,
