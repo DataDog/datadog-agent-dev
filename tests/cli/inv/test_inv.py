@@ -23,13 +23,14 @@ def test_default(dda, helpers, temp_dir, uv_on_path, mocker):
     subprocess_run = mocker.patch("subprocess.run", return_value=subprocess.CompletedProcess([], returncode=0))
 
     result = dda("inv", "foo")
-
-    assert result.exit_code == 0, result.output
-    assert result.output == helpers.dedent(
-        """
-        Creating virtual environment
-        Synchronizing dependencies
-        """
+    result.check(
+        exit_code=0,
+        output=helpers.dedent(
+            """
+            Creating virtual environment
+            Synchronizing dependencies
+            """
+        ),
     )
 
     expected_path = str(uv_on_path.with_stem(f"{uv_on_path.stem}-{uv_on_path.id}"))
@@ -83,9 +84,7 @@ def test_no_dynamic_deps_flag(dda, mocker):
     )
 
     result = dda("inv", "--no-dynamic-deps", "foo")
-
-    assert result.exit_code == 0, result.output
-    assert not result.output
+    result.check(exit_code=0)
 
     assert exit_with.call_args_list == [
         mock.call(
@@ -108,8 +107,7 @@ def test_no_dynamic_deps_env_var(dda, mocker):
     with EnvVars({AppEnvVars.NO_DYNAMIC_DEPS: "1"}):
         result = dda("inv", "foo")
 
-    assert result.exit_code == 0, result.output
-    assert not result.output
+    result.check(exit_code=0)
 
     assert exit_with.call_args_list == [
         mock.call(

@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+***Fixed:***
+
+- The `config show` command now outputs to stdout instead of stderr
+- The error message when running an outdated version now outputs to stderr instead of stdout
+
 ## 0.28.0 - 2025-09-22
 
 ***Changed:***

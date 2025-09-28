@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
-import json
 from os import sep
 from typing import TYPE_CHECKING
 
@@ -147,6 +146,7 @@ def test_ownership_parsing(  # type: ignore[no-untyped-def]
     default_codeowners_location: Path,
     ownership_data: dict[str, list[str]],
     expected_result: dict[str, list[str]] | None,
+    helpers: ModuleType,
 ) -> None:
     if expected_result is None:
         expected_result = ownership_data
@@ -162,8 +162,16 @@ def test_ownership_parsing(  # type: ignore[no-untyped-def]
             "--json",
             *expected_result.keys(),
         )
-    assert result.exit_code == 0, result.stdout
-    assert json.loads(result.stdout) == expected_result
+
+    result.check(
+        exit_code=0,
+        stdout_json=expected_result,
+        stderr=helpers.dedent(
+            """
+            Synchronizing dependencies
+            """
+        ),
+    )
 
 
 def test_ownership_location(
@@ -171,6 +179,7 @@ def test_ownership_location(
     temp_dir: Path,
     create_codeowners_file: Callable[[dict[str, list[str]], Path], None],
     create_temp_items: Callable[[Iterable[str], Path], None],
+    helpers: ModuleType,
 ) -> None:
     ownership_data = {
         "testfile.txt": ["@owner1"],
@@ -189,8 +198,16 @@ def test_ownership_location(
             custom_location.as_posix(),
             *expected_result.keys(),
         )
-    assert result.exit_code == 0, result.stdout
-    assert json.loads(result.stdout) == expected_result
+
+    result.check(
+        exit_code=0,
+        stdout_json=expected_result,
+        stderr=helpers.dedent(
+            """
+            Synchronizing dependencies
+            """
+        ),
+    )
 
 
 def test_human_output(
@@ -211,13 +228,26 @@ def test_human_output(
     create_temp_items(ownership_data.keys(), temp_dir)
     with temp_dir.as_cwd():
         result = dda("info", "owners", "code", *ownership_data.keys())
-    assert result.exit_code == 0, result.stdout
-    assert result.stdout == helpers.dedent(
-        """
-        ┌────────────────────────┬──────────────────┐
-        │ testfile.txt           │ @owner1          │
-        │ subdir/testfile2.txt   │ @owner2          │
-        │ subdir/anotherfile.txt │ @owner1, @owner3 │
-        └────────────────────────┴──────────────────┘
-        """
+
+    result.check(
+        exit_code=0,
+        stdout=helpers.dedent(
+            """
+            ┌────────────────────────┬──────────────────┐
+            │ testfile.txt           │ @owner1          │
+            │ subdir/testfile2.txt   │ @owner2          │
+            │ subdir/anotherfile.txt │ @owner1, @owner3 │
+            └────────────────────────┴──────────────────┘
+            """
+        ),
+        output=helpers.dedent(
+            """
+            Synchronizing dependencies
+            ┌────────────────────────┬──────────────────┐
+            │ testfile.txt           │ @owner1          │
+            │ subdir/testfile2.txt   │ @owner2          │
+            │ subdir/anotherfile.txt │ @owner1, @owner3 │
+            └────────────────────────┴──────────────────┘
+            """
+        ),
     )

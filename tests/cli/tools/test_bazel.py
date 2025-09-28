@@ -14,12 +14,13 @@ def test_download(dda, helpers, config_file, isolation, mocker):
     downloader = mocker.patch("dda.utils.network.http.manager.HTTPClientManager.download")
 
     result = dda("tools", "bazel", "update")
-
-    assert result.exit_code == 0, result.output
-    assert result.output == helpers.dedent(
-        """
-        Downloading Bazelisk
-        """
+    result.check(
+        exit_code=0,
+        output=helpers.dedent(
+            """
+            Downloading Bazelisk
+            """
+        ),
     )
 
     internal_bazel_path = isolation.joinpath("cache", "tools", "bazel", "bazelisk").as_exe()
@@ -41,11 +42,13 @@ def test_unmanaged(dda, helpers, config_file, temp_dir, mocker):
     with EnvVars({"PATH": str(temp_dir)}):
         result = dda("tools", "bazel", "update")
 
-    assert result.exit_code == 1, result.output
-    assert result.output == helpers.dedent(
-        f"""
-        Bazel is not managed, using external version: {external_bazel_path}
-        """
+    result.check(
+        exit_code=1,
+        output=helpers.dedent(
+            f"""
+            Bazel is not managed, using external version: {external_bazel_path}
+            """
+        ),
     )
 
     downloader.assert_not_called()
