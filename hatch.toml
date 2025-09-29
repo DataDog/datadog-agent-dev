@@ -21,18 +21,15 @@ check = "mypy --install-types --non-interactive {args:src/dda tests}"
 
 [envs.docs]
 dependencies = [
-  # https://github.com/mkdocstrings/mkdocstrings/discussions/743
-  # https://github.com/mkdocstrings/mkdocstrings/issues/756
-  "markdown @ git+https://github.com/Python-Markdown/markdown.git@e912575a903215ebafaeb0fecbdad079d998b9ba",
   "mkdocs~=1.6.1",
-  "mkdocs-material~=9.6.11",
+  "mkdocs-material~=9.6.20",
   # Plugins
   "mkdocs-minify-plugin~=0.8.0",
   # https://github.com/timvink/mkdocs-git-revision-date-localized-plugin/issues/181
   "mkdocs-git-revision-date-localized-plugin~=1.3.0",
-  "mkdocs-glightbox~=0.4.0",
+  "mkdocs-glightbox~=0.5.1",
   "mkdocs-redirects~=1.2.2",
-  "mkdocstrings-python~=1.16.10",
+  "mkdocstrings-python~=1.18.2",
   # Extensions
   "mkdocs-click~=0.9.0",
   "pymdown-extensions~=10.14.3",
@@ -40,7 +37,7 @@ dependencies = [
   # Necessary for syntax highlighting in code blocks
   "pygments~=2.19.1",
   # Validation
-  "linkchecker~=10.5.0",
+  "linkchecker~=10.6.0",
 ]
 [envs.docs.env-vars]
 DDA_BUILDING_DOCS = "true"
