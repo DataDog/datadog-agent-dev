@@ -26,11 +26,17 @@ jobs:
     - name: Install ourself
       run: pip install .
 
-    - name: Check documentation
-      run: dda run docs build --check
-
     - name: Build documentation
       run: dda run docs build
+
+    - name: Check links
+      uses: lycheeverse/lychee-action@885c65f3dc543b57c898c8099f4e08c8afd178a2
+      with:
+        lycheeVersion: "v0.20.1"
+        fail: true
+        failIfEmpty: true
+        # Remove `--index-files index.html` when this fix is released https://github.com/lycheeverse/lychee/pull/1843
+        args: site --index-files index.html
 
     - uses: actions/upload-artifact@v4
       with:

@@ -377,7 +377,8 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         return ssh_command
 
     def check_readiness(self) -> None:
-        output = self.docker.capture(["logs", self.container_name])
+        # The `docker logs` command outputs to stderr
+        output = self.docker.capture(["logs", self.container_name], cross_streams=True)
         if "Server listening on :: port 22" not in output:
             raise RuntimeError
 

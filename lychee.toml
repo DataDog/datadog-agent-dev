@@ -1,0 +1,11 @@
+require_https = true
+include_fragments = true
+index_files = ["index.html"]
+exclude = [
+  '^https://www.instagram.com/.+',
+  '^https://developer\.apple\.com/.+?#//apple_ref/doc/uid/TP0000014-TP9$',
+]
+# TODO: investigate how to account for root links e.g. `/foo`
+exclude_path = [
+  '^site(/|\\)404.html$',
+]
