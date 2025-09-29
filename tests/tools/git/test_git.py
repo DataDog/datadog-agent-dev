@@ -38,13 +38,13 @@ def assert_changesets_equal(actual: ChangeSet, expected: ChangeSet) -> None:
 
 def test_basic(app: Application, temp_repo: Path) -> None:  # type: ignore[no-untyped-def]
     with temp_repo.as_cwd():
-        assert app.tools.git.run(["status"]) == 0
+        app.tools.git.capture(["status"])
         random_key = random.randint(1, 1000000)
         with temp_repo.as_cwd():
             file = Path("testfile.txt")
             file.write_text("test")
-            app.tools.git.run(["add", str(file)])
-            app.tools.git.run(["commit", "-m", f"Initial commit: {random_key}"])
+            app.tools.git.capture(["add", str(file)])
+            app.tools.git.capture(["commit", "-m", f"Initial commit: {random_key}"])
         assert f"Initial commit: {random_key}" in app.tools.git.capture(["log", "-1", "--oneline"])
 
 
@@ -126,7 +126,7 @@ def test_get_changes(app: Application, repo_setup_working_tree: tuple[Path, Chan
         assert_changesets_equal(changeset, expected_changeset)
 
         # Case 2: Get the changes of the HEAD commit - should have the same changeset as the working tree
-        git.run(["add", "."])
+        git.add(["."])
         git.commit("New commit")
         head_sha1 = git.capture(["rev-parse", "HEAD"]).strip()
         changeset = git.get_changes()

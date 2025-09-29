@@ -22,17 +22,17 @@ from dda.utils.git.remote import Remote
 
 
 def test_get_github_url():
-    remote = Remote.from_url(url="https://github.com/foo/bar")
+    remote = Remote("https://github.com/foo/bar")
     assert get_github_url(remote) == "https://github.com/foo/bar"
 
 
 def test_get_github_api_url():
-    remote = Remote.from_url(url="https://github.com/foo/bar")
+    remote = Remote("https://github.com/foo/bar")
     assert get_github_api_url(remote) == "https://api.github.com/repos/foo/bar"
 
 
 def test_get_commit_github_url():
-    remote = Remote.from_url(url="https://github.com/foo/bar")
+    remote = Remote("https://github.com/foo/bar")
     sha1 = "1234567890" * 4
     author = GitPersonDetails(name="a", email="a", timestamp=0)
     commit = Commit(sha1=sha1, author=author, committer=author, message="a")
@@ -40,7 +40,7 @@ def test_get_commit_github_url():
 
 
 def test_get_commit_github_api_url():
-    remote = Remote.from_url(url="https://github.com/foo/bar")
+    remote = Remote("https://github.com/foo/bar")
     sha1 = "1234567890" * 4
     author = GitPersonDetails(name="a", email="a", timestamp=0)
     commit = Commit(sha1=sha1, author=author, committer=author, message="a")
@@ -65,7 +65,7 @@ def test_get_commit_and_changes_from_github(mocker, github_payload_file):
     sha1 = data["sha"]
     commit_url = data["html_url"]
     remote_url = commit_url.split("/commit/")[0]
-    remote = Remote.from_url(url=remote_url)
+    remote = Remote(remote_url)
 
     author_timestamp = int(datetime.fromisoformat(data["commit"]["author"]["date"]).timestamp())
     author = GitPersonDetails(data["commit"]["author"]["name"], data["commit"]["author"]["email"], author_timestamp)

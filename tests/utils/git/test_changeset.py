@@ -62,7 +62,7 @@ class TestChangeSetClass:
         "repo_testcase",
         REPO_TESTCASES,
     )
-    def test_generate_from_diff_output(self, repo_testcase):
+    def test_from_patches(self, repo_testcase):
         fixtures_dir = (
             Path(__file__).parent.parent.parent / "tools" / "git" / "fixtures" / "repo_states" / repo_testcase
         )
@@ -72,7 +72,7 @@ class TestChangeSetClass:
         with open(fixtures_dir / "expected_changeset.json", encoding="utf-8") as f:
             expected_changeset = msgspec.json.decode(f.read(), type=ChangeSet, dec_hook=dec_hook)
 
-        seen_changeset = ChangeSet.generate_from_diff_output(diff_output)
+        seen_changeset = ChangeSet.from_patches(diff_output)
 
         assert seen_changeset.keys() == expected_changeset.keys()
         for file in seen_changeset:

@@ -51,15 +51,15 @@ class ChangedFile(Struct, frozen=True):
 
 
 class ChangeSet:  # noqa: PLW1641
-    def __init__(self, changes: dict[Path, ChangedFile]) -> None:
-        self.__changes = MappingProxyType(changes)
-
     """
     Represents a set of changes to files in a git repository.
     This can both be a change between two commits, or the changes in the working directory.
 
     When considering the changes to the working directory, the untracked files are considered as added files.
     """
+
+    def __init__(self, changes: dict[Path, ChangedFile]) -> None:
+        self.__changes = MappingProxyType(changes)
 
     @property
     def changes(self) -> MappingProxyType[Path, ChangedFile]:
@@ -131,10 +131,10 @@ class ChangeSet:  # noqa: PLW1641
         return cls(changes=items)
 
     @classmethod
-    def generate_from_diff_output(cls, diff_output: str | list[str]) -> Self:
+    def from_patches(cls, diff_output: str | list[str]) -> Self:
         """
         Generate a ChangeSet from the output of _some_ git diff commands.
-        Not all outputs from `git diff` are supported (ex: renames), see set of args in [Git._capture_diff_lines](dda.tools.git.Git._capture_diff_lines) method.
+        Not all outputs from `git diff` are supported (ex: renames).
         """
         import re
 

@@ -19,10 +19,6 @@
     options:
       members: []
 
-::: dda.tools.git.Git
-    options:
-      members: []
-
 ::: dda.tools.go.Go
     options:
       members: []

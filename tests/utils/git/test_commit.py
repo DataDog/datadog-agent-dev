@@ -112,9 +112,9 @@ class TestCommitClass:
             "dda.utils.network.http.client.HTTPClient.get",
             return_value=Response(status_code=200, content=github_payload_str),
         )
-        github_commit = get_commit_and_changes_from_github(
-            Remote.from_url("https://github.com/foo/bar"), reference_commit.sha1
-        )[0]
+        github_commit = get_commit_and_changes_from_github(Remote("https://github.com/foo/bar"), reference_commit.sha1)[
+            0
+        ]
 
         # Mock Git.capture to return payload from file
         git_output_file = Path(__file__).parent / "fixtures" / "git_show_dda_1425a34.txt"
