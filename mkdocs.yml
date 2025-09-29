@@ -72,6 +72,7 @@ nav:
       - HTTP: reference/api/network/http.md
     - Retries: reference/api/retry.md
     - Platform: reference/api/platform.md
+    - Git: reference/api/git.md
     - Date: reference/api/date.md
     - Tools: reference/api/tools.md
     - CI: reference/api/ci.md

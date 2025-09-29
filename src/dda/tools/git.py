@@ -3,18 +3,18 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
+import os
 from contextlib import contextmanager
 from functools import cached_property
 from typing import TYPE_CHECKING, Any
 
 from dda.tools.base import ExecutionContext, Tool
-from dda.utils.git.changeset import ChangeSet
-from dda.utils.git.commit import GitPersonDetails
 
 if TYPE_CHECKING:
     from collections.abc import Generator, Iterable
 
     from dda.utils.fs import Path
+    from dda.utils.git.changeset import ChangeSet
     from dda.utils.git.commit import Commit
     from dda.utils.git.remote import Remote
 
@@ -92,13 +92,13 @@ class Git(Tool):
             ["config", "--get", f"remote.{remote_name}.url"],
         ).strip()
 
-        return Remote.from_url(remote_url)
+        return Remote(remote_url)
 
     def get_commit(self, ref: str = "HEAD") -> Commit:
         """
         Get a Commit object from the Git repository in the current working directory for the given reference (default: HEAD).
         """
-        from dda.utils.git.commit import Commit
+        from dda.utils.git.commit import Commit, GitPersonDetails
 
         raw_details = self.capture([
             "--no-pager",
@@ -106,18 +106,31 @@ class Git(Tool):
             "--no-color",
             "--no-patch",
             "--quiet",
-            # Use a format that is easy to parse
-            # fmt: commit hash, commit subject, commit body, committer name, committer email, committer date, author name, author email, author date
+            # %H: commit hash
+            # %s: commit subject
+            # %b: commit body
+            # %cn: committer name
+            # %ce: committer email
+            # %ct: committer date
+            # %an: author name
+            # %ae: author email
+            # %at: author date
             "--format=%H%x00%s%x00%b%x00%cn%x00%ce%x00%ct%x00%an%x00%ae%x00%at",
             f"{ref}^{{commit}}",
         ])
 
         # Extract parts
-        parts = raw_details.split("\0")
-        sha1, *parts = parts
-        commit_subject, commit_body, *parts = parts
-        committer_name, committer_email, commit_date, *parts = parts
-        author_name, author_email, author_date = parts
+        (
+            sha1,
+            commit_subject,
+            commit_body,
+            committer_name,
+            committer_email,
+            commit_date,
+            author_name,
+            author_email,
+            author_date,
+        ) = raw_details.split("\0")
 
         # Process parts
 
@@ -139,7 +152,7 @@ class Git(Tool):
             message=message,
         )
 
-    def add(self, paths: Iterable[Path]) -> None:
+    def add(self, paths: Iterable[str | os.PathLike[str]]) -> None:
         """
         Add the given paths to the index.
         Will fail if any path is not under cwd.
@@ -163,19 +176,6 @@ class Git(Tool):
         self.add((path,))
         self.commit(commit_message)
 
-    def _get_patch(self, *args: str, **kwargs: Any) -> str:
-        diff_args = [
-            "-c",
-            "core.quotepath=false",
-            "diff",
-            "-U0",
-            "--no-color",
-            "--no-prefix",
-            "--no-renames",
-            "--no-ext-diff",
-        ]
-        return self.capture([*diff_args, *args], **kwargs).strip()
-
     def get_changes(
         self,
         ref: str = "HEAD",
@@ -190,35 +190,44 @@ class Git(Tool):
         Use `git` to compute a ChangeSet between two refs.
 
         Parameters:
-            ref: The reference to compare to. Default is HEAD.
-            start: The reference to compare from.
-                Default is None, in which case the parent commit of the ref is used.
-                If merge_base is also True, the merge base is used instead of the parent commit.
-            merge_base: Whether to compute the differences between the refs starting from the merge base.
-            working_tree: Whether to include the working tree changes. Default is False.
-            remote_name: The name of the remote to compare to. Default is origin.
+            ref: The reference to compare.
+            start: The reference to compare against, defaulting to the parent commit of `ref`.
+            merge_base: Whether to compare against the merge base of `ref` and `start`.
+            working_tree: Whether to include working tree changes.
+            remote_name: The configured name of the remote.
+                This is only used if `merge_base` is True and `start` is not provided.
 
         Returns:
             A ChangeSet representing the differences between the refs.
 
         Examples:
-            ```python
-            # Get the changes of the HEAD commit
-            changes = git.get_changes(ref="HEAD")
-
-            # Get the changes between two commits
-            changes = git.get_changes(ref=commit1.sha1, start=commit2.sha1)
-
-            # Get the changes between the HEAD commit and the main branch
-            changes = git.get_changes(ref="HEAD", start="origin/main")
-
-            # Get the changes between the HEAD commit and the main branch starting from the merge base
-            changes = git.get_changes(ref="HEAD", start="origin/main", merge_base=True)
-
-            # Get _only_ the working tree changes
-            changes = git.get_changes(ref="HEAD", start="HEAD", working_tree=True)
-            ```
+            * Get changes between HEAD and its parent commit
+                ```python
+                git.get_changes()
+                ```
+            * Get changes between HEAD and the main branch
+                ```python
+                git.get_changes(start="origin/main")
+                ```
+            * Get changes between two references
+                ```python
+                git.get_changes("ref2", start="ref1")
+                ```
+            * Get changes between HEAD and the feat1 branch starting from the merge base
+                ```python
+                git.get_changes(start="origin/feat1", merge_base=True)
+                ```
+            * Get changes between HEAD and remote's HEAD (tip of the default branch) starting from the merge base
+                ```python
+                git.get_changes(merge_base=True)
+                ```
+            * Get only the working tree changes
+                ```python
+                git.get_changes(start="HEAD", working_tree=True)
+                ```
         """
+        from dda.utils.git.changeset import ChangeSet
+
         if start is None:
             revspec = f"{remote_name}...{ref}" if merge_base else f"{ref}^!"
         elif merge_base:
@@ -234,28 +243,39 @@ class Git(Tool):
         # Filter out any empty patches
         patches = [patch.strip() for patch in patches if patch.strip()]
 
-        return ChangeSet.generate_from_diff_output(patches)
+        return ChangeSet.from_patches(patches)
 
     def _get_working_tree_patch(self) -> str:
-        from os import environ
+        from dda.utils.fs import temp_directory
 
-        from dda.utils.fs import temp_file
-
-        with temp_file(suffix=".git_index") as temp_index_path:
+        with temp_directory() as temp_dir:
             # Set up environment with temporary index
-            temp_env = dict(environ)
-            temp_env["GIT_INDEX_FILE"] = str(temp_index_path.resolve())
-            self.run(["read-tree", "HEAD"], env=temp_env)
+            temp_env = dict(os.environ)
+            temp_env["GIT_INDEX_FILE"] = str(temp_dir / "index")
+            self.capture(["read-tree", "HEAD"], env=temp_env)
 
             # Get list of untracked files
             untracked_files_output = self.capture(
                 ["ls-files", "--others", "--exclude-standard", "-z"], env=temp_env
             ).strip()
-            untracked_files = [x.strip() for x in untracked_files_output.split("\0") if x.strip()]
+            untracked_files = [s for f in untracked_files_output.split("\0") if (s := f.strip())]
 
-            # Add untracked files to the index with --intent-to-add
+            # Add untracked files to the index
             if untracked_files:
-                self.run(["add", "--intent-to-add", *untracked_files], env=temp_env)
+                self.capture(["add", "--intent-to-add", "--", *untracked_files], env=temp_env)
 
             # Get all changes (tracked + untracked) with a single diff command
             return self._get_patch("HEAD", env=temp_env)
+
+    def _get_patch(self, *args: str, **kwargs: Any) -> str:
+        diff_args = [
+            "-c",
+            "core.quotepath=false",
+            "diff",
+            "-U0",
+            "--no-color",
+            "--no-prefix",
+            "--no-renames",
+            "--no-ext-diff",
+        ]
+        return self.capture([*diff_args, *args], **kwargs).strip()

@@ -26,14 +26,14 @@ def temp_repo(app: Application, temp_dir: Path) -> Path:
     repo_path = temp_dir / "dummy-repo"
     repo_path.mkdir()  # Don't do exist_ok, the directory should not exist
     with repo_path.as_cwd():
-        app.subprocess.run(["git", "init", "--initial-branch", "main"])
+        app.subprocess.capture(["git", "init", "--initial-branch", "main"])
     return repo_path
 
 
 @pytest.fixture
 def temp_repo_with_remote(app: Application, temp_repo: Path) -> Path:
     with temp_repo.as_cwd():
-        app.tools.git.run(["remote", "add", "origin", "https://github.com/foo/bar"])
+        app.tools.git.capture(["remote", "add", "origin", "https://github.com/foo/bar"])
     return temp_repo
 
 
@@ -49,8 +49,8 @@ def _make_repo_changes(
         for file in base_dir.iterdir():
             shutil.copy(file, temp_repo / file.name)
         # -- Create commit
-        git.run(["add", "."])
-        git.run(["commit", "-m", "Initial commit"])
+        git.capture(["add", "."])
+        git.capture(["commit", "-m", "Initial commit"])
         # Create changed commit
         # -- Remove all files from temp_repo
         for file in temp_repo.iterdir():
@@ -61,8 +61,8 @@ def _make_repo_changes(
             shutil.copy(file, temp_repo / file.name)
         # -- Create commit if requested, otherwise leave working tree changes
         if commit_end:
-            git.run(["add", "."])
-            git.run(["commit", "-m", "Changed commit"])
+            git.capture(["add", "."])
+            git.capture(["commit", "-m", "Changed commit"])
 
 
 def _load_changeset(filepath: Path) -> ChangeSet:
