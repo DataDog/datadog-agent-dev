@@ -12,6 +12,8 @@ from dda.utils.fs import Path
 
 if TYPE_CHECKING:
     from collections.abc import Generator
+    from os import PathLike
+    from typing import Any
 
 
 class Go(Tool):
@@ -62,3 +64,65 @@ class Go(Tool):
             return match.group(1)
 
         return None
+
+    def _build(self, args: list[str], **kwargs: Any) -> str:
+        """Run a raw go build command."""
+        return self.capture(["build", *args], check=True, **kwargs)
+
+    def build(
+        self,
+        entrypoint: str | PathLike,
+        output: str | PathLike,
+        *args: str,
+        build_tags: set[str] | None = None,
+        go_mod: str | PathLike | None = None,
+        gcflags: str | None = None,
+        ldflags: str | None = None,
+        **kwargs: dict[str, Any],
+    ) -> str:
+        """
+        Run an instrumented Go build command.
+
+        Args:
+            entrypoint: The go file / directory to build.
+            output: The path to the output binary.
+            *args: Extra positional arguments to pass to the go build command.
+            go_mod: Path to a go.mod file to use. By default will not be specified to the build command.
+            gcflags: The gcflags (go compiler flags) to use. Empty by default.
+            ldflags: The ldflags (go linker flags) to use. Empty by default.
+            **kwargs: Additional arguments to pass to the go build command.
+        """
+        from platform import machine as architecture
+
+        from dda.config.constants import Verbosity
+        from dda.utils.platform import PLATFORM_ID
+
+        command_parts = [
+            "-a",  # Always rebuild the package for consistent behavior
+            "-trimpath",  # Always use trimmed paths instead of absolute file system paths # NOTE: This might not work with delve
+            f"-o={output}",
+        ]
+
+        # Enable data race detection on platforms that support it (all execpt windows arm64)
+        if not (PLATFORM_ID == "windows" and architecture() == "arm64"):
+            command_parts.append("-race")
+
+        if self.app.config.terminal.verbosity >= Verbosity.VERBOSE:
+            command_parts.append("-v")
+        if self.app.config.terminal.verbosity >= Verbosity.DEBUG:
+            command_parts.append("-x")
+
+        if go_mod:
+            command_parts.append(f"-mod={go_mod}")
+        if gcflags:
+            command_parts.append(f"-gcflags={gcflags}")
+        if ldflags:
+            command_parts.append(f"-ldflags={ldflags}")
+
+        if build_tags:
+            command_parts.append(f"-tags={' '.join(sorted(build_tags))}")
+
+        command_parts.extend(args)
+        command_parts.append(str(entrypoint))
+
+        return self._build(command_parts, **kwargs)
