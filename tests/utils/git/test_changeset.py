@@ -6,7 +6,7 @@ from __future__ import annotations
 import msgspec
 import pytest
 
-from dda.config.model import dec_hook, enc_hook
+from dda.types.hooks import dec_hook, enc_hook
 from dda.utils.fs import Path
 from dda.utils.git.changeset import ChangedFile, ChangeSet, ChangeType
 from tests.tools.git.conftest import REPO_TESTCASES
