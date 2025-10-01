@@ -15,7 +15,7 @@ from dda.config.model.terminal import TerminalConfig
 from dda.config.model.tools import ToolsConfig
 from dda.config.model.update import UpdateConfig
 from dda.config.model.user import UserConfig
-from dda.utils.fs import Path
+from dda.types.hooks import dec_hook, enc_hook
 
 
 def _default_orgs() -> dict[str, OrgConfig]:
@@ -52,38 +52,3 @@ def get_default_toml_data() -> dict[str, Any]:
         builtin_types=(datetime.datetime, datetime.date, datetime.time),
         enc_hook=enc_hook,
     )
-
-
-def dec_hook(type: type[Any], obj: Any) -> Any:  # noqa: A002
-    if type is Path:
-        return Path(obj)
-
-    from msgspec import convert
-
-    from dda.utils.git.changeset import ChangedFile, ChangeSet
-
-    if type is ChangeSet:
-        # Since the dict decode logic from msgspec is not called here we have to manually decode the keys and values
-        decoded_obj = {}
-        for key, value in obj.items():
-            decoded_key = dec_hook(Path, key)
-            decoded_value = convert(value, ChangedFile, dec_hook=dec_hook)
-            decoded_obj[decoded_key] = decoded_value
-        return ChangeSet(changes=decoded_obj)
-
-    message = f"Cannot decode: {obj!r}"
-    raise ValueError(message)
-
-
-def enc_hook(obj: Any) -> Any:
-    if isinstance(obj, Path):
-        return str(obj)
-
-    from dda.utils.git.changeset import ChangeSet
-
-    # Encode ChangeSet objects as dicts
-    if isinstance(obj, ChangeSet):
-        return dict(obj.changes)
-
-    message = f"Cannot encode: {obj!r}"
-    raise NotImplementedError(message)

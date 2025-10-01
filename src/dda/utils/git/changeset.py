@@ -7,10 +7,11 @@ from __future__ import annotations
 from enum import StrEnum
 from functools import cached_property
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Any, Self
 
-from msgspec import Struct
+from msgspec import Struct, convert
 
+from dda.types.hooks import dec_hook, register_hooks
 from dda.utils.fs import Path
 
 if TYPE_CHECKING:
@@ -195,3 +196,17 @@ def _determine_change_type(before_filename: str, after_filename: str) -> ChangeT
 
     msg = f"Unexpected file paths in git diff output: {before_filename} -> {after_filename} - this indicates a rename which we do not support"
     raise ValueError(msg)
+
+
+def __decode_change_set(obj: dict[str, Any]) -> ChangeSet:
+    # Since the dict decode logic from msgspec is not called here we have to manually decode the keys and values
+    decoded_obj = {}
+    for key, value in obj.items():
+        decoded_key = dec_hook(Path, key)
+        decoded_value = convert(value, ChangedFile, dec_hook=dec_hook)
+        decoded_obj[decoded_key] = decoded_value
+
+    return ChangeSet(changes=decoded_obj)
+
+
+register_hooks(ChangeSet, encode=lambda obj: dict(obj.changes), decode=__decode_change_set)

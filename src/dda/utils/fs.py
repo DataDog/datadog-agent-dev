@@ -10,6 +10,8 @@ from contextlib import contextmanager
 from functools import cached_property
 from typing import IO, TYPE_CHECKING, Any
 
+from dda.types.hooks import register_hooks
+
 if TYPE_CHECKING:
     from collections.abc import Generator
 
@@ -189,3 +191,6 @@ def temp_file(suffix: str = "") -> Generator[Path, None, None]:
 
     with NamedTemporaryFile(suffix=suffix) as f:
         yield Path(f.name).resolve()
+
+
+register_hooks(Path, encode=str, decode=Path)
