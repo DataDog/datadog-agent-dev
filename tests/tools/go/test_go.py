@@ -48,6 +48,7 @@ class TestBuild:
                 "ldflags": "-ldflags=all=-s -w",
                 "go_mod": "../go.mod",
             },
+            {"force_rebuild": True},
         ],
     )
     def test_command_formation(self, app, mocker, call_args, get_random_filename):
@@ -65,7 +66,6 @@ class TestBuild:
 
         # Assert the command is formed correctly
         expected_command_flags = {
-            "-a",
             "-trimpath",
             f"-o={output}",
             # "-v", # By default verbosity is INFO
@@ -82,6 +82,8 @@ class TestBuild:
             expected_command_flags.add(f"-ldflags={call_args.get('ldflags')}")
         if call_args.get("go_mod"):
             expected_command_flags.add(f"-mod={call_args.get('go_mod')}")
+        if call_args.get("force_rebuild"):
+            expected_command_flags.add("-a")
 
         seen_command = app.tools.go._build.call_args[0][0]  # noqa: SLF001
         seen_command_flags = {x for x in seen_command if x.startswith("-")}
