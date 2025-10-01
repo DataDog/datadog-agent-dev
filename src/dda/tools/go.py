@@ -78,6 +78,7 @@ class Go(Tool):
         go_mod: str | PathLike | None = None,
         gcflags: str | None = None,
         ldflags: str | None = None,
+        force_rebuild: bool = False,
         **kwargs: dict[str, Any],
     ) -> str:
         """
@@ -90,6 +91,7 @@ class Go(Tool):
             go_mod: Path to a go.mod file to use. By default will not be specified to the build command.
             gcflags: The gcflags (go compiler flags) to use. Empty by default.
             ldflags: The ldflags (go linker flags) to use. Empty by default.
+            force_rebuild: Whether to force a rebuild of the package and bypass the build cache.
             **kwargs: Additional arguments to pass to the go build command.
         """
         from platform import machine as architecture
@@ -98,10 +100,12 @@ class Go(Tool):
         from dda.utils.platform import PLATFORM_ID
 
         command_parts = [
-            "-a",  # Always rebuild the package for consistent behavior
             "-trimpath",  # Always use trimmed paths instead of absolute file system paths # NOTE: This might not work with delve
             f"-o={output}",
         ]
+
+        if force_rebuild:
+            command_parts.append("-a")
 
         # Enable data race detection on platforms that support it (all execpt windows arm64)
         if not (PLATFORM_ID == "windows" and architecture() == "arm64"):
