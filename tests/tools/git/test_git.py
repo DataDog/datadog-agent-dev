@@ -21,19 +21,13 @@ if TYPE_CHECKING:
 
 def assert_changesets_equal(actual: ChangeSet, expected: ChangeSet) -> None:
     """
-    Assert that two ChangeSet objects are equal by comparing their keys and
-    each FileChanges object's file, type, and patch attributes.
+    Assert that two ChangeSet objects are equal by comparing their mapping of path to ChangedFile object.
 
     Args:
         actual: The actual ChangeSet to compare
         expected: The expected ChangeSet to compare against
     """
-    assert actual.keys() == expected.keys()
-    for file in actual:
-        seen, expected_change = actual[file], expected[file]
-        assert seen.path == expected_change.path
-        assert seen.type == expected_change.type
-        assert seen.patch == expected_change.patch
+    assert actual.paths == expected.paths
 
 
 def test_basic(app: Application, temp_repo: Path) -> None:  # type: ignore[no-untyped-def]
@@ -141,9 +135,9 @@ def test_get_changes(app: Application, repo_setup_working_tree: tuple[Path, Chan
         new_file = Path("new_file.txt")
         new_file.write_text("new file\n")
         changeset = git.get_changes(working_tree=True)
-        new_expected_changeset = expected_changeset | ChangeSet({
-            new_file: ChangedFile(path=new_file, type=ChangeType.ADDED, binary=False, patch="@@ -0,0 +1 @@\n+new file")
-        })
+        new_expected_changeset = expected_changeset | ChangeSet([
+            ChangedFile(path=new_file, type=ChangeType.ADDED, binary=False, patch="@@ -0,0 +1 @@\n+new file")
+        ])
         assert_changesets_equal(changeset, new_expected_changeset)
 
 

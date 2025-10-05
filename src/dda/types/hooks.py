@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
+from types import MappingProxyType
 from typing import TYPE_CHECKING, Any
 
 from msgspec import Struct
@@ -42,3 +43,5 @@ def dec_hook(typ: type[Any], obj: Any) -> Any:
 
 
 __HOOKS: dict[type[Any], Hooks] = {}
+
+register_hooks(MappingProxyType, encode=dict, decode=MappingProxyType)

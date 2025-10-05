@@ -34,13 +34,12 @@
 ::: dda.utils.git.changeset.ChangeSet
     options:
       members:
-      - changes
+      - files
+      - paths
       - added
       - modified
       - deleted
-      - changed
       - digest
-      - from_iter
       - from_patches
 
 ::: dda.utils.git.changeset.ChangedFile

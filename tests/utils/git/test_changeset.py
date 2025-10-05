@@ -29,13 +29,13 @@ class TestFileChangesClass:
 class TestChangeSetClass:
     def test_basic(self):
         change = ChangedFile(path=Path("/path/to/file"), type=ChangeType.ADDED, binary=False, patch="patch")
-        changeset = ChangeSet({change.path: change})
-        assert changeset[Path("/path/to/file")] == change
+        changeset = ChangeSet([change])
+        assert changeset.paths[str(change.path)] == change
 
     def test_add(self):
         change = ChangedFile(path=Path("/path/to/file"), type=ChangeType.ADDED, binary=False, patch="patch")
-        changeset = ChangeSet.from_iter([change])
-        assert changeset[Path("/path/to/file")] == change
+        changeset = ChangeSet([change])
+        assert changeset.paths[str(change.path)] == change
 
     def test_digest(self):
         changes = [
@@ -43,20 +43,18 @@ class TestChangeSetClass:
             ChangedFile(path=Path("file2"), type=ChangeType.MODIFIED, binary=False, patch="patch2"),
             ChangedFile(path=Path("/path/../file3"), type=ChangeType.DELETED, binary=False, patch="patch3"),
         ]
-        changeset = ChangeSet.from_iter(changes)
+        changeset = ChangeSet(changes)
         assert changeset.digest() == "aa2369871b3934e0dae9f141b5224704a7dffe5af614f8a31789322837fdcd85"
 
     def test_properties(self):
-        changes = [
-            ChangedFile(path=Path("/path/to/file"), type=ChangeType.ADDED, binary=False, patch="patch"),
-            ChangedFile(path=Path("file2"), type=ChangeType.MODIFIED, binary=False, patch="patch2"),
-            ChangedFile(path=Path("/path/../file3"), type=ChangeType.DELETED, binary=False, patch="patch3"),
-        ]
-        changeset = ChangeSet.from_iter(changes)
-        assert changeset.added == {Path("/path/to/file")}
-        assert changeset.modified == {Path("file2")}
-        assert changeset.deleted == {Path("/path/../file3")}
-        assert changeset.changed == {Path("/path/to/file"), Path("file2"), Path("/path/../file3")}
+        added = ChangedFile(path=Path("/path/to/file"), type=ChangeType.ADDED, binary=False, patch="patch")
+        modified = ChangedFile(path=Path("file2"), type=ChangeType.MODIFIED, binary=False, patch="patch2")
+        deleted = ChangedFile(path=Path("/path/../file3"), type=ChangeType.DELETED, binary=False, patch="patch3")
+        changeset = ChangeSet([added, modified, deleted])
+        assert changeset.added == {str(added.path): added}
+        assert changeset.modified == {str(modified.path): modified}
+        assert changeset.deleted == {str(deleted.path): deleted}
+        assert changeset.paths == {str(added.path): added, str(modified.path): modified, str(deleted.path): deleted}
 
     @pytest.mark.parametrize(
         "repo_testcase",
@@ -74,12 +72,7 @@ class TestChangeSetClass:
 
         seen_changeset = ChangeSet.from_patches(diff_output)
 
-        assert seen_changeset.keys() == expected_changeset.keys()
-        for file in seen_changeset:
-            seen, expected = seen_changeset[file], expected_changeset[file]
-            assert seen.path == expected.path
-            assert seen.type == expected.type
-            assert seen.patch == expected.patch
+        assert seen_changeset.paths == expected_changeset.paths
 
     def test_encode_decode(self):
         changes = [
@@ -87,7 +80,7 @@ class TestChangeSetClass:
             ChangedFile(path=Path("file2"), type=ChangeType.MODIFIED, binary=False, patch="patch2"),
             ChangedFile(path=Path("/path/../file3"), type=ChangeType.DELETED, binary=False, patch="patch3"),
         ]
-        changeset = ChangeSet.from_iter(changes)
+        changeset = ChangeSet(changes)
         encoded_changeset = msgspec.json.encode(changeset, enc_hook=enc_hook)
         decoded_changeset = msgspec.json.decode(encoded_changeset, type=ChangeSet, dec_hook=dec_hook)
         assert decoded_changeset == changeset

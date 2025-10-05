@@ -44,7 +44,7 @@ def get_commit_and_changes_from_github(remote: Remote, sha1: str) -> tuple[Commi
     data = client.get(get_commit_github_api_url(remote, sha1)).json()
 
     # Compute ChangeSet
-    changes = ChangeSet.from_iter(
+    changes = ChangeSet(
         ChangedFile(
             path=Path(file_obj["filename"]),
             type=get_change_type_from_github_status(file_obj["status"]),
