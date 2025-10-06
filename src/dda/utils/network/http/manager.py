@@ -20,7 +20,11 @@ class HTTPClientManager:
     def __init__(self, app: Application):
         self.__app = app
 
-    def client(self, **kwargs: Any) -> HTTPClient:  # noqa: PLR6301
+    @property
+    def app(self) -> Application:
+        return self.__app
+
+    def client(self, **kwargs: Any) -> HTTPClient:
         """
         Returns:
             An [`HTTPClient`][dda.utils.network.http.client.HTTPClient] instance with proper default configuration.
@@ -31,6 +35,7 @@ class HTTPClientManager:
         """
         from dda.utils.network.http.client import get_http_client
 
+        self.set_default_client_config(kwargs)
         return get_http_client(**kwargs)
 
     def download(self, url: str, *, path: Path) -> None:
@@ -41,3 +46,12 @@ class HTTPClientManager:
         ):
             for chunk in response.iter_bytes():
                 f.write(chunk)
+
+    def set_default_client_config(self, config: dict[str, Any]) -> None:
+        """
+        This is called by subclasses to set the default configuration for HTTP clients.
+
+        Parameters:
+            config: Keyword arguments to pass to the [`get_http_client`][dda.utils.network.http.client.get_http_client]
+                function.
+        """
