@@ -91,7 +91,7 @@ def test_get_commit_and_changes_from_github(mocker, github_payload_file):
         )
         for file in data["files"]
     ]
-    expected_commit_changes = ChangeSet.from_iter(changes)
+    expected_commit_changes = ChangeSet(changes)
 
     # Make the comparisons
     remote_commit, commit_changes = get_commit_and_changes_from_github(remote, sha1)

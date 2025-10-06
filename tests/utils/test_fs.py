@@ -9,7 +9,7 @@ import sys
 import msgspec
 import pytest
 
-from dda.config.model import dec_hook, enc_hook
+from dda.types.hooks import dec_hook, enc_hook
 from dda.utils.fs import Path, temp_directory
 
 

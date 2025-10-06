@@ -6,15 +6,17 @@ from __future__ import annotations
 
 from enum import StrEnum
 from functools import cached_property
+from itertools import chain
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Self
 
-from msgspec import Struct
+from msgspec import Struct, convert, to_builtins
 
+from dda.types.hooks import dec_hook, enc_hook, register_type_hooks
 from dda.utils.fs import Path
 
 if TYPE_CHECKING:
-    from collections.abc import ItemsView, Iterable, Iterator, KeysView, ValuesView
+    from collections.abc import Iterable
 
 
 class ChangeType(StrEnum):
@@ -58,77 +60,44 @@ class ChangeSet:  # noqa: PLW1641
     When considering the changes to the working directory, the untracked files are considered as added files.
     """
 
-    def __init__(self, changes: dict[Path, ChangedFile]) -> None:
-        self.__changes = MappingProxyType(changes)
+    def __init__(self, changed_files: Iterable[ChangedFile]) -> None:
+        self.__changed = MappingProxyType({str(c.path): c for c in changed_files})
+        self.__files = tuple(self.__changed.values())
 
     @property
-    def changes(self) -> MappingProxyType[Path, ChangedFile]:
-        return self.__changes
+    def paths(self) -> MappingProxyType[str, ChangedFile]:
+        return self.__changed
 
-    def keys(self) -> KeysView[Path]:
-        return self.__changes.keys()
+    @property
+    def files(self) -> Iterable[ChangedFile]:
+        return self.__files
 
-    def values(self) -> ValuesView[ChangedFile]:
-        return self.__changes.values()
+    @property
+    def added(self) -> MappingProxyType[str, ChangedFile]:
+        """Set of files that were added."""
+        return self.__change_types[ChangeType.ADDED]
 
-    def items(self) -> ItemsView[Path, ChangedFile]:
-        return self.__changes.items()
+    @property
+    def modified(self) -> MappingProxyType[str, ChangedFile]:
+        """Set of files that were modified."""
+        return self.__change_types[ChangeType.MODIFIED]
 
-    def __getitem__(self, key: Path) -> ChangedFile:
-        return self.__changes[key]
-
-    def __contains__(self, key: Path) -> bool:
-        return key in self.__changes
-
-    def __len__(self) -> int:
-        return len(self.__changes)
-
-    def __iter__(self) -> Iterator[Path]:
-        return iter(self.__changes.keys())
-
-    def __or__(self, other: Self) -> Self:
-        return self.from_iter(list(self.values()) + list(other.values()))
-
-    def __eq__(self, other: object) -> bool:
-        return isinstance(other, ChangeSet) and self.__changes == other.__changes
-
-    @cached_property
-    def added(self) -> set[Path]:
-        """List of files that were added."""
-        return {change.path for change in self.values() if change.type == ChangeType.ADDED}
-
-    @cached_property
-    def modified(self) -> set[Path]:
-        """List of files that were modified."""
-        return {change.path for change in self.values() if change.type == ChangeType.MODIFIED}
-
-    @cached_property
-    def deleted(self) -> set[Path]:
-        """List of files that were deleted."""
-        return {change.path for change in self.values() if change.type == ChangeType.DELETED}
-
-    @cached_property
-    def changed(self) -> set[Path]:
-        """List of files that were changed (added, modified, or deleted)."""
-        return set(self.keys())
+    @property
+    def deleted(self) -> MappingProxyType[str, ChangedFile]:
+        """Set of files that were deleted."""
+        return self.__change_types[ChangeType.DELETED]
 
     def digest(self) -> str:
         """Compute a hash of the changeset."""
         from hashlib import sha256
 
         digester = sha256()
-        for change in sorted(self.values(), key=lambda x: x.path.as_posix()):
+        for change in sorted(self.files, key=lambda cf: cf.path):
             digester.update(change.path.as_posix().encode())
             digester.update(change.type.value.encode())
             digester.update(change.patch.encode())
 
         return str(digester.hexdigest())
-
-    @classmethod
-    def from_iter(cls, data: Iterable[ChangedFile]) -> Self:
-        """Create a ChangeSet from an iterable of FileChanges."""
-        items = {change.path: change for change in data}
-        return cls(changes=items)
 
     @classmethod
     def from_patches(cls, diff_output: str | list[str]) -> Self:
@@ -182,7 +151,21 @@ class ChangeSet:  # noqa: PLW1641
             # Strip every "block" and add the missing separator
             patch = "" if binary else "\n".join([sep + block.strip() for block in blocks]).strip()
             changes.append(ChangedFile(path=current_file, type=current_type, binary=binary, patch=patch))
-        return cls.from_iter(changes)
+        return cls(changes)
+
+    def __or__(self, other: Self) -> Self:
+        return type(self)(chain(self.files, other.files))
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, ChangeSet) and self.paths == other.paths
+
+    @cached_property
+    def __change_types(self) -> dict[ChangeType, MappingProxyType[str, ChangedFile]]:
+        changes: dict[ChangeType, dict[str, ChangedFile]] = {}
+        for change in self.files:
+            changes.setdefault(change.type, {})[str(change.path)] = change
+
+        return {change_type: MappingProxyType(paths) for change_type, paths in changes.items()}
 
 
 def _determine_change_type(before_filename: str, after_filename: str) -> ChangeType:
@@ -195,3 +178,10 @@ def _determine_change_type(before_filename: str, after_filename: str) -> ChangeT
 
     msg = f"Unexpected file paths in git diff output: {before_filename} -> {after_filename} - this indicates a rename which we do not support"
     raise ValueError(msg)
+
+
+register_type_hooks(
+    ChangeSet,
+    encode=lambda obj: to_builtins(obj.files, enc_hook=enc_hook),
+    decode=lambda obj: ChangeSet(convert(cf, ChangedFile, dec_hook=dec_hook) for cf in obj),
+)
