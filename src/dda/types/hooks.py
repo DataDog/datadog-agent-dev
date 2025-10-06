@@ -12,18 +12,18 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 
-class Hooks(Struct, frozen=True):
+class Hook(Struct, frozen=True):
     encode: Callable[[Any], Any]
     decode: Callable[[Any], Any]
 
 
-def register_hooks(
+def register_type_hooks(
     typ: type[Any],
     *,
     encode: Callable[[Any], Any],
     decode: Callable[[Any], Any],
 ) -> None:
-    __HOOKS[typ] = Hooks(encode=encode, decode=decode)
+    __HOOKS[typ] = Hook(encode=encode, decode=decode)
 
 
 def enc_hook(obj: Any) -> Any:
@@ -42,6 +42,6 @@ def dec_hook(typ: type[Any], obj: Any) -> Any:
     raise ValueError(message)
 
 
-__HOOKS: dict[type[Any], Hooks] = {}
+__HOOKS: dict[type[Any], Hook] = {}
 
-register_hooks(MappingProxyType, encode=dict, decode=MappingProxyType)
+register_type_hooks(MappingProxyType, encode=dict, decode=MappingProxyType)

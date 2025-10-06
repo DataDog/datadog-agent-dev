@@ -8,11 +8,11 @@ from enum import StrEnum
 from functools import cached_property
 from itertools import chain
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Literal, Self
+from typing import TYPE_CHECKING, Self
 
 from msgspec import Struct, convert, to_builtins
 
-from dda.types.hooks import dec_hook, enc_hook, register_hooks
+from dda.types.hooks import dec_hook, enc_hook, register_type_hooks
 from dda.utils.fs import Path
 
 if TYPE_CHECKING:
@@ -160,28 +160,12 @@ class ChangeSet:  # noqa: PLW1641
         return isinstance(other, ChangeSet) and self.paths == other.paths
 
     @cached_property
-    def __change_types(
-        self,
-    ) -> dict[Literal[ChangeType.ADDED, ChangeType.MODIFIED, ChangeType.DELETED], MappingProxyType[str, ChangedFile]]:
-        added: dict[str, ChangedFile] = {}
-        modified: dict[str, ChangedFile] = {}
-        deleted: dict[str, ChangedFile] = {}
+    def __change_types(self) -> dict[ChangeType, MappingProxyType[str, ChangedFile]]:
+        changes: dict[ChangeType, dict[str, ChangedFile]] = {}
         for change in self.files:
-            if change.type == ChangeType.ADDED:
-                added[str(change.path)] = change
-            elif change.type == ChangeType.MODIFIED:
-                modified[str(change.path)] = change
-            elif change.type == ChangeType.DELETED:
-                deleted[str(change.path)] = change
-            else:  # no cov
-                msg = f"Unexpected change type: {change.type}"
-                raise ValueError(msg)
+            changes.setdefault(change.type, {})[str(change.path)] = change
 
-        return {
-            ChangeType.ADDED: MappingProxyType(added),
-            ChangeType.MODIFIED: MappingProxyType(modified),
-            ChangeType.DELETED: MappingProxyType(deleted),
-        }
+        return {change_type: MappingProxyType(paths) for change_type, paths in changes.items()}
 
 
 def _determine_change_type(before_filename: str, after_filename: str) -> ChangeType:
@@ -196,7 +180,7 @@ def _determine_change_type(before_filename: str, after_filename: str) -> ChangeT
     raise ValueError(msg)
 
 
-register_hooks(
+register_type_hooks(
     ChangeSet,
     encode=lambda obj: to_builtins(obj.files, enc_hook=enc_hook),
     decode=lambda obj: ChangeSet(convert(cf, ChangedFile, dec_hook=dec_hook) for cf in obj),
