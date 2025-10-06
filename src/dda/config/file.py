@@ -35,11 +35,20 @@ class ConfigFile:
         return construct_model(self.data)
 
     def save(self, data: dict[str, Any] | None = None) -> None:
+        from contextlib import suppress
+
         import tomlkit
 
         content = tomlkit.dumps(self.data if data is None else data)
         self.path.parent.ensure_dir()
         self.path.write_atomic(content, "w", encoding="utf-8")
+
+        with suppress(AttributeError):
+            del self.model
+
+        if data is not None:
+            with suppress(AttributeError):
+                del self.data
 
     def read(self) -> str:
         return self.path.read_text(encoding="utf-8")

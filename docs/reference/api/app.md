@@ -8,9 +8,10 @@
       members:
       - abort
       - config
+      - tools
       - subprocess
       - http
-      - tools
+      - github
       - telemetry
       - last_error
       - display

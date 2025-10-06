@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from dda.tools.bazel import Bazel
     from dda.tools.docker import Docker
     from dda.tools.git import Git
+    from dda.tools.github.core import GitHub
     from dda.tools.go import Go
     from dda.tools.uv import UV
 
@@ -36,6 +37,18 @@ class Tools:
         return Docker(self.__app)
 
     @cached_property
+    def git(self) -> Git:
+        from dda.tools.git import Git
+
+        return Git(self.__app)
+
+    @cached_property
+    def github(self) -> GitHub:
+        from dda.tools.github.core import GitHub
+
+        return GitHub(self.__app)
+
+    @cached_property
     def go(self) -> Go:
         from dda.tools.go import Go
 
@@ -46,9 +59,3 @@ class Tools:
         from dda.tools.uv import UV
 
         return UV(self.__app)
-
-    @cached_property
-    def git(self) -> Git:
-        from dda.tools.git import Git
-
-        return Git(self.__app)
