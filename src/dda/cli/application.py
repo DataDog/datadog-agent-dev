@@ -194,9 +194,17 @@ class UpdateChecker:
             try:
                 response = client.get("https://api.github.com/repos/DataDog/datadog-agent-dev/releases/latest")
             except httpx.HTTPStatusError as e:
-                github_auth = self.__app.config.github.auth
-                # Ignore rate limiting errors if the user has not authenticated
-                if e.response.headers.get("Retry-After") is not None and not (github_auth.user and github_auth.token):
+                # Rate limiting
+                if e.response.headers.get("Retry-After") is not None:
+                    github_auth = self.__app.config.github.auth
+                    if not (github_auth.user and github_auth.token):
+                        self.__app.display_warning(
+                            "The GitHub API rate limit was exceeded while checking for new releases."
+                        )
+                        self.__app.display_info("Run the following commands to authenticate:")
+                        self.__app.display_info("dda config set github.auth.user <user>")
+                        self.__app.display_info("dda config set github.auth.token")
+
                     return None
 
                 raise

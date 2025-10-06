@@ -13,7 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - The `config show` command now outputs to stdout instead of stderr
 - The error message when running an outdated version now outputs to stderr instead of stdout
 - The `app.subprocess.capture` and `app.subprocess.redirect` methods no longer include the standard error stream by default
-- Ignore rate limiting errors when checking for new releases if the user has not authenticated
+- Ignore rate limiting errors when checking for new releases
 
 ## 0.28.0 - 2025-09-22
 
