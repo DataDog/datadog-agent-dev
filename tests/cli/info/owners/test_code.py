@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
-from os import sep
 from typing import TYPE_CHECKING
 
 import pytest
@@ -15,64 +14,6 @@ if TYPE_CHECKING:
     from types import ModuleType
 
     from tests.conftest import CliRunner
-
-
-# We prepend "fixt_" to the fixture names to avoid pylint complaining about name shadowing
-# https://docs.pytest.org/en/stable/reference/reference.html#pytest-fixture
-@pytest.fixture(name="default_codeowners_location")
-def fixt_default_codeowners_location() -> Path:
-    return Path(".github/CODEOWNERS")
-
-
-@pytest.fixture(name="create_temp_file_or_dir")
-def fixt_create_temp_file_or_dir():
-    """Fixture to create and clean up temporary files and directories."""
-    created_paths: list[Path] = []
-
-    def _create_temp_file_or_dir(location: Path, *, force_file: bool = False) -> None:
-        for parent in reversed(location.parents):
-            # Create and keep track of created parent directories for cleanup
-            if not parent.exists():
-                parent.mkdir()
-                created_paths.append(parent)
-
-        # Create the requested file or directory and keep track of it for cleanup
-        # Assume that if the file path does not have an extension, it is a directory
-        # The force_file flag can be used to override this behavior
-        if location.suffix == "" and not force_file:
-            location.mkdir()
-        else:
-            location.touch()
-        created_paths.append(location)
-
-    yield _create_temp_file_or_dir
-    for path in reversed(created_paths):
-        if path.exists():
-            if path.is_dir():
-                path.rmdir()
-            else:
-                path.unlink()
-
-
-@pytest.fixture(name="create_codeowners_file")
-def fixt_create_codeowners_file(create_temp_file_or_dir):
-    def _create_codeowners_file(ownership_data: dict[str, list[str]], location: Path) -> None:
-        create_temp_file_or_dir(location, force_file=True)
-        codeowners_content = "\n".join(f"{pattern} {' '.join(owners)}" for pattern, owners in ownership_data.items())
-        location.write_text(codeowners_content)
-
-    return _create_codeowners_file
-
-
-@pytest.fixture(name="create_temp_items")
-def fixt_create_temp_items(create_temp_file_or_dir):
-    def _create_temp_items(files: Iterable[str], temp_dir: Path) -> None:
-        for file_str in files:
-            # Always use forward slashes for paths, as that's what pathlib expects
-            file_path = temp_dir / file_str.replace(sep, "/")
-            create_temp_file_or_dir(file_path)
-
-    return _create_temp_items
 
 
 @pytest.mark.parametrize(
@@ -111,9 +52,9 @@ def fixt_create_temp_items(create_temp_file_or_dir):
                 "subdir2/testfile2.txt": ["@owner3"],
             },
             {
-                "subdir1": ["@owner1"],
+                "subdir1/": ["@owner1"],
                 "subdir1/testfile1.txt": ["@owner1"],
-                "subdir2": ["@owner2"],
+                "subdir2/": ["@owner2"],
                 "subdir2/testfile2.txt": ["@owner3"],
             },
         ),
@@ -131,7 +72,7 @@ def fixt_create_temp_items(create_temp_file_or_dir):
                     "@DataDog/team-devops",
                     "@DataDog/team-doc",
                 ],
-                ".gitlab": ["@DataDog/team-devops"],
+                ".gitlab/": ["@DataDog/team-devops"],
                 ".gitlab/security.yml": ["@DataDog/team-security"],
                 ".gitlab/ci.yml": ["@DataDog/team-devops"],
             },
@@ -166,6 +107,73 @@ def test_ownership_parsing(  # type: ignore[no-untyped-def]
     result.check(
         exit_code=0,
         stdout_json=expected_result,
+        stderr=helpers.dedent(
+            """
+            Synchronizing dependencies
+            """
+        ),
+    )
+
+
+def test_ambiguous_directory_paths(
+    dda: CliRunner,
+    temp_dir: Path,
+    create_codeowners_file: Callable[[dict[str, list[str]], Path], None],
+    create_temp_items: Callable[[Iterable[str], Path], None],
+    default_codeowners_location: Path,
+    helpers: ModuleType,
+) -> None:
+    ownership_data = {
+        "dir_with_slash/": ["@owner1"],
+        "dir_with_slash/testfile.txt": ["@owner2"],
+        "dir_without_slash": ["@owner3"],
+        "dir_without_slash/testfile.txt": ["@owner4"],
+        "dir_with_slash/subdir_with_slash/": ["@owner5"],
+        "dir_with_slash/subdir_with_slash/testfile.txt": ["@owner6"],
+        "dir_with_slash/subdir_without_slash": ["@owner7"],
+        "dir_with_slash/subdir_without_slash/testfile.txt": ["@owner8"],
+    }
+    create_codeowners_file(ownership_data, temp_dir / default_codeowners_location)
+    create_temp_items(
+        (
+            "dir_with_slash/testfile.txt",
+            "dir_without_slash/testfile.txt",
+            "dir_with_slash/subdir_with_slash/testfile.txt",
+            "dir_with_slash/subdir_without_slash/testfile.txt",
+        ),
+        temp_dir,
+    )
+    with temp_dir.as_cwd():
+        result = dda(
+            "info",
+            "owners",
+            "code",
+            "--json",
+            "dir_with_slash",
+            "dir_without_slash",
+            "dir_with_slash/",
+            "dir_without_slash/",
+            "dir_with_slash/testfile.txt",
+            "dir_without_slash/testfile.txt",
+            "dir_with_slash/subdir_with_slash/",
+            "dir_with_slash/subdir_without_slash/",
+            "dir_with_slash/subdir_with_slash",
+            "dir_with_slash/subdir_without_slash",
+            "dir_with_slash/subdir_with_slash/testfile.txt",
+            "dir_with_slash/subdir_without_slash/testfile.txt",
+        )
+    result.check(
+        exit_code=0,
+        stdout_json={
+            "dir_with_slash/": ["@owner1"],
+            "dir_without_slash/": ["@owner3"],
+            "dir_with_slash/testfile.txt": ["@owner2"],
+            "dir_without_slash/testfile.txt": ["@owner4"],
+            "dir_with_slash/subdir_with_slash/": ["@owner5"],
+            "dir_with_slash/subdir_with_slash/testfile.txt": ["@owner6"],
+            "dir_with_slash/subdir_without_slash/": ["@owner7"],
+            "dir_with_slash/subdir_without_slash/testfile.txt": ["@owner8"],
+        },
         stderr=helpers.dedent(
             """
             Synchronizing dependencies
