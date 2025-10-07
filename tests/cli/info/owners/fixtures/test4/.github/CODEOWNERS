@@ -1,0 +1,4 @@
+* @DataDog/team-everything
+*.md @DataDog/team-devops @DataDog/team-doc
+.gitlab @DataDog/team-devops
+.gitlab/security.yml @DataDog/team-security
