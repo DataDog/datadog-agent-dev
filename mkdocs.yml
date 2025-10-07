@@ -119,6 +119,9 @@ plugins:
         paths:
         - src
         options:
+          filters:
+          # Ignore both private and dunder members
+          - "!^_"
           # Rendering
           show_root_full_path: false
           # Headings

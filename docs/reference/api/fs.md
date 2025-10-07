@@ -1,8 +1,10 @@
-# Filesystem reference
+# Filesystem utilities reference
 
 -----
 
 ::: dda.utils.fs.temp_directory
+
+::: dda.utils.fs.temp_file
 
 ::: dda.utils.fs.Path
     options:
