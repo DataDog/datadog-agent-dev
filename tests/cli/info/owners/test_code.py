@@ -44,6 +44,11 @@ TESTCASE_RESULTS = [
 ]
 
 
+@pytest.fixture(autouse=True)
+def prevent_dependency_check(mocker):
+    mocker.patch("dda.cli.base.ensure_features_installed", return_value=None)
+
+
 @pytest.mark.parametrize(
     ("case_number", "expected_result"),
     enumerate(TESTCASE_RESULTS),
@@ -52,7 +57,6 @@ def test_ownership_parsing(  # type: ignore[no-untyped-def]
     dda: CliRunner,
     case_number: int,
     expected_result: dict[str, list[str]],
-    helpers: ModuleType,
 ) -> None:
     with (Path(__file__).parent / "fixtures" / f"test{case_number}").as_cwd():
         result = dda(
@@ -66,17 +70,11 @@ def test_ownership_parsing(  # type: ignore[no-untyped-def]
     result.check(
         exit_code=0,
         stdout_json=expected_result,
-        stderr=helpers.dedent(
-            """
-            Synchronizing dependencies
-            """
-        ),
     )
 
 
 def test_ambiguous_directory_paths(
     dda: CliRunner,
-    helpers: ModuleType,
 ) -> None:
     paths_to_test = [
         "dir_with_slash",
@@ -118,17 +116,11 @@ def test_ambiguous_directory_paths(
     result.check(
         exit_code=0,
         stdout_json=expected_result,
-        stderr=helpers.dedent(
-            """
-            Synchronizing dependencies
-            """
-        ),
     )
 
 
 def test_ownership_location(
     dda: CliRunner,
-    helpers: ModuleType,
 ) -> None:
     testcase_result = TESTCASE_RESULTS[4]
     with (Path(__file__).parent / "fixtures" / "test4").as_cwd():
@@ -145,11 +137,6 @@ def test_ownership_location(
     result.check(
         exit_code=0,
         stdout_json=testcase_result,
-        stderr=helpers.dedent(
-            """
-            Synchronizing dependencies
-            """
-        ),
     )
 
 
@@ -166,18 +153,6 @@ def test_human_output(
         exit_code=0,
         stdout=helpers.dedent(
             """
-            ┌──────────────────────┬─────────────────────────────────────────┐
-            │ test.txt             │ @DataDog/team-everything                │
-            │ README.md            │ @DataDog/team-devops, @DataDog/team-doc │
-            │ .gitlab/             │ @DataDog/team-devops                    │
-            │ .gitlab/security.yml │ @DataDog/team-security                  │
-            │ .gitlab/ci.yml       │ @DataDog/team-devops                    │
-            └──────────────────────┴─────────────────────────────────────────┘
-            """
-        ),
-        output=helpers.dedent(
-            """
-            Synchronizing dependencies
             ┌──────────────────────┬─────────────────────────────────────────┐
             │ test.txt             │ @DataDog/team-everything                │
             │ README.md            │ @DataDog/team-devops, @DataDog/team-doc │
