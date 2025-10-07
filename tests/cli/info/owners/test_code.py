@@ -45,7 +45,8 @@ TESTCASE_RESULTS = [
 
 
 @pytest.fixture(autouse=True)
-def prevent_dependency_check(mocker):
+def install_deps_once(dda, mocker):
+    dda("self", "dep", "sync", "-f", "codeowners")
     mocker.patch("dda.cli.base.ensure_features_installed", return_value=None)
 
 
