@@ -161,7 +161,7 @@ def temp_directory() -> Generator[Path, None, None]:
     A context manager that creates a temporary directory and yields a path to it. Example:
 
     ```python
-    with temp_directory() as temp_dir:
+    with temp_directory() as td:
         ...
     ```
 
@@ -180,7 +180,7 @@ def temp_file(suffix: str = "") -> Generator[Path, None, None]:
     A context manager that creates a temporary file and yields a path to it. Example:
 
     ```python
-    with temp_file() as temp_file:
+    with temp_file() as tf:
         ...
     ```
 

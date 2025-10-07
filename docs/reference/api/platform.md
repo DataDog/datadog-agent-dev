@@ -1,4 +1,4 @@
-# Platform reference
+# Platform utilities reference
 
 -----
 
