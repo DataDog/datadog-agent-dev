@@ -14,6 +14,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - The error message when running an outdated version now outputs to stderr instead of stdout
 - The `app.subprocess.capture` and `app.subprocess.redirect` methods no longer include the standard error stream by default
 - Ignore rate limiting errors when checking for new releases
+- Send anonymized telemetry by default
+- Improve logging when developer environments fail to start
 
 ## 0.28.0 - 2025-09-22
 

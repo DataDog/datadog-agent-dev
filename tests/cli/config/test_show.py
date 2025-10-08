@@ -63,6 +63,9 @@ def test_default_scrubbed(dda, config_file, helpers, default_cache_dir, default_
 
             [update.check]
             period = "2w"
+
+            [telemetry]
+            id = "anon"
             """
         ),
     )
@@ -125,6 +128,9 @@ def test_reveal(dda, config_file, helpers, default_cache_dir, default_data_dir, 
 
             [update.check]
             period = "2w"
+
+            [telemetry]
+            id = "anon"
             """
         ),
     )
