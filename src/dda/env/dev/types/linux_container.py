@@ -128,7 +128,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 "-e",
                 AppEnvVars.TELEMETRY_API_KEY,
                 "-e",
-                AppEnvVars.TELEMETRY_USER_ID,
+                AppEnvVars.TELEMETRY_USER_MACHINE_ID,
                 "-e",
                 GitEnvVars.AUTHOR_NAME,
                 "-e",
@@ -160,7 +160,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
 
             env = EnvVars()
             env["DD_SHELL"] = self.config.shell
-            env[AppEnvVars.TELEMETRY_USER_ID] = self.app.telemetry.user.id
+            env[AppEnvVars.TELEMETRY_USER_MACHINE_ID] = self.app.telemetry.user.machine_id
             if self.app.telemetry.api_key is not None:
                 env[AppEnvVars.TELEMETRY_API_KEY] = self.app.telemetry.api_key
             if self.app.config.tools.git.author.name:

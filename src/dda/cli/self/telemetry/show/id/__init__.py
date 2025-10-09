@@ -11,7 +11,10 @@ if TYPE_CHECKING:
     from dda.cli.application import Application
 
 
-@dynamic_command(short_help="Show the telemetry user ID")
+@dynamic_command(short_help="Show the ID used for telemetry")
 @pass_app
 def cmd(app: Application) -> None:
-    app.display(app.telemetry.user.id)
+    """
+    Show the ID used for telemetry.
+    """
+    app.display(app.telemetry.user.machine_id)

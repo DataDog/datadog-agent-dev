@@ -137,10 +137,10 @@ class TelemetryUser:
         self.__config = config
 
     @cached_property
-    def id(self) -> str:
+    def machine_id(self) -> str:
         from dda.config.constants import AppEnvVars
 
-        if machine_id := os.environ.get(AppEnvVars.TELEMETRY_USER_ID):
+        if machine_id := os.environ.get(AppEnvVars.TELEMETRY_USER_MACHINE_ID):
             return machine_id
 
         from dda.utils.platform import get_machine_id

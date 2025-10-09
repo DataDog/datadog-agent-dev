@@ -3,8 +3,6 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
-from typing import Literal
-
 from msgspec import Struct
 
 
@@ -13,9 +11,9 @@ class TelemetryConfig(Struct, frozen=True):
     /// tab | :octicons-file-code-16: config.toml
     ```toml
     [telemetry]
-    id = "anon"
+    anon = true
     ```
     ///
     """
 
-    id: Literal["anon", "user"] = "anon"
+    anon: bool = True
