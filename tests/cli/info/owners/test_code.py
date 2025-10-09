@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from unittest.mock import patch
 
 import pytest
 
@@ -44,10 +45,11 @@ TESTCASE_RESULTS = [
 ]
 
 
-@pytest.fixture(autouse=True)
-def install_deps_once(dda, mocker):
+@pytest.fixture(scope="module", autouse=True)
+def install_deps_once(dda):
     dda("self", "dep", "sync", "-f", "codeowners")
-    mocker.patch("dda.cli.base.ensure_features_installed", return_value=None)
+    with patch("dda.cli.base.ensure_features_installed", return_value=None):
+        yield
 
 
 @pytest.mark.parametrize(
