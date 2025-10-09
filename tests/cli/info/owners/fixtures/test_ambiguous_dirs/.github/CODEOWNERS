@@ -1,0 +1,8 @@
+dir_with_slash/ @owner1
+dir_with_slash/testfile.txt @owner2
+dir_without_slash @owner3
+dir_without_slash/testfile.txt @owner4
+dir_with_slash/subdir_with_slash/ @owner5
+dir_with_slash/subdir_with_slash/testfile.txt @owner6
+dir_with_slash/subdir_without_slash @owner7
+dir_with_slash/subdir_without_slash/testfile.txt @owner8

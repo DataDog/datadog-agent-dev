@@ -1,0 +1,3 @@
+subdir1 @owner1
+subdir2 @owner2
+subdir2/testfile2.txt @owner3

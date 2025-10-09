@@ -42,10 +42,15 @@ def cmd(app: Application, paths: tuple[Path, ...], *, owners_filepath: Path, jso
     """
     import codeowners
 
+    from dda.cli.info.owners.format import format_path_for_codeowners
+
     owners = codeowners.CodeOwners(owners_filepath.read_text(encoding="utf-8"))
 
-    # The codeowners library expects paths to be in POSIX format (even on Windows)
-    res = {(posix_path := path.as_posix()): [owner[1] for owner in owners.of(posix_path)] for path in paths}
+    # The codeowners library expects paths to be in a specific format
+    res = {
+        (formatted_path := format_path_for_codeowners(path)): [owner[1] for owner in owners.of(formatted_path)]
+        for path in paths
+    }
     if json:
         from json import dumps
 
