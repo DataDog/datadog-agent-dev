@@ -3,11 +3,13 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
+import os
 from functools import cached_property
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from dda.cli.application import Application
+    from dda.config.model import RootConfig
     from dda.telemetry.writers.log import LogTelemetryWriter
     from dda.telemetry.writers.trace import TraceTelemetryWriter
     from dda.utils.fs import Path
@@ -85,21 +87,9 @@ class TelemetryManager:
 
         return api_key
 
-    @cached_property
-    def user_name(self) -> str:
-        return (
-            self.__app.config.user.name
-            if self.__app.config.user.name != "auto"
-            else self.__app.config.tools.git.author.name
-        )
-
-    @cached_property
-    def user_email(self) -> str:
-        return (
-            self.__app.config.user.email
-            if self.__app.config.user.email != "auto"
-            else self.__app.config.tools.git.author.email
-        )
+    @property
+    def user(self) -> TelemetryUser:
+        return TelemetryUser(self.__app.config)
 
     @cached_property
     def __enabled(self) -> bool:
@@ -140,3 +130,27 @@ class TelemetryManager:
         })
         self.__app.subprocess.spawn_daemon([sys.executable, "-m", "dda.telemetry.daemon"], env=env_vars)
         self.__started = True
+
+
+class TelemetryUser:
+    def __init__(self, config: RootConfig) -> None:
+        self.__config = config
+
+    @cached_property
+    def machine_id(self) -> str:
+        from dda.config.constants import AppEnvVars
+
+        if machine_id := os.environ.get(AppEnvVars.TELEMETRY_USER_MACHINE_ID):
+            return machine_id
+
+        from dda.utils.platform import get_machine_id
+
+        return str(get_machine_id())
+
+    @cached_property
+    def name(self) -> str:
+        return self.__config.user.name if self.__config.user.name != "auto" else self.__config.tools.git.author.name
+
+    @cached_property
+    def email(self) -> str:
+        return self.__config.user.email if self.__config.user.email != "auto" else self.__config.tools.git.author.email

@@ -10,6 +10,7 @@ import shutil
 import sys
 import time
 from typing import TYPE_CHECKING, Any
+from unittest.mock import patch
 
 import pytest
 from click import testing as click_testing
@@ -27,6 +28,7 @@ from dda.utils.process import EnvVars
 if TYPE_CHECKING:
     import pathlib
     from collections.abc import Generator
+    from uuid import UUID
 
     from dda.config.model.tools import GitAuthorConfig
 
@@ -210,6 +212,16 @@ def uv_on_path() -> Path:
 @pytest.fixture(scope="session")
 def bazel_on_path() -> Path:
     return Path(which("bazel"))
+
+
+@pytest.fixture(scope="session", autouse=True)
+def machine_id() -> Generator[UUID, None, None]:
+    # The logic on macOS requires a subprocess call which interferes with tests expecting
+    # such calls being in a certain order with specific output
+    from uuid import UUID
+
+    with patch("dda.utils.platform.get_machine_id", return_value=UUID("12345678-1234-5678-1234-567812345678")) as mock:
+        yield mock.return_value
 
 
 def pytest_runtest_setup(item):

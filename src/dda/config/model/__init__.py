@@ -11,6 +11,7 @@ from dda.config.model.env import EnvConfig
 from dda.config.model.github import GitHubConfig
 from dda.config.model.orgs import OrgConfig
 from dda.config.model.storage import StorageDirs
+from dda.config.model.telemetry import TelemetryConfig
 from dda.config.model.terminal import TerminalConfig
 from dda.config.model.tools import ToolsConfig
 from dda.config.model.update import UpdateConfig
@@ -37,6 +38,7 @@ class RootConfig(Struct, frozen=True, omit_defaults=True):
     user: UserConfig = field(default_factory=UserConfig)
     terminal: TerminalConfig = field(default_factory=TerminalConfig)
     update: UpdateConfig = field(default_factory=UpdateConfig)
+    telemetry: TelemetryConfig = field(default_factory=TelemetryConfig)
 
 
 def construct_model(data: dict[str, Any]) -> RootConfig:
