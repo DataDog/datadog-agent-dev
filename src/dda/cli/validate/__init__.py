@@ -13,3 +13,4 @@ def cmd() -> None:
     """
     Validate tools and utilities for development workflow.
     """
+    pass
