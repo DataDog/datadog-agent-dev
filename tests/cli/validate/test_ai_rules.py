@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
+import os
 import shutil
 from typing import TYPE_CHECKING
 
@@ -50,12 +51,12 @@ def test_validate_with_fix_flag(
     result.check_exit_code(exit_code=0)
     assert (path / "CLAUDE.md").exists()
     content = (path / "CLAUDE.md").read_text(encoding="utf-8")
-    assert "@.cursor/rules/coding-standards.mdc" in content
-    assert "@.cursor/rules/security.mdc" in content
-    assert "@.cursor/rules/testing.mdc" in content
+    assert f"@{os.path.join('.cursor', 'rules', 'coding-standards.mdc')}" in content
+    assert f"@{os.path.join('.cursor', 'rules', 'security.mdc')}" in content
+    assert f"@{os.path.join('.cursor', 'rules', 'testing.mdc')}" in content
     assert "imhere.txt" not in content
-    assert "@.cursor/rules/personal/my-rule.mdc" not in content
-    assert "@.cursor/rules/nested/my-nested-rule.mdc" in content
+    assert f"@{os.path.join('.cursor', 'rules', 'personal', 'my-rule.mdc')}" not in content
+    assert f"@{os.path.join('.cursor', 'rules', 'nested', 'my-nested-rule.mdc')}" in content
     assert "@CLAUDE_PERSONAL.md" in content
 
 
