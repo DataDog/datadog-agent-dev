@@ -4,184 +4,100 @@
 from __future__ import annotations
 
 import os
+import shutil
 from typing import TYPE_CHECKING
+from dda.utils.fs import Path
 
 import pytest
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from dda.utils.fs import Path
     from tests.conftest import CliRunner
 
-@pytest.fixture(name="create_cursor_rules")
-def fixt_create_cursor_rules(create_temp_path):
-    def _create_cursor_rules(rules_data: dict[str, str], cursor_rules_dir: Path) -> None:
-        """Create cursor rule files with given content."""
-        for filename, content in rules_data.items():
-            rule_file = cursor_rules_dir / filename
-            create_temp_path(rule_file, force_file=True)
-            rule_file.write_text(content, encoding="utf-8")
 
-    return _create_cursor_rules
+
+@pytest.fixture(name="use_temp_fixture_folder")
+def fixt_use_temp_folder(temp_dir: Path):
+    def _use_temp_folder(folder_name: str):
+        shutil.copytree(Path((__file__)).parent / "fixtures" / "ai_rules" / folder_name, temp_dir / folder_name)
+        return Path(temp_dir) / folder_name
+    return _use_temp_folder
 
 
 def test_validate_rule_files_no_target_file(
     dda: CliRunner,
-    temp_dir: Path,
-    create_cursor_rules: Callable[[dict[str, str], Path], None],
+    use_temp_fixture_folder: Callable[[str], Path],
 ) -> None:
     """Test validation with multiple rule files."""
-    cursor_rules_dir = temp_dir / ".cursor" / "rules"
 
-    rules_data = {
-        "coding-standards.mdc": "Use TypeScript for all frontend code.",
-        "security.mdc": "Always validate input parameters.",
-        "testing.mdc": "Write unit tests for all functions.",
-    }
-
-    create_cursor_rules(rules_data, cursor_rules_dir)
-
-    with temp_dir.as_cwd():
+    path = use_temp_fixture_folder("simple_rules_no_target")
+    with path.as_cwd():
         result = dda("validate", "ai-rules")
 
-    assert result.exit_code == 1
+    result.check_exit_code(exit_code=1)
 
 
 def test_validate_with_fix_flag(
     dda: CliRunner,
-    temp_dir: Path,
-    create_cursor_rules: Callable[[dict[str, str], Path], None],
+    use_temp_fixture_folder: Callable[[str], Path],
 ) -> None:
     """Test validation with fix flag when files are out of sync."""
-    cursor_rules_dir = temp_dir / ".cursor" / "rules"
-    target_file = temp_dir / "CLAUDE.md"
-
-    rules_data = {"test-rule.mdc": "This is a test rule."}
-
-    create_cursor_rules(rules_data, cursor_rules_dir)
-
-    with temp_dir.as_cwd():
+    path = use_temp_fixture_folder("simple_rules_no_target")
+    with path.as_cwd():
         result = dda("validate", "ai-rules", "--fix")
 
-    assert result.exit_code == 0
-    assert target_file.exists()
-
-    content = target_file.read_text(encoding="utf-8")
-    assert f"@{cursor_rules_dir.relative_to(target_file.parent) / 'test-rule.mdc'}" in content
+    result.check_exit_code(exit_code=0)
+    assert (path / "CLAUDE.md").exists()
+    content = (path / "CLAUDE.md").read_text(encoding="utf-8")
+    assert f"@.cursor/rules/coding-standards.mdc" in content
+    assert f"@.cursor/rules/security.mdc" in content
+    assert f"@.cursor/rules/testing.mdc" in content
+    assert f"imhere.txt" not in content
+    assert f"@.cursor/rules/personal/my-rule.mdc" not in content
+    assert f"@.cursor/rules/nested/my-nested-rule.mdc" in content
+    assert f"@CLAUDE_PERSONAL.md" in content
 
 
 def test_validate_no_cursor_rules_directory(
     dda: CliRunner,
-    temp_dir: Path,
+    use_temp_fixture_folder: Callable[[str], Path],
 ) -> None:
     """Test validation when cursor rules directory doesn't exist."""
-    with temp_dir.as_cwd():
+    path = use_temp_fixture_folder("no_cursor_rules")
+    with path.as_cwd():
         result = dda("validate", "ai-rules")
 
-    assert result.exit_code == 0  # Should succeed when no rules directory
+    result.check_exit_code(exit_code=0)
     # Should not create target file if no rules directory
-    target_file = temp_dir / "CLAUDE.md"
+    target_file = path / "CLAUDE.md"
     assert not target_file.exists()
-
-
-def test_validate_ignore_non_mdc_files(
-    dda: CliRunner,
-    temp_dir: Path,
-    create_cursor_rules: Callable[[dict[str, str], Path], None],
-    create_temp_path: Callable[[Path], None],
-) -> None:
-    """Test that validation ignores files that don't end with .mdc."""
-    cursor_rules_dir = temp_dir / ".cursor" / "rules"
-    target_file = temp_dir / "CLAUDE.md"
-
-    # Create .mdc file and other files that should be ignored
-    rules_data = {"valid-rule.mdc": "This is a valid rule."}
-    create_cursor_rules(rules_data, cursor_rules_dir)
-
-    # Create files that should be ignored
-    ignored_file = cursor_rules_dir / "ignored.txt"
-    create_temp_path(ignored_file)
-    ignored_file.write_text("This should be ignored", encoding="utf-8")
-
-    with temp_dir.as_cwd():
-        result = dda("validate", "ai-rules", "--fix")
-
-    assert result.exit_code == 0
-    assert target_file.exists()
-
-    content = target_file.read_text(encoding="utf-8")
-    assert f"@{cursor_rules_dir.relative_to(target_file.parent) / 'valid-rule.mdc'}" in content
-    assert "ignored.txt" not in content
 
 
 def test_validate_in_sync(
     dda: CliRunner,
-    temp_dir: Path,
-    create_cursor_rules: Callable[[dict[str, str], Path], None],
+    use_temp_fixture_folder: Callable[[str], Path],
 ) -> None:
     """Test validation when files are already in sync."""
-    cursor_rules_dir = temp_dir / ".cursor" / "rules"
+    path = use_temp_fixture_folder("simple_rules_no_target")
 
-    rules_data = {"test-rule.mdc": "This is a test rule."}
-
-    create_cursor_rules(rules_data, cursor_rules_dir)
-
-    with temp_dir.as_cwd():
+    with path.as_cwd():
         # First fix the files
         result = dda("validate", "ai-rules", "--fix")
-        assert result.exit_code == 0
+        result.check_exit_code(exit_code=0)
 
         # Then validate without fix
         result = dda("validate", "ai-rules")
-        assert result.exit_code == 0
+        result.check_exit_code(exit_code=0)
 
 
 def test_validate_out_of_sync(
     dda: CliRunner,
-    temp_dir: Path,
-    create_cursor_rules: Callable[[dict[str, str], Path], None],
-    create_temp_path: Callable[[Path], None],
+    use_temp_fixture_folder: Callable[[str], Path],
 ) -> None:
     """Test validation when files are out of sync."""
-    cursor_rules_dir = temp_dir / ".cursor" / "rules"
-    target_file = temp_dir / "CLAUDE.md"
+    path = use_temp_fixture_folder("out_of_sync")
 
-    rules_data = {"test-rule.mdc": "This is a test rule."}
-
-    create_cursor_rules(rules_data, cursor_rules_dir)
-
-    # Create an outdated target file
-    create_temp_path(target_file)
-    target_file.write_text("Old content", encoding="utf-8")
-
-    with temp_dir.as_cwd():
+    with path.as_cwd():
         result = dda("validate", "ai-rules")
-        assert result.exit_code == 1
-
-
-
-
-def test_validate_ignore_personal_rules(
-    dda: CliRunner,
-    temp_dir: Path,
-    create_cursor_rules: Callable[[dict[str, str], Path], None],
-) -> None:
-    """Test that personal rules are ignored."""
-    cursor_rules_dir = temp_dir / ".cursor" / "rules"
-    target_file = temp_dir / "CLAUDE.md"
-
-    rules_data = {"valid-rule.mdc": "This is a valid rule.", "personal/my-rule.mdc": "This should be ignored."}
-
-    create_cursor_rules(rules_data, cursor_rules_dir)
-
-    with temp_dir.as_cwd():
-        print(os.listdir("."))
-        result = dda("validate", "ai-rules", "--fix")
-
-    assert result.exit_code == 0
-    assert target_file.exists()
-
-    content = target_file.read_text(encoding="utf-8")
-    assert f"@{cursor_rules_dir.relative_to(target_file.parent) / 'valid-rule.mdc'}" in content
-    assert "my-rule.mdc" not in content
+        result.check_exit_code(exit_code=1)

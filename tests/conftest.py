@@ -107,34 +107,6 @@ def dda():
 def temp_dir(tmp_path: pathlib.Path) -> Path:
     return Path(tmp_path)
 
-@pytest.fixture(scope="session")
-def create_temp_path():
-    """Fixture to create and clean up temporary files and directories."""
-    created_paths: list[Path] = []
-
-    def _create_temp_path(location: Path, *, force_file: bool = False) -> None:
-        for parent in reversed(location.parents):
-            # Create and keep track of created parent directories for cleanup
-            if not parent.exists():
-                parent.mkdir()
-                created_paths.append(parent)
-
-        # Create the requested file or directory and keep track of it for cleanup
-        # Assume that if the file path does not have an extension, it is a directory
-        # The force_file flag can be used to override this behavior
-        if location.suffix == "" and not force_file:
-            location.mkdir()
-        else:
-            location.touch()
-        created_paths.append(location)
-
-    yield _create_temp_path
-    for path in reversed(created_paths):
-        if path.exists():
-            if path.is_dir():
-                path.rmdir()
-            else:
-                path.unlink()
 
 @pytest.fixture(scope="session", autouse=True)
 def isolation(default_git_author: GitAuthorConfig) -> Generator[Path, None, None]:
