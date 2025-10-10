@@ -44,22 +44,24 @@ def cmd(app: Application, *, should_fix: bool) -> None:
     unsynced_targets = []
     for target_file in targets_files:
         new_content = generate_content(rule_files, target_file)
-        with open(target_file, "r", encoding="utf-8") as f:
-            old_content = f.read()
-            diff = pretty_diff(old_content, new_content)
-            if not diff:
-                continue
-            app.display_info(f"Target file {target_file} is not in sync")
-            app.display_info(diff)
-            if should_fix:
-                with open(target_file, "w", encoding="utf-8") as f:
-                    f.write(new_content)
-                app.display_success(f"Successfully fixed {target_file}")
-            else:
+        old_content = ""
+        if target_file.exists() and target_file.is_file():
+            with open(target_file, "r", encoding="utf-8") as f:
+                old_content = f.read()
+        diff = pretty_diff(old_content, new_content)
+        if not diff:
+            continue
+        app.display_info(f"Target file {target_file} is not in sync")
+        app.display_info(diff)
+        if should_fix:
+            with open(target_file, "w", encoding="utf-8") as f:
+                f.write(new_content)
+            app.display_success(f"Successfully fixed {target_file}")
+        else:
                 unsynced_targets.append(str(target_file))
     if unsynced_targets:
         app.display_error(f"The following targets are not in sync: {', '.join(unsynced_targets)}")
-        return
+        app.abort()
     app.display_success("All targets are in sync")
 
 def get_rule_files(cursor_rules_dir: Path) -> list[Path]:
