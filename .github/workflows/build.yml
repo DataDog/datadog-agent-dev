@@ -32,17 +32,17 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
       with:
         fetch-depth: 0
 
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
       with:
         python-version: "${{ env.PYTHON_VERSION }}"
 
     - name: Install UV
-      uses: astral-sh/setup-uv@v6
+      uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
 
     - name: Install tools
       run: uv pip install --system hatch .
@@ -66,7 +66,7 @@ jobs:
       run: uv build
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
         name: python-artifacts
         path: dist/*
@@ -115,7 +115,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
       with:
         fetch-depth: 0
 
@@ -127,25 +127,25 @@ jobs:
         tar --strip-components=1 -xzf - -C $PYAPP_REPO
 
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
       with:
         python-version: "${{ env.PYTHON_VERSION }}"
 
     - name: Install UV
-      uses: astral-sh/setup-uv@v6
+      uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
 
     - name: Install Hatch
       run: |-
         uv pip install --system hatch
 
     - name: Install Rust toolchain
-      uses: dtolnay/rust-toolchain@stable
+      uses: dtolnay/rust-toolchain@5d458579430fc14a04a08a1e7d3694f545e91ce6 # stable
       with:
         targets: ${{ matrix.job.target }}
 
     - name: Set up cross compiling
       if: matrix.job.cross
-      uses: taiki-e/install-action@v2
+      uses: taiki-e/install-action@e30c5b8cfc4910a9f163907c8149ac1e54f1ab11 # v2.62.25
       with:
         tool: cross
 
@@ -162,7 +162,7 @@ jobs:
 
     - name: Download Python artifacts
       if: ${{ !startsWith(github.event.ref, 'refs/tags') }}
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
       with:
         name: python-artifacts
         path: dist
@@ -214,7 +214,7 @@ jobs:
 
     - name: Upload staged archive
       if: runner.os != 'Linux'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
         name: staged-${{ runner.os }}-${{ matrix.job.target }}
         path: packaging/*
@@ -222,7 +222,7 @@ jobs:
 
     - name: Upload archive
       if: runner.os == 'Linux'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
         name: standalone-${{ matrix.job.target }}
         path: packaging/*
@@ -241,21 +241,21 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
 
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
       with:
         python-version: "${{ env.PYTHON_VERSION }}"
 
     - name: Install UV
-      uses: astral-sh/setup-uv@v6
+      uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
 
     - name: Install PyOxidizer ${{ env.PYOXIDIZER_VERSION }}
       run: uv pip install --system pyoxidizer==${{ env.PYOXIDIZER_VERSION }}
 
     - name: Download staged binaries
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
       with:
         pattern: staged-${{ runner.os }}-*
         path: archives
@@ -300,14 +300,14 @@ jobs:
         mv "$universal_installer" "${{ env.APP_NAME }}-universal.exe"
 
     - name: Upload binaries
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
         name: standalone-${{ runner.os }}
         path: archives/*
         if-no-files-found: error
 
     - name: Upload installers
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
         name: installers-${{ runner.os }}
         path: installers/*
@@ -327,15 +327,15 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
 
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
       with:
         python-version: "${{ env.PYTHON_VERSION }}"
 
     - name: Install UV
-      uses: astral-sh/setup-uv@v6
+      uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
 
     - name: Install PyOxidizer ${{ env.PYOXIDIZER_VERSION }}
       run: uv pip install --system pyoxidizer==${{ env.PYOXIDIZER_VERSION }}
@@ -350,7 +350,7 @@ jobs:
         tar --strip-components=1 -xzf - -C /usr/local/bin "$ARCHIVE_NAME/rcodesign"
 
     - name: Download staged binaries
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
       with:
         pattern: staged-${{ runner.os }}-*
         path: archives
@@ -477,14 +477,14 @@ jobs:
         "signed/${{ steps.pkg.outputs.path }}"
 
     - name: Upload binaries
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
         name: standalone-${{ runner.os }}
         path: archives/*
         if-no-files-found: error
 
     - name: Upload installer
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
         name: installers-${{ runner.os }}
         path: signed/${{ steps.pkg.outputs.path }}
@@ -505,32 +505,32 @@ jobs:
 
     steps:
     - name: Download Python artifacts
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
       with:
         name: python-artifacts
         path: dist
 
     - name: Download binaries
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
       with:
         pattern: standalone-*
         path: archives
         merge-multiple: true
 
     - name: Download installers
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
       with:
         pattern: installers-*
         path: installers
         merge-multiple: true
 
     - name: Push Python artifacts to PyPI
-      uses: pypa/gh-action-pypi-publish@v1.12.4
+      uses: pypa/gh-action-pypi-publish@76f52bc884231f62b9a034ebfe128415bbaabdfc # v1.12.4
       with:
         skip-existing: true
 
     - name: Add assets to current release
-      uses: softprops/action-gh-release@v2
+      uses: softprops/action-gh-release@aec2ec56f94eb8180ceec724245f64ef008b89f5 # v2.4.0
       with:
         files: |-
           archives/*
