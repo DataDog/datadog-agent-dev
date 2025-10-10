@@ -1,7 +1,7 @@
 import difflib
 
 
-def pretty_diff(string1, string2) -> str:
+def pretty_diff(string1: str, string2: str) -> str:
     lines1 = string1.splitlines()
     lines2 = string2.splitlines()
 
@@ -15,4 +15,4 @@ def pretty_diff(string1, string2) -> str:
             result.append(f"\033[32m{line}\033[0m")  # Green for additions
         else:
             result.append(line)
-    return '\n'.join(result)
+    return "\n".join(result)

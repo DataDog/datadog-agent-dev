@@ -3,13 +3,12 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
-import os
 from typing import TYPE_CHECKING
 
 import click
-from dda.utils.diff import pretty_diff
 
 from dda.cli.base import dynamic_command, pass_app
+from dda.utils.diff import pretty_diff
 from dda.utils.fs import Path
 
 if TYPE_CHECKING:
@@ -17,6 +16,7 @@ if TYPE_CHECKING:
 
 CURSOR_RULES_DIR = Path(".cursor/rules")
 TARGETS_FILES = [Path("CLAUDE.md")]
+
 
 @dynamic_command(short_help="Validate AI rules are coherent between all the coding agent config files")
 @click.option(
@@ -46,7 +46,7 @@ def cmd(app: Application, *, should_fix: bool) -> None:
         new_content = generate_content(rule_files, target_file)
         old_content = ""
         if target_file.exists() and target_file.is_file():
-            with open(target_file, "r", encoding="utf-8") as f:
+            with open(target_file, encoding="utf-8") as f:
                 old_content = f.read()
         diff = pretty_diff(old_content, new_content)
         if not diff:
@@ -58,15 +58,16 @@ def cmd(app: Application, *, should_fix: bool) -> None:
                 f.write(new_content)
             app.display_success(f"Successfully fixed {target_file}")
         else:
-                unsynced_targets.append(str(target_file))
+            unsynced_targets.append(str(target_file))
     if unsynced_targets:
         app.display_error(f"The following targets are not in sync: {', '.join(unsynced_targets)}")
         app.abort()
     app.display_success("All targets are in sync")
 
+
 def get_rule_files(cursor_rules_dir: Path) -> list[Path]:
     """Find all rule files in cursor rules directory (recursively), excluding personal rules."""
-    return sorted(rule for rule in cursor_rules_dir.glob('**/*.mdc') if "personal" not in rule.parts)
+    return sorted(rule for rule in cursor_rules_dir.glob("**/*.mdc") if "personal" not in rule.parts)
 
 
 def generate_content(rule_files: list[Path], target_file: Path) -> str:
