@@ -163,7 +163,7 @@ class BuildMetadata(Struct, frozen=True):
             Any `-` characters will be replaced with `_`.
             If there are multiple components, a comma-separated list will be used, sorted alphabetically.
         - `short uuid` is the first section of the UUID.
-        - `source_info` is the short commit SHA, appended with `+` if there are working tree changes
+        - `source_info` is the short commit SHA, appended with `+{worktree diff hash}` if there are working tree changes.
         - `compatibility` is a platform identifier, e.g. `linux-arm64`.
             If there are multiple compatible platforms, the string `many` will be used instead.
             If the platform compatibility is `any, any`, the string `any` will be used instead.
@@ -186,7 +186,7 @@ class BuildMetadata(Struct, frozen=True):
         # Source info
         source_info = self.commit.sha1[:8]
         if self.worktree_diff:
-            source_info += "+"
+            source_info += f"+{self.worktree_diff.digest()[:8]}"
 
         # Compatibility
         if (OS.ANY, Arch.ANY) in self.compatible_platforms:

@@ -275,7 +275,7 @@ class TestMetadata:
                         ),
                     ]),
                 },
-                "dogstatd-12345678+-db5fec1a-linux-amd64",
+                "dogstatd-12345678+c7bcba44-db5fec1a-linux-amd64",
             ),
             (
                 {
