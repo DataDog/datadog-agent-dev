@@ -145,12 +145,26 @@ class TestMetadata:
         assert_metadata_equal(metadata, expected)
 
         # Test with passed compatible platforms
+        old_compatible_platforms = expected["compatible_platforms"]
         expected["compatible_platforms"] = {(OS.MACOS, Arch.ARM64), (OS.LINUX, Arch.AMD64)}
         metadata = BuildMetadata.this(
             ctx,
             app,
             Path("test.txt"),
             compatible_platforms=expected["compatible_platforms"],
+        )
+        assert_metadata_equal(metadata, expected)
+        expected["compatible_platforms"] = old_compatible_platforms
+
+        # Test with passed build components
+        expected["agent_components"] = {"otel-agent", "dogstatsd", "system-probe"}
+        expected["artifact_type"] = ArtifactType.DIST
+        expected["artifact_format"] = ArtifactFormat.DOCKER
+        metadata = BuildMetadata.this(
+            ctx,
+            app,
+            Path("test.txt"),
+            build_components=(expected["agent_components"], expected["artifact_type"], expected["artifact_format"]),
         )
         assert_metadata_equal(metadata, expected)
 
