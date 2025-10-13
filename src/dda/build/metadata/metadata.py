@@ -11,6 +11,7 @@ from uuid import UUID  # noqa: TC003 - needed outside of typecheck for msgspec d
 from msgspec import Struct
 
 from dda.build.metadata.enums import OS, Arch, ArtifactFormat, ArtifactType, Platform
+from dda.utils.fs import Path
 from dda.utils.git.changeset import ChangeSet  # noqa: TC001 - needed outside of typecheck for msgspec decode
 from dda.utils.git.commit import Commit  # noqa: TC001
 
@@ -20,7 +21,6 @@ if TYPE_CHECKING:
     from click import Context
 
     from dda.cli.application import Application
-    from dda.utils.fs import Path
 
 
 class BuildMetadata(Struct, frozen=True):
@@ -126,13 +126,16 @@ class BuildMetadata(Struct, frozen=True):
             file_hash=file_hash,
         )
 
-    def to_file(self, path: Path) -> None:
+    def to_file(self, path: Path | None = None) -> None:
         """
         Write the build metadata to a file.
         """
         from msgspec.json import encode
 
         from dda.types.hooks import enc_hook
+
+        if path is None:
+            path = Path(f"{self.get_canonical_filename()}.json")
 
         path.write_atomic(encode(self, enc_hook=enc_hook), "wb")
 
