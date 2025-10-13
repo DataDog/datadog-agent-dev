@@ -58,8 +58,8 @@ class BuildMetadata(Struct, frozen=True):
             msg = "Invalid format for the specified file hash"
             raise ValueError(msg)
 
-        os_set = {platform[0] for platform in self.compatible_platforms}
-        arch_set = {platform[1] for platform in self.compatible_platforms}
+        os_set = {platform.os for platform in self.compatible_platforms}
+        arch_set = {platform.arch for platform in self.compatible_platforms}
         if OS.ANY in os_set and len(os_set) > 1:
             msg = "Cannot use both the 'any' OS and other OSs in compatible platforms"
             raise ValueError(msg)
@@ -106,7 +106,7 @@ class BuildMetadata(Struct, frozen=True):
         agent_components, artifact_type, artifact_format = build_components
 
         # Build platform
-        build_platform = OS.from_alias(platform.system().lower()), Arch.from_alias(platform.machine())
+        build_platform = Platform.from_alias(platform.system().lower(), platform.machine())
         compatible_platforms = compatible_platforms or {build_platform}
 
         # Get worktree information - base commit and diff hash
@@ -189,15 +189,14 @@ class BuildMetadata(Struct, frozen=True):
             source_info += f"+{self.worktree_diff.digest()[:8]}"
 
         # Compatibility
-        if (OS.ANY, Arch.ANY) in self.compatible_platforms:
+        if Platform.ANY in self.compatible_platforms:
             compatibility = "any"
         elif len(self.compatible_platforms) > 1:
             compatibility = "many"
         else:
             # Also handles the case in which os is `any` or `arch` is `any`
             platform = self.compatible_platforms.copy().pop()
-            os, arch = platform
-            compatibility = f"{os}-{arch}"
+            compatibility = str(platform)
 
         # Artifact format identifier
         artifact_format_identifier = self.artifact_format.get_file_identifier()

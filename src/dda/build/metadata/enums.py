@@ -3,6 +3,9 @@
 # SPDX-License-Identifier: MIT
 
 from enum import StrEnum, auto
+from typing import ClassVar
+
+from msgspec import Struct
 
 
 class ArtifactType(StrEnum):
@@ -74,11 +77,6 @@ class ArtifactFormat(StrEnum):
         return ""
 
 
-# TODO: Merge this code with stuff in dda.utils.platform
-# we should have a single source of truth for OS and Arch identifiers and use it everywhere imo
-# @ofek or maybe we should keep this separate, since our build metadata might need to refer to many more platforms than platforms `dda` itself will be running on ?
-
-
 class OS(StrEnum):
     """
     The operating system for which the build artifact is intended.
@@ -144,5 +142,29 @@ class Arch(StrEnum):
                 raise ValueError(msg)
 
 
-# Define a "Platform" as a tuple of (OS, Arch)
-Platform = tuple[OS, Arch]
+class Platform(Struct, frozen=True):
+    """
+    The platform for which the build artifact is intended.
+    """
+
+    os: OS
+    arch: Arch
+
+    ANY: ClassVar["Platform"]
+
+    @classmethod
+    def from_alias(cls, os_alias: str, arch_alias: str) -> "Platform":
+        """
+        Get the Platform enum value from an alias.
+        """
+        return cls(os=OS.from_alias(os_alias), arch=Arch.from_alias(arch_alias))
+
+    def __str__(self) -> str:
+        """
+        Get the string representation of the platform.
+        """
+        return f"{self.os}-{self.arch}"
+
+
+# Initialize the ANY class variable after the class is fully defined
+Platform.ANY = Platform(os=OS.ANY, arch=Arch.ANY)

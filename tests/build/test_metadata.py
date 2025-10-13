@@ -12,7 +12,7 @@ from uuid import UUID
 import msgspec
 import pytest
 
-from dda.build.metadata.enums import OS, Arch, ArtifactFormat, ArtifactType
+from dda.build.metadata.enums import OS, Arch, ArtifactFormat, ArtifactType, Platform
 from dda.build.metadata.metadata import BuildMetadata
 from dda.config.model import dec_hook, enc_hook
 from dda.utils.fs import Path
@@ -38,8 +38,8 @@ def example_build_metadata(example_commit: Commit) -> BuildMetadata:
         artifact_format=ArtifactFormat.RPM,
         artifact_type=ArtifactType.DIST,
         commit=example_commit,
-        compatible_platforms={(OS.LINUX, Arch.AMD64), (OS.MACOS, Arch.ARM64)},
-        build_platform=(OS.MACOS, Arch.ARM64),
+        compatible_platforms={Platform(OS.LINUX, Arch.AMD64), Platform(OS.MACOS, Arch.ARM64)},
+        build_platform=Platform(OS.MACOS, Arch.ARM64),
         build_time=datetime.fromisoformat("2025-09-16T12:54:34.820949Z"),
         worktree_diff=ChangeSet([
             ChangedFile(
@@ -76,8 +76,8 @@ class TestMetadata:
             artifact_format=ArtifactFormat.BIN,
             artifact_type=ArtifactType.COMP,
             commit=commit,
-            compatible_platforms={(OS.LINUX, Arch.AMD64)},
-            build_platform=(OS.LINUX, Arch.AMD64),
+            compatible_platforms={Platform(OS.LINUX, Arch.AMD64)},
+            build_platform=Platform(OS.LINUX, Arch.AMD64),
             build_time=now,
             worktree_diff=ChangeSet({}),
             file_hash="0" * 64,
@@ -87,8 +87,8 @@ class TestMetadata:
             "artifact_format": ArtifactFormat.BIN,
             "artifact_type": ArtifactType.COMP,
             "commit": example_commit,
-            "compatible_platforms": {(OS.LINUX, Arch.AMD64)},
-            "build_platform": (OS.LINUX, Arch.AMD64),
+            "compatible_platforms": {Platform(OS.LINUX, Arch.AMD64)},
+            "build_platform": Platform(OS.LINUX, Arch.AMD64),
             "build_time": now,
             "worktree_diff": ChangeSet({}),
             "file_hash": "0" * 64,
@@ -108,7 +108,7 @@ class TestMetadata:
     def test_this(self, app, mocker, command_path, expected, example_commit):
         # Expected values
         expected_agent_components, expected_artifact_type, expected_artifact_format = expected
-        build_platform = (OS.from_alias(platform.system().lower()), Arch.from_alias(platform.machine()))
+        build_platform = Platform.from_alias(platform.system(), platform.machine())
         expected = {
             "id": UUID("00000000-0000-0000-0000-000000000000"),
             "agent_components": expected_agent_components,
@@ -146,7 +146,7 @@ class TestMetadata:
 
         # Test with passed compatible platforms
         old_compatible_platforms = expected["compatible_platforms"]
-        expected["compatible_platforms"] = {(OS.MACOS, Arch.ARM64), (OS.LINUX, Arch.AMD64)}
+        expected["compatible_platforms"] = {Platform(OS.MACOS, Arch.ARM64), Platform(OS.LINUX, Arch.AMD64)}
         metadata = BuildMetadata.this(
             ctx,
             app,
@@ -176,8 +176,8 @@ class TestMetadata:
                 "agent_components": {"core-agent"},
                 "artifact_format": ArtifactFormat.BIN,
                 "artifact_type": ArtifactType.COMP,
-                "compatible_platforms": {(OS.LINUX, Arch.AMD64)},
-                "build_platform": (OS.LINUX, Arch.AMD64),
+                "compatible_platforms": {Platform(OS.LINUX, Arch.AMD64)},
+                "build_platform": Platform(OS.LINUX, Arch.AMD64),
                 "build_time": datetime.now(UTC),
                 "file_hash": "0" * 64,
             },
@@ -186,8 +186,8 @@ class TestMetadata:
                 "agent_components": {"core-agent", "trace-agent"},
                 "artifact_format": ArtifactFormat.RPM,
                 "artifact_type": ArtifactType.DIST,
-                "compatible_platforms": {(OS.LINUX, Arch.AMD64), (OS.MACOS, Arch.ARM64)},
-                "build_platform": (OS.MACOS, Arch.ARM64),
+                "compatible_platforms": {Platform(OS.LINUX, Arch.AMD64), Platform(OS.MACOS, Arch.ARM64)},
+                "build_platform": Platform(OS.MACOS, Arch.ARM64),
                 "build_time": datetime.now(UTC),
                 "file_hash": "0" * 64,
             },
@@ -231,7 +231,11 @@ class TestMetadata:
         for key in encoded_keys:
             encoded_value, expected_value = encoded[key], expected[key]
             if isinstance(encoded_value, list):
-                assert sorted(encoded_value) == sorted(expected_value)
+                # We might have lists of dicts, so use dict.values() as a key for sorting
+                def sorter(x):
+                    return list(x.values()) if isinstance(x, dict) else x
+
+                assert sorted(encoded_value, key=sorter) == sorted(expected_value, key=sorter)
             else:
                 assert encoded_value == expected_value
 
@@ -249,8 +253,8 @@ class TestMetadata:
                     "agent_components": {"core-agent", "trace-agent"},
                     "artifact_format": ArtifactFormat.RPM,
                     "artifact_type": ArtifactType.DIST,
-                    "compatible_platforms": {(OS.LINUX, Arch.AMD64)},
-                    "build_platform": (OS.MACOS, Arch.ARM64),
+                    "compatible_platforms": {Platform(OS.LINUX, Arch.AMD64)},
+                    "build_platform": Platform(OS.MACOS, Arch.ARM64),
                     "build_time": datetime.now(UTC),
                     "file_hash": "0" * 64,
                 },
@@ -262,8 +266,8 @@ class TestMetadata:
                     "agent_components": {"dogstatd"},
                     "artifact_format": ArtifactFormat.BIN,
                     "artifact_type": ArtifactType.COMP,
-                    "compatible_platforms": {(OS.LINUX, Arch.AMD64)},
-                    "build_platform": (OS.MACOS, Arch.ARM64),
+                    "compatible_platforms": {Platform(OS.LINUX, Arch.AMD64)},
+                    "build_platform": Platform(OS.MACOS, Arch.ARM64),
                     "build_time": datetime.now(UTC),
                     "file_hash": "0" * 64,
                     "worktree_diff": ChangeSet([
@@ -284,12 +288,12 @@ class TestMetadata:
                     "artifact_format": ArtifactFormat.DOCKER,
                     "artifact_type": ArtifactType.DIST,
                     "compatible_platforms": {
-                        (OS.LINUX, Arch.AMD64),
-                        (OS.MACOS, Arch.ARM64),
-                        (OS.LINUX, Arch.ARM64),
-                        (OS.MACOS, Arch.AMD64),
+                        Platform(OS.LINUX, Arch.AMD64),
+                        Platform(OS.MACOS, Arch.ARM64),
+                        Platform(OS.LINUX, Arch.ARM64),
+                        Platform(OS.MACOS, Arch.AMD64),
                     },
-                    "build_platform": (OS.MACOS, Arch.ARM64),
+                    "build_platform": Platform(OS.MACOS, Arch.ARM64),
                     "build_time": datetime.now(UTC),
                     "file_hash": "0" * 64,
                 },
@@ -301,8 +305,8 @@ class TestMetadata:
                     "agent_components": {"core-agent"},
                     "artifact_format": ArtifactFormat.CFG,
                     "artifact_type": ArtifactType.OTHER,
-                    "compatible_platforms": {(OS.ANY, Arch.ANY)},
-                    "build_platform": (OS.MACOS, Arch.ARM64),
+                    "compatible_platforms": {Platform(OS.ANY, Arch.ANY)},
+                    "build_platform": Platform(OS.MACOS, Arch.ARM64),
                     "build_time": datetime.now(UTC),
                     "file_hash": "0" * 64,
                     "worktree_diff": ChangeSet([]),
