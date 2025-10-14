@@ -22,6 +22,7 @@ class AppEnvVars:
     VERBOSE = "DDA_VERBOSE"
     NO_DYNAMIC_DEPS = "DDA_NO_DYNAMIC_DEPS"
     TELEMETRY_API_KEY = "DDA_TELEMETRY_API_KEY"
+    FEATURE_FLAGS_CLIENT_TOKEN = "DDA_FEATURE_FLAGS_CLIENT_TOKEN"  # noqa: S105 This is not a hardcoded secret but the linter complains on it
     TELEMETRY_USER_MACHINE_ID = "DDA_TELEMETRY_USER_MACHINE_ID"
     # https://no-color.org
     NO_COLOR = "NO_COLOR"
