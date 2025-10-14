@@ -18,6 +18,7 @@ from dda.secrets.api import fetch_api_key, read_api_key, save_api_key
 from dda.telemetry.constants import DaemonEnvVars
 from dda.telemetry.daemon.handler import finalize_error
 from dda.utils.fs import Path
+from dda.utils.secrets.secrets import fetch_api_key, read_api_key, save_api_key
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
