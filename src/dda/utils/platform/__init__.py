@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import contextlib
 import os
+import platform
 import sys
 from functools import cache
 from typing import TYPE_CHECKING
@@ -174,3 +175,28 @@ def get_machine_id() -> UUID:
     import uuid
 
     return uuid.uuid5(uuid.NAMESPACE_DNS, str(uuid.getnode()))
+
+
+if sys.platform == "win32":
+
+    def get_os_name() -> str:
+        return f"{platform.system()} {platform.win32_ver()[0]} {platform.win32_edition()}"
+
+    def get_os_version() -> str:
+        return platform.win32_ver()[0]
+
+elif sys.platform == "darwin":
+
+    def get_os_name() -> str:
+        return f"{platform.system()} {platform.mac_ver()[0]}"
+
+    def get_os_version() -> str:
+        return platform.mac_ver()[0]
+
+else:
+
+    def get_os_name() -> str:
+        return platform.freedesktop_os_release()["NAME"]
+
+    def get_os_version() -> str:
+        return platform.freedesktop_os_release()["VERSION_ID"]

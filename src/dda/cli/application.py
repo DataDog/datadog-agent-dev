@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING, Any, NoReturn, Self
 
 from dda.cli.terminal import Terminal
 from dda.config.constants import AppEnvVars
+from dda.feature_flags.manager import CIFeatureFlagManager, LocalFeatureFlagManager
+from dda.utils.ci import running_in_ci
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -129,9 +131,10 @@ class Application(Terminal):
 
     @cached_property
     def features(self) -> FeatureFlagManager:
-        from dda.feature_flags.manager import FeatureFlagManager
-
-        return FeatureFlagManager(self)
+        self.display_info(f"IS IT RUNNING IN CI {running_in_ci()}")
+        if running_in_ci():
+            return CIFeatureFlagManager(self)
+        return LocalFeatureFlagManager(self)
 
     @cached_property
     def dynamic_deps_allowed(self) -> bool:
