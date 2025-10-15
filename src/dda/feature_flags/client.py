@@ -1,10 +1,13 @@
 # SPDX-FileCopyrightText: 2025-present Datadog, Inc. <dev@datadoghq.com>
 #
 # SPDX-License-Identifier: MIT
-import json
-from typing import Any, Optional
+from __future__ import annotations
 
-from dda.utils.network.http.client import get_http_client
+import json
+from typing import TYPE_CHECKING, Any, Optional
+
+if TYPE_CHECKING:
+    from dda.cli.application import Application
 
 
 class DatadogFeatureFlag:
@@ -15,10 +18,7 @@ class DatadogFeatureFlag:
     /Users/kevin.fairise/dd/openfeature-js-client/packages/browser/src/transport/fetchConfiguration.ts
     """
 
-    def __init__(
-        self,
-        client_token: str,
-    ):
+    def __init__(self, client_token: str | None, app: Application):
         """
         Initialize the Datadog Feature Flag client
 
@@ -32,11 +32,11 @@ class DatadogFeatureFlag:
             flagging_proxy: Optional proxy URL for flagging configuration requests
             custom_headers: Optional custom headers to add to requests
         """
-        self.client_token = client_token
-        self.env = "Production"
-        self.endpoint_url = f"https://preview.ff-cdn.datadoghq.com/precompute-assignments?dd_env={self.env}"
-        self.application_id = "dda"
-        self.__client = get_http_client()
+        self.__client_token = client_token
+        self.__env = "Production"
+        self.__endpoint_url = f"https://preview.ff-cdn.datadoghq.com/precompute-assignments?dd_env={self.__env}"
+        self.__application_id = "dda"
+        self.__app = app
 
     def _fetch_flags(
         self, targeting_key: str = "", targeting_attributes: Optional[dict[str, Any]] = None
@@ -54,14 +54,17 @@ class DatadogFeatureFlag:
         Raises:
             requests.HTTPError: If the API request fails
         """
+        if not self.__client_token:
+            return {}
+
         # Build headers
         headers = {
             "Content-Type": "application/vnd.api+json",
-            "dd-client-token": self.client_token,
+            "dd-client-token": self.__client_token,
         }
 
-        if self.application_id:
-            headers["dd-application-id"] = self.application_id
+        if self.__application_id:
+            headers["dd-application-id"] = self.__application_id
 
         # Stringify all targeting attributes
         stringified_attributes = {}
@@ -78,7 +81,7 @@ class DatadogFeatureFlag:
                 "type": "precompute-assignments-request",
                 "attributes": {
                     "env": {
-                        "dd_env": self.env,
+                        "dd_env": self.__env,
                     },
                     "sdk": {
                         "name": "python-example",
@@ -94,8 +97,9 @@ class DatadogFeatureFlag:
 
         try:
             # Make the request
-            response = self.__client.post(self.endpoint_url, headers=headers, json=payload, timeout=10)
-        except Exception:  # noqa: BLE001
+            response = self.__app.http.client().post(self.__endpoint_url, headers=headers, json=payload, timeout=10)
+        except Exception as e:  # noqa: BLE001
+            self.__app.display_warning(f"Error fetching flags: {e}")
             return {}
 
         return response.json()

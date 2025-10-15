@@ -37,12 +37,12 @@ def save_client_token(client_token: str) -> None:
 
 
 def fetch_api_key() -> str:
-    from dda.utils.secrets.vault import fetch_secret
+    from dda.secrets.vault import fetch_secret
 
     return fetch_secret("group/subproduct-agent/deva", "telemetry-api-key")
 
 
 def fetch_client_token() -> str:
-    from dda.utils.secrets.vault import fetch_secret
+    from dda.secrets.vault import fetch_secret
 
     return fetch_secret("group/subproduct-agent/deva", "feature-flags-client-token")

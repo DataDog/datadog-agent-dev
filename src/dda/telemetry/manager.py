@@ -7,7 +7,7 @@ import os
 from functools import cached_property
 from typing import TYPE_CHECKING
 
-from dda.utils.user import User
+from dda.user.datadog import User
 
 if TYPE_CHECKING:
     from dda.cli.application import Application
@@ -78,7 +78,7 @@ class TelemetryManager:
 
         from contextlib import suppress
 
-        from dda.utils.secrets.secrets import fetch_api_key, read_api_key, save_api_key
+        from dda.secrets.api import fetch_api_key, read_api_key, save_api_key
 
         api_key: str | None = None
         with suppress(Exception):

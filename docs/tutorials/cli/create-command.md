@@ -134,3 +134,62 @@ $ dda agent-release data
 │                   │ └───┴────────┘ │
 ...
 ```
+
+## Using feature flags
+
+You can guard behavior behind feature flags using the `app.features` manager. It evaluates a remote flag for the current user/machine with a default fallback.
+
+
+Update the command to check a flag before performing the network request:
+
+/// tab | :octicons-file-code-16: src/dda/cli/agent_release/data/__init__.py
+```python hl_lines="15 23-28 31-36"
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from dda.cli.base import dynamic_command, pass_app
+
+if TYPE_CHECKING:
+    from dda.cli.application import Application
+
+
+@dynamic_command(
+    short_help="Show Agent release data",
+    features=["http"],
+)
+@pass_app
+def cmd(app: Application) -> None:
+    """
+    Show Agent release data.
+    """
+    # Check a feature flag to enable this command's behavior
+    # Replace "agent-release-enabled" with your flag key
+    enabled = app.features.enabled(
+        "agent-release-enabled",
+        default_value=True,
+        extra_attributes={"module": "agent-release"},
+    )
+    if not enabled:
+        app.display_warning("This command is currently disabled by feature flag.")
+        return
+
+    import httpx
+
+    base = "https://raw.githubusercontent.com"
+    repo = "DataDog/datadog-agent"
+    branch = "main"
+    path = "release.json"
+    with app.status("Fetching Agent release data"):
+        response = httpx.get(f"{base}/{repo}/{branch}/{path}")
+
+    response.raise_for_status()
+    app.display_table(response.json())
+```
+///
+
+/// note
+`app.features.enabled(key, default_value, extra_attributes)` returns the evaluated value for `key`, or `default_value` if the flag is not found. The client automatically includes base context like platform, CI, environment, and user; you can add `extra_attributes` to refine targeting.
+///
+
+

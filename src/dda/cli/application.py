@@ -128,7 +128,7 @@ class Application(Terminal):
         return TelemetryManager(self)
 
     @cached_property
-    def ff(self) -> FeatureFlagManager:
+    def features(self) -> FeatureFlagManager:
         from dda.feature_flags.manager import FeatureFlagManager
 
         return FeatureFlagManager(self)
