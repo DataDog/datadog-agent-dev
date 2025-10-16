@@ -4,7 +4,11 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
+
+from httpx import HTTPError
+
+from dda._version import __version__
 
 if TYPE_CHECKING:
     from dda.cli.application import Application
@@ -13,46 +17,34 @@ if TYPE_CHECKING:
 class DatadogFeatureFlag:
     """
     Direct HTTP client for Datadog Feature Flag API
-
-    Based on the JavaScript implementation at:
-    /Users/kevin.fairise/dd/openfeature-js-client/packages/browser/src/transport/fetchConfiguration.ts
     """
 
     def __init__(self, client_token: str | None, app: Application):
         """
         Initialize the Datadog Feature Flag client
 
-        Args:
+        Parameters:
             client_token: Your Datadog client token (starts with 'pub_')
-            site: Datadog site (e.g., 'datadoghq.com', 'datadoghq.eu')
-            env: Environment name
-            application_id: Your application ID for RUM attribution
-            service: Service name
-            version: Application version
-            flagging_proxy: Optional proxy URL for flagging configuration requests
-            custom_headers: Optional custom headers to add to requests
+            app: The application instance
         """
         self.__client_token = client_token
         self.__env = "Production"
-        self.__endpoint_url = f"https://preview.ff-cdn.datadoghq.com/precompute-assignments?dd_env={self.__env}"
-        self.__application_id = "dda"
+        self.__url = f"https://preview.ff-cdn.datadoghq.com/precompute-assignments?dd_env={self.__env}"
+        self.__app_id = "dda"
         self.__app = app
 
     def _fetch_flags(
-        self, targeting_key: str = "", targeting_attributes: Optional[dict[str, Any]] = None
+        self, targeting_key: str = "", targeting_attributes: dict[str, Any] | None = None
     ) -> dict[str, Any]:
         """
         Fetch flag configuration from Datadog API
 
-        Args:
+        Parameters:
             targeting_key: The targeting key (typically user ID)
             targeting_attributes: Additional targeting attributes (context)
 
         Returns:
             Dictionary containing the flag configuration response
-
-        Raises:
-            requests.HTTPError: If the API request fails
         """
         if not self.__client_token:
             return {}
@@ -63,8 +55,7 @@ class DatadogFeatureFlag:
             "dd-client-token": self.__client_token,
         }
 
-        if self.__application_id:
-            headers["dd-application-id"] = self.__application_id
+        headers["dd-application-id"] = self.__app_id
 
         # Stringify all targeting attributes
         stringified_attributes = {}
@@ -84,8 +75,8 @@ class DatadogFeatureFlag:
                         "dd_env": self.__env,
                     },
                     "sdk": {
-                        "name": "python-example",
-                        "version": "0.1.0",
+                        "name": "dda",
+                        "version": __version__,
                     },
                     "subject": {
                         "targeting_key": targeting_key,
@@ -97,34 +88,28 @@ class DatadogFeatureFlag:
 
         try:
             # Make the request
-            response = self.__app.http.client().post(self.__endpoint_url, headers=headers, json=payload, timeout=10)
-        except Exception as e:  # noqa: BLE001
+            response = self.__app.http.client().post(self.__url, headers=headers, json=payload)
+        except HTTPError as e:
             self.__app.display_warning(f"Error fetching flags: {e}")
             return {}
 
         return response.json()
 
-    def get_flag_value(self, flag_key: str, context: dict[str, Any]) -> Any:
+    def get_flag_value(self, flag: str, targeting_key: str, targeting_attributes: dict[str, Any]) -> bool | None:
         """
         Get a flag value by key
 
-        Args:
-            flag_key: The flag key to evaluate
-            default_value: Default value if flag is not found
-            targeting_key: The targeting key (typically user ID)
-            targeting_attributes: Additional targeting attributes
+        Parameters:
+            flag: The flag key to evaluate
+            targeting_key: The targeting key to use for feature flag evaluation
+            targeting_attributes: The targeting attributes to use for feature flag evaluation
 
         Returns:
-            The flag value or default value
+            The flag value or None if the flag is not found
         """
-        try:
-            response = self._fetch_flags(context["targeting_key"], context["targeting_attributes"])
-            # Navigate the response structure
-            flags = response.get("data", {}).get("attributes", {}).get("flags", {})
-            if flag_key in flags:
-                return flags[flag_key].get("variationValue", None)
-
-        except Exception:  # noqa: BLE001
-            return None
+        response = self._fetch_flags(targeting_key, targeting_attributes)
+        flags = response.get("data", {}).get("attributes", {}).get("flags", {})
+        if flag in flags:
+            return flags[flag].get("variationValue", None)
 
         return None

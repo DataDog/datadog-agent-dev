@@ -11,7 +11,7 @@ from dda.config.constants import AppEnvVars
 
 KEYRING_SERVICE = "dda"
 KEYRING_ITEM_API_KEY = "telemetry_api_key"
-KEYRING_ITEM_CLIENT_TOKEN = "feature_flags_client_token"  # noqa: S105 This is not a hardcoded secret but the linter complains on it
+KEYRING_ITEM_CLIENT_TOKEN = "feature_flags_client_token"  # noqa: S105
 
 
 def read_api_key() -> str | None:

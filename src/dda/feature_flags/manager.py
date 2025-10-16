@@ -29,7 +29,12 @@ class FeatureFlagManager:
     def __init__(self, app: Application) -> None:
         self.__app = app
 
-        self.__ff_client = DatadogFeatureFlag(self.__client_token, self.__app)
+        self.__client = DatadogFeatureFlag(self.__client_token, self.__app)
+
+        # Manually implemented cache to avoid calling several time Feature flag backend on the same flag evaluation.
+        # Cache key is a tuple of the flag, entity and scopes, to make it hashable.
+        # For example after calling `enabled("test-flag", default=False, scopes={"user": "user1"}),
+        # the cache will contain the result for the tuple ("test-flag", "entity", (("user", "user1"),)).
         self.__cache: dict[tuple[str, str, tuple[tuple[str, str], ...]], Any] = {}
 
     @cached_property
@@ -51,7 +56,7 @@ class FeatureFlagManager:
     def __user(self) -> FeatureFlagUser:
         return FeatureFlagUser(self.__app.config)
 
-    def __get_targeting_key(self) -> str:
+    def __get_entity(self) -> str:
         if running_in_ci():
             import os
 
@@ -59,49 +64,36 @@ class FeatureFlagManager:
 
         return self.__user.machine_id
 
-    def enabled(
-        self, flag_key: str, *, default_value: bool = False, extra_attributes: Optional[dict[str, str]] = None
-    ) -> bool:
+    def enabled(self, flag: str, *, default: bool = False, scopes: Optional[dict[str, str]] = None) -> bool:
         if not self.__client_token:
             self.__app.display_debug("No client token found")
-            return default_value
+            return default
 
-        targeting_key = self.__get_targeting_key()
-        targeting_attributes = self.__get_base_context()
-        if extra_attributes is not None:
-            targeting_attributes.update(extra_attributes)
+        entity = self.__get_entity()
+        base_scopes = self.__get_base_scopes()
+        if scopes is not None:
+            base_scopes.update(scopes)
 
-        attributes_items = targeting_attributes.items()
+        attributes_items = base_scopes.items()
         tuple_attributes = tuple(((key, value) for key, value in sorted(attributes_items)))
 
-        self.__app.display_debug(
-            f"Checking flag {flag_key} with targeting key {targeting_key} and targeting attributes {tuple_attributes}"
-        )
-        flag_value = self.__check_flag(flag_key, targeting_key, tuple_attributes)
+        self.__app.display_debug(f"Checking flag {flag} with entity {entity} and scopes {base_scopes}")
+        flag_value = self.__check_flag(flag, entity, tuple_attributes)
         if flag_value is None:
-            return default_value
+            return default
         return flag_value
 
-    def __check_flag(
-        self, flag_key: str, targeting_key: str, targeting_attributes: tuple[tuple[str, str], ...]
-    ) -> bool:
-        cache_key = (flag_key, targeting_key, targeting_attributes)
+    def __check_flag(self, flag: str, entity: str, scopes: tuple[tuple[str, str], ...]) -> bool | None:
+        cache_key = (flag, entity, scopes)
         if cache_key in self.__cache:
             return self.__cache[cache_key]
 
-        context = {
-            "targeting_key": targeting_key,
-            "targeting_attributes": dict(targeting_attributes),
-        }
-
-        flag_value = self.__ff_client.get_flag_value(flag_key, context)
+        flag_value = self.__client.get_flag_value(flag, entity, dict(scopes))
         self.__cache[cache_key] = flag_value
         return flag_value
 
-    def __get_base_context(self) -> dict[str, str]:
+    def __get_base_scopes(self) -> dict[str, str]:
         return {
-            "platform": "toto",
             "ci": "true" if running_in_ci() else "false",
-            "env": "prod",
             "user": self.__user.email,
         }

@@ -167,8 +167,8 @@ def cmd(app: Application) -> None:
     # Replace "agent-release-enabled" with your flag key
     enabled = app.features.enabled(
         "agent-release-enabled",
-        default_value=True,
-        extra_attributes={"module": "agent-release"},
+        default=True,
+        scopes={"module": "agent-release"},
     )
     if not enabled:
         app.display_warning("This command is currently disabled by feature flag.")
@@ -189,7 +189,7 @@ def cmd(app: Application) -> None:
 ///
 
 /// note
-`app.features.enabled(key, default_value, extra_attributes)` returns the evaluated value for `key`, or `default_value` if the flag is not found. The client automatically includes base context like platform, CI, environment, and user; you can add `extra_attributes` to refine targeting.
+`app.features.enabled(key, default, scopes)` returns the evaluated value for `key`, or `default` if the flag is not found. The client automatically includes base context like platform, CI, environment, and user; you can add `scopes` to refine targeting.
 ///
 
 
