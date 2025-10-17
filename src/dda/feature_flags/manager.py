@@ -39,6 +39,9 @@ class FeatureFlagManager:
 
     @cached_property
     def __client_token(self) -> str | None:
+        if running_in_ci():  # We do not support feature flags token retrieval in the CI yet.
+            return None
+
         from contextlib import suppress
 
         from dda.secrets.api import fetch_client_token, read_client_token, save_client_token
