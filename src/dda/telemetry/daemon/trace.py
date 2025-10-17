@@ -15,36 +15,12 @@ from typing import TYPE_CHECKING, Any, Self
 from dda.telemetry.constants import SERVICE_NAME, SERVICE_VERSION
 from dda.telemetry.daemon.base import TelemetryClient
 from dda.utils.network.http.client import get_http_client
-from dda.utils.platform import get_machine_id
+from dda.utils.platform import get_machine_id, get_os_name, get_os_version
 
 if TYPE_CHECKING:
     from types import TracebackType
 
 URL = "https://instrumentation-telemetry-intake.datadoghq.com/api/v2/apmtelemetry"
-
-if sys.platform == "win32":
-
-    def get_os_name() -> str:
-        return f"{platform.system()} {platform.win32_ver()[0]} {platform.win32_edition()}"
-
-    def get_os_version() -> str:
-        return platform.win32_ver()[0]
-
-elif sys.platform == "darwin":
-
-    def get_os_name() -> str:
-        return f"{platform.system()} {platform.mac_ver()[0]}"
-
-    def get_os_version() -> str:
-        return platform.mac_ver()[0]
-
-else:
-
-    def get_os_name() -> str:
-        return platform.freedesktop_os_release()["NAME"]
-
-    def get_os_version() -> str:
-        return platform.freedesktop_os_release()["VERSION_ID"]
 
 
 @cache
