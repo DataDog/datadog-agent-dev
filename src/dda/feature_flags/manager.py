@@ -28,12 +28,6 @@ class FeatureFlagManager:
 
     def __init__(self, app: Application) -> None:
         self.__app = app
-<<<<<<< HEAD
-=======
-
-        self.__client = DatadogFeatureFlag(self.__client_token, self.__app)
-
->>>>>>> d7a0c79 (Address comments round 2)
         # Manually implemented cache to avoid calling several time Feature flag backend on the same flag evaluation.
         # Cache key is a tuple of the flag, entity and scopes, to make it hashable.
         # For example after calling `enabled("test-flag", default=False, scopes={"user": "user1"}),
