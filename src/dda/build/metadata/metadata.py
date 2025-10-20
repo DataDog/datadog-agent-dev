@@ -114,7 +114,7 @@ class BuildMetadata(Struct, frozen=True):
         commit = app.tools.git.get_commit()
 
         # Calculate file hash
-        file_hash = calculate_file_hash(file)
+        file_hash = file.hexdigest(algorithm="sha256")
 
         return cls(
             id=artifact_id,
@@ -241,12 +241,3 @@ def generate_build_id() -> UUID:
     from uuid import uuid4
 
     return uuid4()
-
-
-def calculate_file_hash(file: Path) -> str:
-    """
-    Calculate the hash of a file.
-    """
-    import hashlib
-
-    return hashlib.sha256(file.read_bytes(), usedforsecurity=False).hexdigest()

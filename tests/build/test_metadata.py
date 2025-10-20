@@ -130,7 +130,7 @@ class TestMetadata:
         mocker.patch("dda.build.metadata.metadata.generate_build_id", return_value=expected["id"])
         mocker.patch("dda.tools.git.Git.get_commit", return_value=expected["commit"])
         mocker.patch("dda.tools.git.Git.get_changes", return_value=expected["worktree_diff"])
-        mocker.patch("dda.build.metadata.metadata.calculate_file_hash", return_value=expected["file_hash"])
+        mocker.patch("dda.utils.fs.Path.hexdigest", return_value=expected["file_hash"])
 
         # Can't directly patch datetime.now because it's a builtin
         patched_datetime = mocker.patch("dda.build.metadata.metadata.datetime")
