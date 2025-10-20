@@ -159,7 +159,7 @@ class TestMetadata:
         # Test with passed build components
         expected["agent_components"] = {"otel-agent", "dogstatsd", "system-probe"}
         expected["artifact_type"] = ArtifactType.DIST
-        expected["artifact_format"] = ArtifactFormat.DOCKER
+        expected["artifact_format"] = ArtifactFormat.OCI
         metadata = BuildMetadata.this(
             ctx,
             app,
@@ -285,7 +285,7 @@ class TestMetadata:
                 {
                     "id": UUID("db5fec1a-7fce-42e9-a29b-13a8cc6a5493"),
                     "agent_components": {"core-agent", "system-probe", "dogstatsd"},
-                    "artifact_format": ArtifactFormat.DOCKER,
+                    "artifact_format": ArtifactFormat.OCI,
                     "artifact_type": ArtifactType.DIST,
                     "compatible_platforms": {
                         Platform(OS.LINUX, Arch.AMD64),
@@ -297,21 +297,7 @@ class TestMetadata:
                     "build_time": datetime.now(UTC),
                     "file_hash": "0" * 64,
                 },
-                "core,dogstatsd,system_probe-12345678-db5fec1a-many-dockerimage.tar.gz",
-            ),
-            (
-                {
-                    "id": UUID("db5fec1a-7fce-42e9-a29b-13a8cc6a5493"),
-                    "agent_components": {"core-agent"},
-                    "artifact_format": ArtifactFormat.CFG,
-                    "artifact_type": ArtifactType.OTHER,
-                    "compatible_platforms": {Platform(OS.ANY, Arch.ANY)},
-                    "build_platform": Platform(OS.MACOS, Arch.ARM64),
-                    "build_time": datetime.now(UTC),
-                    "file_hash": "0" * 64,
-                    "worktree_diff": ChangeSet([]),
-                },
-                "core-12345678-db5fec1a-any-config.tar.gz",
+                "core,dogstatsd,system_probe-12345678-db5fec1a-many-oci.tar.gz",
             ),
         ],
     )

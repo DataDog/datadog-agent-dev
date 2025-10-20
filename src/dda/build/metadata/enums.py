@@ -13,12 +13,10 @@ class ArtifactType(StrEnum):
     The type of the build artifact, one of:
     - `comp` (component)
     - `dist` (distribution)
-    - `other` for miscellaneous artifacts: source code tarball, configuration files, etc.
     """
 
     COMP = auto()
     DIST = auto()
-    OTHER = auto()
 
 
 class ArtifactFormat(StrEnum):
@@ -27,12 +25,10 @@ class ArtifactFormat(StrEnum):
     """
 
     BIN = auto()
-    SRC = auto()  # Source code tarball
     DEB = auto()
     RPM = auto()
     MSI = auto()
-    CFG = auto()  # Configuration files tarball
-    DOCKER = auto()  # Docker container image
+    OCI = auto()  # Docker container image
 
     def validate_for_type(self, artifact_type: ArtifactType) -> None:
         """
@@ -40,16 +36,12 @@ class ArtifactFormat(StrEnum):
         """
         match artifact_type:
             case ArtifactType.COMP:
-                if self not in {self.BIN, self.SRC}:
+                if self is not self.BIN:
                     msg = f"Invalid artifact format for component artifact: {self}"
                     raise ValueError(msg)
             case ArtifactType.DIST:
-                if self not in {self.DEB, self.RPM, self.MSI, self.DOCKER}:
+                if self not in {self.DEB, self.RPM, self.MSI, self.OCI}:
                     msg = f"Invalid artifact format for distribution artifact: {self}"
-                    raise ValueError(msg)
-            case ArtifactType.OTHER:
-                if self not in {self.SRC, self.CFG}:
-                    msg = f"Invalid artifact format for other artifact: {self}"
                     raise ValueError(msg)
 
     def get_file_identifier(self) -> str:
@@ -61,18 +53,14 @@ class ArtifactFormat(StrEnum):
         match self:
             case self.BIN:
                 return ""
-            case self.SRC:
-                return "-source.tar.gz"
             case self.DEB:
                 return ".deb"
             case self.RPM:
                 return ".rpm"
             case self.MSI:
                 return ".msi"
-            case self.CFG:
-                return "-config.tar.gz"
-            case self.DOCKER:
-                return "-dockerimage.tar.gz"
+            case self.OCI:
+                return "-oci.tar.gz"
         # Adding a default return value to satisfy mypy, even though we should never reach here
         return ""
 
