@@ -156,17 +156,17 @@ class BuildMetadata(Struct, frozen=True):
     def get_canonical_filename(self) -> str:
         """
         Get a predictable filename corresponding to the artifact represented by this metadata.
-        Schema is: `{components}-{source info}-{short uuid}-{compatibility}-{artifact format identifier}`.
+        Schema is: `{components}-{compatibility}-{source info}-{short uuid}-{artifact format identifier}`.
         Where:
         - `components` is the name of the agent component.
             For components named `x-agent`, we will use `x` instead, omitting the `-agent` suffix.
             Any `-` characters will be replaced with `_`.
             If there are multiple components, a comma-separated list will be used, sorted alphabetically.
-        - `short uuid` is the first section of the UUID.
-        - `source_info` is the short commit SHA, appended with `+{worktree diff hash}` if there are working tree changes.
         - `compatibility` is a platform identifier, e.g. `linux-arm64`.
             If there are multiple compatible platforms, the string `many` will be used instead.
             If the platform compatibility is `any, any`, the string `any` will be used instead.
+        - `source_info` is the short commit SHA, appended with `+{worktree diff hash}` if there are any working tree changes.
+        - `short uuid` is the first section of the UUID attributed to the artifact.
         - `artifact_format_identifier` gives info on the contents of the artifact when it is a dist. See `ArtifactFormat.get_file_identifier` for more details.
         NOTE: For binaries, we do not use `.bin`, instead leaving the file extension blank.
 
@@ -200,7 +200,7 @@ class BuildMetadata(Struct, frozen=True):
 
         # Artifact format identifier
         artifact_format_identifier = self.artifact_format.get_file_identifier()
-        return f"{components}-{source_info}-{short_uuid}-{compatibility}{artifact_format_identifier}"
+        return f"{components}-{compatibility}-{source_info}-{short_uuid}{artifact_format_identifier}"
 
 
 def get_build_components(command: str) -> tuple[set[str], ArtifactType, ArtifactFormat]:

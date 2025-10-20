@@ -258,7 +258,7 @@ class TestMetadata:
                     "build_time": datetime.now(UTC),
                     "file_hash": "0" * 64,
                 },
-                "core,trace-12345678-db5fec1a-linux-amd64.rpm",
+                "core,trace-linux-amd64-12345678-db5fec1a.rpm",
             ),
             (
                 {
@@ -279,7 +279,7 @@ class TestMetadata:
                         ),
                     ]),
                 },
-                "dogstatd-12345678+c7bcba44-db5fec1a-linux-amd64",
+                "dogstatd-linux-amd64-12345678+c7bcba44-db5fec1a",
             ),
             (
                 {
@@ -297,7 +297,7 @@ class TestMetadata:
                     "build_time": datetime.now(UTC),
                     "file_hash": "0" * 64,
                 },
-                "core,dogstatsd,system_probe-12345678-db5fec1a-many-oci.tar.gz",
+                "core,dogstatsd,system_probe-many-12345678-db5fec1a-oci.tar.gz",
             ),
         ],
     )
