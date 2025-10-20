@@ -8,63 +8,6 @@ from typing import ClassVar
 from msgspec import Struct
 
 
-class ArtifactType(StrEnum):
-    """
-    The type of the build artifact, one of:
-    - `comp` (component)
-    - `dist` (distribution)
-    """
-
-    COMP = auto()
-    DIST = auto()
-
-
-class ArtifactFormat(StrEnum):
-    """
-    The format of the build artifact.
-    """
-
-    BIN = auto()
-    DEB = auto()
-    RPM = auto()
-    MSI = auto()
-    OCI = auto()  # Docker container image
-
-    def validate_for_type(self, artifact_type: ArtifactType) -> None:
-        """
-        Validate that the artifact format is valid for the given artifact type.
-        """
-        match artifact_type:
-            case ArtifactType.COMP:
-                if self is not self.BIN:
-                    msg = f"Invalid artifact format for component artifact: {self}"
-                    raise ValueError(msg)
-            case ArtifactType.DIST:
-                if self not in {self.DEB, self.RPM, self.MSI, self.OCI}:
-                    msg = f"Invalid artifact format for distribution artifact: {self}"
-                    raise ValueError(msg)
-
-    def get_file_identifier(self) -> str:
-        """
-        Get the file identifier for the artifact format.
-        This is the string that will be used to identify the artifact format in the filename.
-        This usually corresponds to the file extension, but can include some other charactres before it.
-        """
-        match self:
-            case self.BIN:
-                return ""
-            case self.DEB:
-                return ".deb"
-            case self.RPM:
-                return ".rpm"
-            case self.MSI:
-                return ".msi"
-            case self.OCI:
-                return "-oci.tar.gz"
-        # Adding a default return value to satisfy mypy, even though we should never reach here
-        return ""
-
-
 class OS(StrEnum):
     """
     The operating system for which the build artifact is intended.

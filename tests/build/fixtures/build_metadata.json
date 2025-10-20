@@ -4,7 +4,6 @@
         "trace-agent",
         "core-agent"
     ],
-    "artifact_type": "dist",
     "artifact_format": "rpm",
     "commit": {
         "sha1": "1234567890123456789012345678901234567890",

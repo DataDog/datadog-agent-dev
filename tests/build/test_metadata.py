@@ -12,7 +12,8 @@ from uuid import UUID
 import msgspec
 import pytest
 
-from dda.build.metadata.enums import OS, Arch, ArtifactFormat, ArtifactType, Platform
+from dda.build.metadata.enums import OS, Arch, Platform
+from dda.build.metadata.formats import ArtifactFormat
 from dda.build.metadata.metadata import BuildMetadata
 from dda.config.model import dec_hook, enc_hook
 from dda.utils.fs import Path
@@ -36,7 +37,6 @@ def example_build_metadata(example_commit: Commit) -> BuildMetadata:
         id=UUID("00000000-0000-0000-0000-123456780000"),
         agent_components={"core-agent", "trace-agent"},
         artifact_format=ArtifactFormat.RPM,
-        artifact_type=ArtifactType.DIST,
         commit=example_commit,
         compatible_platforms={Platform(OS.LINUX, Arch.AMD64), Platform(OS.MACOS, Arch.ARM64)},
         build_platform=Platform(OS.MACOS, Arch.ARM64),
@@ -58,7 +58,6 @@ def assert_metadata_equal(metadata: BuildMetadata, expected: BuildMetadata | dic
 
     assert metadata.agent_components == get(expected, "agent_components")  # type: ignore[arg-type]
     assert metadata.artifact_format == get(expected, "artifact_format")  # type: ignore[arg-type]
-    assert metadata.artifact_type == get(expected, "artifact_type")  # type: ignore[arg-type]
     assert metadata.commit == get(expected, "commit")  # type: ignore[arg-type]
     assert metadata.compatible_platforms == get(expected, "compatible_platforms")  # type: ignore[arg-type]
     assert metadata.build_platform == get(expected, "build_platform")  # type: ignore[arg-type]
@@ -74,7 +73,6 @@ class TestMetadata:
             id=UUID("00000000-0000-0000-0000-000000000000"),
             agent_components={"core-agent"},
             artifact_format=ArtifactFormat.BIN,
-            artifact_type=ArtifactType.COMP,
             commit=commit,
             compatible_platforms={Platform(OS.LINUX, Arch.AMD64)},
             build_platform=Platform(OS.LINUX, Arch.AMD64),
@@ -85,7 +83,6 @@ class TestMetadata:
         expected = {
             "agent_components": {"core-agent"},
             "artifact_format": ArtifactFormat.BIN,
-            "artifact_type": ArtifactType.COMP,
             "commit": example_commit,
             "compatible_platforms": {Platform(OS.LINUX, Arch.AMD64)},
             "build_platform": Platform(OS.LINUX, Arch.AMD64),
@@ -98,21 +95,20 @@ class TestMetadata:
     @pytest.mark.parametrize(
         ("command_path", "expected"),
         [
-            ("dda build comp core-agent", ({"core-agent"}, ArtifactType.COMP, ArtifactFormat.BIN)),
+            ("dda build comp core-agent", ({"core-agent"}, ArtifactFormat.BIN)),
             (
                 "dda build dist deb -c core-agent -c process-agent",
-                ({"core-agent", "process-agent"}, ArtifactType.DIST, ArtifactFormat.DEB),
+                ({"core-agent", "process-agent"}, ArtifactFormat.DEB),
             ),
         ],
     )
     def test_this(self, app, mocker, command_path, expected, example_commit):
         # Expected values
-        expected_agent_components, expected_artifact_type, expected_artifact_format = expected
+        expected_agent_components, expected_artifact_format = expected
         build_platform = Platform.from_alias(platform.system(), platform.machine())
         expected = {
             "id": UUID("00000000-0000-0000-0000-000000000000"),
             "agent_components": expected_agent_components,
-            "artifact_type": expected_artifact_type,
             "artifact_format": expected_artifact_format,
             "commit": example_commit,
             "compatible_platforms": {build_platform},
@@ -158,13 +154,12 @@ class TestMetadata:
 
         # Test with passed build components
         expected["agent_components"] = {"otel-agent", "dogstatsd", "system-probe"}
-        expected["artifact_type"] = ArtifactType.DIST
         expected["artifact_format"] = ArtifactFormat.OCI
         metadata = BuildMetadata.this(
             ctx,
             app,
             Path("test.txt"),
-            build_components=(expected["agent_components"], expected["artifact_type"], expected["artifact_format"]),
+            build_components=(expected["agent_components"], expected["artifact_format"]),
         )
         assert_metadata_equal(metadata, expected)
 
@@ -175,7 +170,6 @@ class TestMetadata:
                 "id": UUID("12345678-0000-0000-0000-000000000000"),
                 "agent_components": {"core-agent"},
                 "artifact_format": ArtifactFormat.BIN,
-                "artifact_type": ArtifactType.COMP,
                 "compatible_platforms": {Platform(OS.LINUX, Arch.AMD64)},
                 "build_platform": Platform(OS.LINUX, Arch.AMD64),
                 "build_time": datetime.now(UTC),
@@ -185,7 +179,6 @@ class TestMetadata:
                 "id": UUID("00000000-0000-0000-0000-123456780000"),
                 "agent_components": {"core-agent", "trace-agent"},
                 "artifact_format": ArtifactFormat.RPM,
-                "artifact_type": ArtifactType.DIST,
                 "compatible_platforms": {Platform(OS.LINUX, Arch.AMD64), Platform(OS.MACOS, Arch.ARM64)},
                 "build_platform": Platform(OS.MACOS, Arch.ARM64),
                 "build_time": datetime.now(UTC),
@@ -252,7 +245,6 @@ class TestMetadata:
                     "id": UUID("db5fec1a-7fce-42e9-a29b-13a8cc6a5493"),
                     "agent_components": {"core-agent", "trace-agent"},
                     "artifact_format": ArtifactFormat.RPM,
-                    "artifact_type": ArtifactType.DIST,
                     "compatible_platforms": {Platform(OS.LINUX, Arch.AMD64)},
                     "build_platform": Platform(OS.MACOS, Arch.ARM64),
                     "build_time": datetime.now(UTC),
@@ -265,7 +257,6 @@ class TestMetadata:
                     "id": UUID("db5fec1a-7fce-42e9-a29b-13a8cc6a5493"),
                     "agent_components": {"dogstatd"},
                     "artifact_format": ArtifactFormat.BIN,
-                    "artifact_type": ArtifactType.COMP,
                     "compatible_platforms": {Platform(OS.LINUX, Arch.AMD64)},
                     "build_platform": Platform(OS.MACOS, Arch.ARM64),
                     "build_time": datetime.now(UTC),
@@ -286,7 +277,6 @@ class TestMetadata:
                     "id": UUID("db5fec1a-7fce-42e9-a29b-13a8cc6a5493"),
                     "agent_components": {"core-agent", "system-probe", "dogstatsd"},
                     "artifact_format": ArtifactFormat.OCI,
-                    "artifact_type": ArtifactType.DIST,
                     "compatible_platforms": {
                         Platform(OS.LINUX, Arch.AMD64),
                         Platform(OS.MACOS, Arch.ARM64),
