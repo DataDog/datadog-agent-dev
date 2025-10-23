@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from enum import StrEnum, auto
-from typing import ClassVar
+from typing import ClassVar, override
 
 from msgspec import Struct
 
@@ -113,3 +113,12 @@ class DigestType(StrEnum):
     # Digest applicable to OCI container images
     # Use the OCI image digest format (result of `docker image inspect <image> --format '{{.Id}}'`)
     OCI_DIGEST = auto()
+
+    # Other digest types - used for non-standard digest types
+    OTHER = auto()
+
+    @classmethod
+    @override
+    def _missing_(cls, value: object) -> "DigestType":
+        # TODO: Add a warning here probably
+        return cls.OTHER

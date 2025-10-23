@@ -228,6 +228,9 @@ class ArtifactDigest(Struct, frozen=True):
                     msg = f"OCI digest value must start with 'sha256:': {self.value}"
                     raise ValueError(msg)
                 check_valid_sha256_digest(self.value.removeprefix("sha256:"))
+            case DigestType.OTHER:
+                # TODO: Maybe warning here
+                pass
             case _:
                 msg = f"Unsupported digest type: {self.type}"
                 raise NotImplementedError(msg)

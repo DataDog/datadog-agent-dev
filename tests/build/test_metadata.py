@@ -205,6 +205,15 @@ class TestMetadata:
                 "build_time": datetime.now(UTC),
                 "digest": ArtifactDigest(value="0" * 64, type=DigestType.FILE_SHA256),
             },
+            {
+                "id": UUID("00000000-0000-0000-0000-123456780000"),
+                "agent_components": {"core-agent"},
+                "artifact_format": ArtifactFormat.OTHER,
+                "compatible_platforms": {Platform(OS.MACOS, Arch.ARM64)},
+                "build_platform": Platform(OS.MACOS, Arch.ARM64),
+                "build_time": datetime.now(UTC),
+                "digest": ArtifactDigest(value="i am a really weird digest", type=DigestType.OTHER),
+            },
         ],
     )
     class TestEncodeDecode:

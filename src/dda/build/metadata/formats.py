@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 from enum import StrEnum, auto
+from typing import override
 
 from msgspec import Struct
 
@@ -24,6 +25,15 @@ class ArtifactFormat(StrEnum):
 
     # Component formats
     BIN = auto()
+
+    # Other formats - used for non-standard artifact formats
+    OTHER = auto()
+
+    @classmethod
+    @override
+    def _missing_(cls, value: object) -> ArtifactFormat:
+        # TODO: Add a warning here probably
+        return cls.OTHER
 
     # Properties for the underlying format details
     @property
@@ -46,6 +56,13 @@ class ArtifactType(StrEnum):
 
     COMP = auto()
     DIST = auto()
+    OTHER = auto()
+
+    @classmethod
+    @override
+    def _missing_(cls, value: object) -> ArtifactType:
+        # TODO: Add a warning here probably
+        return cls.OTHER
 
 
 class _ArtifactFormatDetails(Struct, frozen=True):
@@ -75,6 +92,9 @@ _ARTIFACT_FORMAT_DETAILS: dict[str, _ArtifactFormatDetails] = {
     ),
     "BIN": _ArtifactFormatDetails(
         file_identifier="", artifact_type=ArtifactType.COMP, digest_type=DigestType.FILE_SHA256
+    ),
+    "OTHER": _ArtifactFormatDetails(
+        file_identifier=".unknown", artifact_type=ArtifactType.OTHER, digest_type=DigestType.OTHER
     ),
 }
 
