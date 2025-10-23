@@ -12,9 +12,10 @@ from uuid import UUID
 import msgspec
 import pytest
 
-from dda.build.metadata.enums import OS, Arch, DigestType, Platform
+from dda.build.metadata.digests import DigestType
 from dda.build.metadata.formats import ArtifactFormat, ArtifactType
 from dda.build.metadata.metadata import ArtifactDigest, BuildMetadata
+from dda.build.metadata.platforms import OS, Arch, Platform
 from dda.config.model import dec_hook, enc_hook
 from dda.utils.fs import Path
 from dda.utils.git.changeset import ChangedFile, ChangeSet, ChangeType

@@ -9,7 +9,7 @@ from typing import override
 
 from msgspec import Struct
 
-from dda.build.metadata.enums import DigestType
+from dda.build.metadata.digests import DigestType
 
 
 class ArtifactFormat(StrEnum):

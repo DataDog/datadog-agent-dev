@@ -10,8 +10,9 @@ from uuid import UUID  # noqa: TC003 - needed outside of typecheck for msgspec d
 
 from msgspec import Struct
 
-from dda.build.metadata.enums import OS, Arch, DigestType, Platform
+from dda.build.metadata.digests import ArtifactDigest, DigestType
 from dda.build.metadata.formats import ArtifactFormat, ArtifactType
+from dda.build.metadata.platforms import OS, Arch, Platform
 from dda.utils.fs import Path
 from dda.utils.git.changeset import ChangeSet  # noqa: TC001 - needed outside of typecheck for msgspec decode
 from dda.utils.git.commit import Commit  # noqa: TC001
@@ -208,41 +209,6 @@ class BuildMetadata(Struct, frozen=True):
         # Artifact format identifier
         artifact_format_identifier = self.artifact_format.get_file_identifier()
         return f"{components}-{compatibility}-{source_info}-{short_uuid}{artifact_format_identifier}"
-
-
-class ArtifactDigest(Struct, frozen=True):
-    """
-    A digest for a build artifact.
-    """
-
-    value: str
-    type: DigestType
-
-    def __post_init__(self) -> None:
-        # Validate the digest value for the given digest type
-        match self.type:
-            case DigestType.FILE_SHA256:
-                check_valid_sha256_digest(self.value)
-            case DigestType.OCI_DIGEST:
-                if not self.value.startswith("sha256:"):
-                    msg = f"OCI digest value must start with 'sha256:': {self.value}"
-                    raise ValueError(msg)
-                check_valid_sha256_digest(self.value.removeprefix("sha256:"))
-            case DigestType.OTHER:
-                # TODO: Maybe warning here
-                pass
-            case _:
-                msg = f"Unsupported digest type: {self.type}"
-                raise NotImplementedError(msg)
-
-
-def check_valid_sha256_digest(digest: str) -> None:
-    """
-    Check if the digest is a valid SHA256 digest.
-    """
-    if not (all(x in "0123456789abcdef" for x in digest) and len(digest) == 64):  # noqa: PLR2004
-        msg = f"Value is not a valid SHA256 digest: {digest}"
-        raise ValueError(msg)
 
 
 def get_build_components(command: str) -> tuple[set[str], ArtifactFormat]:
