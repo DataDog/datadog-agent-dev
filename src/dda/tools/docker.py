@@ -34,3 +34,6 @@ class Docker(Tool):
         import shutil
 
         return shutil.which("docker") or shutil.which("podman") or "docker"
+
+    def get_image_digest(self, image_spec: str) -> str:
+        return self.capture(["image", "inspect", image_spec, "--format", "{{.Id}}"])

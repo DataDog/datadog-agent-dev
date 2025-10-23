@@ -159,6 +159,12 @@ class ChangeSet:  # noqa: PLW1641
     def __eq__(self, other: object) -> bool:
         return isinstance(other, ChangeSet) and self.paths == other.paths
 
+    def __len__(self) -> int:
+        return len(self.__files)
+
+    def __bool__(self) -> bool:
+        return bool(self.__files)
+
     @cached_property
     def __change_types(self) -> dict[ChangeType, MappingProxyType[str, ChangedFile]]:
         changes: dict[ChangeType, dict[str, ChangedFile]] = {}
