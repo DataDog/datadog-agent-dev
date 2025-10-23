@@ -8,6 +8,8 @@ from enum import StrEnum, auto
 
 from msgspec import Struct
 
+from dda.build.metadata.enums import DigestType
+
 
 class ArtifactFormat(StrEnum):
     """
@@ -27,6 +29,10 @@ class ArtifactFormat(StrEnum):
     @property
     def type(self) -> ArtifactType:
         return _ARTIFACT_FORMAT_DETAILS[self.name].artifact_type
+
+    @property
+    def digest_type(self) -> DigestType:
+        return _ARTIFACT_FORMAT_DETAILS[self.name].digest_type
 
     def get_file_identifier(self) -> str:
         return _ARTIFACT_FORMAT_DETAILS[self.name].file_identifier
@@ -51,14 +57,25 @@ class _ArtifactFormatDetails(Struct, frozen=True):
 
     file_identifier: str
     artifact_type: ArtifactType
+    digest_type: DigestType
 
 
 _ARTIFACT_FORMAT_DETAILS: dict[str, _ArtifactFormatDetails] = {
-    "DEB": _ArtifactFormatDetails(file_identifier=".deb", artifact_type=ArtifactType.DIST),
-    "RPM": _ArtifactFormatDetails(file_identifier=".rpm", artifact_type=ArtifactType.DIST),
-    "MSI": _ArtifactFormatDetails(file_identifier=".msi", artifact_type=ArtifactType.DIST),
-    "OCI": _ArtifactFormatDetails(file_identifier="-oci.tar.gz", artifact_type=ArtifactType.DIST),
-    "BIN": _ArtifactFormatDetails(file_identifier="", artifact_type=ArtifactType.COMP),
+    "DEB": _ArtifactFormatDetails(
+        file_identifier=".deb", artifact_type=ArtifactType.DIST, digest_type=DigestType.FILE_SHA256
+    ),
+    "RPM": _ArtifactFormatDetails(
+        file_identifier=".rpm", artifact_type=ArtifactType.DIST, digest_type=DigestType.FILE_SHA256
+    ),
+    "MSI": _ArtifactFormatDetails(
+        file_identifier=".msi", artifact_type=ArtifactType.DIST, digest_type=DigestType.FILE_SHA256
+    ),
+    "OCI": _ArtifactFormatDetails(
+        file_identifier="-oci.tar.gz", artifact_type=ArtifactType.DIST, digest_type=DigestType.OCI_DIGEST
+    ),
+    "BIN": _ArtifactFormatDetails(
+        file_identifier="", artifact_type=ArtifactType.COMP, digest_type=DigestType.FILE_SHA256
+    ),
 }
 
 # Validate that the keys of the _ArtifactFormatDetails dict match the keys of the ArtifactFormat enum

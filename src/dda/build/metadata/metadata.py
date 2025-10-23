@@ -10,7 +10,7 @@ from uuid import UUID  # noqa: TC003 - needed outside of typecheck for msgspec d
 
 from msgspec import Struct
 
-from dda.build.metadata.enums import OS, Arch, Platform
+from dda.build.metadata.enums import OS, Arch, DigestType, Platform
 from dda.build.metadata.formats import ArtifactFormat, ArtifactType
 from dda.utils.fs import Path
 from dda.utils.git.changeset import ChangeSet  # noqa: TC001 - needed outside of typecheck for msgspec decode
@@ -45,16 +45,12 @@ class BuildMetadata(Struct, frozen=True):
     build_platform: Platform
     build_time: datetime
 
-    # File-related fields
-    file_hash: str
+    # Artifact-related fields
+    digest: ArtifactDigest
 
     def __post_init__(self) -> None:
         if self.artifact_type == ArtifactType.COMP and len(self.agent_components) != 1:
             msg = "An agent component artifact can only represent a single component"
-            raise ValueError(msg)
-
-        if not (all(x in "0123456789abcdef" for x in self.file_hash) and len(self.file_hash) == 64):  # noqa: PLR2004
-            msg = "Invalid format for the specified file hash"
             raise ValueError(msg)
 
         os_set = {platform.os for platform in self.compatible_platforms}
@@ -76,7 +72,7 @@ class BuildMetadata(Struct, frozen=True):
         cls,
         ctx: Context,
         app: Application,
-        file: Path,
+        artifact: Path | str,
         *,
         build_components: tuple[set[str], ArtifactFormat] | None = None,
         compatible_platforms: Iterable[Platform] | None = None,
@@ -117,8 +113,16 @@ class BuildMetadata(Struct, frozen=True):
         worktree_diff = app.tools.git.get_changes("HEAD", start="HEAD", working_tree=True)
         commit = app.tools.git.get_commit()
 
-        # Calculate file hash
-        file_hash = file.hexdigest(algorithm="sha256")
+        # Calculate digest
+        digest_type = artifact_format.digest_type
+        match digest_type:
+            case DigestType.FILE_SHA256:
+                digest_value = Path(artifact).hexdigest(algorithm="sha256")
+            case DigestType.OCI_DIGEST:
+                digest_value = app.tools.docker.get_image_digest(str(artifact))
+            case _:
+                msg = f"Unsupported digest type: {digest_type}"
+                raise NotImplementedError(msg)
 
         return cls(
             id=artifact_id,
@@ -129,7 +133,7 @@ class BuildMetadata(Struct, frozen=True):
             build_platform=build_platform,
             build_time=build_time,
             worktree_diff=worktree_diff,
-            file_hash=file_hash,
+            digest=ArtifactDigest(value=digest_value, type=digest_type),
         )
 
     def to_file(self, path: Path | None = None) -> None:
@@ -204,6 +208,38 @@ class BuildMetadata(Struct, frozen=True):
         # Artifact format identifier
         artifact_format_identifier = self.artifact_format.get_file_identifier()
         return f"{components}-{compatibility}-{source_info}-{short_uuid}{artifact_format_identifier}"
+
+
+class ArtifactDigest(Struct, frozen=True):
+    """
+    A digest for a build artifact.
+    """
+
+    value: str
+    type: DigestType
+
+    def __post_init__(self) -> None:
+        # Validate the digest value for the given digest type
+        match self.type:
+            case DigestType.FILE_SHA256:
+                check_valid_sha256_digest(self.value)
+            case DigestType.OCI_DIGEST:
+                if not self.value.startswith("sha256:"):
+                    msg = f"OCI digest value must start with 'sha256:': {self.value}"
+                    raise ValueError(msg)
+                check_valid_sha256_digest(self.value.removeprefix("sha256:"))
+            case _:
+                msg = f"Unsupported digest type: {self.type}"
+                raise NotImplementedError(msg)
+
+
+def check_valid_sha256_digest(digest: str) -> None:
+    """
+    Check if the digest is a valid SHA256 digest.
+    """
+    if not (all(x in "0123456789abcdef" for x in digest) and len(digest) == 64):  # noqa: PLR2004
+        msg = f"Value is not a valid SHA256 digest: {digest}"
+        raise ValueError(msg)
 
 
 def get_build_components(command: str) -> tuple[set[str], ArtifactFormat]:

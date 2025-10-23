@@ -99,3 +99,17 @@ class Platform(Struct, frozen=True):
 
 # Initialize the ANY class variable after the class is fully defined
 Platform.ANY = Platform(os=OS.ANY, arch=Arch.ANY)
+
+
+class DigestType(StrEnum):
+    """
+    The type of digest for a build artifact, i.e. the possible values for the `digest` field in the BuildMetadata struct.
+    """
+
+    # Digest applicable to files
+    # Suport only SHA256 for now
+    FILE_SHA256 = auto()
+
+    # Digest applicable to OCI container images
+    # Use the OCI image digest format (result of `docker image inspect <image> --format '{{.Id}}'`)
+    OCI_DIGEST = auto()

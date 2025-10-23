@@ -12,9 +12,9 @@ from uuid import UUID
 import msgspec
 import pytest
 
-from dda.build.metadata.enums import OS, Arch, Platform
-from dda.build.metadata.formats import ArtifactFormat
-from dda.build.metadata.metadata import BuildMetadata
+from dda.build.metadata.enums import OS, Arch, DigestType, Platform
+from dda.build.metadata.formats import ArtifactFormat, ArtifactType
+from dda.build.metadata.metadata import ArtifactDigest, BuildMetadata
 from dda.config.model import dec_hook, enc_hook
 from dda.utils.fs import Path
 from dda.utils.git.changeset import ChangedFile, ChangeSet, ChangeType
@@ -49,7 +49,9 @@ def example_build_metadata(example_commit: Commit) -> BuildMetadata:
                 binary=False,
             )
         ]),
-        file_hash="4a23f9863c45f043ececc0f82bf95ae9e4ff377ec2bb587a61ea7a75a3621115",
+        digest=ArtifactDigest(
+            value="4a23f9863c45f043ececc0f82bf95ae9e4ff377ec2bb587a61ea7a75a3621115", type=DigestType.FILE_SHA256
+        ),
     )
 
 
@@ -78,7 +80,7 @@ class TestMetadata:
             build_platform=Platform(OS.LINUX, Arch.AMD64),
             build_time=now,
             worktree_diff=ChangeSet({}),
-            file_hash="0" * 64,
+            digest=ArtifactDigest(value="0" * 64, type=DigestType.FILE_SHA256),
         )
         expected = {
             "agent_components": {"core-agent"},
@@ -95,16 +97,31 @@ class TestMetadata:
     @pytest.mark.parametrize(
         ("command_path", "expected"),
         [
-            ("dda build comp core-agent", ({"core-agent"}, ArtifactFormat.BIN)),
+            (
+                "dda build comp core-agent",
+                ({"core-agent"}, ArtifactFormat.BIN, ArtifactDigest(value="0" * 64, type=DigestType.FILE_SHA256)),
+            ),
             (
                 "dda build dist deb -c core-agent -c process-agent",
-                ({"core-agent", "process-agent"}, ArtifactFormat.DEB),
+                (
+                    {"core-agent", "process-agent"},
+                    ArtifactFormat.DEB,
+                    ArtifactDigest(value="0" * 64, type=DigestType.FILE_SHA256),
+                ),
+            ),
+            (
+                "dda build dist oci -c core-agent -c process-agent",
+                (
+                    {"core-agent", "process-agent"},
+                    ArtifactFormat.OCI,
+                    ArtifactDigest(value="sha256:" + "0" * 64, type=DigestType.OCI_DIGEST),
+                ),
             ),
         ],
     )
     def test_this(self, app, mocker, command_path, expected, example_commit):
         # Expected values
-        expected_agent_components, expected_artifact_format = expected
+        expected_agent_components, expected_artifact_format, expected_digest = expected
         build_platform = Platform.from_alias(platform.system(), platform.machine())
         expected = {
             "id": UUID("00000000-0000-0000-0000-000000000000"),
@@ -117,7 +134,7 @@ class TestMetadata:
             "worktree_diff": ChangeSet([
                 ChangedFile(path=Path("test.txt"), type=ChangeType.ADDED, patch="@@ -0,0 +1 @@\n+test", binary=False)
             ]),
-            "file_hash": "0" * 64,
+            "digest": expected_digest,
         }
 
         # Setup mocks
@@ -126,7 +143,8 @@ class TestMetadata:
         mocker.patch("dda.build.metadata.metadata.generate_build_id", return_value=expected["id"])
         mocker.patch("dda.tools.git.Git.get_commit", return_value=expected["commit"])
         mocker.patch("dda.tools.git.Git.get_changes", return_value=expected["worktree_diff"])
-        mocker.patch("dda.utils.fs.Path.hexdigest", return_value=expected["file_hash"])
+        mocker.patch("dda.utils.fs.Path.hexdigest", return_value=expected["digest"].value)
+        mocker.patch("dda.tools.docker.Docker.get_image_digest", return_value=expected["digest"].value)
 
         # Can't directly patch datetime.now because it's a builtin
         patched_datetime = mocker.patch("dda.build.metadata.metadata.datetime")
@@ -153,8 +171,11 @@ class TestMetadata:
         expected["compatible_platforms"] = old_compatible_platforms
 
         # Test with passed build components
-        expected["agent_components"] = {"otel-agent", "dogstatsd", "system-probe"}
-        expected["artifact_format"] = ArtifactFormat.OCI
+        expected["agent_components"] = (
+            {"otel-agent", "dogstatsd", "system-probe"}
+            if metadata.artifact_type == ArtifactType.DIST
+            else {"dogstatsd"}
+        )
         metadata = BuildMetadata.this(
             ctx,
             app,
@@ -173,7 +194,7 @@ class TestMetadata:
                 "compatible_platforms": {Platform(OS.LINUX, Arch.AMD64)},
                 "build_platform": Platform(OS.LINUX, Arch.AMD64),
                 "build_time": datetime.now(UTC),
-                "file_hash": "0" * 64,
+                "digest": ArtifactDigest(value="0" * 64, type=DigestType.FILE_SHA256),
             },
             {
                 "id": UUID("00000000-0000-0000-0000-123456780000"),
@@ -182,7 +203,7 @@ class TestMetadata:
                 "compatible_platforms": {Platform(OS.LINUX, Arch.AMD64), Platform(OS.MACOS, Arch.ARM64)},
                 "build_platform": Platform(OS.MACOS, Arch.ARM64),
                 "build_time": datetime.now(UTC),
-                "file_hash": "0" * 64,
+                "digest": ArtifactDigest(value="0" * 64, type=DigestType.FILE_SHA256),
             },
         ],
     )
@@ -248,7 +269,7 @@ class TestMetadata:
                     "compatible_platforms": {Platform(OS.LINUX, Arch.AMD64)},
                     "build_platform": Platform(OS.MACOS, Arch.ARM64),
                     "build_time": datetime.now(UTC),
-                    "file_hash": "0" * 64,
+                    "digest": ArtifactDigest(value="0" * 64, type=DigestType.FILE_SHA256),
                 },
                 "core,trace-linux-amd64-12345678-db5fec1a.rpm",
             ),
@@ -260,7 +281,7 @@ class TestMetadata:
                     "compatible_platforms": {Platform(OS.LINUX, Arch.AMD64)},
                     "build_platform": Platform(OS.MACOS, Arch.ARM64),
                     "build_time": datetime.now(UTC),
-                    "file_hash": "0" * 64,
+                    "digest": ArtifactDigest(value="0" * 64, type=DigestType.FILE_SHA256),
                     "worktree_diff": ChangeSet([
                         ChangedFile(
                             path=Path("test.txt"),
@@ -285,7 +306,7 @@ class TestMetadata:
                     },
                     "build_platform": Platform(OS.MACOS, Arch.ARM64),
                     "build_time": datetime.now(UTC),
-                    "file_hash": "0" * 64,
+                    "digest": ArtifactDigest(value="sha256:" + "0" * 64, type=DigestType.OCI_DIGEST),
                 },
                 "core,dogstatsd,system_probe-many-12345678-db5fec1a-oci.tar.gz",
             ),
