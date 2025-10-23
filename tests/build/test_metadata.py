@@ -306,3 +306,41 @@ class TestDigest:
 
         with pytest.raises(NotImplementedError):
             DigestType.OTHER.calculate_digest(app, "test.txt")
+
+
+class TestEncodeDecodeOtherValues:
+    """Test that we can encode and decode other values that are not part of the enum."""
+
+    def test_other_digest_type(self):
+        digest_type = DigestType.OTHER
+        encoded_digest_type = msgspec.json.encode(digest_type, enc_hook=enc_hook)
+        decoded_digest_type = msgspec.json.decode(encoded_digest_type, type=DigestType, dec_hook=dec_hook)
+        assert decoded_digest_type == DigestType.OTHER
+
+        # Test that an unknown digest type is decoded as OTHER
+        decoded_digest = msgspec.json.decode(b'"i am a really weird digest"', type=DigestType, dec_hook=dec_hook)
+        assert decoded_digest == DigestType.OTHER
+
+    def test_other_artifact_format(self):
+        artifact_format = ArtifactFormat.OTHER
+        encoded_artifact_format = msgspec.json.encode(artifact_format, enc_hook=enc_hook)
+        decoded_artifact_format = msgspec.json.decode(encoded_artifact_format, type=ArtifactFormat, dec_hook=dec_hook)
+        assert decoded_artifact_format == ArtifactFormat.OTHER
+
+        # Test that an unknown artifact format is decoded as OTHER
+        decoded_artifact_format = msgspec.json.decode(
+            b'"i am a really weird artifact format"', type=ArtifactFormat, dec_hook=dec_hook
+        )
+        assert decoded_artifact_format == ArtifactFormat.OTHER
+
+    def test_other_artifact_type(self):
+        artifact_type = ArtifactType.OTHER
+        encoded_artifact_type = msgspec.json.encode(artifact_type, enc_hook=enc_hook)
+        decoded_artifact_type = msgspec.json.decode(encoded_artifact_type, type=ArtifactType, dec_hook=dec_hook)
+        assert decoded_artifact_type == ArtifactType.OTHER
+
+        # Test that an unknown artifact type is decoded as OTHER
+        decoded_artifact_type = msgspec.json.decode(
+            b'"i am a really weird artifact type"', type=ArtifactType, dec_hook=dec_hook
+        )
+        assert decoded_artifact_type == ArtifactType.OTHER
