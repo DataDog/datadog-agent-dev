@@ -5,21 +5,20 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from uuid import UUID  # noqa: TC003 - needed outside of typecheck for msgspec decode
 
 from msgspec import Struct
 
-from dda.build.metadata.digests import ArtifactDigest, DigestType
 from dda.build.metadata.formats import ArtifactFormat, ArtifactType
+from dda.build.metadata.digests import ArtifactDigest  # noqa: TC001 - needed outside of typecheck for msgspec decode
+
 from dda.build.metadata.platforms import OS, Arch, Platform
 from dda.utils.fs import Path
 from dda.utils.git.changeset import ChangeSet  # noqa: TC001 - needed outside of typecheck for msgspec decode
 from dda.utils.git.commit import Commit  # noqa: TC001
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
-
     from click import Context
 
     from dda.cli.application import Application
@@ -69,72 +68,39 @@ class BuildMetadata(Struct, frozen=True):
         return self.artifact_format.type
 
     @classmethod
-    def this(
+    def spawn_from_context(
         cls,
-        ctx: Context,
-        app: Application,
-        artifact: Path | str,
-        *,
-        build_components: tuple[set[str], ArtifactFormat] | None = None,
-        compatible_platforms: Iterable[Platform] | None = None,
+        context_data: _MetadataRequiredContext,
+        artifact_digest: ArtifactDigest,
     ) -> BuildMetadata:
         """
         Create a BuildMetadata instance for the current build.
-        Most arguments are inferred from context:
-            - A UUID is generated
-            - Build time is automatically set to the current time
-            - Source info (commit hash and worktree diff) are computed from the current git checkout
-            ...
-
-        The set of agent components is extracted from the current called command, but can be overriden by the `build_components` argument.
-        The compatible platforms are set to the build platform if not provided, but can be overriden by the `compatible_platforms` argument.
-
-        Args:
-            build_components: A tuple containing the agent components, artifact type, and artifact format for override.
-                If not provided, they will be extracted from the calling command via the `get_build_components` function.
-            compatible_platforms: An optional iterable of platforms to indicate the platform compatibility of the build.
-                If not provided, the build platform will be used as sole compatible platform.
+        Takes two arguments:
+        - context_data: A _MetadataRequiredContext instance containing the required data to generate build metadata.
+            This can be created with the `analyze_context` function.
+        - artifact_digest: An ArtifactDigest instance containing the digest of the artifact.
+            This can be calculated with the `DigestType.calculate_digest` method.
+            For example, starting from the _MetadataRequiredContext instance, you can do:
+            ```python
+            context_details: _MetadataRequiredContext = analyze_context(ctx, app)
+            artifact_digest = context_details.artifact_format.digest_type.calculate_digest(
+                app, <path to the artifact or container image reference>
+            )
+            ```
+        The _MetadataRequiredContext instance can have its fields overridden if the defaults obtained from the context are not correct.
+        Returns:
+            A fully initialized BuildMetadata instance. The `id` and `build_time` fields are automatically generated.
         """
-        import platform
 
         # Current time and ID
         build_time = datetime.now()  # noqa: DTZ005
         artifact_id = generate_build_id()
 
-        # Build components
-        if build_components is None:
-            build_components = get_build_components(ctx.command_path)
-        agent_components, artifact_format = build_components
-
-        # Build platform
-        build_platform = Platform.from_alias(platform.system().lower(), platform.machine())
-        compatible_platforms = compatible_platforms or {build_platform}
-
-        # Get worktree information - base commit and diff hash
-        worktree_diff = app.tools.git.get_changes("HEAD", start="HEAD", working_tree=True)
-        commit = app.tools.git.get_commit()
-
-        # Calculate digest
-        digest_type = artifact_format.digest_type
-        match digest_type:
-            case DigestType.FILE_SHA256:
-                digest_value = Path(artifact).hexdigest(algorithm="sha256")
-            case DigestType.OCI_DIGEST:
-                digest_value = app.tools.docker.get_image_digest(str(artifact))
-            case _:
-                msg = f"Unsupported digest type: {digest_type}"
-                raise NotImplementedError(msg)
-
         return cls(
             id=artifact_id,
-            agent_components=agent_components,
-            artifact_format=artifact_format,
-            commit=commit,
-            compatible_platforms=set(compatible_platforms),
-            build_platform=build_platform,
             build_time=build_time,
-            worktree_diff=worktree_diff,
-            digest=ArtifactDigest(value=digest_value, type=digest_type),
+            digest=artifact_digest,
+            **context_data.dump(),
         )
 
     def to_file(self, path: Path | None = None) -> None:
@@ -250,3 +216,69 @@ def generate_build_id() -> UUID:
     from uuid import uuid4
 
     return uuid4()
+
+
+def analyze_context(ctx: Context, app: Application) -> _MetadataRequiredContext:
+    """
+    Analyze the context to get the required data to generate build metadata.
+    """
+    return _MetadataRequiredContext.from_context(ctx, app)
+
+
+class _MetadataRequiredContext(Struct):
+    """
+    Collection of fields obtained from build context to generate build metadata.
+    Having this as a separate struct allows for easier overriding - this struct is explicitely not frozen.
+    """
+
+    agent_components: set[str]
+    artifact_format: ArtifactFormat
+
+    # Source tree fields
+    commit: Commit
+    worktree_diff: ChangeSet
+
+    # Compatibility fields
+    compatible_platforms: set[Platform]
+
+    # Build metadata
+    build_platform: Platform
+
+    @classmethod
+    def from_context(cls, ctx: Context, app: Application) -> _MetadataRequiredContext:
+        """
+        Create a _MetadataRequiredContext instance from the application and build context.
+        Some values might not be correct for some artifacts, in which case they should be overridden afterwards.
+
+        Defaults:
+        - agent_components: Extracted from the calling command for DIST artifacts, or set to a single component for COMP artifacts.
+        - artifact_format: Extracted from the calling command.
+        - commit: The HEAD commit of the currently checked-out repo.
+        - worktree_diff: The changes in the working tree compared to HEAD.
+        - compatible_platforms: Defaults to a singleton of the build platform. This can be overridden to add more compatible platforms if possible.
+        - build_platform: The platform this code is being run on.
+        """
+
+        import platform
+
+        # Build components
+        build_components = get_build_components(ctx.command_path)
+        agent_components, artifact_format = build_components
+
+        # Build platform
+        build_platform = Platform.from_alias(platform.system().lower(), platform.machine())
+
+        return cls(
+            agent_components=agent_components,
+            artifact_format=artifact_format,
+            commit=app.tools.git.get_commit(),
+            worktree_diff=app.tools.git.get_changes("HEAD", start="HEAD", working_tree=True),
+            compatible_platforms={build_platform},
+            build_platform=build_platform,
+        )
+
+    def dump(self) -> dict[str, Any]:
+        """
+        Dump the context data to a dictionary.
+        """
+        return {k: getattr(self, k) for k in self.__struct_fields__}

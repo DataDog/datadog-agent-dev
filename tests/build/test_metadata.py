@@ -12,9 +12,9 @@ from uuid import UUID
 import msgspec
 import pytest
 
-from dda.build.metadata.digests import DigestType
+from dda.build.metadata.digests import ArtifactDigest, DigestType
 from dda.build.metadata.formats import ArtifactFormat, ArtifactType
-from dda.build.metadata.metadata import ArtifactDigest, BuildMetadata
+from dda.build.metadata.metadata import BuildMetadata, analyze_context
 from dda.build.metadata.platforms import OS, Arch, Platform
 from dda.config.model import dec_hook, enc_hook
 from dda.utils.fs import Path
@@ -100,14 +100,13 @@ class TestMetadata:
         [
             (
                 "dda build comp core-agent",
-                ({"core-agent"}, ArtifactFormat.BIN, ArtifactDigest(value="0" * 64, type=DigestType.FILE_SHA256)),
+                ({"core-agent"}, ArtifactFormat.BIN),
             ),
             (
                 "dda build dist deb -c core-agent -c process-agent",
                 (
                     {"core-agent", "process-agent"},
                     ArtifactFormat.DEB,
-                    ArtifactDigest(value="0" * 64, type=DigestType.FILE_SHA256),
                 ),
             ),
             (
@@ -115,75 +114,36 @@ class TestMetadata:
                 (
                     {"core-agent", "process-agent"},
                     ArtifactFormat.OCI,
-                    ArtifactDigest(value="sha256:" + "0" * 64, type=DigestType.OCI_DIGEST),
                 ),
             ),
         ],
     )
-    def test_this(self, app, mocker, command_path, expected, example_commit):
+    def test_analyze_context(self, app, mocker, command_path, expected, example_commit):
         # Expected values
-        expected_agent_components, expected_artifact_format, expected_digest = expected
+        expected_agent_components, expected_artifact_format = expected
         build_platform = Platform.from_alias(platform.system(), platform.machine())
         expected = {
-            "id": UUID("00000000-0000-0000-0000-000000000000"),
             "agent_components": expected_agent_components,
             "artifact_format": expected_artifact_format,
             "commit": example_commit,
             "compatible_platforms": {build_platform},
             "build_platform": build_platform,
-            "build_time": datetime.now(),  # noqa: DTZ005
             "worktree_diff": ChangeSet([
                 ChangedFile(path=Path("test.txt"), type=ChangeType.ADDED, patch="@@ -0,0 +1 @@\n+test", binary=False)
             ]),
-            "digest": expected_digest,
         }
 
         # Setup mocks
         ctx = mocker.MagicMock()
         ctx.command_path = command_path
-        mocker.patch("dda.build.metadata.metadata.generate_build_id", return_value=expected["id"])
         mocker.patch("dda.tools.git.Git.get_commit", return_value=expected["commit"])
         mocker.patch("dda.tools.git.Git.get_changes", return_value=expected["worktree_diff"])
-        mocker.patch("dda.utils.fs.Path.hexdigest", return_value=expected["digest"].value)
-        mocker.patch("dda.tools.docker.Docker.get_image_digest", return_value=expected["digest"].value)
 
-        # Can't directly patch datetime.now because it's a builtin
-        patched_datetime = mocker.patch("dda.build.metadata.metadata.datetime")
-        patched_datetime.now.return_value = expected["build_time"]
         # Test without special arguments
-        metadata = BuildMetadata.this(
-            ctx,
-            app,
-            Path("test.txt"),
-        )
+        context_details = analyze_context(ctx, app)
 
-        assert_metadata_equal(metadata, expected)
-
-        # Test with passed compatible platforms
-        old_compatible_platforms = expected["compatible_platforms"]
-        expected["compatible_platforms"] = {Platform(OS.MACOS, Arch.ARM64), Platform(OS.LINUX, Arch.AMD64)}
-        metadata = BuildMetadata.this(
-            ctx,
-            app,
-            Path("test.txt"),
-            compatible_platforms=expected["compatible_platforms"],
-        )
-        assert_metadata_equal(metadata, expected)
-        expected["compatible_platforms"] = old_compatible_platforms
-
-        # Test with passed build components
-        expected["agent_components"] = (
-            {"otel-agent", "dogstatsd", "system-probe"}
-            if metadata.artifact_type == ArtifactType.DIST
-            else {"dogstatsd"}
-        )
-        metadata = BuildMetadata.this(
-            ctx,
-            app,
-            Path("test.txt"),
-            build_components=(expected["agent_components"], expected["artifact_format"]),
-        )
-        assert_metadata_equal(metadata, expected)
+        for field in expected:
+            assert getattr(context_details, field) == expected[field]
 
     @pytest.mark.parametrize(
         "obj_data",
@@ -327,3 +287,22 @@ class TestMetadata:
             obj_data["worktree_diff"] = ChangeSet({})
         obj = BuildMetadata(**obj_data, commit=example_commit)
         assert obj.get_canonical_filename() == expected
+
+
+class TestDigest:
+    def test_calculate_digest(self, app, mocker):
+        # Setup mocks
+        mocker.patch("dda.utils.fs.Path.hexdigest", return_value="0" * 64)
+        mocker.patch("dda.tools.docker.Docker.get_image_digest", return_value="sha256:" + "0" * 64)
+
+        # Test
+        digest = DigestType.FILE_SHA256.calculate_digest(app, "test.txt")
+        assert digest.value == "0" * 64
+        assert digest.type == DigestType.FILE_SHA256
+
+        digest = DigestType.OCI_DIGEST.calculate_digest(app, "test.txt")
+        assert digest.value == "sha256:" + "0" * 64
+        assert digest.type == DigestType.OCI_DIGEST
+
+        with pytest.raises(NotImplementedError):
+            DigestType.OTHER.calculate_digest(app, "test.txt")

@@ -5,9 +5,14 @@
 from __future__ import annotations
 
 from enum import StrEnum, auto
-from typing import override
+from typing import TYPE_CHECKING, override
 
 from msgspec import Struct
+
+from dda.utils.fs import Path
+
+if TYPE_CHECKING:
+    from dda.cli.application import Application
 
 
 class DigestType(StrEnum):
@@ -31,6 +36,18 @@ class DigestType(StrEnum):
     def _missing_(cls, value: object) -> DigestType:
         # TODO: Add a warning here probably
         return cls.OTHER
+
+    def calculate_digest(self, app: Application, artifact_spec: Path | str) -> ArtifactDigest:
+        match self:
+            case DigestType.FILE_SHA256:
+                digest_value = Path(artifact_spec).hexdigest(algorithm="sha256")
+            case DigestType.OCI_DIGEST:
+                digest_value = app.tools.docker.get_image_digest(str(artifact_spec))
+            case _:
+                msg = f"Cannot calculate digest for digest type: {self}"
+                raise NotImplementedError(msg)
+
+        return ArtifactDigest(value=digest_value, type=self)  # type: ignore[arg-type]
 
 
 class ArtifactDigest(Struct, frozen=True):
