@@ -10,9 +10,8 @@ from uuid import UUID  # noqa: TC003 - needed outside of typecheck for msgspec d
 
 from msgspec import Struct
 
-from dda.build.metadata.formats import ArtifactFormat, ArtifactType
 from dda.build.metadata.digests import ArtifactDigest  # noqa: TC001 - needed outside of typecheck for msgspec decode
-
+from dda.build.metadata.formats import ArtifactFormat, ArtifactType
 from dda.build.metadata.platforms import OS, Arch, Platform
 from dda.utils.fs import Path
 from dda.utils.git.changeset import ChangeSet  # noqa: TC001 - needed outside of typecheck for msgspec decode

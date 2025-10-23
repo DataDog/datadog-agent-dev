@@ -47,7 +47,7 @@ class DigestType(StrEnum):
                 msg = f"Cannot calculate digest for digest type: {self}"
                 raise NotImplementedError(msg)
 
-        return ArtifactDigest(value=digest_value, type=self)  # type: ignore[arg-type]
+        return ArtifactDigest(value=digest_value, type=self)
 
 
 class ArtifactDigest(Struct, frozen=True):
