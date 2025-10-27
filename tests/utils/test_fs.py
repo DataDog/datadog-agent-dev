@@ -10,7 +10,7 @@ import msgspec
 import pytest
 
 from dda.types.hooks import dec_hook, enc_hook
-from dda.utils.fs import Path, temp_directory
+from dda.utils.fs import Path, temp_directory, temp_file
 
 
 class TestPath:
@@ -67,47 +67,48 @@ class TestPath:
         assert decoded_path == path
 
     @pytest.mark.parametrize(
-        ("file", "hashes"),
+        ("data", "hashes"),
         [
             (
-                "lipsum.txt",
+                b"Lorem ipsum dolor sit amet, consectetur adipiscing elit. In aliquet felis in pretium aliquet. Ut ac laoreet quam. Vivamus velit.",
                 {
-                    "sha256": "e921ca1908b2928951026a4f4aa39b4e0e45faa1ed35c6bec5d0a1172f749b19",
-                    "sha512": "39262feb3dddfbfe4fb0f6a7d62cc1e3a5956a8dc9f3f2cfe881ba86883800c66a5854839588193ca3cbf3d7a01f0adf32aafa568d5e8ca83f823070c4c12470",
-                    "blake2b": "dd89da4063a1b0725b5f9012a861c4a5dca904a648408d4c6b777b07bdc0294c8736d892ff6a1c0a6e3c58df4c4f6d91682e830f508380333478b11dd1d40e71",
+                    "sha256": "cfa2679987c09a6a650119bb403b7409097dde137fd5d6c5b73e1887ce2b1fa9",
+                    "sha512": "51799af49d7e298ae8ecc9d3cb8494ce1798bc30b8ec00bd94ba9b4dcdf1cf44fb3adf2ff4046543a50b0c8d480813895712b53561803dd482037d670ee92dbb",
+                    "blake2b": "4398d6c895645672abe343c4bcaa283adb7e35e534b1dc164a2426040ca74b4b285b5847f5fa86ce51aa84159a587cc5332cbeb8ceaa3b98c4f6fccdbc36df55",
                 },
             ),
             (
-                "dd_icon_white.svg",
+                b"Etiam eget imperdiet enim, vel blandit mauris. Cras dapibus nam.",
                 {
-                    "sha256": "846d2ee9685255f043eb26f067bb01b1a1411790f0808b8b137fe2caed271b17",
-                    "sha512": "eb712138447228a52af1646ba24fedffa4d847d4759a3481cd233abea65fa82b6daa892d3ecebdfb2cecc62efa63577a68fbf58572e605afcfb99c1b16893b72",
-                    "blake2b": "89af50b94a061a28b76e6801a35c202dc1cb50a5d77cbb2f773c46a6834ac111fea717ddfd6758fd21669418fb8dcabc27d5438d5017b9bd614985c399196717",
+                    "sha256": "ef7f1b043a2b91c2900ead0091f1ac715a8e97f5bf4508cff3738ac11b711f03",
+                    "sha512": "21907a7f2c887c871a38919154916a81e2f3bb75dd26bbcde2d12c4c3d2c82eb83f94446196fcbdd35cad5bd9e17f3efafb2e2300949b0d93e18b5c54df1ab56",
+                    "blake2b": "3815deec2d01e0a7ca59fb3c7782f668d10ff04b3d0c3973db1f934f18d92ec24c3fc2aead937736144f0e65d29440520de68ce75d88e258db72b1062edb825c",
                 },
             ),
             (
-                "dd_icon_white.png",
+                b"Phasellus congue commodo erat quis eleifend. Nulla semper velit eget mauris ultricies laoreet.\n Sed orci tellus, venenatis vitae egestas vel, vehicula eget odio.",
                 {
-                    "sha256": "b240ea6d9e70afe7a5241386c7d19ac00d1e62322dde29e5a86abd9b90834a42",
-                    "sha512": "dcbb45592b3ee64f136c9b81c0f119aeb03eb648ef4b906da48337d518bb9a9b370b420e5a95fdc8952946f08ac3795a4cae4b3b3ac9dfff97aa9c4bc3352ad9",
-                    "blake2b": "40c6b509cd6b3efe23038978ea3fedae62ec0fee2ffd264bcf1e64d6270140a145bc5a815a9ff17a82f01cdcc61ac09ad219f47e54c413c41e861f51c883f4da",
+                    "sha256": "4ca6c0ca071e0cfdab3f6aeea99f852d6b9e2981409ffffa7a8f88b1e951c605",
+                    "sha512": "c357c4eb2c8093774a807393fc19dcd980d8335c5d6e1d8b98bc1b8be2002a4c3f0d19b78f5d08290f8ec30f22951d3bff72c0ae8f0bfbe88429f9234ecb49d9",
+                    "blake2b": "12edd771bf10e018bf31896985a4ce36941127d80d1e738ad712e0e4717c04deb0fa98f1dad02126e903f370019d9168041240722dc821386f5ff4efce36dd63",
                 },
             ),
         ],
     )
-    def test_hexdigest(self, file, hashes):
-        path = Path(__file__).parent / "fixtures" / "hash_files" / file
+    def test_hexdigest(self, data, hashes):
         algos = hashes.keys()
-        for algo in algos:
-            # Try with the default buffer size
-            digest = path.hexdigest(algorithm=algo)
-            assert digest == hashes[algo]
+        with temp_file(suffix=".txt") as path:
+            path.write_atomic(data, "wb")
+            for algo in algos:
+                # Try with the default buffer size
+                digest = path.hexdigest(algorithm=algo)
+                assert digest == hashes[algo]
 
-            # Try with another buffer size
-            digest = path.hexdigest(algorithm=algo, buffer_size=8192)
-            assert digest == hashes[algo]
+                # Try with another buffer size
+                digest = path.hexdigest(algorithm=algo, buffer_size=32)
+                assert digest == hashes[algo]
 
-    def test_hexdigest_invalid_call(self):
+    def test_hexdigest_invalid_call(self, temp_dir):
         fake_algo = "not_a_real_algo"
         with pytest.raises(
             ValueError,
@@ -119,8 +120,8 @@ class TestPath:
         with pytest.raises(FileNotFoundError):
             non_existing_path.hexdigest()
 
-        non_file_path = Path(__file__).parent
-        with pytest.raises(IsADirectoryError):
+        non_file_path = temp_dir
+        with pytest.raises((IsADirectoryError, PermissionError)):
             non_file_path.hexdigest()
 
 

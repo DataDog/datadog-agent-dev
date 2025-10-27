@@ -214,6 +214,7 @@ def temp_file(suffix: str = "") -> Generator[Path, None, None]:
     from tempfile import NamedTemporaryFile
 
     with NamedTemporaryFile(suffix=suffix) as f:
+        f.close()  # NamedTemporaryFile returns a file descriptor, not a path. We close it as, on Windows, it is not possible to open a file descriptor twice.
         yield Path(f.name).resolve()
 
 
