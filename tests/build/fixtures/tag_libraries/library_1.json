@@ -1,0 +1,18 @@
+{
+    "key": "library_1",
+    "tags": [
+        "a",
+        "b",
+        "c"
+    ],
+    "configurations": {
+        "config_1": [
+            "a",
+            "b"
+        ],
+        "config_2": [
+            "b",
+            "c"
+        ]
+    }
+}
