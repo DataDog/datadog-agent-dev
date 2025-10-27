@@ -8,12 +8,54 @@ import re
 
 import pytest
 
+from dda.build.go.tags.library import BuildTagLibrary
 from dda.build.go.tags.search import (
     _get_build_constraint_expr,  # noqa: PLC2701
     _parse_build_constraint_expr,  # noqa: PLC2701
     search_build_tags,
 )
 from dda.utils.fs import Path
+
+
+class TestBuildTagLibrary:
+    TEST_TAG_LIBRARIES = {  # noqa: RUF012
+        "library_1": Path(__file__).parent / "fixtures" / "tag_libraries" / "library_1.json",
+        "library_2": Path(__file__).parent / "fixtures" / "tag_libraries" / "library_2.json",
+    }
+
+    @pytest.fixture
+    def example_library(self):
+        return BuildTagLibrary(tags={"a", "b", "c"}, configurations={"config_1": {"a", "b"}, "config_2": {"b", "c"}})
+
+    @pytest.mark.parametrize("file", TEST_TAG_LIBRARIES.values())
+    def test_load(self, file):
+        library = BuildTagLibrary.load(file)
+        raw = json.load(file.open("r", encoding="utf-8"))
+        assert library.tags == set(raw["tags"])
+        assert library.configurations == {k: set(v) for k, v in raw["configurations"].items()}
+
+    def test_invalid_configurations(self, example_library):
+        with pytest.raises(
+            ValueError,
+            match="Invalid configurations: Tags `.*` not found in available tags. Available tags: `.*`",
+        ):
+            example_library.extend_configurations({"example_config_2": ["d", "e", "f"]})
+        with pytest.raises(
+            ValueError,
+            match="Cannot add configurations: Keys `.*` already defined. Available keys: `.*`",
+        ):
+            example_library.extend_configurations({"config_1": ["a", "b"]})
+
+    def test_extend_configurations(self, example_library):
+        example_library.extend_tags(["d", "e", "f", "g"])
+        example_library.extend_configurations({"config_3": ["d", "e"], "config_4": ["f", "g"]})
+        assert example_library.configurations.get("config_3") == {"d", "e"}
+        assert example_library.configurations.get("config_4") == {"f", "g"}
+
+    def test_extend_tags(self, example_library):
+        example_library.extend_tags(["x", "y"])
+        assert "x" in example_library.tags
+        assert "y" in example_library.tags
 
 
 class TestBuildTagSearch:
