@@ -3,10 +3,7 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
-import json
 from typing import TYPE_CHECKING, Any
-
-from httpx import HTTPError
 
 from dda._version import __version__
 
@@ -49,22 +46,14 @@ class DatadogFeatureFlag:
         if not self.__client_token:
             return {}
 
+        from httpx import HTTPError
+
         # Build headers
         headers = {
             "Content-Type": "application/vnd.api+json",
             "dd-client-token": self.__client_token,
+            "dd-application-id": self.__app_id,
         }
-
-        headers["dd-application-id"] = self.__app_id
-
-        # Stringify all targeting attributes
-        stringified_attributes = {}
-        if targeting_attributes:
-            for key, value in targeting_attributes.items():
-                if isinstance(value, str):
-                    stringified_attributes[key] = value
-                else:
-                    stringified_attributes[key] = json.dumps(value)
 
         # Build request payload (following JSON:API format)
         payload = {
@@ -80,7 +69,7 @@ class DatadogFeatureFlag:
                     },
                     "subject": {
                         "targeting_key": targeting_key,
-                        "targeting_attributes": stringified_attributes,
+                        "targeting_attributes": targeting_attributes,
                     },
                 },
             },

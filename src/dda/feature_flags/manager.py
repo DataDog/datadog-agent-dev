@@ -28,9 +28,6 @@ class FeatureFlagManager:
 
     def __init__(self, app: Application) -> None:
         self.__app = app
-
-        self.__client = DatadogFeatureFlag(self.__client_token, self.__app)
-
         # Manually implemented cache to avoid calling several time Feature flag backend on the same flag evaluation.
         # Cache key is a tuple of the flag, entity and scopes, to make it hashable.
         # For example after calling `enabled("test-flag", default=False, scopes={"user": "user1"}),
@@ -38,7 +35,7 @@ class FeatureFlagManager:
         self.__cache: dict[tuple[str, str, tuple[tuple[str, str], ...]], Any] = {}
 
     @cached_property
-    def __client_token(self) -> str | None:
+    def __client(self) -> DatadogFeatureFlag | None:
         if running_in_ci():  # We do not support feature flags token retrieval in the CI yet.
             return None
 
@@ -53,7 +50,7 @@ class FeatureFlagManager:
                 client_token = fetch_client_token()
                 save_client_token(client_token)
 
-        return client_token
+        return DatadogFeatureFlag(client_token, self.__app)
 
     @property
     def __user(self) -> FeatureFlagUser:
@@ -68,10 +65,6 @@ class FeatureFlagManager:
         return self.__user.machine_id
 
     def enabled(self, flag: str, *, default: bool = False, scopes: Optional[dict[str, str]] = None) -> bool:
-        if not self.__client_token:
-            self.__app.display_debug("No client token found")
-            return default
-
         entity = self.__get_entity()
         base_scopes = self.__get_base_scopes()
         if scopes is not None:
@@ -87,6 +80,10 @@ class FeatureFlagManager:
         return flag_value
 
     def __check_flag(self, flag: str, entity: str, scopes: tuple[tuple[str, str], ...]) -> bool | None:
+        if self.__client is None:
+            self.__app.display_debug("Feature flag client not initialized properly")
+            return None
+
         cache_key = (flag, entity, scopes)
         if cache_key in self.__cache:
             return self.__cache[cache_key]
