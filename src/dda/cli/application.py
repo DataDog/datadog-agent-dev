@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 
     from dda.config.file import ConfigFile
     from dda.config.model import RootConfig
+    from dda.feature_flags.manager import FeatureFlagManager
     from dda.github.core import GitHub
     from dda.telemetry.manager import TelemetryManager
     from dda.tools import Tools
@@ -125,6 +126,12 @@ class Application(Terminal):
         from dda.telemetry.manager import TelemetryManager
 
         return TelemetryManager(self)
+
+    @cached_property
+    def features(self) -> FeatureFlagManager:
+        from dda.feature_flags.manager import FeatureFlagManager
+
+        return FeatureFlagManager(self)
 
     @cached_property
     def dynamic_deps_allowed(self) -> bool:
