@@ -56,6 +56,27 @@ class TestChangeSetClass:
         assert changeset.deleted == {str(deleted.path): deleted}
         assert changeset.paths == {str(added.path): added, str(modified.path): modified, str(deleted.path): deleted}
 
+    def test_union(self):
+        changeset1 = ChangeSet([
+            ChangedFile(path=Path("/path/to/file"), type=ChangeType.ADDED, binary=False, patch="patch")
+        ])
+        changeset2 = ChangeSet([
+            ChangedFile(path=Path("/path/to/file2"), type=ChangeType.DELETED, binary=True, patch="patch2")
+        ])
+        assert changeset1 | changeset2 == ChangeSet([
+            ChangedFile(path=Path("/path/to/file"), type=ChangeType.ADDED, binary=False, patch="patch"),
+            ChangedFile(path=Path("/path/to/file2"), type=ChangeType.DELETED, binary=True, patch="patch2"),
+        ])
+
+    def test_eq(self):
+        changeset1 = ChangeSet([
+            ChangedFile(path=Path("/path/to/file"), type=ChangeType.ADDED, binary=False, patch="patch")
+        ])
+        changeset2 = ChangeSet([
+            ChangedFile(path=Path("/path/to/file"), type=ChangeType.ADDED, binary=False, patch="patch")
+        ])
+        assert changeset1 == changeset2
+
     @pytest.mark.parametrize(
         "repo_testcase",
         REPO_TESTCASES,
