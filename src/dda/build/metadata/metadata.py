@@ -48,7 +48,7 @@ class BuildMetadata(Struct, frozen=True):
     digest: ArtifactDigest
 
     def __post_init__(self) -> None:
-        if self.artifact_type == ArtifactType.COMP and len(self.agent_components) != 1:
+        if self.artifact_type == ArtifactType.BIN and len(self.agent_components) != 1:
             msg = "An agent component artifact can only represent a single component"
             raise ValueError(msg)
 
@@ -181,7 +181,7 @@ def get_build_components(command: str) -> tuple[set[str], ArtifactFormat]:
     Parse calling command to get the agent components and artifact format.
 
     Ex:
-        `dda build comp core-agent` -> (`core-agent`), `comp` and `bin`
+        `dda build bin core-agent` -> (`core-agent`), `bin` and `bin`
         `dda build dist deb -c core-agent -c process-agent` -> (`core-agent`, `process-agent`), `dist` and `deb`
     """
     command_parts = command.split(" ")
@@ -197,8 +197,7 @@ def get_build_components(command: str) -> tuple[set[str], ArtifactFormat]:
             artifact_format = ArtifactFormat[command_parts[3].upper()]
             # TODO: Implement this in a more robust way, write a proper parser for the command line
             agent_components = {part for part in command_parts[4:] if part != "-c"}
-        case "comp":
-            # TODO: support other component formats for comps - default to bin for now
+        case "bin":
             artifact_format = ArtifactFormat.BIN
             agent_components = {command_parts[3]}
         case _:
@@ -250,7 +249,7 @@ class _MetadataRequiredContext(Struct):
         Some values might not be correct for some artifacts, in which case they should be overridden afterwards.
 
         Defaults:
-        - agent_components: Extracted from the calling command for DIST artifacts, or set to a single component for COMP artifacts.
+        - agent_components: Extracted from the calling command for DIST artifacts, or set to a single component for BIN artifacts.
         - artifact_format: Extracted from the calling command.
         - commit: The HEAD commit of the currently checked-out repo.
         - worktree_diff: The changes in the working tree compared to HEAD.

@@ -23,7 +23,7 @@ class ArtifactFormat(StrEnum):
     MSI = auto()
     OCI = auto()
 
-    # Component formats
+    # Format for binary artifacts
     BIN = auto()
 
     # Other formats - used for non-standard artifact formats
@@ -50,11 +50,11 @@ class ArtifactFormat(StrEnum):
 
 class ArtifactType(StrEnum):
     """
-    The type of a build artifact: either a "component" or a "distribution".
+    The type of a build artifact: either a "binary" or a "distribution".
     Each artifact type has a corresponding format enum.
     """
 
-    COMP = auto()
+    BIN = auto()
     DIST = auto()
     OTHER = auto()
 
@@ -91,7 +91,7 @@ _ARTIFACT_FORMAT_DETAILS: dict[str, _ArtifactFormatDetails] = {
         file_identifier="-oci.tar.gz", artifact_type=ArtifactType.DIST, digest_type=DigestType.OCI_DIGEST
     ),
     "BIN": _ArtifactFormatDetails(
-        file_identifier="", artifact_type=ArtifactType.COMP, digest_type=DigestType.FILE_SHA256
+        file_identifier="", artifact_type=ArtifactType.BIN, digest_type=DigestType.FILE_SHA256
     ),
     "OTHER": _ArtifactFormatDetails(
         file_identifier=".unknown", artifact_type=ArtifactType.OTHER, digest_type=DigestType.OTHER

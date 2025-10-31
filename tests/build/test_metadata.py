@@ -99,7 +99,7 @@ class TestMetadata:
         ("command_path", "expected"),
         [
             (
-                "dda build comp core-agent",
+                "dda build bin core-agent",
                 ({"core-agent"}, ArtifactFormat.BIN),
             ),
             (
