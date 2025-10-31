@@ -77,27 +77,6 @@ class TestChangeSetClass:
         ])
         assert changeset1 == changeset2
 
-    def test_len(self):
-        changeset1 = ChangeSet([])
-        changeset2 = ChangeSet([
-            ChangedFile(path=Path("/path/to/file"), type=ChangeType.ADDED, binary=False, patch="patch")
-        ])
-        changeset3 = ChangeSet([
-            ChangedFile(path=Path("/path/to/file"), type=ChangeType.ADDED, binary=False, patch="patch"),
-            ChangedFile(path=Path("/path/to/file2"), type=ChangeType.ADDED, binary=False, patch="patch2"),
-        ])
-        assert len(changeset1) == 0
-        assert len(changeset2) == 1
-        assert len(changeset3) == 2
-
-    def test_bool(self):
-        changeset1 = ChangeSet([])
-        changeset2 = ChangeSet([
-            ChangedFile(path=Path("/path/to/file"), type=ChangeType.ADDED, binary=False, patch="patch")
-        ])
-        assert bool(changeset1) is False
-        assert bool(changeset2) is True
-
     @pytest.mark.parametrize(
         "repo_testcase",
         REPO_TESTCASES,

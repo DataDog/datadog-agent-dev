@@ -158,7 +158,7 @@ class BuildMetadata(Struct, frozen=True):
 
         # Source info
         source_info = self.commit.sha1[:8]
-        if self.worktree_diff:
+        if self.worktree_diff.files:
             source_info += f"+{self.worktree_diff.digest()[:8]}"
 
         # Compatibility
