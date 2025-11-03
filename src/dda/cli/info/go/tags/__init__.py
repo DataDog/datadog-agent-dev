@@ -7,21 +7,67 @@ from typing import TYPE_CHECKING
 
 import click
 
-from dda.cli.base import dynamic_command
+from dda.cli.base import dynamic_command, pass_app
+from dda.utils.fs import Path
 
 if TYPE_CHECKING:
-    from dda.utils.fs import Path
+    from dda.cli.application import Application
 
 
 @dynamic_command(
     short_help="Query the list of Go build tags existing in the repository.",
 )
 @click.option(
-    "repo",
+    "--repo",
     "-r",
-    type=click.Path(exists=True, file_okay=False, dir_okay=True, resolve_path=True),
-    help="The repository to use.",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, resolve_path=True, path_type=Path),
+    default=Path.cwd(),
+    # NOTE: Should we default to the root of the currently-open git repository?
+    help="The repository path to use. Defaults to the current working directory.",
 )
 @click.option("--json", "-j", is_flag=True, help="Format the output as JSON.")
-def cmd(repo: Path, *, json: bool) -> None:
-    pass
+@click.option("--map", "-m", is_flag=True, help="Map the tags to the paths where they are used.")
+@click.option(
+    "--exclude",
+    "-e",
+    multiple=True,
+    help="Exclude files or directories from the search using a regular expression. Can be specified multiple times.",
+)
+@pass_app
+def cmd(app: Application, *, repo: Path, json: bool, map: bool, exclude: list[str]) -> None:  # noqa: A002
+    import re
+
+    from dda.build.go.tags.search import search_build_tags
+
+    result_raw = search_build_tags(repo, exclude_patterns=[re.compile(pattern) for pattern in exclude])
+
+    # Need to convert the set[Path] to a list[str] to be able to serialize to JSON
+    # Sort the inner list elements alphabetically for consistent output
+    result_map = {tag: sorted(str(path) for path in paths) for tag, paths in result_raw.items()}
+    result_list = sorted(result_map.keys(), key=lambda x: len(result_map[x]), reverse=True)
+
+    if json:
+        from json import dumps
+
+        result = result_map if map else result_list
+        app.output(dumps(result))
+        return
+
+    # If outputting for humans, display the tags in a table
+    # This table is sorted by the most frequently used tags first
+    if len(result_list) == 0:
+        app.display("No build tags found.")
+        return
+
+    if not map:
+        app.display("\n".join(result_list))
+        return
+
+    from collections import OrderedDict
+
+    # Order the tags by most-used first (by "count"), descending
+    result_human = OrderedDict([
+        (tag, {"count": len(result_map[tag]), "paths": ", ".join(result_map[tag])}) for tag in result_list
+    ])
+    app.display_table(result_human)
+    return
