@@ -67,7 +67,29 @@ def cmd(app: Application, *, repo: Path, json: bool, map: bool, exclude: list[st
 
     # Order the tags by most-used first (by "count"), descending
     result_human = OrderedDict([
-        (tag, {"count": len(result_map[tag]), "paths": ", ".join(result_map[tag])}) for tag in result_list
+        (tag, {"count": len(result_map[tag]), "paths": _regroup_paths_by_longest_common_prefix(result_map[tag])})
+        for tag in result_list
     ])
     app.display_table(result_human)
     return
+
+
+def _regroup_paths_by_longest_common_prefix(paths: list[str]) -> str:
+    if len(paths) == 0:
+        return ""
+
+    if len(paths) == 1:
+        return paths[0]
+
+    import os
+
+    # Use commonpath to get the deepest common directory
+    common_dir = os.path.commonpath(paths)
+    if not common_dir:
+        return ", ".join(paths)
+
+    # Extract just the filenames (or remaining path parts) after the common directory
+    remaining_parts = [os.path.relpath(path, common_dir) for path in paths]
+
+    # Return `common_dir/{file1, file2, ...}`
+    return f"{common_dir}/{{{', '.join(remaining_parts)}}}"
