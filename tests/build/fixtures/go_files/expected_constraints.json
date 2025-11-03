@@ -1,0 +1,10 @@
+{
+    "dira/subdira/debug.go": "(linux || windows) && debug",
+    "dira/linux2.go": "linux",
+    "dira/noconstraints.go": null,
+    "dira/windows2.go": "windows",
+    "dirb/linux1.go": "linux",
+    "dirb/notlinux.go": "!linux || (debug && windows)",
+    "dirb/windows1.go": "windows",
+    "prod.go": "!debug"
+}

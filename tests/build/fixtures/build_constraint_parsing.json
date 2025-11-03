@@ -1,0 +1,1247 @@
+{
+    "linux && pcap && cgo": [
+        "linux",
+        "pcap",
+        "cgo"
+    ],
+    "e2ecoverage": [
+        "e2ecoverage"
+    ],
+    "go1.18": [
+        "go1.18"
+    ],
+    "zlib && test": [
+        "zlib",
+        "test"
+    ],
+    "trivy && !linux": [
+        "trivy",
+        "linux"
+    ],
+    "jmx": [
+        "jmx"
+    ],
+    "!windows && cgo": [
+        "windows",
+        "cgo"
+    ],
+    "linux_bpf": [
+        "linux_bpf"
+    ],
+    "linux && ebpf_bindata && cgo": [
+        "linux",
+        "ebpf_bindata",
+        "cgo"
+    ],
+    "!((linux && linux_bpf) || (windows && npm))": [
+        "linux",
+        "linux_bpf",
+        "windows",
+        "npm"
+    ],
+    "linux || linux_bpf": [
+        "linux",
+        "linux_bpf"
+    ],
+    "!goexperiment.systemcrypto && !goexperiment.boringcrypto": [
+        "goexperiment.systemcrypto",
+        "goexperiment.boringcrypto"
+    ],
+    "crio && trivy": [
+        "crio",
+        "trivy"
+    ],
+    "!linux && !windows": [
+        "linux",
+        "windows"
+    ],
+    "!windows && bundle_system_probe": [
+        "windows",
+        "bundle_system_probe"
+    ],
+    "!containerd": [
+        "containerd"
+    ],
+    "cel && test": [
+        "cel",
+        "test"
+    ],
+    "goexperiment.systemcrypto && !windows && !goexperiment.boringcrypto": [
+        "goexperiment.systemcrypto",
+        "windows",
+        "goexperiment.boringcrypto"
+    ],
+    "unix": [
+        "unix"
+    ],
+    "!unix": [
+        "unix"
+    ],
+    "npm": [
+        "npm"
+    ],
+    "!windows && !freebsd && !darwin": [
+        "windows",
+        "freebsd",
+        "darwin"
+    ],
+    "kubelet && orchestrator": [
+        "kubelet",
+        "orchestrator"
+    ],
+    "!ebpf_bindata && linux_bpf": [
+        "ebpf_bindata",
+        "linux_bpf"
+    ],
+    "!linux || !cgo": [
+        "linux",
+        "cgo"
+    ],
+    "!windows && bundle_security_agent": [
+        "windows",
+        "bundle_security_agent"
+    ],
+    "!windows": [
+        "windows"
+    ],
+    "trivy": [
+        "trivy"
+    ],
+    "linux && functionaltests && arm64": [
+        "linux",
+        "functionaltests",
+        "arm64"
+    ],
+    "!fargateprocess": [
+        "fargateprocess"
+    ],
+    "etcd": [
+        "etcd"
+    ],
+    "clusterchecks && !windows": [
+        "clusterchecks",
+        "windows"
+    ],
+    "kubelet || docker": [
+        "kubelet",
+        "docker"
+    ],
+    "kubelet && !docker": [
+        "kubelet",
+        "docker"
+    ],
+    "linux || darwin": [
+        "linux",
+        "darwin"
+    ],
+    "containerd && cel": [
+        "containerd",
+        "cel"
+    ],
+    "!clusterchecks": [
+        "clusterchecks"
+    ],
+    "linux": [
+        "linux"
+    ],
+    "linux && test && nvml": [
+        "linux",
+        "test",
+        "nvml"
+    ],
+    "tools": [
+        "tools"
+    ],
+    "linux || windows || darwin": [
+        "linux",
+        "windows",
+        "darwin"
+    ],
+    "containerd && linux": [
+        "containerd",
+        "linux"
+    ],
+    "!windows && bundle_process_agent": [
+        "windows",
+        "bundle_process_agent"
+    ],
+    "kubelet || clusterchecks || kubeapiserver": [
+        "kubelet",
+        "clusterchecks",
+        "kubeapiserver"
+    ],
+    "!linux": [
+        "linux"
+    ],
+    "otlp && serverless": [
+        "otlp",
+        "serverless"
+    ],
+    "linux && functionaltests && trivy": [
+        "linux",
+        "functionaltests",
+        "trivy"
+    ],
+    "ec2": [
+        "ec2"
+    ],
+    "containerd && !linux": [
+        "containerd",
+        "linux"
+    ],
+    "!serverless && (test || functionaltests || stresstests)": [
+        "serverless",
+        "test",
+        "functionaltests",
+        "stresstests"
+    ],
+    "!kubelet || !kubeapiserver": [
+        "kubelet",
+        "kubeapiserver"
+    ],
+    "test && linux_bpf": [
+        "test",
+        "linux_bpf"
+    ],
+    "test && zlib && zstd": [
+        "test",
+        "zlib",
+        "zstd"
+    ],
+    "trivy && containerd": [
+        "trivy",
+        "containerd"
+    ],
+    "jetson": [
+        "jetson"
+    ],
+    "!windows && clusterchecks": [
+        "windows",
+        "clusterchecks"
+    ],
+    "!orchestrator": [
+        "orchestrator"
+    ],
+    "!python": [
+        "python"
+    ],
+    "!linux || !go1.19": [
+        "linux",
+        "go1.19"
+    ],
+    "python && test && kubelet": [
+        "python",
+        "test",
+        "kubelet"
+    ],
+    "kubeapiserver && test": [
+        "kubeapiserver",
+        "test"
+    ],
+    "ebpf_bindata && amd64": [
+        "ebpf_bindata",
+        "amd64"
+    ],
+    "!e2ecoverage": [
+        "e2ecoverage"
+    ],
+    "containerd && windows": [
+        "containerd",
+        "windows"
+    ],
+    "docker && cel": [
+        "docker",
+        "cel"
+    ],
+    "linux_bpf && !ebpf_bindata && !btfhubsync && !cws_go_generate": [
+        "linux_bpf",
+        "ebpf_bindata",
+        "btfhubsync",
+        "cws_go_generate"
+    ],
+    "!kubelet": [
+        "kubelet"
+    ],
+    "linux && cgo && !static": [
+        "linux",
+        "cgo",
+        "static"
+    ],
+    "kubelet && !kubeapiserver": [
+        "kubelet",
+        "kubeapiserver"
+    ],
+    "!kubeapiserver || !orchestrator": [
+        "kubeapiserver",
+        "orchestrator"
+    ],
+    "linux && !test": [
+        "linux",
+        "test"
+    ],
+    "kubelet && test": [
+        "kubelet",
+        "test"
+    ],
+    "ncm": [
+        "ncm"
+    ],
+    "kubeapiserver && orchestrator && test && test": [
+        "kubeapiserver",
+        "orchestrator",
+        "test"
+    ],
+    "integration": [
+        "integration"
+    ],
+    "test && ncm": [
+        "test",
+        "ncm"
+    ],
+    "test && otlp": [
+        "test",
+        "otlp"
+    ],
+    "windows || freebsd || netbsd || openbsd || solaris || dragonfly": [
+        "windows",
+        "freebsd",
+        "netbsd",
+        "openbsd",
+        "solaris",
+        "dragonfly"
+    ],
+    "oracle_test": [
+        "oracle_test"
+    ],
+    "!kubelet && !docker": [
+        "kubelet",
+        "docker"
+    ],
+    "linux && !arm64": [
+        "linux",
+        "arm64"
+    ],
+    "windows": [
+        "windows"
+    ],
+    "linux && test": [
+        "linux",
+        "test"
+    ],
+    "!darwin && !windows && kubeapiserver": [
+        "darwin",
+        "windows",
+        "kubeapiserver"
+    ],
+    "!linux || !cgo || static": [
+        "linux",
+        "cgo",
+        "static"
+    ],
+    "kubelet && !orchestrator": [
+        "kubelet",
+        "orchestrator"
+    ],
+    "!windows && !linux": [
+        "windows",
+        "linux"
+    ],
+    "test && (linux || windows)": [
+        "test",
+        "linux",
+        "windows"
+    ],
+    "(linux && !linux_bpf) || ebpf_bindata || btfhubsync": [
+        "linux",
+        "linux_bpf",
+        "ebpf_bindata",
+        "btfhubsync"
+    ],
+    "ebpf_bindata && arm64": [
+        "ebpf_bindata",
+        "arm64"
+    ],
+    "usm_debugger": [
+        "usm_debugger"
+    ],
+    "!trivy && !windows": [
+        "trivy",
+        "windows"
+    ],
+    "otlp && !serverless": [
+        "otlp",
+        "serverless"
+    ],
+    "(windows && npm) || linux_bpf": [
+        "windows",
+        "npm",
+        "linux_bpf"
+    ],
+    "linux_bpf && nvml && test": [
+        "linux_bpf",
+        "nvml",
+        "test"
+    ],
+    "kubeapiserver && orchestrator": [
+        "kubeapiserver",
+        "orchestrator"
+    ],
+    "ec2 && docker": [
+        "ec2",
+        "docker"
+    ],
+    "!ncm": [
+        "ncm"
+    ],
+    "systemd": [
+        "systemd"
+    ],
+    "test && nvml": [
+        "test",
+        "nvml"
+    ],
+    "!cgo || windows": [
+        "cgo",
+        "windows"
+    ],
+    "linux && !cgo": [
+        "linux",
+        "cgo"
+    ],
+    "otlp && serverless && test": [
+        "otlp",
+        "serverless",
+        "test"
+    ],
+    "!docker && !linux && !kubeapiserver": [
+        "docker",
+        "linux",
+        "kubeapiserver"
+    ],
+    "!ebpf_bindata": [
+        "ebpf_bindata"
+    ],
+    "test": [
+        "test"
+    ],
+    "linux && go1.19": [
+        "linux",
+        "go1.19"
+    ],
+    "!unix && !windows": [
+        "unix",
+        "windows"
+    ],
+    "docker && linux": [
+        "docker",
+        "linux"
+    ],
+    "syscalltesters": [
+        "syscalltesters"
+    ],
+    "linux_bpf && amd64": [
+        "linux_bpf",
+        "amd64"
+    ],
+    "!windows && kubeapiserver": [
+        "windows",
+        "kubeapiserver"
+    ],
+    "linux_bpf && nvml": [
+        "linux_bpf",
+        "nvml"
+    ],
+    "podman": [
+        "podman"
+    ],
+    "containerd && trivy": [
+        "containerd",
+        "trivy"
+    ],
+    "linux && amd64": [
+        "linux",
+        "amd64"
+    ],
+    "(windows && npm) || (linux && linux_bpf)": [
+        "windows",
+        "npm",
+        "linux",
+        "linux_bpf"
+    ],
+    "netbsd || openbsd || solaris || dragonfly || linux": [
+        "netbsd",
+        "openbsd",
+        "solaris",
+        "dragonfly",
+        "linux"
+    ],
+    "windows && python": [
+        "windows",
+        "python"
+    ],
+    "!clusterchecks && !kubeapiserver": [
+        "clusterchecks",
+        "kubeapiserver"
+    ],
+    "python && windows": [
+        "python",
+        "windows"
+    ],
+    "python": [
+        "python"
+    ],
+    "otlp && !serverless && test": [
+        "otlp",
+        "serverless",
+        "test"
+    ],
+    "!windows && otlp": [
+        "windows",
+        "otlp"
+    ],
+    "!kubelet && !kubeapiserver": [
+        "kubelet",
+        "kubeapiserver"
+    ],
+    "kubeapiserver && !kubelet": [
+        "kubeapiserver",
+        "kubelet"
+    ],
+    "freebsd || darwin": [
+        "freebsd",
+        "darwin"
+    ],
+    "!windows && !darwin && python": [
+        "windows",
+        "darwin",
+        "python"
+    ],
+    "!kubeapiserver": [
+        "kubeapiserver"
+    ],
+    "!trivy": [
+        "trivy"
+    ],
+    "clusterchecks && !kubeapiserver": [
+        "clusterchecks",
+        "kubeapiserver"
+    ],
+    "!kubelet && docker": [
+        "kubelet",
+        "docker"
+    ],
+    "(linux && (!linux_bpf || !nvml)) || windows": [
+        "linux",
+        "linux_bpf",
+        "nvml",
+        "windows"
+    ],
+    "!windows && functionaltests": [
+        "windows",
+        "functionaltests"
+    ],
+    "!windows && !serverless && test": [
+        "windows",
+        "serverless",
+        "test"
+    ],
+    "sds": [
+        "sds"
+    ],
+    "freebsd || netbsd || openbsd || solaris || dragonfly || linux": [
+        "freebsd",
+        "netbsd",
+        "openbsd",
+        "solaris",
+        "dragonfly",
+        "linux"
+    ],
+    "jmx && !windows": [
+        "jmx",
+        "windows"
+    ],
+    "clusterchecks && kubeapiserver": [
+        "clusterchecks",
+        "kubeapiserver"
+    ],
+    "android": [
+        "android"
+    ],
+    "!kubeapiserver || kubelet": [
+        "kubeapiserver",
+        "kubelet"
+    ],
+    "linux && nvml && test": [
+        "linux",
+        "nvml",
+        "test"
+    ],
+    "!functionaltests": [
+        "functionaltests"
+    ],
+    "unix && pcap && cgo": [
+        "unix",
+        "pcap",
+        "cgo"
+    ],
+    "python && kubelet && test": [
+        "python",
+        "kubelet",
+        "test"
+    ],
+    "!darwin && !windows": [
+        "darwin",
+        "windows"
+    ],
+    "goexperiment.boringcrypto": [
+        "goexperiment.boringcrypto"
+    ],
+    "!cri": [
+        "cri"
+    ],
+    "!systemd": [
+        "systemd"
+    ],
+    "test || functionaltests || stresstests": [
+        "test",
+        "functionaltests",
+        "stresstests"
+    ],
+    "linux && arm64": [
+        "linux",
+        "arm64"
+    ],
+    "ec2 && !docker": [
+        "ec2",
+        "docker"
+    ],
+    "!kubelet && kubeapiserver": [
+        "kubelet",
+        "kubeapiserver"
+    ],
+    "python && test": [
+        "python",
+        "test"
+    ],
+    "!kubeapiserver && orchestrator": [
+        "kubeapiserver",
+        "orchestrator"
+    ],
+    "linux && linux_bpf": [
+        "linux",
+        "linux_bpf"
+    ],
+    "clusterchecks && kubeapiserver && test": [
+        "clusterchecks",
+        "kubeapiserver",
+        "test"
+    ],
+    "trivy && docker": [
+        "trivy",
+        "docker"
+    ],
+    "!linux || serverless": [
+        "linux",
+        "serverless"
+    ],
+    "windows || !kubeapiserver": [
+        "windows",
+        "kubeapiserver"
+    ],
+    "linux && !(pcap && cgo)": [
+        "linux",
+        "pcap",
+        "cgo"
+    ],
+    "windows && npm": [
+        "windows",
+        "npm"
+    ],
+    "otlp && test": [
+        "otlp",
+        "test"
+    ],
+    "trivy || windows": [
+        "trivy",
+        "windows"
+    ],
+    "clusterchecks": [
+        "clusterchecks"
+    ],
+    "!sds": [
+        "sds"
+    ],
+    "kubeapiserver && orchestrator && test": [
+        "kubeapiserver",
+        "orchestrator",
+        "test"
+    ],
+    "(linux && linux_bpf) || (windows && npm)": [
+        "linux",
+        "linux_bpf",
+        "windows",
+        "npm"
+    ],
+    "zk": [
+        "zk"
+    ],
+    "!jetson": [
+        "jetson"
+    ],
+    "(windows || serverless) && test": [
+        "windows",
+        "serverless",
+        "test"
+    ],
+    "freebsd || netbsd || openbsd || solaris || dragonfly || aix": [
+        "freebsd",
+        "netbsd",
+        "openbsd",
+        "solaris",
+        "dragonfly",
+        "aix"
+    ],
+    "!linux_bpf": [
+        "linux_bpf"
+    ],
+    "ebpf_bindata": [
+        "ebpf_bindata"
+    ],
+    "cri && !windows": [
+        "cri",
+        "windows"
+    ],
+    "crio": [
+        "crio"
+    ],
+    "linux || freebsd || netbsd || openbsd || solaris || dragonfly || darwin": [
+        "linux",
+        "freebsd",
+        "netbsd",
+        "openbsd",
+        "solaris",
+        "dragonfly",
+        "darwin"
+    ],
+    "ignore": [
+        "ignore"
+    ],
+    "kubeapiserver && local_debug": [
+        "kubeapiserver",
+        "local_debug"
+    ],
+    "trivy || (windows && wmi)": [
+        "trivy",
+        "windows",
+        "wmi"
+    ],
+    "windows || linux_bpf": [
+        "windows",
+        "linux_bpf"
+    ],
+    "docker && kubelet": [
+        "docker",
+        "kubelet"
+    ],
+    "kubeapiserver && !linux": [
+        "kubeapiserver",
+        "linux"
+    ],
+    "otlp": [
+        "otlp"
+    ],
+    "linux || freebsd || openbsd || darwin": [
+        "linux",
+        "freebsd",
+        "openbsd",
+        "darwin"
+    ],
+    "!windows && bundle_trace_agent": [
+        "windows",
+        "bundle_trace_agent"
+    ],
+    "linux && trivy && containerd && docker && crio": [
+        "linux",
+        "trivy",
+        "containerd",
+        "docker",
+        "crio"
+    ],
+    "serverless": [
+        "serverless"
+    ],
+    "kubelet && orchestrator && test": [
+        "kubelet",
+        "orchestrator",
+        "test"
+    ],
+    "linux && functionaltests && !386": [
+        "linux",
+        "functionaltests",
+        "386"
+    ],
+    "!(unix && pcap && cgo)": [
+        "unix",
+        "pcap",
+        "cgo"
+    ],
+    "darwin || linux": [
+        "darwin",
+        "linux"
+    ],
+    "docker && !trivy": [
+        "docker",
+        "trivy"
+    ],
+    "!test": [
+        "test"
+    ],
+    "!linux || !(amd64 || arm64)": [
+        "linux",
+        "amd64",
+        "arm64"
+    ],
+    "linux || windows": [
+        "linux",
+        "windows"
+    ],
+    "linux && ebpf_bindata": [
+        "linux",
+        "ebpf_bindata"
+    ],
+    "(linux && !linux_bpf) || windows": [
+        "linux",
+        "linux_bpf",
+        "windows"
+    ],
+    "containerd && !trivy": [
+        "containerd",
+        "trivy"
+    ],
+    "zlib && test && zstd": [
+        "zlib",
+        "test",
+        "zstd"
+    ],
+    "linux && pcap": [
+        "linux",
+        "pcap"
+    ],
+    "linux && functionaltests && amd64": [
+        "linux",
+        "functionaltests",
+        "amd64"
+    ],
+    "!zk": [
+        "zk"
+    ],
+    "linux || freebsd || netbsd || openbsd || solaris || dragonfly || aix": [
+        "linux",
+        "freebsd",
+        "netbsd",
+        "openbsd",
+        "solaris",
+        "dragonfly",
+        "aix"
+    ],
+    "python && !windows": [
+        "python",
+        "windows"
+    ],
+    "ignore || generate": [
+        "ignore",
+        "generate"
+    ],
+    "docker && trivy": [
+        "docker",
+        "trivy"
+    ],
+    "linux_bpf || (windows && npm)": [
+        "linux_bpf",
+        "windows",
+        "npm"
+    ],
+    "!serverless": [
+        "serverless"
+    ],
+    "test && windows": [
+        "test",
+        "windows"
+    ],
+    "goexperiment.systemcrypto && windows && !goexperiment.boringcrypto": [
+        "goexperiment.systemcrypto",
+        "windows",
+        "goexperiment.boringcrypto"
+    ],
+    "windows || darwin || linux": [
+        "windows",
+        "darwin",
+        "linux"
+    ],
+    "kubelet": [
+        "kubelet"
+    ],
+    "!windows && !kubeapiserver": [
+        "windows",
+        "kubeapiserver"
+    ],
+    "!docker": [
+        "docker"
+    ],
+    "docker && windows": [
+        "docker",
+        "windows"
+    ],
+    "linux && !linux_bpf": [
+        "linux",
+        "linux_bpf"
+    ],
+    "docker": [
+        "docker"
+    ],
+    "!windows && !darwin": [
+        "windows",
+        "darwin"
+    ],
+    "!android": [
+        "android"
+    ],
+    "otlp && test && !race": [
+        "otlp",
+        "test",
+        "race"
+    ],
+    "!(clusterchecks && kubeapiserver)": [
+        "clusterchecks",
+        "kubeapiserver"
+    ],
+    "go1.18 && !windows": [
+        "go1.18",
+        "windows"
+    ],
+    "linux && functionaltests": [
+        "linux",
+        "functionaltests"
+    ],
+    "windows && otlp": [
+        "windows",
+        "otlp"
+    ],
+    "linux && nvml": [
+        "linux",
+        "nvml"
+    ],
+    "!darwin": [
+        "darwin"
+    ],
+    "linux && ebpf_bindata && pcap && cgo": [
+        "linux",
+        "ebpf_bindata",
+        "pcap",
+        "cgo"
+    ],
+    "python && !kubelet": [
+        "python",
+        "kubelet"
+    ],
+    "kubeapiserver && kubelet": [
+        "kubeapiserver",
+        "kubelet"
+    ],
+    "!jmx": [
+        "jmx"
+    ],
+    "!etcd": [
+        "etcd"
+    ],
+    "three": [
+        "three"
+    ],
+    "linux_bpf && test": [
+        "linux_bpf",
+        "test"
+    ],
+    "trivy && crio": [
+        "trivy",
+        "crio"
+    ],
+    "!trivy && windows && wmi": [
+        "trivy",
+        "windows",
+        "wmi"
+    ],
+    "orchestrator": [
+        "orchestrator"
+    ],
+    "python && kubelet": [
+        "python",
+        "kubelet"
+    ],
+    "windows && manualtest": [
+        "windows",
+        "manualtest"
+    ],
+    "two": [
+        "two"
+    ],
+    "orchestrator && test": [
+        "orchestrator",
+        "test"
+    ],
+    "!windows && python": [
+        "windows",
+        "python"
+    ],
+    "kubeapiserver || kubelet": [
+        "kubeapiserver",
+        "kubelet"
+    ],
+    "zlib && zstd": [
+        "zlib",
+        "zstd"
+    ],
+    "!windows && !aix": [
+        "windows",
+        "aix"
+    ],
+    "fargateprocess": [
+        "fargateprocess"
+    ],
+    "linux && kubeapiserver": [
+        "linux",
+        "kubeapiserver"
+    ],
+    "!cel": [
+        "cel"
+    ],
+    "linux && functionaltests && linux_bpf": [
+        "linux",
+        "functionaltests",
+        "linux_bpf"
+    ],
+    "cri": [
+        "cri"
+    ],
+    "oracle": [
+        "oracle"
+    ],
+    "containerd && (windows || linux)": [
+        "containerd",
+        "windows",
+        "linux"
+    ],
+    "docker && (linux || windows)": [
+        "docker",
+        "linux",
+        "windows"
+    ],
+    "!(linux || windows)": [
+        "linux",
+        "windows"
+    ],
+    "!ec2": [
+        "ec2"
+    ],
+    "linux && linux_bpf && nvml": [
+        "linux",
+        "linux_bpf",
+        "nvml"
+    ],
+    "zlib && !zstd": [
+        "zlib",
+        "zstd"
+    ],
+    "!zlib && !zstd": [
+        "zlib",
+        "zstd"
+    ],
+    "serverless && otlp": [
+        "serverless",
+        "otlp"
+    ],
+    "kubelet && kubeapiserver": [
+        "kubelet",
+        "kubeapiserver"
+    ],
+    "!podman": [
+        "podman"
+    ],
+    "!windows && !serverless": [
+        "windows",
+        "serverless"
+    ],
+    "windows && npm && test": [
+        "windows",
+        "npm",
+        "test"
+    ],
+    "!serverless && cel": [
+        "serverless",
+        "cel"
+    ],
+    "!crio": [
+        "crio"
+    ],
+    "darwin": [
+        "darwin"
+    ],
+    "!python || windows": [
+        "python",
+        "windows"
+    ],
+    "windows && (amd64 || arm64)": [
+        "windows",
+        "amd64",
+        "arm64"
+    ],
+    "!libopenscap || !cgo || !linux": [
+        "libopenscap",
+        "cgo",
+        "linux"
+    ],
+    "!kubelet || !orchestrator": [
+        "kubelet",
+        "orchestrator"
+    ],
+    "e2ecoverage && !windows && kubeapiserver": [
+        "e2ecoverage",
+        "windows",
+        "kubeapiserver"
+    ],
+    "trivy && (docker || containerd || crio)": [
+        "trivy",
+        "docker",
+        "containerd",
+        "crio"
+    ],
+    "functionaltests": [
+        "functionaltests"
+    ],
+    "!serverless && test": [
+        "serverless",
+        "test"
+    ],
+    "freebsd || linux || netbsd || openbsd || solaris || dragonfly || aix": [
+        "freebsd",
+        "linux",
+        "netbsd",
+        "openbsd",
+        "solaris",
+        "dragonfly",
+        "aix"
+    ],
+    "linux_bpf && arm64": [
+        "linux_bpf",
+        "arm64"
+    ],
+    "freebsd || netbsd || openbsd || solaris || dragonfly": [
+        "freebsd",
+        "netbsd",
+        "openbsd",
+        "solaris",
+        "dragonfly"
+    ],
+    "linux || freebsd || netbsd || openbsd || solaris || dragonfly || darwin || aix": [
+        "linux",
+        "freebsd",
+        "netbsd",
+        "openbsd",
+        "solaris",
+        "dragonfly",
+        "darwin",
+        "aix"
+    ],
+    "benchmarking": [
+        "benchmarking"
+    ],
+    "kubeapiserver": [
+        "kubeapiserver"
+    ],
+    "linux && cgo": [
+        "linux",
+        "cgo"
+    ],
+    "zlib && optional_benchmarks": [
+        "zlib",
+        "optional_benchmarks"
+    ],
+    "!oracle": [
+        "oracle"
+    ],
+    "!linux_bpf && !windows": [
+        "linux_bpf",
+        "windows"
+    ],
+    "consul": [
+        "consul"
+    ],
+    "cel": [
+        "cel"
+    ],
+    "crio && !trivy": [
+        "crio",
+        "trivy"
+    ],
+    "containerd": [
+        "containerd"
+    ],
+    "!kubeapiserver || !kubelet": [
+        "kubeapiserver",
+        "kubelet"
+    ],
+    "containerd && (linux || windows)": [
+        "containerd",
+        "linux",
+        "windows"
+    ],
+    "!(clusterchecks && kubeapiserver) && systemprobechecks": [
+        "clusterchecks",
+        "kubeapiserver",
+        "systemprobechecks"
+    ],
+    "!otlp": [
+        "otlp"
+    ],
+    "windows || serverless": [
+        "windows",
+        "serverless"
+    ],
+    "!linux || !nvml": [
+        "linux",
+        "nvml"
+    ],
+    "windows && functionaltests": [
+        "windows",
+        "functionaltests"
+    ],
+    "kubeapiserver && linux": [
+        "kubeapiserver",
+        "linux"
+    ],
+    "!e2ecoverage && !windows && kubeapiserver": [
+        "e2ecoverage",
+        "windows",
+        "kubeapiserver"
+    ],
+    "!consul": [
+        "consul"
+    ],
+    "hack_no_include": [
+        "hack_no_include"
+    ],
+    "test && trivy && linux": [
+        "test",
+        "trivy",
+        "linux"
+    ],
+    "!(clusterchecks && kubeapiserver) && !systemprobechecks": [
+        "clusterchecks",
+        "kubeapiserver",
+        "systemprobechecks"
+    ],
+    "!darwin && !linux && !windows": [
+        "darwin",
+        "linux",
+        "windows"
+    ]
+}

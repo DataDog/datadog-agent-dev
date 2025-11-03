@@ -1,0 +1,19 @@
+{
+    "linux": [
+        "dira/linux2.go",
+        "dirb/linux1.go",
+        "dirb/notlinux.go",
+        "dira/subdira/debug.go"
+    ],
+    "windows": [
+        "dira/windows2.go",
+        "dirb/windows1.go",
+        "dirb/notlinux.go",
+        "dira/subdira/debug.go"
+    ],
+    "debug": [
+        "dira/subdira/debug.go",
+        "dirb/notlinux.go",
+        "prod.go"
+    ]
+}
