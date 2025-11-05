@@ -18,8 +18,6 @@ from dda.utils.git.changeset import ChangeSet  # noqa: TC001 - needed outside of
 from dda.utils.git.commit import Commit  # noqa: TC001
 
 if TYPE_CHECKING:
-    from click import Context
-
     from dda.cli.application import Application
 
 
@@ -70,13 +68,17 @@ class BuildMetadata(Struct, frozen=True):
     def spawn_from_context(
         cls,
         context_data: _MetadataRequiredContext,
+        artifact_components: _MetadataAgentComponents,
         artifact_digest: ArtifactDigest,
     ) -> BuildMetadata:
         """
         Create a BuildMetadata instance for the current build.
-        Takes two arguments:
+        Takes three arguments:
         - context_data: A _MetadataRequiredContext instance containing the required data to generate build metadata.
             This can be created with the `analyze_context` function.
+        - artifact_components: A tuple containing the agent components and artifact format for the artifact.
+            The first element is a set of strings representing the agent components.
+            The second element is an ArtifactFormat instance representing the format of the artifact.
         - artifact_digest: An ArtifactDigest instance containing the digest of the artifact.
             This can be calculated with the `DigestType.calculate_digest` method.
             For example, starting from the _MetadataRequiredContext instance, you can do:
@@ -98,6 +100,8 @@ class BuildMetadata(Struct, frozen=True):
         return cls(
             id=artifact_id,
             build_time=build_time,
+            agent_components=artifact_components[0],
+            artifact_format=artifact_components[1],
             digest=artifact_digest,
             **context_data.dump(),
         )
@@ -176,37 +180,6 @@ class BuildMetadata(Struct, frozen=True):
         return f"{components}-{compatibility}-{source_info}-{short_uuid}{artifact_format_identifier}"
 
 
-def get_build_components(command: str) -> tuple[set[str], ArtifactFormat]:
-    """
-    Parse calling command to get the agent components and artifact format.
-
-    Ex:
-        `dda build bin core-agent` -> (`core-agent`), `bin` and `bin`
-        `dda build dist deb -c core-agent -c process-agent` -> (`core-agent`, `process-agent`), `dist` and `deb`
-    """
-    command_parts = command.split(" ")
-    # Remove the first two parts, which are `dda` and `build`, if they exist
-    if command_parts[:2] != ["dda", "build"]:
-        msg = f"Unexpected command, only build commands can be used to extract build components: {command}"
-        raise ValueError(msg)
-
-    artifact_format: ArtifactFormat
-    artifact_type_str = command_parts[2]
-    match artifact_type_str:
-        case "dist":
-            artifact_format = ArtifactFormat[command_parts[3].upper()]
-            # TODO: Implement this in a more robust way, write a proper parser for the command line
-            agent_components = {part for part in command_parts[4:] if part != "-c"}
-        case "bin":
-            artifact_format = ArtifactFormat.BIN
-            agent_components = {command_parts[3]}
-        case _:
-            msg = f"Unsupported artifact type: {artifact_type_str}"
-            raise NotImplementedError(msg)
-
-    return agent_components, artifact_format
-
-
 def generate_build_id() -> UUID:
     """
     Generate a unique build ID.
@@ -216,11 +189,14 @@ def generate_build_id() -> UUID:
     return uuid4()
 
 
-def analyze_context(ctx: Context, app: Application) -> _MetadataRequiredContext:
+def analyze_context(app: Application) -> _MetadataRequiredContext:
     """
     Analyze the context to get the required data to generate build metadata.
     """
-    return _MetadataRequiredContext.from_context(ctx, app)
+    return _MetadataRequiredContext.from_context(app)
+
+
+_MetadataAgentComponents = tuple[set[str], ArtifactFormat]
 
 
 class _MetadataRequiredContext(Struct):
@@ -228,9 +204,6 @@ class _MetadataRequiredContext(Struct):
     Collection of fields obtained from build context to generate build metadata.
     Having this as a separate struct allows for easier overriding - this struct is explicitely not frozen.
     """
-
-    agent_components: set[str]
-    artifact_format: ArtifactFormat
 
     # Source tree fields
     commit: Commit
@@ -243,7 +216,7 @@ class _MetadataRequiredContext(Struct):
     build_platform: Platform
 
     @classmethod
-    def from_context(cls, ctx: Context, app: Application) -> _MetadataRequiredContext:
+    def from_context(cls, app: Application) -> _MetadataRequiredContext:
         """
         Create a _MetadataRequiredContext instance from the application and build context.
         Some values might not be correct for some artifacts, in which case they should be overridden afterwards.
@@ -259,16 +232,10 @@ class _MetadataRequiredContext(Struct):
 
         import platform
 
-        # Build components
-        build_components = get_build_components(ctx.command_path)
-        agent_components, artifact_format = build_components
-
         # Build platform
         build_platform = Platform.from_alias(platform.system().lower(), platform.machine())
 
         return cls(
-            agent_components=agent_components,
-            artifact_format=artifact_format,
             commit=app.tools.git.get_commit(),
             worktree_diff=app.tools.git.get_changes("HEAD", start="HEAD", working_tree=True),
             compatible_platforms={build_platform},
