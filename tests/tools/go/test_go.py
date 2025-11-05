@@ -92,6 +92,7 @@ class TestBuild:
 
     # This tests is quite slow, we'll only run it in CI
     @pytest.mark.requires_ci
+    @pytest.mark.skip_macos  # Go binary is not installed on macOS CI runners
     def test_build_project(self, app, temp_dir):
         for tag, output_mark in [("prod", "PRODUCTION"), ("debug", "DEBUG")]:
             with (Path(__file__).parent / "fixtures" / "small_go_project").as_cwd():
