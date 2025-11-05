@@ -232,21 +232,37 @@ def pytest_runtest_setup(item):
         if marker.name == "requires_windows" and PLATFORM_ID != "windows":
             pytest.skip("Not running on Windows")
 
+        if marker.name == "skip_windows" and PLATFORM_ID == "windows":
+            pytest.skip("Test should be skipped on Windows")
+
         if marker.name == "requires_macos" and PLATFORM_ID != "macos":
             pytest.skip("Not running on macOS")
+
+        if marker.name == "skip_macos" and PLATFORM_ID == "macos":
+            pytest.skip("Test should be skipped on macOS")
 
         if marker.name == "requires_linux" and PLATFORM_ID != "linux":
             pytest.skip("Not running on Linux")
 
-        if marker.name == "requires_unix" and PLATFORM_ID == "windows":
-            pytest.skip("Not running on a Linux-based platform")
+        if marker.name == "skip_linux" and PLATFORM_ID == "linux":
+            pytest.skip("Test should be skipped on Linux")
+
+        if marker.name == "requires_unix" and PLATFORM_ID not in {"linux", "macos"}:
+            pytest.skip("Not running on a Unix-based platform")
+
+        if marker.name == "skip_unix" and PLATFORM_ID in {"linux", "macos"}:
+            pytest.skip("Test should be skipped on Unix-based platforms")
 
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "requires_ci: Tests intended for CI environments")
     config.addinivalue_line("markers", "requires_windows: Tests intended for Windows operating systems")
+    config.addinivalue_line("markers", "skip_windows: Tests should be skipped on Windows operating systems")
     config.addinivalue_line("markers", "requires_macos: Tests intended for macOS operating systems")
+    config.addinivalue_line("markers", "skip_macos: Tests should be skipped on macOS operating systems")
     config.addinivalue_line("markers", "requires_linux: Tests intended for Linux operating systems")
+    config.addinivalue_line("markers", "skip_linux: Tests should be skipped on Linux operating systems")
     config.addinivalue_line("markers", "requires_unix: Tests intended for Linux-based operating systems")
+    config.addinivalue_line("markers", "skip_unix: Tests should be skipped on Unix-based operating systems")
 
     config.getini("norecursedirs").remove("build")  # /tests/cli/build
