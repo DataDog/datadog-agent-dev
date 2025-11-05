@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, override
 
 from dda.build.artifacts.binaries.base import BinaryArtifact
 
@@ -15,6 +15,11 @@ class CoreAgent(BinaryArtifact):
     """
     Build artifact for the `core-agent` binary.
     """
+
+    @property
+    @override
+    def name(self) -> str:
+        return "core-agent"
 
     def build(self, app: Application, *args: Any, **kwargs: Any) -> None:
         msg = "Not implemented"
