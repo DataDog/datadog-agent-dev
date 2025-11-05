@@ -69,7 +69,7 @@ class ChangeSet:  # noqa: PLW1641
         return self.__changed
 
     @property
-    def files(self) -> Iterable[ChangedFile]:
+    def files(self) -> tuple[ChangedFile, ...]:
         return self.__files
 
     @property

@@ -154,6 +154,30 @@ class Path(pathlib.Path):
         def __as_exe(self) -> Path:
             return self
 
+    def hexdigest(self, *, algorithm: str = "sha256", buffer_size: int | None = None) -> str:
+        """
+        Returns a hexadecimal string representation of the file's digest.
+        The algorithm used can be any algorithm supported by hashlib, as defined in hashlib. Defaults to sha256.
+        Will raise FileNotFoundError if the path does not exist, and OSError if it is not a file.
+
+        Parameters:
+            algorithm: The hashing algorithm to use to calculate the digest, specified as a string. Must be a member of hashlib.algorithms_guaranteed.
+            buffer_size: The size, in bytes, of the in-memory buffer to use for reading the file while hashing. Defaults to None, which lets hashlib choose the buffer size.
+        """
+        import hashlib
+
+        # Note: algorithms_guaranteed is a subset of algorithms_available, we use it to avoid letting people use platform-specific algorithms.
+        if algorithm not in hashlib.algorithms_guaranteed:
+            msg = f"Invalid hashing algorithm `{algorithm}` requested. Must be one of {', '.join(hashlib.algorithms_guaranteed)}."
+            raise ValueError(msg)
+
+        bufsize_arg = {} if buffer_size is None else {"_bufsize": buffer_size}
+
+        with self.open("rb") as f:
+            digest = hashlib.file_digest(f, algorithm, **bufsize_arg)
+
+        return digest.hexdigest()
+
 
 @contextmanager
 def temp_directory() -> Generator[Path, None, None]:
@@ -190,6 +214,7 @@ def temp_file(suffix: str = "") -> Generator[Path, None, None]:
     from tempfile import NamedTemporaryFile
 
     with NamedTemporaryFile(suffix=suffix) as f:
+        f.close()  # NamedTemporaryFile returns a file descriptor, not a path. We close it as, on Windows, it is not possible to open a file descriptor twice.
         yield Path(f.name).resolve()
 
 
