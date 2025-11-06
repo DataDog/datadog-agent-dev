@@ -86,9 +86,11 @@ nav:
   - Interface:
     - Tool: reference/interface/tool.md
     - Environments:
-      - Status: reference/interface/env/status.md
       - Types:
         - Developer: reference/interface/env/types/dev.md
+        - QA: reference/interface/env/types/qa.md
+      - Status: reference/interface/env/status.md
+      - Metadata: reference/interface/env/metadata.md
 - Guidelines:
   - CLI: guidelines/cli.md
   - Documentation: guidelines/docs.md

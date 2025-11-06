@@ -75,3 +75,14 @@ def __existing_binary() -> str:
 
     # Prefer the entry point because it's very small
     return shutil.which("dda", path=sysconfig.get_path("scripts")) or sys.executable
+
+
+class ExpectedEnvVars:  # noqa: PLW1641
+    def __init__(self, env_vars: dict[str, str]) -> None:
+        self.env_vars = env_vars
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, dict):
+            return False
+
+        return {k: v for k, v in other.items() if k in self.env_vars} == self.env_vars

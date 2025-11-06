@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 from dda.env.dev import DEFAULT_DEV_ENV
+from dda.env.qa import DEFAULT_QA_ENV
 
 
 def test_default_scrubbed(dda, config_file, helpers, default_cache_dir, default_data_dir, default_git_author):
@@ -26,6 +27,10 @@ def test_default_scrubbed(dda, config_file, helpers, default_cache_dir, default_
             clone-repos = false
             universal-shell = false
             editor = "vscode"
+
+            [env.qa]
+            default-type = "{DEFAULT_QA_ENV}"
+            e2e = false
 
             [tools.bazel]
             managed = "auto"
@@ -91,6 +96,10 @@ def test_reveal(dda, config_file, helpers, default_cache_dir, default_data_dir, 
             clone-repos = false
             universal-shell = false
             editor = "vscode"
+
+            [env.qa]
+            default-type = "{DEFAULT_QA_ENV}"
+            e2e = false
 
             [tools.bazel]
             managed = "auto"

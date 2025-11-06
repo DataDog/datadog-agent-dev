@@ -408,7 +408,18 @@ def _construct_table(data: dict[str, Any], *, key_style: Style) -> Table:
 
     for key, value in data.items():
         if isinstance(value, dict):
-            table.add_row(key, _construct_table(value, key_style=key_style))
+            if value:
+                table.add_row(key, _construct_table(value, key_style=key_style))
+            else:
+                table.add_row(key, "{}")
+        elif isinstance(value, list):
+            table.add_row(
+                key,
+                _construct_table(
+                    {f"{i}": v for i, v in enumerate(value, start=1)},
+                    key_style=key_style,
+                ),
+            )
         else:
             table.add_row(key, str(value))
 
