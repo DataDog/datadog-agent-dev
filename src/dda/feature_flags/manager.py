@@ -32,7 +32,7 @@ class FeatureFlagManager(ABC):
     """
 
     def __init__(self, app: Application) -> None:
-        self.__app = app
+        self._app = app
         # Manually implemented cache to avoid calling several time Feature flag backend on the same flag evaluation.
         # Cache key is a tuple of the flag, entity and scopes, to make it hashable.
         # For example after calling `enabled("test-flag", default=False, scopes={"user": "user1"}),
@@ -58,7 +58,7 @@ class FeatureFlagManager(ABC):
 
     def __check_flag(self, flag: str, entity: str, scopes: tuple[tuple[str, str], ...]) -> bool | None:
         if self.__client is None:
-            self.__app.display_debug("Feature flag client not initialized properly")
+            self._app.display_debug("Feature flag client not initialized properly")
             return None
 
         cache_key = (flag, entity, scopes)
@@ -81,17 +81,12 @@ class FeatureFlagManager(ABC):
     def _get_base_scopes(self) -> dict[str, str]:
         pass
 
-    @abstractmethod
-    def _get_client_token(self) -> str | None:
-        pass
-
     @cached_property
     def __client(self) -> DatadogFeatureFlag | None:
         token = self._get_client_token()
         if token is None:
             return None
-        return DatadogFeatureFlag(token, self.__app)
-
+        return DatadogFeatureFlag(token, self._app)
 
     @cached_property
     def __base_scopes(self) -> dict[str, str]:
@@ -173,7 +168,7 @@ class LocalFeatureFlagManager(FeatureFlagManager):
                 client_token = fetch_client_token()
                 save_client_token(client_token)
 
-        return DatadogFeatureFlag(client_token, self.__app)
+        return client_token
 
     @property
     def __user(self) -> FeatureFlagUser:
@@ -182,39 +177,7 @@ class LocalFeatureFlagManager(FeatureFlagManager):
     def _get_entity(self) -> str:
         return self.__user.machine_id
 
-<<<<<<< HEAD
-    def enabled(self, flag: str, *, default: bool = False, scopes: Optional[dict[str, str]] = None) -> bool:
-        entity = self.__get_entity()
-        base_scopes = self.__get_base_scopes()
-        if scopes is not None:
-            base_scopes.update(scopes)
-
-        attributes_items = base_scopes.items()
-        tuple_attributes = tuple(((key, value) for key, value in sorted(attributes_items)))
-
-        self.__app.display_debug(f"Checking flag {flag} with entity {entity} and scopes {base_scopes}")
-        flag_value = self.__check_flag(flag, entity, tuple_attributes)
-        if flag_value is None:
-            return default
-        return flag_value
-
-    def __check_flag(self, flag: str, entity: str, scopes: tuple[tuple[str, str], ...]) -> bool | None:
-        if self.__client is None:
-            self.__app.display_debug("Feature flag client not initialized properly")
-            return None
-
-        cache_key = (flag, entity, scopes)
-        if cache_key in self.__cache:
-            return self.__cache[cache_key]
-
-        flag_value = self.__client.get_flag_value(flag, entity, dict(scopes))
-        self.__cache[cache_key] = flag_value
-        return flag_value
-
-    def __get_base_scopes(self) -> dict[str, str]:
-=======
     def _get_base_scopes(self) -> dict[str, str]:
->>>>>>> be7a4ee (Add support for CI use for feature flags)
         return {
             "platform": get_os_name(),
             "ci": "false",
