@@ -70,8 +70,6 @@ class CoreAgent(BinaryArtifact, GoArtifact):
         # TODO: Implement a properly dynamic function, matching the old invoke task
         return {
             # TODO: Move GOPATH a GOCACHE to a configurable thing probably ? Probably also set them in the general go context
-            "GOPATH": "/Users/pierrelouis.veyrenc/go",
-            "GOCACHE": "/Users/pierrelouis.veyrenc/go/cache",
             "GO111MODULE": "on",
             "CGO_LDFLAGS_ALLOW": "-Wl,--wrap=.*",
             "DYLD_LIBRARY_PATH": ":/Users/pierrelouis.veyrenc/go/src/github.com/DataDog/datadog-agent/dev/lib",
