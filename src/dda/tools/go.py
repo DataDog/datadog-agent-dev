@@ -11,7 +11,7 @@ from dda.tools.base import ExecutionContext, Tool
 from dda.utils.fs import Path
 
 if TYPE_CHECKING:
-    from collections.abc import Generator
+    from collections.abc import Generator, Iterable
     from os import PathLike
     from typing import Any
 
@@ -75,9 +75,9 @@ class Go(Tool):
         output: str | PathLike,
         *args: str,
         build_tags: set[str] | None = None,
-        go_mod: str | PathLike | None = None,
-        gcflags: str | None = None,
-        ldflags: str | None = None,
+        gcflags: Iterable[str] | None = None,
+        ldflags: Iterable[str] | None = None,
+        env_vars: dict[str, str] | None = None,
         force_rebuild: bool = False,
         **kwargs: dict[str, Any],
     ) -> str:
@@ -88,9 +88,9 @@ class Go(Tool):
             entrypoint: The go file / directory to build.
             output: The path to the output binary.
             *args: Extra positional arguments to pass to the go build command.
-            go_mod: Path to a go.mod file to use. By default will not be specified to the build command.
-            gcflags: The gcflags (go compiler flags) to use. Empty by default.
-            ldflags: The ldflags (go linker flags) to use. Empty by default.
+            gcflags: The gcflags (go compiler flags) to use, passed as a list of strings. Empty by default.
+            ldflags: The ldflags (go linker flags) to use, passed as a list of strings. Empty by default.
+            env_vars: Extra environment variables to set for the build command. Empty by default.
             force_rebuild: Whether to force a rebuild of the package and bypass the build cache.
             **kwargs: Additional arguments to pass to the go build command.
         """
@@ -101,6 +101,7 @@ class Go(Tool):
 
         command_parts = [
             "-trimpath",  # Always use trimmed paths instead of absolute file system paths # NOTE: This might not work with delve
+            "-mod=readonly",  # Always use readonly mode, we never use anything else
             f"-o={output}",
         ]
 
@@ -116,17 +117,16 @@ class Go(Tool):
         if self.app.config.terminal.verbosity >= Verbosity.DEBUG:
             command_parts.append("-x")
 
-        if go_mod:
-            command_parts.append(f"-mod={go_mod}")
         if gcflags:
-            command_parts.append(f"-gcflags={gcflags}")
+            command_parts.append(f"-gcflags={' '.join(gcflags)}")
         if ldflags:
-            command_parts.append(f"-ldflags={ldflags}")
+            command_parts.append(f"-ldflags={' '.join(ldflags)}")
 
         if build_tags:
-            command_parts.append(f"-tags={' '.join(sorted(build_tags))}")
+            command_parts.extend(("-tags", f"{','.join(sorted(build_tags))}"))
 
         command_parts.extend(args)
         command_parts.append(str(entrypoint))
 
-        return self._build(command_parts, **kwargs)
+        # TODO: Debug log the command parts ?
+        return self._build(command_parts, env=env_vars, **kwargs)
