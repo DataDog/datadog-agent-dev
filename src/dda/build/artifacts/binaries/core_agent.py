@@ -100,14 +100,12 @@ class CoreAgent(BinaryArtifact, GoArtifact):
         return "core-agent"
 
     @override
-    def build(self, app: Application, *args: Any, **kwargs: Any) -> None:
-        from dda.utils.fs import Path
-
+    def build(self, app: Application, output: Path, *args: Any, **kwargs: Any) -> None:
         # TODO: Build rtloader first if needed
         # TODO: Make this build in a devenv ? Or at least add a flag
         app.tools.go.build(
             "github.com/DataDog/datadog-agent/cmd/agent",
-            output=Path("./bin/agent"),
+            output=output,
             build_tags=self.get_build_tags(),
             gcflags=self.get_gcflags(),
             ldflags=self.get_ldflags(app),
