@@ -41,13 +41,7 @@ class TestBuild:
         [
             {},
             {"build_tags": ["debug"]},
-            {"build_tags": ["prod"], "gcflags": "-gcflags=all=-N -l", "ldflags": "-ldflags=all=-s -w"},
-            {
-                "build_tags": ["prod"],
-                "gcflags": "-gcflags=all=-N -l",
-                "ldflags": "-ldflags=all=-s -w",
-                "go_mod": "../go.mod",
-            },
+            {"build_tags": ["prod"], "gcflags": ["all=-N -l"], "ldflags": ["all=-s -w", "-dumpdep"]},
             {"force_rebuild": True},
         ],
     )
@@ -64,31 +58,40 @@ class TestBuild:
             **call_args,
         )
 
-        # Assert the command is formed correctly
-        expected_command_flags = {
-            "-trimpath",
-            f"-o={output}",
-            # "-v", # By default verbosity is INFO
-            # "-x",
+        flags = {
+            ("-trimpath",),
+            ("-mod=readonly",),
+            (f"-o={output}",),
+            # ("-v",), # By default verbosity is INFO
+            # ("-x",),
         }
+
         if not (platform.machine() == "windows" and platform.machine() == "arm64"):
-            expected_command_flags.add("-race")
+            flags.add(("-race",))
 
         if call_args.get("build_tags"):
-            expected_command_flags.add(f"-tags={' '.join(sorted(call_args.get('build_tags', [])))}")
+            flags.add(("-tags", ",".join(sorted(call_args.get("build_tags", [])))))
         if call_args.get("gcflags"):
-            expected_command_flags.add(f"-gcflags={call_args.get('gcflags')}")
+            flags.add((f"-gcflags={' '.join(call_args.get('gcflags'))}",))
         if call_args.get("ldflags"):
-            expected_command_flags.add(f"-ldflags={call_args.get('ldflags')}")
-        if call_args.get("go_mod"):
-            expected_command_flags.add(f"-mod={call_args.get('go_mod')}")
+            flags.add((f"-ldflags={' '.join(call_args.get('ldflags'))}",))
         if call_args.get("force_rebuild"):
-            expected_command_flags.add("-a")
+            flags.add(("-a",))
 
-        seen_command = app.tools.go._build.call_args[0][0]  # noqa: SLF001
-        seen_command_flags = {x for x in seen_command if x.startswith("-")}
-        assert seen_command_flags == expected_command_flags
-        assert seen_command[len(seen_command_flags)] == str(entrypoint)
+        entrypoint = [str(entrypoint)]
+
+        seen_command_parts = app.tools.go._build.call_args[0][0]  # noqa: SLF001
+
+        flags_len = len(flags)
+        seen_flags: list[str] = seen_command_parts[: flags_len + 1]
+        for flag_tuple in flags:
+            assert flag_tuple[0] in seen_flags
+
+            if len(flag_tuple) > 1:
+                flag_index = seen_flags.index(flag_tuple[0])
+                assert seen_flags[flag_index + 1] == flag_tuple[1]
+
+        assert seen_command_parts[-len(entrypoint) :] == entrypoint
 
     # This tests is quite slow, we'll only run it in CI
     @pytest.mark.requires_ci
@@ -100,6 +103,7 @@ class TestBuild:
                     entrypoint=".",
                     output=(temp_dir / "testbinary").absolute(),
                     build_tags=[tag],
+                    force_rebuild=True,
                 )
 
                 assert (temp_dir / "testbinary").is_file()
