@@ -18,7 +18,7 @@ class CoreAgent(BinaryArtifact, GoArtifact):
     """
 
     @override
-    def get_build_tags(self) -> set[str]:
+    def get_build_tags(self, *args: Any, **kwargs: Any) -> set[str]:
         # TODO: Implement a properly dynamic function, matching the old invoke task
         return {
             "ec2",
@@ -45,11 +45,11 @@ class CoreAgent(BinaryArtifact, GoArtifact):
         }
 
     @override
-    def get_gcflags(self) -> list[str]:
+    def get_gcflags(self, *args: Any, **kwargs: Any) -> list[str]:
         return []
 
     @override
-    def get_ldflags(self) -> list[str]:
+    def get_ldflags(self, *args: Any, **kwargs: Any) -> list[str]:
         # TODO: Implement a properly dynamic function, matching the old invoke task
         return [
             "-X",
@@ -66,7 +66,7 @@ class CoreAgent(BinaryArtifact, GoArtifact):
         ]
 
     @override
-    def get_build_env(self) -> dict[str, str]:
+    def get_build_env(self, *args: Any, **kwargs: Any) -> dict[str, str]:
         # TODO: Implement a properly dynamic function, matching the old invoke task
         return {
             # TODO: Move GOPATH a GOCACHE to a configurable thing probably ? Probably also set them in the general go context
