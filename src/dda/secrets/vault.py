@@ -10,6 +10,8 @@ from typing import Any
 import hvac
 from ada_url import URL, URLSearchParams
 
+from dda.utils.ci import running_in_ci
+
 VAULT_URL = "https://vault.us1.ddbuild.io"
 OIDC_CALLBACK_PORT = 8250
 OIDC_REDIRECT_URI = f"http://localhost:{OIDC_CALLBACK_PORT}/oidc/callback"
@@ -94,6 +96,18 @@ def login_oidc_get_token() -> str:
 
 
 def fetch_secret(name: str, key: str) -> str:
+    if running_in_ci():
+        return fetch_secret_ci(name, key)
+    return fetch_secret_local(name, key)
+
+
+def fetch_secret_local(name: str, key: str) -> str:
     client = init_client()
+    secret = client.secrets.kv.v2.read_secret_version(path=name, mount_point="kv")
+    return secret["data"]["data"][key]
+
+
+def fetch_secret_ci(name: str, key: str) -> str:
+    client = hvac.Client()
     secret = client.secrets.kv.v2.read_secret_version(path=name, mount_point="kv")
     return secret["data"]["data"][key]

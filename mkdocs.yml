@@ -56,6 +56,8 @@ nav:
   - Extend:
     - Local commands: how-to/extend/local.md
     - Plugins: how-to/extend/plugin.md
+  - Feature flags:
+    - CI: how-to/feature-flags/ci.md
 - Tutorials:
   - CLI:
     - Creating a command: tutorials/cli/create-command.md

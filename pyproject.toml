@@ -26,6 +26,7 @@ classifiers = [
 dependencies = [
   "ada-url~=1.15.3",
   "binary~=1.0.2",
+  "boto3~=1.38.8",
   "click~=8.1",
   "datadog-api-client~=2.34",
   "dep-sync~=0.1",
