@@ -1,4 +1,4 @@
-def fetch_secret_ssm(name: str) -> str:
+def fetch_secret(name: str) -> str:
     import boto3
 
     ssm = boto3.client("ssm", region_name="us-east-1")

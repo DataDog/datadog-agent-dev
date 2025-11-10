@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from dda.config.constants import AppEnvVars
 from dda.feature_flags.client import DatadogFeatureFlag
-from dda.secrets.ssm import fetch_secret_ssm
+from dda.secrets.ssm import fetch_secret as fetch_secret_ssm
 from dda.secrets.vault import fetch_secret_ci
 from dda.user.datadog import User
 from dda.utils.platform import get_os_name

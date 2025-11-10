@@ -131,7 +131,6 @@ class Application(Terminal):
 
     @cached_property
     def features(self) -> FeatureFlagManager:
-        self.display_info(f"IS IT RUNNING IN CI {running_in_ci()}")
         if running_in_ci():
             return CIFeatureFlagManager(self)
         return LocalFeatureFlagManager(self)

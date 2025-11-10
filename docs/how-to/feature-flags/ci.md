@@ -33,7 +33,7 @@ variables:
   DDA_FEATURE_FLAGS_CI_VAULT_KEY: CLIENT_TOKEN
   DDA_FEATURE_FLAGS_CI_VAULT_PATH_MACOS: kv/path/to/dda/feature-flags
   DDA_FEATURE_FLAGS_CI_VAULT_KEY_MACOS: CLIENT_TOKEN
-  DDA_FEATURE_FLAGS_CI_SSM_KEY_WINDOWS: my/ssm/parameter/name
+  DDA_FEATURE_FLAGS_CI_SSM_KEY_WINDOWS: ci.repo-name.my-ssm-parameter-name
 ```
 
 ## Notes
