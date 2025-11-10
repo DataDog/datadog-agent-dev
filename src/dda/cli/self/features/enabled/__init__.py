@@ -17,11 +17,13 @@ def _parse_scopes(values: tuple[str, ...]) -> dict[str, str]:
     scopes: dict[str, str] = {}
     for item in values:
         if "=" not in item:
-            raise click.BadParameter(f"Invalid scope '{item}', expected key=value")
+            err_message = f"Invalid scope '{item}', expected key=value"
+            raise click.BadParameter(err_message)
         key, value = item.split("=", 1)
         key = key.strip()
         if not key:
-            raise click.BadParameter(f"Invalid scope '{item}', key cannot be empty")
+            err_message = f"Invalid scope '{item}', key cannot be empty"
+            raise click.BadParameter(err_message)
         scopes[key] = value
     return scopes
 
@@ -57,4 +59,3 @@ def cmd(app: Application, *, flag: str, default_value: bool, scopes: tuple[str, 
     extra_scopes = _parse_scopes(scopes)
     enabled = app.features.enabled(flag, default=default_value, scopes=extra_scopes or None)
     app.display("true" if enabled else "false")
-

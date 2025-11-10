@@ -3,17 +3,16 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
-from unittest.mock import ANY, patch
+from unittest.mock import patch
 
 
 class TestSelfFeatureEnabled:
     def test_prints_true(self, dda):
         with patch("dda.feature_flags.manager.FeatureFlagManager.enabled", return_value=True) as mocked_enabled:
-            result = dda("self", "feature", "enabled", "my-flag")
+            result = dda("self", "features", "enabled", "my-flag")
 
         result.check(exit_code=0, stdout="true\n")
         # Called with (self, flag) and kwargs
-        print(mocked_enabled.call_args.args)
         args, kwargs = mocked_enabled.call_args
         assert args[0] == "my-flag"
         assert kwargs == {"default": False, "scopes": None}
@@ -22,7 +21,7 @@ class TestSelfFeatureEnabled:
         with patch("dda.feature_flags.manager.FeatureFlagManager.enabled", return_value=False) as mocked_enabled:
             result = dda(
                 "self",
-                "feature",
+                "features",
                 "enabled",
                 "another-flag",
                 "--default",
@@ -39,12 +38,10 @@ class TestSelfFeatureEnabled:
         assert kwargs == {"default": True, "scopes": {"env": "ci", "team": "agent"}}
 
     def test_invalid_scope_fails(self, dda, helpers):
-        result = dda("self", "feature", "enabled", "flag", "--scope", "invalid")
+        result = dda("self", "features", "enabled", "flag", "--scope", "invalid")
         result.check_exit_code(2)
         helpers.assert_output_match(
             result.output,
             """expected key=value""",
             exact=False,
         )
-
-

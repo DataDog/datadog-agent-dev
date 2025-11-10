@@ -11,4 +11,3 @@ from dda.cli.base import dynamic_group
 )
 def cmd() -> None:
     pass
-
