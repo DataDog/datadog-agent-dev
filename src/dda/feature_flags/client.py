@@ -42,6 +42,9 @@ class DatadogFeatureFlag:
 
         Returns:
             Dictionary containing the flag configuration response
+        Raises:
+            HTTPError: If the request fails
+            RuntimeError: If an unexpected error occurs
         """
         if not self.__client_token:
             return {}
@@ -80,7 +83,9 @@ class DatadogFeatureFlag:
             response = self.__app.http.client().post(self.__url, headers=headers, json=payload)
         except HTTPError as e:
             self.__app.display_warning(f"Error fetching flags: {e}")
-            return {}
+        except Exception as e:
+            err_message = f"Error fetching flags: {e}"
+            raise RuntimeError(err_message) from e
 
         return response.json()
 
@@ -95,10 +100,14 @@ class DatadogFeatureFlag:
 
         Returns:
             The flag value or None if the flag is not found
+        Raises:
+            HTTPError: If the request fails
+            ValueError: If the flag is not found
+            RuntimeError: If an unexpected error occurs
         """
         response = self._fetch_flags(targeting_key, targeting_attributes)
         flags = response.get("data", {}).get("attributes", {}).get("flags", {})
         if flag in flags:
             return flags[flag].get("variationValue", None)
-
-        return None
+        err_message = f"Flag {flag} not found"
+        raise ValueError(err_message) from None

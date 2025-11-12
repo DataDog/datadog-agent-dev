@@ -169,7 +169,7 @@ def cmd(app: Application) -> None:
         "agent-release-enabled",
         default=True,
         scopes={"module": "agent-release"},
-    )
+    ).value
     if not enabled:
         app.display_warning("This command is currently disabled by feature flag.")
         return
