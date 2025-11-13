@@ -200,9 +200,9 @@ legacy-kernel-matrix-testing = [
 legacy-test-infra-definitions = [
     "boto3>=1.28.0",
     "colorama>=0.4.6",
-    "lxml==6.0.0",
+    "lxml~=5.2.2",
     "pydantic==2.11.4",
-    "PyGithub==2.8.1",
+    "PyGithub==1.59.1",
     "pyperclip==1.11.0",
     "pyright==1.1.405",
     "python-gitlab==6.4.0",
