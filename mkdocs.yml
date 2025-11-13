@@ -85,6 +85,7 @@ nav:
     - Terminal: reference/api/terminal.md
     - Constants: reference/api/constants.md
     - Telemetry: reference/api/telemetry.md
+    - Feature flags: reference/api/feature_flags.md
   - Interface:
     - Tool: reference/interface/tool.md
     - Environments:
