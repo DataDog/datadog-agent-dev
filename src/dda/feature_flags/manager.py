@@ -28,10 +28,23 @@ class FeatureFlagUser(User):
         super().__init__(config)
 
 
-class FeatureFlagEvaluationResult(Struct, frozen=True):
+class FeatureFlagEvaluationResult(Struct, frozen=True, kw_only=True):
+    """
+    A result of a feature flag evaluation.
+    """
+
     value: Any
+    """
+    The value of the feature flag.
+    """
     defaulted: bool
+    """
+    Whether the feature flag was defaulted.
+    """
     error: Optional[str] = None
+    """
+    The error message if the feature flag evaluation failed.
+    """
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -58,6 +71,21 @@ class FeatureFlagManager(ABC):
     def enabled(
         self, flag: str, *, default: bool = False, scopes: Optional[dict[str, str]] = None
     ) -> FeatureFlagEvaluationResult:
+        """
+        Check if a feature flag is enabled.
+        Parameters:
+            flag: The name of the feature flag to check.
+            default: The default value to return if the feature flag is not found.
+            scopes: Additional targeting attributes to use for feature flag evaluation.
+        Returns:
+            A `FeatureFlagEvaluationResult` object containing the value of the feature flag, whether it was defaulted, and an error message if the feature flag evaluation failed.
+        Examples:
+            ```python
+            result = app.features.enabled(
+                "test-flag", default=False, scopes={"user": "user1"}
+            )
+            ```
+        """
         entity = self.__entity
         base_scopes = self.__base_scopes
         if scopes is not None:
@@ -72,10 +100,12 @@ class FeatureFlagManager(ABC):
         try:
             flag_value = self.__check_flag(flag, entity, tuple_attributes)
         except Exception as e:  # noqa: BLE001
-            return FeatureFlagEvaluationResult(default, True, str(e))
+            return FeatureFlagEvaluationResult(value=default, defaulted=True, error=str(e))
 
         return FeatureFlagEvaluationResult(
-            flag_value if flag_value is not None else default, flag_value is None, self.__client_error
+            value=flag_value if flag_value is not None else default,
+            defaulted=flag_value is None,
+            error=self.__client_error,
         )
 
     def __check_flag(self, flag: str, entity: str, scopes: tuple[tuple[str, str], ...]) -> bool | None:

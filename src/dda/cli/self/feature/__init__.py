@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 import click
 
 from dda.cli.base import dynamic_command, pass_app
+from dda.types.hooks import enc_hook
 
 if TYPE_CHECKING:
     from dda.cli.application import Application
@@ -49,8 +50,8 @@ def cmd(app: Application, *, flag: str, default: bool, scopes: tuple[tuple[str, 
 
     feature_flag_result = app.features.enabled(flag, default=default, scopes=extra_scopes)
     if json:
-        import json as json_lib
+        from msgspec import json as json_lib
 
-        app.display(json_lib.dumps(feature_flag_result.to_dict()))
+        app.display(json_lib.encode(feature_flag_result.to_dict(), enc_hook=enc_hook).decode("utf-8"))
     else:
         app.display(f"{feature_flag_result.value}")

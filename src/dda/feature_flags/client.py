@@ -42,8 +42,9 @@ class DatadogFeatureFlag:
 
         Returns:
             Dictionary containing the flag configuration response
+
         Raises:
-            HTTPError: If the request fails
+            httpx.HTTPError: If the request fails
             RuntimeError: If an unexpected error occurs
         """
         if not self.__client_token:
@@ -100,8 +101,9 @@ class DatadogFeatureFlag:
 
         Returns:
             The flag value or None if the flag is not found
+
         Raises:
-            HTTPError: If the request fails
+            httpx.HTTPError: If the request fails
             ValueError: If the flag is not found
             RuntimeError: If an unexpected error occurs
         """
