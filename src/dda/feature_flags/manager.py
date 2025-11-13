@@ -73,12 +73,15 @@ class FeatureFlagManager(ABC):
     ) -> FeatureFlagEvaluationResult:
         """
         Check if a feature flag is enabled.
+
         Parameters:
             flag: The name of the feature flag to check.
             default: The default value to return if the feature flag is not found.
             scopes: Additional targeting attributes to use for feature flag evaluation.
+
         Returns:
             A `FeatureFlagEvaluationResult` object containing the value of the feature flag, whether it was defaulted, and an error message if the feature flag evaluation failed.
+
         Examples:
             ```python
             result = app.features.enabled(
