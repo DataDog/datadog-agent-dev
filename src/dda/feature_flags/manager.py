@@ -7,7 +7,7 @@ import os
 import sys
 from abc import ABC, abstractmethod
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from msgspec import Struct
 
@@ -41,7 +41,7 @@ class FeatureFlagEvaluationResult(Struct, frozen=True, kw_only=True):
     """
     Whether the feature flag was defaulted.
     """
-    error: Optional[str] = None
+    error: str | None = None
     """
     The error message if the feature flag evaluation failed.
     """
@@ -66,10 +66,10 @@ class FeatureFlagManager(ABC):
         # For example after calling `enabled("test-flag", default=False, scopes={"user": "user1"}),
         # the cache will contain the result for the tuple ("test-flag", "entity", (("user", "user1"),)).
         self.__cache: dict[tuple[str, str, tuple[tuple[str, str], ...]], Any] = {}
-        self.__client_error: Optional[str] = None
+        self.__client_error: str | None = None
 
     def enabled(
-        self, flag: str, *, default: bool = False, scopes: Optional[dict[str, str]] = None
+        self, flag: str, *, default: bool = False, scopes: dict[str, str] | None = None
     ) -> FeatureFlagEvaluationResult:
         """
         Check if a feature flag is enabled.
@@ -78,7 +78,6 @@ class FeatureFlagManager(ABC):
             flag: The name of the feature flag to check.
             default: The default value to return if the feature flag is not found.
             scopes: Additional targeting attributes to use for feature flag evaluation.
-
         Returns:
             A `FeatureFlagEvaluationResult` object containing the value of the feature flag, whether it was defaulted, and an error message if the feature flag evaluation failed.
 
