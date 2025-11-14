@@ -8,6 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+## 0.30.0 - 2025-11-14
+
+***Added:***
+
+- Add Feature Flag evaluation support
+- Add `dda validate ai-rules` command to automatically sync Cursor rules to Claude.md
+
 ## 0.29.0 - 2025-10-09
 
 ***Changed:***
