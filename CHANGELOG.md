@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+## 0.30.2 - 2025-11-17
+
+***Fixed:***
+
+- Lazily import Feature Flag manager when needed
+
 ## 0.30.1 - 2025-11-14
 
 ***Added:***
