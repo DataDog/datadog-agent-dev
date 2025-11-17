@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Any, NoReturn, Self
 
 from dda.cli.terminal import Terminal
 from dda.config.constants import AppEnvVars
-from dda.feature_flags.manager import CIFeatureFlagManager, LocalFeatureFlagManager
 from dda.utils.ci import running_in_ci
 
 if TYPE_CHECKING:
@@ -132,7 +131,11 @@ class Application(Terminal):
     @cached_property
     def features(self) -> FeatureFlagManager:
         if running_in_ci():
+            from dda.feature_flags.manager import CIFeatureFlagManager
+
             return CIFeatureFlagManager(self)
+        from dda.feature_flags.manager import LocalFeatureFlagManager
+
         return LocalFeatureFlagManager(self)
 
     @cached_property
