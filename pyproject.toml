@@ -204,7 +204,7 @@ legacy-test-infra-definitions = [
     "pydantic==2.11.4",
     "PyGithub==1.59.1",
     "pyperclip==1.11.0",
-    "pyright==1.1.405",
+    "pyright==1.1.391",
     "python-gitlab==6.4.0",
     "pyyaml==6.0.2",
     "termcolor==3.1.0",
