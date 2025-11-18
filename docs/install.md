@@ -176,3 +176,14 @@ This method is not recommended.
 `dda` is available on [PyPI](https://pypi.org/project/dda/) and can be installed with any Python package installer like [pip](https://github.com/pypa/pip) or [UV](https://github.com/astral-sh/uv).
 
 The Python environment in which you choose to install must be at least version 3.12.
+
+## Github Action
+
+Use the `dda` [Github Action](https://github.com/DataDog/datadog-agent-dev/tree/install) to install it in your Github Actions workflow.
+
+```yaml
+- name: Install dda
+  uses: DataDog/datadog-agent-dev@00e4a423088309efce1d5ba6b8c5366eef648710 # commit hash from the DataDog/datadog-agent-dev's install branch
+  with: 
+    version: v0.30.2 # DataDog/datadog-agent-dev version
+```
