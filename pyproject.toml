@@ -207,7 +207,7 @@ legacy-test-infra-definitions = [
     "pyright==1.1.391",
     "python-gitlab==4.4.0",
     "pyyaml==6.0.2",
-    "termcolor==3.1.0",
+    "termcolor==2.5.0",
 ]
 
 [project.urls]
