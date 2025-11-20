@@ -101,9 +101,9 @@ jobs:
           os: windows-2022
         # macOS
         - target: aarch64-apple-darwin
-          os: macos-13
+          os: macos-15
         - target: x86_64-apple-darwin
-          os: macos-13
+          os: macos-15
 
     env:
       CARGO: cargo
@@ -319,7 +319,7 @@ jobs:
     needs:
     - binaries
     - python-artifacts
-    runs-on: macos-13
+    runs-on: macos-15
 
     env:
       VERSION: ${{ needs.python-artifacts.outputs.version }}
