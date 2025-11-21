@@ -441,7 +441,7 @@ sdist = { url = "https://files.pythonhosted.org/packages/f1/2a/8c3ac3d8bc94e6de8
 
 [[package]]
 name = "datadog-api-client"
-version = "2.34.0"
+version = "2.46.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "certifi" },
@@ -449,9 +449,9 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/db/6c/b72ebdd79d3c1b6ff2c6e58eb0ed0806123506730b916ee496423cb0c454/datadog_api_client-2.34.0.tar.gz", hash = "sha256:ec1061ec272dd426e183947d9103a9a98f6823b9882157abec1ba4fcdfea9f05", size = 2828918, upload-time = "2025-04-14T13:41:00.604Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/43/22/dbe5804382baec5f095bbd6c3e80035dfb462c74ce9938d5282a03f127f9/datadog_api_client-2.46.0.tar.gz", hash = "sha256:001719e8ea4968177d038b7f568e5c1f3fa5205896f2d999d082d751bb7bc7a8", size = 3714103, upload-time = "2025-11-14T17:09:34.492Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/9a/b3/4ece89b426e14398400fe534e4cc649328d16ca7daf5d4c562bd14761922/datadog_api_client-2.34.0-py3-none-any.whl", hash = "sha256:29534095d6270bfe3a0a80882f060e65f25b28250fae3437b97bfcd9e9ff027d", size = 3332276, upload-time = "2025-04-14T13:40:58.504Z" },
+    { url = "https://files.pythonhosted.org/packages/cc/05/59c5f2914f9582192932a04e5f293233e38ca077cdad68fbcf58f5ae988b/datadog_api_client-2.46.0-py3-none-any.whl", hash = "sha256:1d5c03b21fdd513d0619d62080f24a525f728e0f81c748a0eba1e5b54a73002f", size = 4616552, upload-time = "2025-11-14T17:09:31.839Z" },
 ]
 
 [[package]]
@@ -667,7 +667,7 @@ requires-dist = [
     { name = "binary", specifier = "~=1.0.2" },
     { name = "boto3", specifier = "~=1.38.8" },
     { name = "click", specifier = "~=8.1" },
-    { name = "datadog-api-client", specifier = "~=2.34" },
+    { name = "datadog-api-client", specifier = "~=2.46" },
     { name = "dep-sync", specifier = "~=0.1" },
     { name = "find-exe", specifier = "~=0.1" },
     { name = "httpx", extras = ["http2"], specifier = "~=0.28.1" },
@@ -708,7 +708,7 @@ legacy-agent-deploy = [
 legacy-build = [
     { name = "boto3", specifier = "==1.38.8" },
     { name = "codeowners", specifier = "==0.6.0" },
-    { name = "datadog-api-client", specifier = "==2.34.0" },
+    { name = "datadog-api-client", specifier = "==2.46.0" },
     { name = "dmgbuild", marker = "sys_platform == 'darwin'", specifier = "==1.6.5" },
     { name = "docker", specifier = "==6.1.3" },
     { name = "docker-squash", specifier = "==1.1.0" },
@@ -794,7 +794,7 @@ legacy-tasks = [
     { name = "beautifulsoup4", specifier = "~=4.12.3" },
     { name = "boto3", specifier = "==1.38.8" },
     { name = "codeowners", specifier = "==0.6.0" },
-    { name = "datadog-api-client", specifier = "==2.34.0" },
+    { name = "datadog-api-client", specifier = "==2.46.0" },
     { name = "debugpy", specifier = "==1.8.2" },
     { name = "dmgbuild", marker = "sys_platform == 'darwin'", specifier = "==1.6.5" },
     { name = "docker", specifier = "==6.1.3" },
