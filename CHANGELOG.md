@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+***Added:***
+
+- `user` field for feature flags is also sent from Gitlab CI
+
 ## 0.30.2 - 2025-11-17
 
 ***Fixed:***
