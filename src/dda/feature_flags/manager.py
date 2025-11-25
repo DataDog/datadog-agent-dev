@@ -224,7 +224,7 @@ class CIFeatureFlagManager(FeatureFlagManager):
             "ci.job.id": os.getenv("CI_JOB_ID", ""),
             "ci.stage.name": os.getenv("CI_JOB_STAGE", ""),
             "git.branch": os.getenv("CI_COMMIT_BRANCH", ""),
-            "user": self._get_author_from_ci(os.getenv("CI_COMMIT_AUTHOR", ""))
+            "user": self.get_author_from_ci(os.getenv("CI_COMMIT_AUTHOR", ""))
         }
 
 
