@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
-from dda.feature_flags.manager import FeatureFlagEvaluationResult
+from dda.feature_flags.manager import FeatureFlagEvaluationResult, CIFeatureFlagManager
 
 
 class TestSelfFeatureEnabled:
@@ -65,3 +65,12 @@ class TestSelfFeatureEnabled:
         args, kwargs = mocked_enabled.call_args
         assert args[0] == "my-flag"
         assert kwargs == {"default": False, "scopes": None}
+
+
+class TestCIFeatureFlagManager:
+    def test_get_author_from_ci(self):
+        manager = CIFeatureFlagManager(None)
+
+        assert manager._get_author_from_ci("John Doe <john.doe@example.com>") == "john.doe@example.com"
+        assert manager._get_author_from_ci("<john.doe@example.com>") == "john.doe@example.com"
+        assert manager._get_author_from_ci("John Doe") == ""
