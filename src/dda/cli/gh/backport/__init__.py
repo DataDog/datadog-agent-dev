@@ -4,8 +4,6 @@ import json
 import os
 from typing import TYPE_CHECKING
 
-from github import Github, GithubException
-
 from dda.cli.base import dynamic_command, pass_app
 from dda.utils.ci import running_in_ci
 
@@ -66,6 +64,14 @@ def cmd(
     if not token:
         app.display_error("GITHUB_TOKEN is not set")
         return
+
+    # Lazy import PyGithub to avoid requiring it for local development
+    try:
+        from github import Github, GithubException
+    except ImportError as e:
+        app.abort(f"Failed to import PyGithub: {e}")
+        return
+
     gh = Github(token)
     repo = gh.get_repo(full_repo_name)
 
