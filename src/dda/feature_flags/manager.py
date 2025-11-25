@@ -204,7 +204,7 @@ class CIFeatureFlagManager(FeatureFlagManager):
     def _get_entity(self) -> str:  # noqa: PLR6301
         return os.getenv("CI_JOB_ID", "default_entity")
 
-    def _get_author_from_ci(self, ci_commit_author: str) -> str:
+    def get_author_from_ci(self, ci_commit_author: str) -> str:
         """
         Gets the author email from $CI_COMMIT_AUTHOR env var.
 
@@ -217,7 +217,7 @@ class CIFeatureFlagManager(FeatureFlagManager):
 
         return ""
 
-    def _get_base_scopes(self) -> dict[str, str]:  # noqa: PLR6301
+    def _get_base_scopes(self) -> dict[str, str]:
         return {
             "ci": "true",
             "ci.job.name": os.getenv("CI_JOB_NAME", ""),
@@ -235,7 +235,11 @@ class LocalFeatureFlagManager(FeatureFlagManager):
     """
 
     def _get_client_token(self) -> str | None:
-        from dda.secrets.api import fetch_client_token, read_client_token, save_client_token
+        from dda.secrets.api import (
+            fetch_client_token,
+            read_client_token,
+            save_client_token,
+        )
 
         client_token: str | None = None
         try:
