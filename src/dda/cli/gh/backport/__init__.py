@@ -131,7 +131,7 @@ ___
 {original_body}
 """
     backport_labels = [*get_non_backport_labels(labels), "backport", "bot"]
-    backport_title = f"[Backport {target_branch_name}] "
+    backport_title = f"[Backport {target_branch_name}] {original_pr.get('title')}"
 
     try:
         backport_pr = repo.create_pull(
