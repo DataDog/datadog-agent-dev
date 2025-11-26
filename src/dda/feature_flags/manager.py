@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import os
+import re
 import sys
 from abc import ABC, abstractmethod
 from functools import cached_property
@@ -159,6 +160,11 @@ class CIFeatureFlagManager(FeatureFlagManager):
     A class for querying feature flags in a CI environment.
     """
 
+    def __init__(self, app: Application) -> None:
+        super().__init__(app)
+
+        self._re_author_mail = re.compile(r"<([^>]+)>")
+
     def _get_client_token(self) -> str | None:
         self._app.display_debug(f"Getting client token for {sys.platform}")
         try:
@@ -198,14 +204,31 @@ class CIFeatureFlagManager(FeatureFlagManager):
     def _get_entity(self) -> str:  # noqa: PLR6301
         return os.getenv("CI_JOB_ID", "default_entity")
 
-    def _get_base_scopes(self) -> dict[str, str]:  # noqa: PLR6301
+    def get_author_from_ci(self, ci_commit_author: str) -> str:
+        """
+        Gets the author email from $CI_COMMIT_AUTHOR env var.
+
+        Returns:
+            The author email or an empty string if the env var is not valid.
+        """
+
+        if (match := self._re_author_mail.search(ci_commit_author)) is not None:
+            return match.group(1)
+
+        return ""
+
+    def _get_base_scopes(self) -> dict[str, str]:
         return {
             "ci": "true",
             "ci.job.name": os.getenv("CI_JOB_NAME", ""),
             "ci.job.id": os.getenv("CI_JOB_ID", ""),
             "ci.stage.name": os.getenv("CI_JOB_STAGE", ""),
             "git.branch": os.getenv("CI_COMMIT_BRANCH", ""),
+<<<<<<< HEAD
             "user": os.getenv("CI_COMMIT_AUTHOR", ""),
+=======
+            "user": self.get_author_from_ci(os.getenv("CI_COMMIT_AUTHOR", "")),
+>>>>>>> main
         }
 
 
@@ -216,7 +239,11 @@ class LocalFeatureFlagManager(FeatureFlagManager):
     """
 
     def _get_client_token(self) -> str | None:
-        from dda.secrets.api import fetch_client_token, read_client_token, save_client_token
+        from dda.secrets.api import (
+            fetch_client_token,
+            read_client_token,
+            save_client_token,
+        )
 
         client_token: str | None = None
         try:
