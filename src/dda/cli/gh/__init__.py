@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from dda.cli.base import dynamic_group
 
+
 @dynamic_group(
     short_help="Github helpers and commands",
 )
