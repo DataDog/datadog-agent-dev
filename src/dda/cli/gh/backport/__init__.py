@@ -37,7 +37,8 @@ def cmd(
     # Only handle pull_request events
     original_pr = event.get("pull_request")
     if not original_pr:
-        app.abort("No pull_request found. Skipping backport.")
+        app.display_warning("No pull_request found. Skipping backport.")
+        return
 
     # Merge commit SHA (the commit created on base branch)
     merge_commit_sha = original_pr.get("merge_commit_sha")
