@@ -304,6 +304,7 @@ class DynamicGroup(click.RichGroup):
         subcommand_filter: A function that takes a subcommand name and returns a boolean indicating whether the
             subcommand should be included in the list of subcommands.
         search_path_finder: A function that returns a list of directories to search for subcommands.
+        add_subcommand_selectors: Whether to add flag selectors for each subcommand.
 
     Other parameters:
         *args: Additional positional arguments to pass to the [`Group`][click.Group] constructor.
@@ -319,6 +320,7 @@ class DynamicGroup(click.RichGroup):
         allow_external_plugins: bool | None = None,
         subcommand_filter: Callable[[str], bool] | None = None,
         search_path_finder: Callable[[], list[str]] | None = None,
+        add_subcommand_selectors: bool | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(*args, **kwargs)
@@ -326,6 +328,7 @@ class DynamicGroup(click.RichGroup):
         self.allow_external_plugins = allow_external_plugins
         self.__subcommand_filter = subcommand_filter
         self.__search_path_finder = search_path_finder
+        self.__add_subcommand_selectors = add_subcommand_selectors
         self.__subcommand_cache: list[str] | None = None
 
         self.__dynamic_path_id = 0
@@ -417,6 +420,26 @@ class DynamicGroup(click.RichGroup):
             raise TypeError(message)
 
         return cmd_object
+
+    def get_params(self, ctx: DynamicContext) -> list[click.Parameter]:  # type: ignore[override]
+        # https://github.com/pallets/click/pull/2784
+        # https://github.com/pallets/click/blob/8.1.7/src/click/core.py#L1255
+        params = [*self.params, *ctx.dynamic_params]
+
+        # Add a flag for each subcommand
+        if self.__add_subcommand_selectors:
+            params.extend(
+                click.Option(param_decls=[f"--{command}"], is_flag=True) for command in self.list_commands(ctx)
+            )
+
+        if (help_option := self.get_help_option(ctx)) is not None:
+            params.append(help_option)
+
+        return params
+
+    def get_selected_subcommands(self, ctx: DynamicContext, selections: dict[str, bool]) -> list[str]:
+        subcommands = [_normalize_cmd_name(command) for command, selected in selections.items() if selected]
+        return subcommands or self.list_commands(ctx)
 
 
 def _normalize_cmd_name(cmd_name: str) -> str:

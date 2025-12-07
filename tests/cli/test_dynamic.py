@@ -125,3 +125,91 @@ def test_dependencies(dda, helpers, temp_dir, uv_on_path, mocker):
             encoding="utf-8",
         ),
     ]
+
+
+def test_subcommand_selectors(dda, helpers, temp_dir):
+    commands_dir = temp_dir / ".dda" / "extend" / "commands"
+    commands_dir.ensure_dir()
+    commands_dir.joinpath("run").ensure_dir()
+    commands_dir.joinpath("run", "__init__.py").write_text(
+        helpers.dedent(
+            """
+            import click
+            from dda.cli.base import dynamic_group
+
+            @dynamic_group(
+                invoke_without_command=True,
+                add_subcommand_selectors=True,
+            )
+            @click.pass_context
+            def cmd(ctx, **selections):
+                if not ctx.invoked_subcommand:
+                    ctx.obj.display(" ".join(cmd.get_selected_subcommands(ctx, selections)))
+            """
+        )
+    )
+    commands_dir.joinpath("run", "foo").ensure_dir()
+    commands_dir.joinpath("run", "foo", "__init__.py").write_text(
+        helpers.dedent(
+            """
+            from dda.cli.base import dynamic_command, pass_app
+
+            @dynamic_command()
+            @pass_app
+            def cmd(app):
+                app.display("foo command")
+            """
+        )
+    )
+    commands_dir.joinpath("run", "bar").ensure_dir()
+    commands_dir.joinpath("run", "bar", "__init__.py").write_text(
+        helpers.dedent(
+            """
+            from dda.cli.base import dynamic_command, pass_app
+
+            @dynamic_command()
+            @pass_app
+            def cmd(app):
+                app.display("bar command")
+            """
+        )
+    )
+
+    # Select all by default
+    with temp_dir.as_cwd():
+        result = dda("run")
+
+    result.check(
+        exit_code=0,
+        stdout=helpers.dedent(
+            """
+            bar foo
+            """
+        ),
+    )
+
+    # Select specific subcommands
+    with temp_dir.as_cwd():
+        result = dda("run", "--foo")
+
+    result.check(
+        exit_code=0,
+        stdout=helpers.dedent(
+            """
+            foo
+            """
+        ),
+    )
+
+    # Run subcommand directly
+    with temp_dir.as_cwd():
+        result = dda("run", "foo")
+
+    result.check(
+        exit_code=0,
+        stdout=helpers.dedent(
+            """
+            foo command
+            """
+        ),
+    )
