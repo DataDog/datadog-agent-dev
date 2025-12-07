@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+***Added:***
+
+- Add support for selecting subcommands as flags in their parent group
+
 ## 0.31.0 - 2025-11-27
 
 ***Added:***
