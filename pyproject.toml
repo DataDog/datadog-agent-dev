@@ -55,6 +55,10 @@ dependencies = [
 self-dev = [
     "hatch",
 ]
+dotslash = [
+    "blake3>=1.0.8",
+    "dotslash",
+]
 http = [
     "httpx[zstd]",
 ]
