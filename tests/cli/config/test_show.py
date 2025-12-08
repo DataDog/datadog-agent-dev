@@ -18,6 +18,8 @@ def test_default_scrubbed(
 
     default_cache_directory = str(default_cache_dir).replace("\\", "\\\\")
     default_data_directory = str(default_data_dir).replace("\\", "\\\\")
+    default_gopath = str(default_gopath).replace("\\", "\\\\")
+    default_gocache = str(default_gocache).replace("\\", "\\\\")
 
     result.check(
         exit_code=0,
@@ -91,6 +93,8 @@ def test_reveal(
 
     default_cache_directory = str(default_cache_dir).replace("\\", "\\\\")
     default_data_directory = str(default_data_dir).replace("\\", "\\\\")
+    default_gopath = str(default_gopath).replace("\\", "\\\\")
+    default_gocache = str(default_gocache).replace("\\", "\\\\")
 
     result.check(
         exit_code=0,
