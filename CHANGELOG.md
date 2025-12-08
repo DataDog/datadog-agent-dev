@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+***Added:***
+
+- Add dependencies for working with DotSlash files
+
 ## 0.31.0 - 2025-11-27
 
 ***Added:***
