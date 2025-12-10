@@ -1,21 +1,14 @@
-import random
-import string
+from base64 import urlsafe_b64encode
+from os import urandom
 
 import pytest
 
 from dda.utils.fs import Path
 
-AVAILABLE_CHARS = string.ascii_letters + string.digits + "-_+.!@#$%^&*()[]{}:;,. "
-
 
 @pytest.fixture
 def get_random_filename():
     def _get_random_filename(k: int = 10, root: Path | None = None) -> Path:
-        name = "".join(random.choices(AVAILABLE_CHARS, k=k))
-        # Remove the leading `-` to avoid considering it as a command flag
-        path = Path(name.removeprefix("-"))
-        if root:
-            return root / path
-        return path
+        return (root or Path()).joinpath(urlsafe_b64encode(urandom(k)).decode("utf-8"))
 
     return _get_random_filename
