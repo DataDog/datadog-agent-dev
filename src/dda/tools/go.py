@@ -71,9 +71,8 @@ class Go(Tool):
 
     def build(
         self,
-        entrypoint: str | PathLike,
+        *packages: str | PathLike,
         output: str | PathLike,
-        *args: str,
         build_tags: set[str] | None = None,
         gcflags: Iterable[str] | None = None,
         ldflags: Iterable[str] | None = None,
@@ -85,9 +84,8 @@ class Go(Tool):
         Run an instrumented Go build command.
 
         Args:
-            entrypoint: The go file / directory to build.
+            packages: The go packages to build, passed as a list of strings or Paths. Needs at least one item.
             output: The path to the output binary.
-            *args: Extra positional arguments to pass to the go build command.
             build_tags: Build tags to include when compiling. Empty by default.
             gcflags: The gcflags (go compiler flags) to use, passed as a list of strings. Empty by default.
             ldflags: The ldflags (go linker flags) to use, passed as a list of strings. Empty by default.
@@ -126,8 +124,10 @@ class Go(Tool):
         if build_tags:
             command_parts.extend(("-tags", f"{','.join(sorted(build_tags))}"))
 
-        command_parts.extend(args)
-        command_parts.append(str(entrypoint))
+        if len(packages) < 1:
+            msg = "At least one package is required to build"
+            raise ValueError(msg)
+        command_parts.extend(str(package) for package in packages)
 
         # TODO: Debug log the command parts ?
         return self._build(command_parts, env=env_vars, **kwargs)

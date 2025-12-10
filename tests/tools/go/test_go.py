@@ -49,11 +49,11 @@ class TestBuild:
         # Patch the raw _build method to avoid running anything
         mocker.patch("dda.tools.go.Go._build", return_value="output")
 
-        # Generate dummy entrypoint and output paths
-        entrypoint: Path = get_random_filename()
+        # Generate dummy package and output paths
+        packages: tuple[Path, ...] = (get_random_filename(), get_random_filename())
         output: Path = get_random_filename()
         app.tools.go.build(
-            entrypoint=entrypoint,
+            *packages,
             output=output,
             **call_args,
         )
@@ -78,8 +78,6 @@ class TestBuild:
         if call_args.get("force_rebuild"):
             flags.add(("-a",))
 
-        entrypoint = [str(entrypoint)]
-
         seen_command_parts = app.tools.go._build.call_args[0][0]  # noqa: SLF001
 
         flags_len = len(flags)
@@ -90,8 +88,7 @@ class TestBuild:
             if len(flag_tuple) > 1:
                 flag_index = seen_flags.index(flag_tuple[0])
                 assert seen_flags[flag_index + 1] == flag_tuple[1]
-
-        assert seen_command_parts[-len(entrypoint) :] == entrypoint
+        assert seen_command_parts[-len(packages) :] == [str(package) for package in packages]
 
     # This test is quite slow, we'll only run it in CI
     @pytest.mark.requires_ci
@@ -100,7 +97,7 @@ class TestBuild:
         for tag, output_mark in [("prod", "PRODUCTION"), ("debug", "DEBUG")]:
             with (Path(__file__).parent / "fixtures" / "small_go_project").as_cwd():
                 app.tools.go.build(
-                    entrypoint=".",
+                    ".",
                     output=(temp_dir / "testbinary").absolute(),
                     build_tags=[tag],
                     force_rebuild=True,
