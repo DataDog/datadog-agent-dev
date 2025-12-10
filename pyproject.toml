@@ -149,6 +149,11 @@ legacy-tasks = [
     "debugpy==1.8.2",
     "rich==14.0.0",
     "watchdog==6.0.0",
+    "colorama>=0.4.4",
+    "pydantic==2.10.4",
+    "pyperclip==1.9.0",
+    "pyright==1.1.391",
+    "termcolor==2.5.0",
 ]
 # https://github.com/DataDog/datadog-agent/blob/main/tasks/requirements_docs.txt
 legacy-docs = [
