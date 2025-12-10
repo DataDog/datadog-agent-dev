@@ -79,7 +79,7 @@ class Go(Tool):
         ldflags: Iterable[str] | None = None,
         env_vars: dict[str, str] | None = None,
         force_rebuild: bool = False,
-        **kwargs: dict[str, Any],
+        **kwargs: Any,
     ) -> str:
         """
         Run an instrumented Go build command.
@@ -88,6 +88,7 @@ class Go(Tool):
             entrypoint: The go file / directory to build.
             output: The path to the output binary.
             *args: Extra positional arguments to pass to the go build command.
+            build_tags: Build tags to include when compiling. Empty by default.
             gcflags: The gcflags (go compiler flags) to use, passed as a list of strings. Empty by default.
             ldflags: The ldflags (go linker flags) to use, passed as a list of strings. Empty by default.
             env_vars: Extra environment variables to set for the build command. Empty by default.
@@ -108,7 +109,7 @@ class Go(Tool):
         if force_rebuild:
             command_parts.append("-a")
 
-        # Enable data race detection on platforms that support it (all execpt windows arm64)
+        # Enable data race detection on platforms that support it (all except windows arm64)
         if not (PLATFORM_ID == "windows" and architecture() == "arm64"):
             command_parts.append("-race")
 

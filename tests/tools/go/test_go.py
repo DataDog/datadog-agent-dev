@@ -66,7 +66,7 @@ class TestBuild:
             # ("-x",),
         }
 
-        if not (platform.machine() == "windows" and platform.machine() == "arm64"):
+        if not (platform.system() == "Windows" and platform.machine() == "arm64"):
             flags.add(("-race",))
 
         if call_args.get("build_tags"):
@@ -93,7 +93,7 @@ class TestBuild:
 
         assert seen_command_parts[-len(entrypoint) :] == entrypoint
 
-    # This tests is quite slow, we'll only run it in CI
+    # This test is quite slow, we'll only run it in CI
     @pytest.mark.requires_ci
     @pytest.mark.skip_macos  # Go binary is not installed on macOS CI runners
     def test_build_project(self, app, temp_dir):
