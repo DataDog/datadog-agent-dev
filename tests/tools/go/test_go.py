@@ -40,8 +40,8 @@ class TestBuild:
         "call_args",
         [
             {},
-            {"build_tags": ["debug"]},
-            {"build_tags": ["prod"], "gcflags": ["all=-N -l"], "ldflags": ["all=-s -w", "-dumpdep"]},
+            {"build_tags": {"debug"}},
+            {"build_tags": {"prod"}, "gcflags": ["all=-N -l"], "ldflags": ["all=-s -w", "-dumpdep"]},
             {"force_rebuild": True},
         ],
     )
@@ -99,7 +99,7 @@ class TestBuild:
                 app.tools.go.build(
                     ".",
                     output=(temp_dir / "testbinary").absolute(),
-                    build_tags=[tag],
+                    build_tags={tag},
                     force_rebuild=True,
                 )
 
