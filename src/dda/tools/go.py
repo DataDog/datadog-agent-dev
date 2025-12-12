@@ -11,7 +11,9 @@ from dda.tools.base import ExecutionContext, Tool
 from dda.utils.fs import Path
 
 if TYPE_CHECKING:
-    from collections.abc import Generator
+    from collections.abc import Generator, Iterable
+    from os import PathLike
+    from typing import Any
 
 
 class Go(Tool):
@@ -62,3 +64,68 @@ class Go(Tool):
             return match.group(1)
 
         return None
+
+    def _build(self, args: list[str], **kwargs: Any) -> str:
+        """Run a raw go build command."""
+        return self.capture(["build", *args], check=True, **kwargs)
+
+    def build(
+        self,
+        *packages: str | PathLike,
+        output: str | PathLike,
+        build_tags: set[str] | None = None,
+        gcflags: Iterable[str] | None = None,
+        ldflags: Iterable[str] | None = None,
+        env_vars: dict[str, str] | None = None,
+        force_rebuild: bool = False,
+        **kwargs: Any,
+    ) -> str:
+        """
+        Run an instrumented Go build command.
+
+        Args:
+            packages: The go packages to build, passed as a list of strings or Paths.
+                Empty by default, which is equivalent to building the current directory.
+            output: The path to the output binary.
+            build_tags: Build tags to include when compiling. Empty by default.
+            gcflags: The gcflags (go compiler flags) to use, passed as a list of strings. Empty by default.
+            ldflags: The ldflags (go linker flags) to use, passed as a list of strings. Empty by default.
+            env_vars: Extra environment variables to set for the build command. Empty by default.
+            force_rebuild: Whether to force a rebuild of the package and bypass the build cache.
+            **kwargs: Additional arguments to pass to the go build command.
+        """
+        from platform import machine as architecture
+
+        from dda.config.constants import Verbosity
+        from dda.utils.platform import PLATFORM_ID
+
+        command_parts = [
+            "-trimpath",  # Always use trimmed paths instead of absolute file system paths # NOTE: This might not work with delve
+            "-mod=readonly",  # Always use readonly mode, we never use anything else
+            f"-o={output}",
+        ]
+
+        if force_rebuild:
+            command_parts.append("-a")
+
+        # Enable data race detection on platforms that support it (all except windows arm64)
+        if not (PLATFORM_ID == "windows" and architecture() == "arm64"):
+            command_parts.append("-race")
+
+        if self.app.config.terminal.verbosity >= Verbosity.VERBOSE:
+            command_parts.append("-v")
+        if self.app.config.terminal.verbosity >= Verbosity.DEBUG:
+            command_parts.append("-x")
+
+        if gcflags:
+            command_parts.append(f"-gcflags={' '.join(gcflags)}")
+        if ldflags:
+            command_parts.append(f"-ldflags={' '.join(ldflags)}")
+
+        if build_tags:
+            command_parts.extend(("-tags", f"{','.join(sorted(build_tags))}"))
+
+        command_parts.extend(str(package) for package in packages)
+
+        # TODO: Debug log the command parts ?
+        return self._build(command_parts, env=env_vars, **kwargs)
