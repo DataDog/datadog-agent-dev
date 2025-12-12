@@ -52,7 +52,7 @@ class TestBuild:
 
         # Generate dummy package and output paths
         n_packages = call_args.pop("n_packages", 0)
-        packages: tuple[Path, ...] = tuple(get_random_filename() for _ in range(n_packages))
+        packages: tuple[str, ...] = tuple(get_random_filename() for _ in range(n_packages))
         output: Path = get_random_filename()
         app.tools.go.build(
             *packages,
