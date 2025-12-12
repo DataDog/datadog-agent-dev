@@ -39,10 +39,11 @@ class TestBuild:
     @pytest.mark.parametrize(
         "call_args",
         [
-            {},
-            {"build_tags": {"debug"}},
-            {"build_tags": {"prod"}, "gcflags": ["all=-N -l"], "ldflags": ["all=-s -w", "-dumpdep"]},
-            {"force_rebuild": True},
+            {"n_packages": 2},
+            {"n_packages": 1, "build_tags": {"debug"}},
+            {"n_packages": 0, "build_tags": {"prod"}, "gcflags": ["all=-N -l"], "ldflags": ["all=-s -w", "-dumpdep"]},
+            {"n_packages": 2, "build_tags": {"prod"}, "gcflags": ["all=-N -l"], "ldflags": ["all=-s -w", "-dumpdep"]},
+            {"n_packages": 0, "force_rebuild": True},
         ],
     )
     def test_command_formation(self, app, mocker, call_args, get_random_filename):
@@ -50,7 +51,8 @@ class TestBuild:
         mocker.patch("dda.tools.go.Go._build", return_value="output")
 
         # Generate dummy package and output paths
-        packages: tuple[Path, ...] = (get_random_filename(), get_random_filename())
+        n_packages = call_args.pop("n_packages", 0)
+        packages: tuple[Path, ...] = tuple(get_random_filename() for _ in range(n_packages))
         output: Path = get_random_filename()
         app.tools.go.build(
             *packages,
@@ -88,7 +90,9 @@ class TestBuild:
             if len(flag_tuple) > 1:
                 flag_index = seen_flags.index(flag_tuple[0])
                 assert seen_flags[flag_index + 1] == flag_tuple[1]
-        assert seen_command_parts[-len(packages) :] == [str(package) for package in packages]
+
+        if n_packages > 0:
+            assert seen_command_parts[-len(packages) :] == [str(package) for package in packages]
 
     # This test is quite slow, we'll only run it in CI
     @pytest.mark.requires_ci

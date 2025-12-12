@@ -84,7 +84,8 @@ class Go(Tool):
         Run an instrumented Go build command.
 
         Args:
-            packages: The go packages to build, passed as a list of strings or Paths. Needs at least one item.
+            packages: The go packages to build, passed as a list of strings or Paths.
+                Empty by default, which is equivalent to building the current directory.
             output: The path to the output binary.
             build_tags: Build tags to include when compiling. Empty by default.
             gcflags: The gcflags (go compiler flags) to use, passed as a list of strings. Empty by default.
@@ -124,9 +125,6 @@ class Go(Tool):
         if build_tags:
             command_parts.extend(("-tags", f"{','.join(sorted(build_tags))}"))
 
-        if len(packages) < 1:
-            msg = "At least one package is required to build"
-            raise ValueError(msg)
         command_parts.extend(str(package) for package in packages)
 
         # TODO: Debug log the command parts ?
