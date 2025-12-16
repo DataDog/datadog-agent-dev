@@ -89,6 +89,7 @@ def test_default_config(app):
         "no_pull": False,
         "repos": ["datadog-agent"],
         "shell": "zsh",
+        "extra_mount_specs": [],
     }
 
 

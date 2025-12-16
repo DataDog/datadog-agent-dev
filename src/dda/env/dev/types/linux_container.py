@@ -62,6 +62,25 @@ class LinuxContainerConfig(DeveloperEnvironmentConfig):
             }
         ),
     ] = None
+    extra_volumes: Annotated[
+        list[str],
+        msgspec.Meta(
+            extra={
+                "params": ["-v", "--volume"],
+                "help": (
+                    """\
+Additional directories or volumes to be mounted into the dev env. This option may be supplied multiple
+times, and has the same syntax as the `-v/--volume` flag of `docker run`. Examples:
+
+- `./some-repo:/root/repos/some-repo` (bind mount from relative path on host to container)
+- `/tmp/some-location:/location:ro` (bind mount from absolute path on host to container with read-only flag)
+- `~/projects:/root/projects:ro,z` (bind mount from absolute path on host to container with read-only flag and `z` volume option)
+- `some-volume:/location` (volume mount from named volume to container)
+"""
+                ),
+            }
+        ),
+    ] = msgspec.field(default_factory=list)
 
 
 class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
@@ -155,6 +174,9 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                         self.app.abort(f"Local repository not found: {repo}")
 
                     command.extend(("-v", f"{repo_path}:{self.repo_path(repo)}"))
+
+            for volume in self.config.extra_volumes:
+                command.extend(("-v", volume))
 
             command.append(self.config.image)
 
