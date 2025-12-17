@@ -616,6 +616,117 @@ class TestStart:
             ),
         ]
 
+    @pytest.mark.parametrize(
+        "volume_binds",
+        [
+            # Case 1: Single absolute path
+            [
+                "-v",
+                "/tmp/mounted:/tmp/mounted_abs",
+            ],
+            # Case 2: Single relative path
+            [
+                "-v",
+                "./mounted:/tmp/mounted_rel",
+            ],
+            # Case 3: Multiple mounts
+            [
+                "-v",
+                "/tmp/mounted:/tmp/mounted_abs",
+                "-v",
+                "./mounted:/tmp/mounted_rel",
+            ],
+            # Case 4: Mounts with flags
+            [
+                "-v",
+                "/tmp/mounted:/tmp/mounted_abs:ro",
+                "-v",
+                "./mounted:/tmp/mounted_rel:rw",
+            ],
+        ],
+    )
+    def test_extra_bind_mounts(self, dda, helpers, mocker, temp_dir, host_user_args, volume_binds):
+        mocker.patch("dda.utils.ssh.write_server_config")
+        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / ".shared"
+        starship_mount = get_starship_mount(shared_dir)
+        cache_volumes = get_cache_volumes()
+        with (
+            temp_dir.as_cwd(),
+            helpers.hybrid_patch(
+                "subprocess.run",
+                return_values={
+                    # Start command checks the status
+                    1: CompletedProcess([], returncode=0, stdout="{}"),
+                    # Start method checks the status
+                    2: CompletedProcess([], returncode=0, stdout="{}"),
+                    # Capture container run
+                    # Readiness check
+                    4: CompletedProcess([], returncode=0, stdout="Server listening on :: port 22"),
+                    # Repo cloning
+                    5: CompletedProcess([], returncode=0, stdout="{}"),
+                },
+            ) as calls,
+        ):
+            result = dda(
+                "env",
+                "dev",
+                "start",
+                "--no-pull",
+                "--clone",
+                *volume_binds,
+            )
+
+        result.check(
+            exit_code=0,
+            output=helpers.dedent(
+                """
+                Creating and starting container: dda-linux-container-default
+                Waiting for container: dda-linux-container-default
+                Cloning repository: datadog-agent
+                """
+            ),
+        )
+
+        assert calls == [
+            (
+                (
+                    [
+                        helpers.locate("docker"),
+                        "run",
+                        "--pull",
+                        "never",
+                        "-d",
+                        "--name",
+                        "dda-linux-container-default",
+                        "-p",
+                        "61938:22",
+                        "-p",
+                        "50069:9000",
+                        "-v",
+                        "/var/run/docker.sock:/var/run/docker.sock",
+                        *host_user_args,
+                        "-e",
+                        "DD_SHELL",
+                        "-e",
+                        AppEnvVars.TELEMETRY_API_KEY,
+                        "-e",
+                        AppEnvVars.TELEMETRY_USER_MACHINE_ID,
+                        "-e",
+                        GitEnvVars.AUTHOR_NAME,
+                        "-e",
+                        GitEnvVars.AUTHOR_EMAIL,
+                        *starship_mount,
+                        "-v",
+                        f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
+                        *cache_volumes,
+                        *volume_binds,
+                        "datadog/agent-dev-env-linux",
+                    ],
+                ),
+                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": mocker.ANY},
+            ),
+        ]
+
 
 class TestStop:
     def test_nonexistent(self, dda, helpers, mocker):
