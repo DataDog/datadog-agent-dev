@@ -746,6 +746,35 @@ class TestStart:
             ),
         ]
 
+    @pytest.mark.parametrize(
+        ("volume_spec", "error_message"),
+        [
+            pytest.param(
+                "/i/dont/exist:/valid/path",
+                "Source must be an existing path on the host.",
+                id="absolute_src_does_not_exist",
+            ),
+            pytest.param(
+                "./i/dont/exist:/valid/path",
+                "Source must be an existing path on the host.",
+                id="relative_src_does_not_exist",
+            ),
+            pytest.param(
+                "./:dir",
+                "Destination must be an absolute path.",
+                id="dst_is_not_absolute",
+            ),
+        ],
+    )
+    def test_invalid_mounts(self, dda, temp_dir, mocker, volume_spec, error_message):
+        mocker.patch("subprocess.run", return_value=CompletedProcess([], returncode=0, stdout="{}"))
+
+        with temp_dir.as_cwd():
+            result = dda("env", "dev", "start", "-v", volume_spec)
+
+        result.check_exit_code(2)
+        assert error_message in result.output
+
 
 class TestStop:
     def test_nonexistent(self, dda, helpers, mocker):
