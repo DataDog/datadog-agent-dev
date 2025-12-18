@@ -34,6 +34,7 @@ class SubprocessRunner:
         env: dict[str, str] | None = None,
         cwd: str | Path | None = None,
         encoding: str = "utf-8",
+        hide_output: bool = False,
     ) -> int:
         """
         Run a command and wait for it to complete.
@@ -49,11 +50,14 @@ class SubprocessRunner:
             env: The environment variables to include in the command's environment.
             cwd: The working directory in which to run the command.
             encoding: The encoding used to decode the command's output.
+            hide_output: Whether to hide the command's standard output and error streams from being displayed.
 
         Returns:
             The command's exit code.
         """
-        exit_code, _ = self.__run(command, env=env, cwd=cwd, encoding=encoding, check=check, capture=False)
+        exit_code, _ = self.__run(
+            command, env=env, cwd=cwd, encoding=encoding, check=check, capture=False, hide_output=hide_output
+        )
         if check and exit_code:
             self.__app.abort(f"Command failed with exit code {exit_code}: {command}")
 
@@ -251,6 +255,7 @@ class SubprocessRunner:
         encoding: str,
         check: bool,
         capture: bool,
+        hide_output: bool = False,
     ) -> tuple[int, str]:
         from dda.utils.ci import running_in_ci
 
@@ -262,6 +267,9 @@ class SubprocessRunner:
                 kwargs["encoding"] = encoding
                 kwargs["stdout"] = subprocess.PIPE
                 kwargs["stderr"] = subprocess.STDOUT
+            elif hide_output:
+                kwargs["stdout"] = subprocess.DEVNULL
+                kwargs["stderr"] = subprocess.DEVNULL
 
             cmd, kwargs = self.__sanitize_arguments(command, **kwargs)
             process = subprocess.run(cmd, **kwargs)  # noqa: PLW1510
@@ -279,7 +287,8 @@ class SubprocessRunner:
 
         with tempfile.SpooledTemporaryFile(mode="w+", encoding=encoding, newline="") as out, pty:
             event = threading.Event()
-            thread = threading.Thread(target=pty.capture, args=([sys.stdout, out], event), daemon=True)
+            capture_streams = [] if hide_output else [sys.stdout]
+            thread = threading.Thread(target=pty.capture, args=([*capture_streams, out], event), daemon=True)
             thread.start()
             interrupted = False
             try:

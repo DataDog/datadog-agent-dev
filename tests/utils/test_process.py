@@ -209,3 +209,47 @@ print("baz", file=sys.stdout, flush=True, end="")
 
         assert output_file.is_file()
         assert output_file.read_bytes() == b"foobarbaz"
+
+    def test_run_hide_output(self, app, tmp_path, capsys):
+        script = f"""\
+import sys
+from pathlib import Path
+
+print("stdout output", file=sys.stdout, flush=True)
+print("stderr output", file=sys.stderr, flush=True)
+
+f = Path({str(tmp_path)!r}, "output.txt")
+f.write_text("success")
+"""
+        output_file = tmp_path / "output.txt"
+        assert not output_file.exists()
+
+        app.subprocess.run([sys.executable, "-c", script], hide_output=True)
+        assert output_file.is_file()
+        assert output_file.read_text() == "success"
+
+        # Verify no output was captured
+        captured = capsys.readouterr()
+        assert "stdout output" not in captured.out
+        assert "stderr output" not in captured.err
+
+    def test_run_without_hide_output(self, app, tmp_path, capsys):
+        script = f"""\
+import sys
+from pathlib import Path
+
+print("visible output", file=sys.stdout, flush=True)
+
+f = Path({str(tmp_path)!r}, "output.txt")
+f.write_text("success")
+"""
+        output_file = tmp_path / "output.txt"
+        assert not output_file.exists()
+
+        app.subprocess.run([sys.executable, "-c", script], hide_output=False)
+        assert output_file.is_file()
+        assert output_file.read_text() == "success"
+
+        # With hide_output=False (default), output should be visible
+        captured = capsys.readouterr()
+        assert "visible output" in captured.out or "visible output" in captured.err
