@@ -217,7 +217,7 @@ class SubprocessRunner:
         env: dict[str, str] | None = None,
         cwd: str | Path | None = None,
         encoding: str = "utf-8",
-    ) -> None:
+    ) -> int:
         """
         Run a command and wait for it to complete. By default, the command output is hidden but will be displayed if
         the configured verbosity level is at least [`Verbosity.VERBOSE`][dda.config.constants.Verbosity.VERBOSE]. Under
@@ -232,12 +232,15 @@ class SubprocessRunner:
             env: The environment variables to include in the command's environment.
             cwd: The working directory in which to run the command.
             encoding: The encoding used to decode the command's output.
+        Returns:
+            The command's exit code.
         """
         if self.__app.config.terminal.verbosity >= 1:
-            self.run(command, check=check, env=env, cwd=cwd, encoding=encoding)
-        else:
-            with self.__app.status(message or f"Running: {command}"):
-                self.capture(command, check=check, env=env, cwd=cwd, encoding=encoding)
+            return self.run(command, check=check, env=env, cwd=cwd, encoding=encoding)
+
+        with self.__app.status(message or f"Running: {command}"):
+            exitcode, _ = self.__capture(command, check=check, env=env, cwd=cwd, encoding=encoding)
+            return exitcode
 
     def exit_with(
         self,
