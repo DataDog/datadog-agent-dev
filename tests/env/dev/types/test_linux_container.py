@@ -14,6 +14,7 @@ import pytest
 
 from dda.config.constants import AppEnvVars
 from dda.env.dev.types.linux_container import LinuxContainer
+from dda.utils.container.model import Mount
 from dda.utils.fs import Path
 from dda.utils.git.constants import GitEnvVars
 
@@ -617,36 +618,48 @@ class TestStart:
         ]
 
     @pytest.mark.parametrize(
-        "volume_binds",
+        ("volume_specs", "result_mounts"),
         [
             # Case 1: Single absolute path
-            [
-                "-v",
-                "/tmp/mounted:/tmp/mounted_abs",
-            ],
+            pytest.param(
+                ["/tmp/mounted:/tmp/mounted_abs"],
+                [Mount(type="bind", path="/tmp/mounted_abs", source="/tmp/mounted", read_only=False)],
+                id="single_absolute_path",
+            ),
             # Case 2: Single relative path
-            [
-                "-v",
-                "./mounted:/tmp/mounted_rel",
-            ],
+            pytest.param(
+                ["./mounted:/tmp/mounted_rel"],
+                [Mount(type="bind", path="/tmp/mounted_rel", source="./mounted", read_only=False)],
+                id="single_relative_path",
+            ),
             # Case 3: Multiple mounts
-            [
-                "-v",
-                "/tmp/mounted:/tmp/mounted_abs",
-                "-v",
-                "./mounted:/tmp/mounted_rel",
-            ],
+            pytest.param(
+                ["/tmp/mounted:/tmp/mounted_abs", "./mounted:/tmp/mounted_rel"],
+                [
+                    Mount(type="bind", path="/tmp/mounted_abs", source="/tmp/mounted", read_only=False),
+                    Mount(type="bind", path="/tmp/mounted_rel", source="./mounted", read_only=False),
+                ],
+                id="multiple_mounts",
+            ),
             # Case 4: Mounts with flags
-            [
-                "-v",
-                "/tmp/mounted:/tmp/mounted_abs:ro",
-                "-v",
-                "./mounted:/tmp/mounted_rel:rw",
-            ],
+            pytest.param(
+                ["/tmp/mounted:/tmp/mounted_abs:ro", "./mounted:/tmp/mounted_rel:rw"],
+                [
+                    Mount(type="bind", path="/tmp/mounted_abs", source="/tmp/mounted", read_only=True),
+                    Mount(type="bind", path="/tmp/mounted_rel", source="./mounted", read_only=False),
+                ],
+                id="mounts_with_flags",
+            ),
         ],
     )
-    def test_extra_bind_mounts(self, dda, helpers, mocker, temp_dir, host_user_args, volume_binds):
+    def test_extra_bind_mounts(self, dda, helpers, mocker, temp_dir, host_user_args, volume_specs, result_mounts):
         mocker.patch("dda.utils.ssh.write_server_config")
+
+        # Disable argument validation for the extra mount specs
+        mocker.patch(
+            "dda.env.dev.types.linux_container.__validate_extra_mount_specs",
+            return_value=volume_specs,
+        )
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / ".shared"
         starship_mount = get_starship_mount(shared_dir)
         cache_volumes = get_cache_volumes()
@@ -667,13 +680,16 @@ class TestStart:
                 },
             ) as calls,
         ):
+            extra_volumes = []
+            for extra_volume in result_mounts:
+                extra_volumes.extend(("-v", extra_volume.as_csv()))
             result = dda(
                 "env",
                 "dev",
                 "start",
                 "--no-pull",
                 "--clone",
-                *volume_binds,
+                *extra_volumes,
             )
 
         result.check(
@@ -686,6 +702,9 @@ class TestStart:
                 """
             ),
         )
+        extra_mounts = []
+        for extra_mount in result_mounts:
+            extra_mounts.extend(("--mount", extra_mount.as_csv()))
 
         assert calls == [
             (
@@ -719,7 +738,7 @@ class TestStart:
                         "-v",
                         f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
                         *cache_volumes,
-                        *volume_binds,
+                        *extra_mounts,
                         "datadog/agent-dev-env-linux",
                     ],
                 ),
