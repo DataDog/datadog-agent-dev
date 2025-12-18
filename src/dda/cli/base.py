@@ -139,6 +139,7 @@ class DynamicContext(click.RichContext):
 
             metadata = {
                 "user.machine_id": app.telemetry.user.machine_id,
+                "user.environment": app.telemetry.user.environment,
                 "cli.command": join_command_args(sys.argv[1:]),
                 "cli.exit_code": str(exit_code),
             }

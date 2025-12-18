@@ -33,3 +33,11 @@ class User:
     @cached_property
     def email(self) -> str:
         return self.__config.user.email if self.__config.user.email != "auto" else self.__config.tools.git.author.email
+
+    @cached_property
+    def environment(self) -> str:
+        from dda.config.constants import AppEnvVars
+
+        if os.environ.get(AppEnvVars.TELEMETRY_USER_MACHINE_ID):  # If the machine environment variable is set, we are in a developer environment
+            return "devenv"
+        return "host"
