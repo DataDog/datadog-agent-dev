@@ -139,6 +139,39 @@ class SubprocessRunner:
         kwargs["encoding"] = None
         return self.attach(command, **kwargs)
 
+    def __capture(
+        self,
+        command: list[str],
+        *,
+        cross_streams: bool = False,
+        show: bool = False,
+        check: bool = True,
+        env: dict[str, str] | None = None,
+        cwd: str | Path | None = None,
+        encoding: str = "utf-8",
+        **kwargs: Any,
+    ) -> tuple[int, str]:
+        if show:
+            if kwargs:
+                message = f"Arbitrary keyword arguments are not supported when concurrently showing output: {kwargs}"
+                raise RuntimeError(message)
+
+            return self.__run(command, env=env, cwd=cwd, encoding=encoding, check=check, capture=True)
+
+        import subprocess
+
+        kwargs["stdout"] = subprocess.PIPE
+        kwargs["stderr"] = subprocess.STDOUT if cross_streams else subprocess.PIPE
+        kwargs["check"] = check
+        kwargs["encoding"] = encoding
+        if cwd is not None:
+            kwargs["cwd"] = str(cwd)
+        if env is not None:
+            kwargs["env"] = env
+
+        process = self.attach(command, **kwargs)
+        return process.returncode, process.stdout
+
     def capture(
         self,
         command: list[str],
@@ -170,26 +203,10 @@ class SubprocessRunner:
             **kwargs: Additional keyword arguments to pass to the [`attach`][dda.utils.process.SubprocessRunner.attach]
                 method when `show` is `False`.
         """
-        if show:
-            if kwargs:
-                message = f"Arbitrary keyword arguments are not supported when concurrently showing output: {kwargs}"
-                raise RuntimeError(message)
-
-            _, output = self.__run(command, env=env, cwd=cwd, encoding=encoding, check=check, capture=True)
-            return output
-
-        import subprocess
-
-        kwargs["stdout"] = subprocess.PIPE
-        kwargs["stderr"] = subprocess.STDOUT if cross_streams else subprocess.PIPE
-        kwargs["check"] = check
-        kwargs["encoding"] = encoding
-        if cwd is not None:
-            kwargs["cwd"] = str(cwd)
-        if env is not None:
-            kwargs["env"] = env
-
-        return self.attach(command, **kwargs).stdout
+        _, output = self.__capture(
+            command, cross_streams=cross_streams, show=show, check=check, env=env, cwd=cwd, encoding=encoding, **kwargs
+        )
+        return output
 
     def wait(
         self,
