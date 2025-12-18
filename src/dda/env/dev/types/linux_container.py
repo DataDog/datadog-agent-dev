@@ -62,7 +62,9 @@ class LinuxContainerConfig(DeveloperEnvironmentConfig):
             }
         ),
     ] = None
-    extra_volumes: Annotated[
+    # This parameter stores the raw volume specifications as provided by the user.
+    # Use the `extra_mounts` property to get the list of extra mounts as Mount objects.
+    extra_mount_specs: Annotated[
         list[str],
         msgspec.Meta(
             extra={
@@ -175,8 +177,8 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
 
                     command.extend(("-v", f"{repo_path}:{self.repo_path(repo)}"))
 
-            for volume in self.config.extra_volumes:
-                command.extend(("-v", volume))
+            for volume in self.extra_mounts:
+                command.extend(("--mount", volume.as_csv()))
 
             command.append(self.config.image)
 
@@ -392,6 +394,26 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         if self.config.arch is not None:
             name += f"-{self.config.arch}"
         return name
+
+    @cached_property
+    def extra_mounts(self) -> list[Mount]:
+        from dda.utils.container.model import Mount
+
+        mounts = []
+        for spec in self.config.extra_mount_specs:
+            src, dst, *extra = spec.split(":")
+            flags = extra[0].split(",") if extra else []
+            read_only = "ro" in flags
+            volume_options = {flag.split("=")[0]: flag.split("=")[1] for flag in flags if "=" in flag}
+
+            # Check if the source is a path. If not, it's a named volume.
+            # Note that Docker only recognizes relative paths if they are prefixed with `./`.
+            mount_type: Literal["bind", "volume"] = "bind" if src.startswith(("/", "~", "./")) else "volume"
+
+            mounts.append(
+                Mount(type=mount_type, path=dst, source=src, read_only=read_only, volume_options=volume_options)
+            )
+        return mounts
 
     def construct_command(self, command: list[str], *, cwd: str | None = None) -> list[str]:
         if cwd is None:
