@@ -14,6 +14,8 @@ from dda.env.dev.interface import DeveloperEnvironmentConfig, DeveloperEnvironme
 from dda.utils.git.constants import GitEnvVars
 
 if TYPE_CHECKING:
+    from click import Context, Option
+
     from dda.env.models import EnvironmentStatus
     from dda.env.shells.interface import Shell
     from dda.tools.docker import Docker
@@ -80,6 +82,7 @@ times, and has the same syntax as the `-v/--volume` flag of `docker run`. Exampl
 - `some-volume:/location` (volume mount from named volume to container)
 """
                 ),
+                "callback": __validate_extra_mount_specs,
             }
         ),
     ] = msgspec.field(default_factory=list)
@@ -445,3 +448,24 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             repo = self.default_repo
 
         return f"{self.home_dir}/repos/{repo}"
+
+
+def __validate_extra_mount_specs(_ctx: Context, _param: Option, value: list[str]) -> list[str]:
+    from click import BadParameter
+
+    from dda.utils.fs import Path
+
+    if not value:
+        return value
+
+    for spec in value:
+        src, dst, *_ = spec.split(":", 2)
+        mount_type: Literal["bind", "volume"] = "bind" if src.startswith(("/", "~", "./")) else "volume"
+        if mount_type == "bind" and not Path(src).exists():
+            msg = f"Invalid mount source: {spec}. Source must be an existing path on the host."
+            raise BadParameter(msg)
+
+        if not Path(dst).is_absolute():
+            msg = f"Invalid mount destination: {spec}. Destination must be an absolute path."
+            raise BadParameter(msg)
+    return value
