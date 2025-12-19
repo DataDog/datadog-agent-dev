@@ -842,6 +842,7 @@ class TestStart:
         result.check_exit_code(2)
         assert error_message in result.output
 
+    @pytest.mark.requires_unix  # This fails with Windows-style paths
     @pytest.mark.parametrize(
         ("mount_spec", "error_message"),
         [
