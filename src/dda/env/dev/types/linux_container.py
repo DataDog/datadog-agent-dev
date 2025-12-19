@@ -404,7 +404,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
 
         mounts = []
         for spec in self.config.extra_mount_specs:
-            src, dst, *extra = spec.split(":")
+            src, dst, *extra = spec.split(":", 2)
             flags = extra[0].split(",") if extra else []
             read_only = "ro" in flags
             volume_options = {flag.split("=")[0]: flag.split("=")[1] for flag in flags if "=" in flag}
