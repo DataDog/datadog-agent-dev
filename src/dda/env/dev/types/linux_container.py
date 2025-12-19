@@ -410,8 +410,8 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             volume_options = {flag.split("=")[0]: flag.split("=")[1] for flag in flags if "=" in flag}
 
             # Check if the source is a path. If not, it's a named volume.
-            # Note that Docker only recognizes relative paths if they are prefixed with `./`.
-            mount_type: Literal["bind", "volume"] = "bind" if src.startswith(("/", "~", "./")) else "volume"
+            # Note that Docker only recognizes relative paths if they are prefixed with `.`.
+            mount_type: Literal["bind", "volume"] = "bind" if src.startswith(("/", ".")) else "volume"
 
             mounts.append(
                 Mount(type=mount_type, path=dst, source=src, read_only=read_only, volume_options=volume_options)
@@ -460,7 +460,7 @@ def __validate_extra_mount_specs(_ctx: Context, _param: Option, value: list[str]
 
     for spec in value:
         src, dst, *_ = spec.split(":", 2)
-        mount_type: Literal["bind", "volume"] = "bind" if src.startswith(("/", "~", "./")) else "volume"
+        mount_type: Literal["bind", "volume"] = "bind" if src.startswith(("/", ".")) else "volume"
         if mount_type == "bind" and not Path(src).exists():
             msg = f"Invalid mount source: {spec}. Source must be an existing path on the host."
             raise BadParameter(msg)
