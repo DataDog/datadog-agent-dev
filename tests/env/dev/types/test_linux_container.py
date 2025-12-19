@@ -90,7 +90,7 @@ def test_default_config(app):
         "no_pull": False,
         "repos": ["datadog-agent"],
         "shell": "zsh",
-        "extra_mount_specs": [],
+        "extra_volume_specs": [],
     }
 
 
@@ -657,7 +657,7 @@ class TestStart:
 
         # Disable argument validation for the extra mount specs
         mocker.patch(
-            "dda.env.dev.types.linux_container.__validate_extra_mount_specs",
+            "dda.env.dev.types.linux_container.__validate_extra_volume_specs",
             return_value=volume_specs,
         )
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / ".shared"

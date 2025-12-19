@@ -66,23 +66,30 @@ class LinuxContainerConfig(DeveloperEnvironmentConfig):
     ] = None
     # This parameter stores the raw volume specifications as provided by the user.
     # Use the `extra_mounts` property to get the list of extra mounts as Mount objects.
-    extra_mount_specs: Annotated[
+    extra_volume_specs: Annotated[
         list[str],
         msgspec.Meta(
             extra={
                 "params": ["-v", "--volume"],
                 "help": (
                     """\
-Additional directories or volumes to be mounted into the dev env. This option may be supplied multiple
+Additional host directories to be mounted into the dev env. This option may be supplied multiple
 times, and has the same syntax as the `-v/--volume` flag of `docker run`. Examples:
 
 - `./some-repo:/root/repos/some-repo` (bind mount from relative path on host to container)
 - `/tmp/some-location:/location:ro` (bind mount from absolute path on host to container with read-only flag)
-- `~/projects:/root/projects:ro,z` (bind mount from absolute path on host to container with read-only flag and `z` volume option)
-- `some-volume:/location` (volume mount from named volume to container)
+- `~/projects:/root/projects:ro` (bind mount from absolute path on host to container with read-only flag)
+
+
+> **WARNING:**
+> This option only supports a subset of the syntax for the `-v/--volume` flag of `docker run`, and is provided only as a convenience.
+>
+> In particular, only bind mounts are supported, not volume mounts. Additionally, only the `ro` flag is supported.
+>
+> To mount a volume or use other options, use the more explicit `-m/--mount` option instead.
 """
                 ),
-                "callback": __validate_extra_mount_specs,
+                "callback": __validate_extra_volume_specs,
             }
         ),
     ] = msgspec.field(default_factory=list)
@@ -403,7 +410,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         from dda.utils.container.model import Mount
 
         mounts = []
-        for spec in self.config.extra_mount_specs:
+        for spec in self.config.extra_volume_specs:
             src, dst, *extra = spec.split(":", 2)
             flags = extra[0].split(",") if extra else []
             read_only = "ro" in flags
@@ -450,7 +457,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         return f"{self.home_dir}/repos/{repo}"
 
 
-def __validate_extra_mount_specs(_ctx: Context, _param: Option, value: list[str]) -> list[str]:
+def __validate_extra_volume_specs(_ctx: Context, _param: Option, value: list[str]) -> list[str]:
     from click import BadParameter
 
     from dda.utils.fs import Path
@@ -459,13 +466,16 @@ def __validate_extra_mount_specs(_ctx: Context, _param: Option, value: list[str]
         return value
 
     for spec in value:
-        src, dst, *_ = spec.split(":", 2)
-        mount_type: Literal["bind", "volume"] = "bind" if src.startswith(("/", ".")) else "volume"
-        if mount_type == "bind" and not Path(src).exists():
-            msg = f"Invalid mount source: {spec}. Source must be an existing path on the host."
+        src, dst, *extra = spec.split(":", 2)
+        flag = extra[0] if extra else None
+        if flag not in {None, "ro", "rw"}:
+            msg = f"Invalid volume flag: {flag}. Only the `ro` flag is supported."
             raise BadParameter(msg)
-
+        if not Path(src).exists():
+            # NOTE: We have here a slight discrepancy with the behavior of `docker run -v`, which will create the directory if it doesn't exist.
+            msg = f"Invalid volume source: {src}. Source must be an existing path on the host."
+            raise BadParameter(msg)
         if not Path(dst).is_absolute():
-            msg = f"Invalid mount destination: {spec}. Destination must be an absolute path."
+            msg = f"Invalid volume destination: {dst}. Destination must be an absolute path."
             raise BadParameter(msg)
     return value
