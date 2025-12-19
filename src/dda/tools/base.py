@@ -89,7 +89,7 @@ class Tool(ABC):
             _populate_env_vars(kwargs, context.env_vars)
             return self.app.subprocess.capture(context.command, **kwargs)
 
-    def wait(self, command: list[str], **kwargs: Any) -> None:
+    def wait(self, command: list[str], **kwargs: Any) -> int:
         """
         Equivalent to [`SubprocessRunner.wait`][dda.utils.process.SubprocessRunner.wait] with the tool's
         [`execution_context`][dda.tools.base.Tool.execution_context] determining the final command and
@@ -104,7 +104,7 @@ class Tool(ABC):
         """
         with self.execution_context(command) as context:
             _populate_env_vars(kwargs, context.env_vars)
-            self.app.subprocess.wait(context.command, **kwargs)
+            return self.app.subprocess.wait(context.command, **kwargs)
 
     def exit_with(self, command: list[str], **kwargs: Any) -> NoReturn:
         """
