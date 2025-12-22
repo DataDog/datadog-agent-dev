@@ -13,6 +13,7 @@ from dda.env.models import EnvironmentState, EnvironmentStatus
 
 if TYPE_CHECKING:
     from dda.utils.editors.interface import EditorInterface
+    from dda.utils.fs import Path
 
 pytestmark = [pytest.mark.usefixtures("private_storage")]
 
@@ -32,6 +33,24 @@ class Container(DeveloperEnvironmentInterface):
     def code(self, *, editor: EditorInterface, repo: str | None = None) -> None: ...
 
     def run_command(self, command: list[str], *, repo: str | None = None) -> None: ...
+
+    def export_files(
+        self,
+        sources: tuple[Path, ...],
+        destination: Path,
+        recursive: bool,  # noqa: FBT001
+        force: bool,  # noqa: FBT001
+        mkpath: bool,  # noqa: FBT001
+    ) -> None: ...
+
+    def import_files(
+        self,
+        sources: tuple[Path, ...],
+        destination: Path,
+        recursive: bool,  # noqa: FBT001
+        force: bool,  # noqa: FBT001
+        mkpath: bool,  # noqa: FBT001
+    ) -> None: ...
 
 
 def test_storage_dirs(app, tmp_path):

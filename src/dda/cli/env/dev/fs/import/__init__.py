@@ -45,4 +45,26 @@ def cmd(
     Import files and directories into a developer environment, using an interface similar to `cp`.
     The last path specified is the destination directory inside the environment.
     """
-    raise NotImplementedError
+    from dda.env.dev import get_dev_env
+    from dda.env.models import EnvironmentState
+
+    env = get_dev_env(env_type)(
+        app=app,
+        name=env_type,
+        instance=instance,
+    )
+    status = env.status()
+
+    # TODO: This might end up depending on the environment type.
+    # For `linux-container` though, `docker cp` also works on stopped containers.
+    possible_states = {EnvironmentState.STARTED, EnvironmentState.STOPPED}
+    if status.state not in possible_states:
+        app.abort(
+            f"Developer environment `{env_type}` is in state `{status.state}`, must be one of: "
+            f"{', '.join(sorted(possible_states))}"
+        )
+
+    try:
+        env.import_files(sources, destination, recursive, force, mkpath)
+    except Exception as error:  # noqa: BLE001
+        app.abort(f"Failed to import files: {error}")

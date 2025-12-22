@@ -163,6 +163,48 @@ class DeveloperEnvironmentInterface(ABC, Generic[ConfigT]):
                 [configured repository][dda.env.dev.interface.DeveloperEnvironmentConfig.repos].
         """
 
+    @abstractmethod
+    def export_files(
+        self,
+        sources: tuple[Path, ...],
+        destination: Path,
+        recursive: bool,  # noqa: FBT001
+        force: bool,  # noqa: FBT001
+        mkpath: bool,  # noqa: FBT001
+    ) -> None:
+        """
+        This method exports files from the developer environment to the host filesystem.
+
+        Parameters:
+            sources: The paths to files/directories in the developer environment to export.
+            destination: The destination directory on the host filesystem.
+            recursive: Whether to export files and directories recursively. If False, all sources must be files.
+            force: Whether to overwrite existing files. Without this option, an error will be raised if the destination file/directory already exists.
+            mkpath: Whether to create the destination directories and their parents if they do not exist.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def import_files(
+        self,
+        sources: tuple[Path, ...],
+        destination: Path,
+        recursive: bool,  # noqa: FBT001
+        force: bool,  # noqa: FBT001
+        mkpath: bool,  # noqa: FBT001
+    ) -> None:
+        """
+        This method imports files from the host filesystem into the developer environment.
+
+        Parameters:
+            sources: The paths to files/directories in the developer environment to export.
+            destination: The destination directory on the host filesystem.
+            recursive: Whether to export files and directories recursively. If False, all sources must be files.
+            force: Whether to overwrite existing files. Without this option, an error will be raised if the destination file/directory already exists.
+            mkpath: Whether to create the destination directories and their parents if they do not exist.
+        """
+        raise NotImplementedError
+
     def launch_gui(self) -> NoReturn:
         """
         This method starts an interactive GUI inside the developer environment using e.g. RDP or VNC.
