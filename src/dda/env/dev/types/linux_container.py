@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from dda.tools.docker import Docker
     from dda.utils.container.model import Mount
     from dda.utils.editors.interface import EditorInterface
+    from dda.utils.fs import Path
 
 
 class LinuxContainerConfig(DeveloperEnvironmentConfig):
@@ -445,3 +446,23 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             repo = self.default_repo
 
         return f"{self.home_dir}/repos/{repo}"
+
+    def export_files(
+        self,
+        sources: tuple[Path, ...],
+        destination: Path,
+        recursive: bool,  # noqa: FBT001
+        force: bool,  # noqa: FBT001
+        mkpath: bool,  # noqa: FBT001
+    ) -> None:
+        raise NotImplementedError
+
+    def import_files(
+        self,
+        sources: tuple[Path, ...],
+        destination: Path,
+        recursive: bool,  # noqa: FBT001
+        force: bool,  # noqa: FBT001
+        mkpath: bool,  # noqa: FBT001
+    ) -> None:
+        raise NotImplementedError
