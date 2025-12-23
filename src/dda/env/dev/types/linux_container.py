@@ -76,9 +76,9 @@ class LinuxContainerConfig(DeveloperEnvironmentConfig):
 Additional host directories to be mounted into the dev env. This option may be supplied multiple
 times, and has the same syntax as the `-v/--volume` flag of `docker run`. Examples:
 
-- `./some-repo:/root/repos/some-repo` (bind mount from relative path on host to container)
-- `/tmp/some-location:/location:ro` (bind mount from absolute path on host to container with read-only flag)
-- `~/projects:/root/projects:ro` (bind mount from absolute path on host to container with read-only flag)
+- `./some-repo:/root/repos/some-repo`
+- `/tmp/some-location:/location:ro`
+- `~/projects:/root/projects:ro`
 
 
 > **WARNING:**
@@ -103,11 +103,9 @@ times, and has the same syntax as the `-v/--volume` flag of `docker run`. Exampl
 Additional mounts to be added to the dev env. These can be either bind mounts from the host or Docker volume mounts.
 This option may be supplied multiple times, and has the same syntax as the `-m/--mount` flag of `docker run`. Examples:
 
-- `type=bind,src=/tmp/some-location,dst=/location` (bind mount from absolute path on host to container)
-- `type=bind,src=./some-location,dst=/location` (bind mount from relative path on host to container)
-- `type=volume,src=some-volume,dst=/location` (volume mount from named volume to container)
-- `type=bind,src=/tmp/some-location,dst=/location,ro` (bind mount from absolute path on host to container with read-only flag)
-- `type=bind,src=/tmp/some-location,dst=/location,bind-propagation=rslave` (bind mount from absolute path on host to container with bind propagation flag)
+- `type=bind,src=/tmp/some-location,dst=/location`
+- `type=volume,src=some-volume,dst=/location`
+- `type=bind,src=/tmp/some-location,dst=/location,bind-propagation=rslave`
 """
                 ),
                 "callback": __validate_extra_mount_specs,
