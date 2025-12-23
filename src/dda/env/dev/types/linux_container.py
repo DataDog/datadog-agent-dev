@@ -89,7 +89,6 @@ times, and has the same syntax as the `-v/--volume` flag of `docker run`. Exampl
 > To mount a volume or use other options, use the more explicit `-m/--mount` option instead.
 """
                 ),
-                "callback": __validate_extra_volume_specs,
             }
         ),
     ] = msgspec.field(default_factory=list)
@@ -208,6 +207,9 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
 
             for volume in self.extra_mounts:
                 command.extend(("--mount", volume.as_csv()))
+
+            for volume_spec in self.config.extra_volume_specs:
+                command.extend(("--volume", volume_spec))
 
             command.append(self.config.image)
 
@@ -429,13 +431,6 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         from dda.utils.container.model import Mount
 
         mounts = []
-        for spec in self.config.extra_volume_specs:
-            src, dst, *extra = spec.split(":", 2)
-            read_only = "ro" in extra
-
-            # Volume specs are always bind mounts.
-            mounts.append(Mount(type="bind", path=dst, source=src, read_only=read_only))
-
         for spec in self.config.extra_mount_specs:
             type_spec, src_spec, dst_spec, *flag_specs = spec.split(",")
             mount_type: Literal["bind", "volume"] = "bind" if type_spec == "type=bind" else "volume"
@@ -495,28 +490,6 @@ def __validate_mount_src_dst(mount_type: Literal["bind", "volume"], src: str, ds
     if not Path(dst).is_absolute():
         msg = f"Invalid volume destination: {dst}. Destination must be an absolute path."
         raise BadParameter(msg)
-
-
-def __validate_extra_volume_specs(_ctx: Context, _param: Option, value: list[str]) -> list[str]:
-    from click import BadParameter
-
-    if not value:
-        return value
-
-    for spec in value:
-        try:
-            src, dst, *extra = spec.split(":", 2)
-        except ValueError as e:
-            msg = f"Invalid volume spec: {spec}. Expected format: <source>:<destination>[:<flag>]"
-            raise BadParameter(msg) from e
-        flag = extra[0] if extra else None
-        if flag not in {None, "readonly", "ro"}:
-            msg = f"Invalid volume flag: {flag}. Only the `ro` flag is supported."
-            raise BadParameter(msg)
-        # Volume specs are always bind mounts.
-        __validate_mount_src_dst("bind", src, dst)
-
-    return value
 
 
 def __validate_extra_mount_specs(_ctx: Context, _param: Option, value: list[str]) -> list[str]:

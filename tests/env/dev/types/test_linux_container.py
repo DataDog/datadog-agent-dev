@@ -619,99 +619,17 @@ class TestStart:
         ]
 
     @pytest.mark.parametrize(
-        ("volume_mount_specs", "result_mounts"),
+        ("volume_specs"),
         [
-            # Case 1: -v, Single absolute path
-            pytest.param(
-                ["-v", "/tmp/mounted:/tmp/mounted_abs"],
-                [Mount(type="bind", path="/tmp/mounted_abs", source="/tmp/mounted", read_only=False)],
-                id="-v, single_absolute_path",
-            ),
-            # Case 2: -v, Single relative path
-            pytest.param(
-                ["-v", "./mounted:/tmp/mounted_rel"],
-                [Mount(type="bind", path="/tmp/mounted_rel", source="./mounted", read_only=False)],
-                id="-v, single_relative_path",
-            ),
-            # Case 3: -v, --volume, Multiple mounts
-            pytest.param(
-                ["-v", "/tmp/mounted:/tmp/mounted_abs", "--volume", "./mounted:/tmp/mounted_rel"],
-                [
-                    Mount(type="bind", path="/tmp/mounted_abs", source="/tmp/mounted", read_only=False),
-                    Mount(type="bind", path="/tmp/mounted_rel", source="./mounted", read_only=False),
-                ],
-                id="-v, --volume, multiple_mounts",
-            ),
-            # Case 4: -v, mount with ro flag
-            pytest.param(
-                ["-v", "/tmp/mounted:/tmp/mounted_abs:ro"],
-                [
-                    Mount(type="bind", path="/tmp/mounted_abs", source="/tmp/mounted", read_only=True),
-                ],
-                id="-v, mount_with_ro",
-            ),
-            # Case 5: -m, single bind mount
-            pytest.param(
-                ["-m", "type=bind,src=/tmp/mounted,dst=/tmp/mounted_abs"],
-                [
-                    Mount(type="bind", path="/tmp/mounted_abs", source="/tmp/mounted", read_only=False),
-                ],
-                id="-m, single_bind_mount",
-            ),
-            # Case 6: -m, single volume mount
-            pytest.param(
-                ["-m", "type=volume,src=some-volume,dst=/tmp/mounted_abs"],
-                [
-                    Mount(type="volume", path="/tmp/mounted_abs", source="some-volume", read_only=False),
-                ],
-                id="-m, single_volume_mount",
-            ),
-            # Case 7: -m, mounts with flags
-            pytest.param(
-                [
-                    "-m",
-                    "type=bind,source=/tmp/mounted,destination=/tmp/mounted_abs,ro,bind-propagation=rslave",
-                    "--mount",
-                    "type=volume,src=some-volume,target=/tmp/mounted_rel,volume-opt=foo=bar,volume-subpath=subpath",
-                ],
-                [
-                    Mount(
-                        type="bind",
-                        path="/tmp/mounted_abs",
-                        source="/tmp/mounted",
-                        read_only=True,
-                        volume_options={"bind-propagation": "rslave"},
-                    ),
-                    Mount(
-                        type="volume",
-                        path="/tmp/mounted_rel",
-                        source="some-volume",
-                        read_only=False,
-                        volume_options={"volume-opt": "foo=bar", "volume-subpath": "subpath"},
-                    ),
-                ],
-                id="-m, mounts_with_flags",
-            ),
-            # Case 8: -m, --mount, multiple mounts with different syntax
-            pytest.param(
-                [
-                    "-m",
-                    "type=bind,source=/tmp/mounted,destination=/tmp/mounted_abs",
-                    "--mount",
-                    "type=volume,src=some-volume,target=/tmp/mounted_rel",
-                    "--mount",
-                    "type=bind,source=./relative,dst=/tmp/mounted_abs,readonly",
-                ],
-                [
-                    Mount(type="bind", path="/tmp/mounted_abs", source="/tmp/mounted", read_only=False),
-                    Mount(type="volume", path="/tmp/mounted_rel", source="some-volume", read_only=False),
-                    Mount(type="bind", path="/tmp/mounted_abs", source="./relative", read_only=True),
-                ],
-                id="-m, --mount, multiple_mounts",
-            ),
+            # Case 1: Single -v
+            ["-v", "/tmp/mounted:/tmp/mounted_abs"],
+            # Case 2: Single --volume
+            ["--volume", "/tmp/mounted:/tmp/mounted_abs"],
+            # Case 3: -v and --volume
+            ["-v", "/tmp/mounted:/tmp/mounted_abs", "--volume", "./mounted:/tmp/mounted_rel"],
         ],
     )
-    def test_extra_mounts(self, dda, helpers, mocker, temp_dir, host_user_args, volume_mount_specs, result_mounts):
+    def test_extra_volume_specs(self, dda, helpers, mocker, temp_dir, host_user_args, volume_specs):
         mocker.patch("dda.utils.ssh.write_server_config")
 
         # Disable source and destination validation for the extra mount specs
@@ -740,14 +658,152 @@ class TestStart:
                 },
             ) as calls,
         ):
-            result = dda(
-                "env",
-                "dev",
-                "start",
-                "--no-pull",
-                "--clone",
-                *volume_mount_specs,
-            )
+            result = dda("env", "dev", "start", "--no-pull", "--clone", *volume_specs)
+
+        result.check(
+            exit_code=0,
+            output=helpers.dedent(
+                """
+                Creating and starting container: dda-linux-container-default
+                Waiting for container: dda-linux-container-default
+                Cloning repository: datadog-agent
+                """
+            ),
+        )
+        assert calls == [
+            (
+                (
+                    [
+                        helpers.locate("docker"),
+                        "run",
+                        "--pull",
+                        "never",
+                        "-d",
+                        "--name",
+                        "dda-linux-container-default",
+                        "-p",
+                        "61938:22",
+                        "-p",
+                        "50069:9000",
+                        "-v",
+                        "/var/run/docker.sock:/var/run/docker.sock",
+                        *host_user_args,
+                        "-e",
+                        "DD_SHELL",
+                        "-e",
+                        AppEnvVars.TELEMETRY_API_KEY,
+                        "-e",
+                        AppEnvVars.TELEMETRY_USER_MACHINE_ID,
+                        "-e",
+                        GitEnvVars.AUTHOR_NAME,
+                        "-e",
+                        GitEnvVars.AUTHOR_EMAIL,
+                        *starship_mount,
+                        "-v",
+                        f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
+                        *cache_volumes,
+                        *[(x if x != "-v" else "--volume") for x in volume_specs],
+                        "datadog/agent-dev-env-linux",
+                    ],
+                ),
+                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": mocker.ANY},
+            ),
+        ]
+
+    @pytest.mark.parametrize(
+        ("mount_specs", "result_mounts"),
+        [
+            # Case 1: -m, single bind mount
+            pytest.param(
+                ["-m", "type=bind,src=/tmp/mounted,dst=/tmp/mounted_abs"],
+                [
+                    Mount(type="bind", path="/tmp/mounted_abs", source="/tmp/mounted", read_only=False),
+                ],
+                id="-m, single_bind_mount",
+            ),
+            # Case 2: -m, single volume mount
+            pytest.param(
+                ["-m", "type=volume,src=some-volume,dst=/tmp/mounted_abs"],
+                [
+                    Mount(type="volume", path="/tmp/mounted_abs", source="some-volume", read_only=False),
+                ],
+                id="-m, single_volume_mount",
+            ),
+            # Case 3: -m, mounts with flags
+            pytest.param(
+                [
+                    "-m",
+                    "type=bind,source=/tmp/mounted,destination=/tmp/mounted_abs,ro,bind-propagation=rslave",
+                    "--mount",
+                    "type=volume,src=some-volume,target=/tmp/mounted_rel,volume-opt=foo=bar,volume-subpath=subpath",
+                ],
+                [
+                    Mount(
+                        type="bind",
+                        path="/tmp/mounted_abs",
+                        source="/tmp/mounted",
+                        read_only=True,
+                        volume_options={"bind-propagation": "rslave"},
+                    ),
+                    Mount(
+                        type="volume",
+                        path="/tmp/mounted_rel",
+                        source="some-volume",
+                        read_only=False,
+                        volume_options={"volume-opt": "foo=bar", "volume-subpath": "subpath"},
+                    ),
+                ],
+                id="-m, mounts_with_flags",
+            ),
+            # Case 4: -m, --mount, multiple mounts with different syntax
+            pytest.param(
+                [
+                    "-m",
+                    "type=bind,source=/tmp/mounted,destination=/tmp/mounted_abs",
+                    "--mount",
+                    "type=volume,src=some-volume,target=/tmp/mounted_rel",
+                    "--mount",
+                    "type=bind,source=./relative,dst=/tmp/mounted_abs,readonly",
+                ],
+                [
+                    Mount(type="bind", path="/tmp/mounted_abs", source="/tmp/mounted", read_only=False),
+                    Mount(type="volume", path="/tmp/mounted_rel", source="some-volume", read_only=False),
+                    Mount(type="bind", path="/tmp/mounted_abs", source="./relative", read_only=True),
+                ],
+                id="-m, --mount, multiple_mounts",
+            ),
+        ],
+    )
+    def test_extra_mounts(self, dda, helpers, mocker, temp_dir, host_user_args, mount_specs, result_mounts):
+        mocker.patch("dda.utils.ssh.write_server_config")
+
+        # Disable source and destination validation for the extra mount specs
+        mocker.patch(
+            "dda.env.dev.types.linux_container.__validate_mount_src_dst",
+            return_value=None,
+        )
+        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / ".shared"
+        starship_mount = get_starship_mount(shared_dir)
+        cache_volumes = get_cache_volumes()
+
+        with (
+            temp_dir.as_cwd(),
+            helpers.hybrid_patch(
+                "subprocess.run",
+                return_values={
+                    # Start command checks the status
+                    1: CompletedProcess([], returncode=0, stdout="{}"),
+                    # Start method checks the status
+                    2: CompletedProcess([], returncode=0, stdout="{}"),
+                    # Capture container run
+                    # Readiness check
+                    4: CompletedProcess([], returncode=0, stdout="Server listening on :: port 22"),
+                    # Repo cloning
+                    5: CompletedProcess([], returncode=0, stdout="{}"),
+                },
+            ) as calls,
+        ):
+            result = dda("env", "dev", "start", "--no-pull", "--clone", *mount_specs)
 
         result.check(
             exit_code=0,
@@ -802,45 +858,6 @@ class TestStart:
                 {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": mocker.ANY},
             ),
         ]
-
-    @pytest.mark.parametrize(
-        ("volume_spec", "error_message"),
-        [
-            pytest.param(
-                "/i/dont/exist:/valid/path",
-                "Source must be an existing path on the host.",
-                id="absolute_src_does_not_exist",
-            ),
-            pytest.param(
-                "./i/dont/exist:/valid/path",
-                "Source must be an existing path on the host.",
-                id="relative_src_does_not_exist",
-            ),
-            pytest.param(
-                "./:dir",
-                "Destination must be an absolute path.",
-                id="dst_is_not_absolute",
-            ),
-            pytest.param(
-                "/tmp:/container:foobar",
-                "Invalid volume flag: foobar",
-                id="invalid_arbitrary_flag",
-            ),
-            pytest.param(
-                "/tmpcontainer",
-                "Expected format:",
-                id="no_colon",
-            ),
-        ],
-    )
-    def test_invalid_volume_specs(self, dda, temp_dir, mocker, volume_spec, error_message):
-        mocker.patch("subprocess.run", return_value=CompletedProcess([], returncode=0, stdout="{}"))
-
-        with temp_dir.as_cwd():
-            result = dda("env", "dev", "start", "-v", volume_spec)
-
-        result.check_exit_code(2)
-        assert error_message in result.output
 
     @pytest.mark.requires_unix  # This fails with Windows-style paths
     @pytest.mark.parametrize(
