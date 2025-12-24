@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 import click
 
-from dda.cli.base import dynamic_command
+from dda.cli.base import dynamic_command, pass_app
 from dda.cli.env.dev.utils import option_env_type
 from dda.utils.fs import Path
 
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 )
 @option_env_type()
 @click.option("--id", "instance", default="default", help="Unique identifier for the environment")
-@click.argument("sources", nargs=-1, required=True, type=click.Path(exists=True, resolve_path=True, path_type=Path))
+@click.argument("sources", nargs=-1, required=True)
 @click.argument("destination", required=True, type=click.Path(resolve_path=True, path_type=Path))
 @click.option("--recursive", "-r", is_flag=True, help="Import files and directories recursively.")
 @click.option(
@@ -32,12 +32,13 @@ if TYPE_CHECKING:
 @click.option(
     "--mkpath", is_flag=True, help="Create the destination directories and their parents if they do not exist."
 )
+@pass_app
 def cmd(
     app: Application,
     *,
     env_type: str,
     instance: str,
-    sources: tuple[Path, ...],
+    sources: tuple[str, ...],  # Passed as string since they are inside the env filesystem
     destination: Path,
     recursive: bool,
     force: bool,

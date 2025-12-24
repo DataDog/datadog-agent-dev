@@ -449,7 +449,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
 
     def export_files(
         self,
-        sources: tuple[Path, ...],
+        sources: tuple[str, ...],
         destination: Path,
         recursive: bool,  # noqa: FBT001
         force: bool,  # noqa: FBT001
@@ -460,7 +460,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
     def import_files(
         self,
         sources: tuple[Path, ...],
-        destination: Path,
+        destination: str,
         recursive: bool,  # noqa: FBT001
         force: bool,  # noqa: FBT001
         mkpath: bool,  # noqa: FBT001
