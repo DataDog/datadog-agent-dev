@@ -77,14 +77,6 @@ times, and has the same syntax as the `-v/--volume` flag of `docker run`. Exampl
 - `./some-repo:/root/repos/some-repo`
 - `/tmp/some-location:/location:ro`
 - `~/projects:/root/projects:ro`
-
-
-> **WARNING:**
-> This option only supports a subset of the syntax for the `-v/--volume` flag of `docker run`, and is provided only as a convenience.
->
-> In particular, only bind mounts are supported, not volume mounts. Additionally, only the `ro` flag is supported.
->
-> To mount a volume or use other options, use the more explicit `-m/--mount` option instead.
 """
                 ),
             }
