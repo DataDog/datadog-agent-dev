@@ -447,6 +447,13 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
 
         return f"{self.home_dir}/repos/{repo}"
 
+    def _docker_cp(self, source: str, destination: str) -> None:
+        # TODO: Make this a proper method on the Docker tool
+        self.docker.wait(
+            ["cp", source, destination],
+            message=f"Copying file or directory: {source}",
+        )
+
     def export_files(
         self,
         sources: tuple[str, ...],
@@ -455,7 +462,60 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         force: bool,  # noqa: FBT001
         mkpath: bool,  # noqa: FBT001
     ) -> None:
-        raise NotImplementedError
+        import shutil
+
+        from dda.utils.fs import temp_directory
+
+        # 0. Create the destination directory on the host filesystem if mkpath is True
+        if mkpath:
+            destination.ensure_dir()
+
+        # 1. Create a temporary directory on the host filesystem
+        with temp_directory() as wd:
+            # 2. Copy the files from the container to the temporary directory using `docker cp`
+            for source in sources:
+                self._docker_cp(self.container_name + ":" + source, os.path.basename(source))
+
+            # 3. Copy the files from the temporary directory to the host filesystem
+            for element in wd.iterdir():
+                if not recursive and element.is_dir():
+                    msg = f"Refusing to export directory:{element} as recursive flag is not set"
+                    raise ValueError(msg)
+
+                # Calculate the target path
+                if element.is_file():
+                    # If we're moving a file, check if the destination is a directory
+                    if destination.is_dir():
+                        # If it is, we try to put the file in the directory with the same name as the file
+                        target_path = destination / element.relative_to(wd)
+                    elif destination.exists():
+                        # Otherwise, if it exists and is not a dir, we attempt to replace the existing file
+                        target_path = destination
+                        if not force:
+                            msg = f"Refusing to overwrite existing file: {target_path} (force flag is not set)"
+                            raise ValueError(msg)
+                        self.app.display_warning(f"Overwriting existing file: {target_path}")
+                        target_path.unlink()
+                    else:
+                        # Otherwise, the target path is the destination, which will be created as a file
+                        target_path = destination
+
+                # Else if we're moving a directory, check if the destination is an existing file
+                elif destination.is_file():
+                    # Never overwrite a file with a directory
+                    msg = f"Refusing to overwrite existing file with directory: {destination}"
+                    raise ValueError(msg)
+                # Otherwise, we're moving a directory to the same location as an existing directory
+                elif destination.exists():
+                    # If the directory exists, we put the directory we're moving into the existing one
+                    # This is the default behavior of shutil.move, so nothing else is needed
+                    target_path = destination
+
+                    # TODO: Add a check if destination/element.name is an already-existing file or directory
+                    # Currently shutil.move will fail with an ugly error message
+
+                # Finally, we move the element to the target path
+                shutil.move(element, target_path)
 
     def import_files(
         self,
