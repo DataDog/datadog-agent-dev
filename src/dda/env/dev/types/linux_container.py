@@ -62,6 +62,44 @@ class LinuxContainerConfig(DeveloperEnvironmentConfig):
             }
         ),
     ] = None
+    # This parameter stores the raw volume specifications as provided by the user.
+    # Use the `extra_mounts` property to get the list of extra mounts as Mount objects.
+    extra_volume_specs: Annotated[
+        list[str],
+        msgspec.Meta(
+            extra={
+                "params": ["-v", "--volume"],
+                "help": (
+                    """\
+Additional host directories to be mounted into the dev env. This option may be supplied multiple
+times, and has the same syntax as the `-v/--volume` flag of `docker run`. Examples:
+
+- `./some-repo:/root/repos/some-repo`
+- `/tmp/some-location:/location:ro`
+- `~/projects:/root/projects:ro`
+"""
+                ),
+            }
+        ),
+    ] = msgspec.field(default_factory=list)
+    extra_mount_specs: Annotated[
+        list[str],
+        msgspec.Meta(
+            extra={
+                "params": ["-m", "--mount"],
+                "help": (
+                    """\
+Additional mounts to be added to the dev env. These can be either bind mounts from the host or Docker volume mounts.
+This option may be supplied multiple times, and has the same syntax as the `-m/--mount` flag of `docker run`. Examples:
+
+- `type=bind,src=/tmp/some-location,dst=/location`
+- `type=volume,src=some-volume,dst=/location`
+- `type=bind,src=/tmp/some-location,dst=/location,bind-propagation=rslave`
+"""
+                ),
+            }
+        ),
+    ] = msgspec.field(default_factory=list)
 
 
 class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
@@ -155,6 +193,12 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                         self.app.abort(f"Local repository not found: {repo}")
 
                     command.extend(("-v", f"{repo_path}:{self.repo_path(repo)}"))
+
+            for mount_spec in self.config.extra_mount_specs:
+                command.extend(("--mount", mount_spec))
+
+            for volume_spec in self.config.extra_volume_specs:
+                command.extend(("--volume", volume_spec))
 
             command.append(self.config.image)
 

@@ -89,6 +89,8 @@ def test_default_config(app):
         "no_pull": False,
         "repos": ["datadog-agent"],
         "shell": "zsh",
+        "extra_volume_specs": [],
+        "extra_mount_specs": [],
     }
 
 
@@ -612,6 +614,195 @@ class TestStart:
                     ],
                 ),
                 {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE},
+            ),
+        ]
+
+    @pytest.mark.parametrize(
+        ("volume_specs"),
+        [
+            # Case 1: Single -v
+            ["-v", "/tmp/mounted:/tmp/mounted_abs"],
+            # Case 2: Single --volume
+            ["--volume", "/tmp/mounted:/tmp/mounted_abs"],
+            # Case 3: -v and --volume
+            ["-v", "/tmp/mounted:/tmp/mounted_abs", "--volume", "./mounted:/tmp/mounted_rel"],
+        ],
+    )
+    def test_extra_volume_specs(self, dda, helpers, mocker, temp_dir, host_user_args, volume_specs):
+        mocker.patch("dda.utils.ssh.write_server_config")
+
+        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / ".shared"
+        starship_mount = get_starship_mount(shared_dir)
+        cache_volumes = get_cache_volumes()
+
+        with (
+            temp_dir.as_cwd(),
+            helpers.hybrid_patch(
+                "subprocess.run",
+                return_values={
+                    # Start command checks the status
+                    1: CompletedProcess([], returncode=0, stdout="{}"),
+                    # Start method checks the status
+                    2: CompletedProcess([], returncode=0, stdout="{}"),
+                    # Capture container run
+                    # Readiness check
+                    4: CompletedProcess([], returncode=0, stdout="Server listening on :: port 22"),
+                    # Repo cloning
+                    5: CompletedProcess([], returncode=0, stdout="{}"),
+                },
+            ) as calls,
+        ):
+            result = dda("env", "dev", "start", "--no-pull", "--clone", *volume_specs)
+
+        result.check(
+            exit_code=0,
+            output=helpers.dedent(
+                """
+                Creating and starting container: dda-linux-container-default
+                Waiting for container: dda-linux-container-default
+                Cloning repository: datadog-agent
+                """
+            ),
+        )
+        assert calls == [
+            (
+                (
+                    [
+                        helpers.locate("docker"),
+                        "run",
+                        "--pull",
+                        "never",
+                        "-d",
+                        "--name",
+                        "dda-linux-container-default",
+                        "-p",
+                        "61938:22",
+                        "-p",
+                        "50069:9000",
+                        "-v",
+                        "/var/run/docker.sock:/var/run/docker.sock",
+                        *host_user_args,
+                        "-e",
+                        "DD_SHELL",
+                        "-e",
+                        AppEnvVars.TELEMETRY_API_KEY,
+                        "-e",
+                        AppEnvVars.TELEMETRY_USER_MACHINE_ID,
+                        "-e",
+                        GitEnvVars.AUTHOR_NAME,
+                        "-e",
+                        GitEnvVars.AUTHOR_EMAIL,
+                        *starship_mount,
+                        "-v",
+                        f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
+                        *cache_volumes,
+                        *[(x if x != "-v" else "--volume") for x in volume_specs],
+                        "datadog/agent-dev-env-linux",
+                    ],
+                ),
+                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": mocker.ANY},
+            ),
+        ]
+
+    @pytest.mark.parametrize(
+        ("mount_specs"),
+        [
+            # Case 1: -m, single bind mount
+            ["-m", "type=bind,src=/tmp/mounted,dst=/tmp/mounted_abs"],
+            # Case 2: -m, single volume mount
+            ["-m", "type=volume,src=some-volume,dst=/tmp/mounted_abs"],
+            # Case 3: -m, mounts with flags
+            [
+                "-m",
+                "type=bind,source=/tmp/mounted,destination=/tmp/mounted_abs,ro,bind-propagation=rslave",
+                "--mount",
+                "type=volume,src=some-volume,target=/tmp/mounted_rel,volume-opt=foo=bar,volume-subpath=subpath",
+            ],
+            # Case 4: -m, --mount, multiple mounts with different syntax
+            [
+                "-m",
+                "type=bind,source=/tmp/mounted,destination=/tmp/mounted_abs",
+                "--mount",
+                "type=volume,src=some-volume,target=/tmp/mounted_rel",
+                "--mount",
+                "type=bind,source=./relative,dst=/tmp/mounted_abs,readonly",
+            ],
+        ],
+    )
+    def test_extra_mounts(self, dda, helpers, mocker, temp_dir, host_user_args, mount_specs):
+        mocker.patch("dda.utils.ssh.write_server_config")
+
+        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / ".shared"
+        starship_mount = get_starship_mount(shared_dir)
+        cache_volumes = get_cache_volumes()
+
+        with (
+            temp_dir.as_cwd(),
+            helpers.hybrid_patch(
+                "subprocess.run",
+                return_values={
+                    # Start command checks the status
+                    1: CompletedProcess([], returncode=0, stdout="{}"),
+                    # Start method checks the status
+                    2: CompletedProcess([], returncode=0, stdout="{}"),
+                    # Capture container run
+                    # Readiness check
+                    4: CompletedProcess([], returncode=0, stdout="Server listening on :: port 22"),
+                    # Repo cloning
+                    5: CompletedProcess([], returncode=0, stdout="{}"),
+                },
+            ) as calls,
+        ):
+            result = dda("env", "dev", "start", "--no-pull", "--clone", *mount_specs)
+
+        result.check(
+            exit_code=0,
+            output=helpers.dedent(
+                """
+                Creating and starting container: dda-linux-container-default
+                Waiting for container: dda-linux-container-default
+                Cloning repository: datadog-agent
+                """
+            ),
+        )
+
+        assert calls == [
+            (
+                (
+                    [
+                        helpers.locate("docker"),
+                        "run",
+                        "--pull",
+                        "never",
+                        "-d",
+                        "--name",
+                        "dda-linux-container-default",
+                        "-p",
+                        "61938:22",
+                        "-p",
+                        "50069:9000",
+                        "-v",
+                        "/var/run/docker.sock:/var/run/docker.sock",
+                        *host_user_args,
+                        "-e",
+                        "DD_SHELL",
+                        "-e",
+                        AppEnvVars.TELEMETRY_API_KEY,
+                        "-e",
+                        AppEnvVars.TELEMETRY_USER_MACHINE_ID,
+                        "-e",
+                        GitEnvVars.AUTHOR_NAME,
+                        "-e",
+                        GitEnvVars.AUTHOR_EMAIL,
+                        *starship_mount,
+                        "-v",
+                        f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
+                        *cache_volumes,
+                        *[(x if x != "-m" else "--mount") for x in mount_specs],
+                        "datadog/agent-dev-env-linux",
+                    ],
+                ),
+                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": mocker.ANY},
             ),
         ]
 
