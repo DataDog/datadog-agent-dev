@@ -5,8 +5,10 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import sys
+from contextlib import contextmanager
 from subprocess import CompletedProcess
 
 import msgspec
@@ -14,6 +16,7 @@ import pytest
 
 from dda.config.constants import AppEnvVars
 from dda.env.dev.types.linux_container import LinuxContainer
+from dda.env.models import EnvironmentState, EnvironmentStatus
 from dda.utils.fs import Path
 from dda.utils.git.constants import GitEnvVars
 
@@ -1231,3 +1234,126 @@ bar 1PB
                 """
             ),
         )
+
+
+@pytest.fixture
+def linux_container(app, mocker):
+    """Returns a LinuxContainer instance with mocked methods."""
+    res = LinuxContainer(app=app, name="test", instance="default")
+    mocker.patch.object(res, "start", return_value=0)
+    mocker.patch.object(res, "stop", return_value=0)
+    mocker.patch.object(res, "remove", return_value=0)
+    mocker.patch.object(res, "status", return_value=EnvironmentStatus(state=EnvironmentState.STARTED))
+    return res
+
+
+@pytest.fixture
+def test_files_root():
+    # Folder containing test files to be copied
+    return Path(__file__).parent / "fixtures" / "import_export_tests" / "sources"
+
+
+@pytest.fixture
+def test_target_root():
+    # Folder containing test files that should exist in the target directory after the export test
+    return Path(__file__).parent / "fixtures" / "import_export_tests" / "targets"
+
+
+@pytest.fixture
+def test_target_directory(temp_dir):
+    # Directory where the test files should be copied to, should maybe already contain files
+    res = temp_dir / "test_target"
+    res.ensure_dir()
+    return res
+
+
+@pytest.fixture
+def setup_export_test(temp_dir, test_files_root, mocker, linux_container):
+    # 1. Make the temporary_directory() context manager predictable
+    temp_shared_dir = temp_dir / "share_test"
+    temp_shared_dir.ensure_dir()
+
+    @contextmanager
+    def _f():
+        yield temp_shared_dir
+
+    mocker.patch("dda.utils.fs.temp_directory", _f)
+
+    # 2. Avoid running any docker cp, instead running a "real" cp from the test files
+    def _fake_cp(source: str, destination: str) -> None:
+        real_source = test_files_root / source.split(":")[1]  # Also remove the container name
+        real_destination = temp_shared_dir / destination
+        if real_source.is_dir():
+            shutil.copytree(str(real_source), str(real_destination))
+        else:
+            shutil.copy2(str(real_source), str(real_destination))
+
+    mocker.patch.object(linux_container, "_docker_cp", _fake_cp)
+
+
+@pytest.fixture
+def copy_test_files_to_target(test_target_root, test_target_directory):
+    def _f(target_name: str) -> None:
+        # Copy the test files for the target to another temporary directory
+        test_target_directory.ensure_dir()
+        shutil.copy2(test_target_root / target_name, test_target_directory)
+
+    return _f
+
+
+class TestExportFiles:
+    def test_copy_single_file_to_empty_directory(self, linux_container, test_target_directory, setup_export_test):  # noqa: ARG002
+        linux_container.export_files(
+            sources=("file_root.txt",),
+            destination=test_target_directory,
+            recursive=False,
+            force=False,
+            mkpath=False,
+        )
+
+        assert (test_target_directory / "file_root.txt").exists()
+        assert (test_target_directory / "file_root.txt").read_text().strip() == "source"
+
+    def test_copy_file_and_rename(self, linux_container, test_target_directory, setup_export_test):  # noqa: ARG002
+        linux_container.export_files(
+            sources=("file_root.txt",),
+            destination=test_target_directory / "file_renamed.txt",
+            recursive=False,
+            force=False,
+            mkpath=False,
+        )
+
+        assert (test_target_directory / "file_renamed.txt").exists()
+        assert (test_target_directory / "file_renamed.txt").read_text().strip() == "source"
+
+    def test_copy_multiple_files_to_empty_directory(self, linux_container, test_target_directory, setup_export_test):  # noqa: ARG002
+        linux_container.export_files(
+            sources=("file_root.txt", "file_root2.txt"),
+            destination=test_target_directory,
+            recursive=False,
+            force=False,
+            mkpath=False,
+        )
+
+        for file in ("file_root.txt", "file_root2.txt"):
+            assert (test_target_directory / file).exists()
+            assert (test_target_directory / file).read_text().strip() == "source"
+
+    def test_copy_directory_to_empty_directory(self, linux_container, test_target_directory, setup_export_test):  # noqa: ARG002
+        linux_container.export_files(
+            sources=("folder1",),
+            destination=test_target_directory,
+            recursive=True,
+            force=False,
+            mkpath=False,
+        )
+
+        assert (test_target_directory / "folder1").exists()
+        assert set((test_target_directory / "folder1").iterdir()) == {
+            test_target_directory / "folder1" / "file_deep1.txt",
+            test_target_directory / "folder1" / "subfolder1",
+            test_target_directory / "folder1" / "subfolder2",
+        }
+
+    # TODO: Add more tests, for the recursive flag, force flag, mkpath flag
+    # TODO: Add more tests, for situations where the destination is already full of stuff
