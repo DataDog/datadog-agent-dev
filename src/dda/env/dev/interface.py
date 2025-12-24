@@ -166,7 +166,7 @@ class DeveloperEnvironmentInterface(ABC, Generic[ConfigT]):
     @abstractmethod
     def export_files(
         self,
-        sources: tuple[Path, ...],
+        sources: tuple[str, ...],  # Passed as string since they are inside the env filesystem
         destination: Path,
         recursive: bool,  # noqa: FBT001
         force: bool,  # noqa: FBT001
@@ -188,7 +188,7 @@ class DeveloperEnvironmentInterface(ABC, Generic[ConfigT]):
     def import_files(
         self,
         sources: tuple[Path, ...],
-        destination: Path,
+        destination: str,  # Passed as string since it is inside the env filesystem
         recursive: bool,  # noqa: FBT001
         force: bool,  # noqa: FBT001
         mkpath: bool,  # noqa: FBT001
