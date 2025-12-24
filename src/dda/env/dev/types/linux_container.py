@@ -14,8 +14,6 @@ from dda.env.dev.interface import DeveloperEnvironmentConfig, DeveloperEnvironme
 from dda.utils.git.constants import GitEnvVars
 
 if TYPE_CHECKING:
-    from click import Context, Option
-
     from dda.env.models import EnvironmentStatus
     from dda.env.shells.interface import Shell
     from dda.tools.docker import Docker
@@ -107,7 +105,6 @@ This option may be supplied multiple times, and has the same syntax as the `-m/-
 - `type=bind,src=/tmp/some-location,dst=/location,bind-propagation=rslave`
 """
                 ),
-                "callback": __validate_extra_mount_specs,
             }
         ),
     ] = msgspec.field(default_factory=list)
@@ -205,8 +202,8 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
 
                     command.extend(("-v", f"{repo_path}:{self.repo_path(repo)}"))
 
-            for volume in self.extra_mounts:
-                command.extend(("--mount", volume.as_csv()))
+            for mount_spec in self.config.extra_mount_specs:
+                command.extend(("--mount", mount_spec))
 
             for volume_spec in self.config.extra_volume_specs:
                 command.extend(("--volume", volume_spec))
@@ -426,23 +423,6 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             name += f"-{self.config.arch}"
         return name
 
-    @cached_property
-    def extra_mounts(self) -> list[Mount]:
-        from dda.utils.container.model import Mount
-
-        mounts = []
-        for spec in self.config.extra_mount_specs:
-            type_spec, src_spec, dst_spec, *flag_specs = spec.split(",")
-            mount_type: Literal["bind", "volume"] = "bind" if type_spec == "type=bind" else "volume"
-            src = src_spec.split("=")[1]
-            dst = dst_spec.split("=")[1]
-            read_only = any(flag in flag_specs for flag in ("readonly", "ro"))
-            volume_options = dict(flag.split("=", 1) for flag in flag_specs if "=" in flag)
-            mounts.append(
-                Mount(type=mount_type, path=dst, source=src, read_only=read_only, volume_options=volume_options)
-            )
-        return mounts
-
     def construct_command(self, command: list[str], *, cwd: str | None = None) -> list[str]:
         if cwd is None:
             cwd = self.home_dir
@@ -473,61 +453,3 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             repo = self.default_repo
 
         return f"{self.home_dir}/repos/{repo}"
-
-
-def __validate_mount_src_dst(mount_type: Literal["bind", "volume"], src: str, dst: str) -> None:
-    from click import BadParameter
-
-    from dda.utils.fs import Path
-
-    # Only validate src for bind mounts, since volume mounts sources are pretty much unconstrained.
-    if mount_type == "bind" and not Path(src).exists():
-        # NOTE: We have here a slight discrepancy with the behavior of `docker run -v`, which will create the directory if it doesn't exist.
-        msg = f"Invalid volume source: {src}. Source must be an existing path on the host."
-        raise BadParameter(msg)
-
-    # Destination must always be an absolute path.
-    if not Path(dst).is_absolute():
-        msg = f"Invalid volume destination: {dst}. Destination must be an absolute path."
-        raise BadParameter(msg)
-
-
-def __validate_extra_mount_specs(_ctx: Context, _param: Option, value: list[str]) -> list[str]:
-    from click import BadParameter
-
-    if not value:
-        return value
-
-    for spec in value:
-        try:
-            type_spec, src_spec, dst_spec, *flags = spec.split(",")
-        except ValueError as e:
-            msg = f"Invalid mount spec: {spec}. Expected format: type=<type>,src=<source>,dst=<destination>,[<flag>=<value>, ...]"
-            raise BadParameter(msg) from e
-        if type_spec not in {"type=bind", "type=volume"}:
-            msg = f"Invalid mount type: {type_spec}. Only `bind` and `volume` are supported."
-            raise BadParameter(msg)
-        if not src_spec.startswith(("src=", "source=")):
-            msg = f"Invalid mount source: {src_spec}. Source must be prefixed with `src=`."
-            raise BadParameter(msg)
-        if not dst_spec.startswith(("dst=", "destination=", "target=")):
-            msg = f"Invalid mount destination: {dst_spec}. Destination must be prefixed with `dst=`."
-            raise BadParameter(msg)
-        mount_type: Literal["bind", "volume"] = "bind" if type_spec == "type=bind" else "volume"
-        src = src_spec.removeprefix("src=").removeprefix("source=")
-        dst = dst_spec.removeprefix("dst=").removeprefix("destination=").removeprefix("target=")
-        __validate_mount_src_dst(mount_type, src, dst)
-
-        for flag in flags:
-            if flag in {"readonly", "ro"}:
-                continue
-            key, _ = flag.split("=", 1)
-
-            # Only support the `bind-propagation` flag for bind mounts.
-            if mount_type == "bind" and key != "bind-propagation":
-                msg = f"Invalid mount flag: {flag}. Only the `bind-propagation` flag is supported for bind mounts."
-                raise BadParameter(msg)
-            if mount_type == "volume" and key not in {"volume-subpath", "volume-opt", "volume-nocopy"}:
-                msg = f"Invalid mount flag: {flag}. Only the `volume-subpath`, `volume-opt`, and `volume-nocopy` flags are supported for volume mounts."
-                raise BadParameter(msg)
-    return value
