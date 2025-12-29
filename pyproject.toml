@@ -150,6 +150,7 @@ legacy-tasks = [
     { include-group = "legacy-github" },
     { include-group = "legacy-notifications" },
     { include-group = "legacy-release" },
+    { include-group = "legacy-kernel-matrix-testing" }
     "debugpy==1.8.2",
     "rich==14.0.0",
     "watchdog==6.0.0",
