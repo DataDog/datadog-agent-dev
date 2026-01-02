@@ -482,4 +482,32 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         force: bool,  # noqa: FBT001
         mkpath: bool,  # noqa: FBT001
     ) -> None:
-        raise NotImplementedError
+        from shutil import copy2, copytree
+
+        from dda.utils.fs import temp_directory
+
+        # 1. Create a temporary directory in a location that is bind-mounted into the container
+        with temp_directory(dir=self.shared_dir) as temp_dir:
+            # 2. Copy the files from the source to the shared directory using
+            for source in sources:
+                if source.is_dir():
+                    copytree(source, temp_dir / source.name)
+                else:
+                    copy2(source, temp_dir / source.name)
+
+            # 3. Run `dda env dev fs localimport` inside the dev env so that the files are copied from this shared directory into their final destination
+            self.app.subprocess.wait(
+                self.construct_command([
+                    "dda",
+                    "env",
+                    "dev",
+                    "fs",
+                    "localimport",
+                    temp_dir.as_posix(),  # Source = shared directory in the dev env
+                    destination,  # Destination = final destination in the dev env
+                    str(recursive),
+                    str(force),
+                    str(mkpath),
+                ]),
+                message="Importing files into the dev env...",
+            )

@@ -1252,17 +1252,20 @@ def export_destination(temp_dir):
 
 
 @pytest.fixture
-def linux_container_for_export(app, mocker, temp_shared_dir):
-    """LinuxContainer instance for export testing."""
+def linux_container_with_shared_dir(app, mocker, temp_shared_dir):
+    """LinuxContainer instance configured with a mocked shared temp directory.
+
+    Can be used for both export and import testing.
+    """
     container = LinuxContainer(app=app, name="test", instance="default")
     mocker.patch.object(container, "status", return_value=EnvironmentStatus(state=EnvironmentState.STARTED))
 
     # Mock the temp_directory context manager to return our controlled temp directory
     @contextmanager
-    def _temp_dir():
+    def _temp_directory(dir=None):  # noqa: ARG001, A002
         yield temp_shared_dir
 
-    mocker.patch("dda.utils.fs.temp_directory", _temp_dir)
+    mocker.patch("dda.utils.fs.temp_directory", _temp_directory)
     return container
 
 
@@ -1327,7 +1330,7 @@ class TestExportFiles:
     def test_export_orchestration(
         self,
         mocker,
-        linux_container_for_export,
+        linux_container_with_shared_dir,
         temp_shared_dir,
         export_destination,
         sources,
@@ -1344,13 +1347,13 @@ class TestExportFiles:
         def _mock_docker_cp(source: str, destination: str) -> None:
             docker_cp_calls.append((source, destination))
 
-        mocker.patch.object(linux_container_for_export, "_docker_cp", _mock_docker_cp)
+        mocker.patch.object(linux_container_with_shared_dir, "_docker_cp", _mock_docker_cp)
 
         # Mock import_from_dir where it's used (in linux_container module)
         mock_import_from_dir = mocker.patch("dda.env.dev.types.linux_container.import_from_dir")
 
         # Execute
-        linux_container_for_export.export_files(
+        linux_container_with_shared_dir.export_files(
             sources=sources,
             destination=export_destination,
             recursive=recursive,
@@ -1369,3 +1372,115 @@ class TestExportFiles:
             force=force,
             mkpath=mkpath,
         )
+
+
+class TestImportFiles:
+    """Test LinuxContainer.import_files() orchestration of file copying and dda command execution."""
+
+    @pytest.mark.parametrize(
+        ("sources", "destination", "recursive", "force", "mkpath"),
+        [
+            pytest.param(
+                ("file_root.txt",),
+                "/root/dest",
+                False,
+                False,
+                False,
+                id="single_file",
+            ),
+            pytest.param(
+                ("file_root.txt", "file_root2.txt"),
+                "/root/dest",
+                False,
+                True,
+                False,
+                id="multiple_files_with_force",
+            ),
+            pytest.param(
+                ("folder1",),
+                "/root/dest",
+                True,
+                False,
+                False,
+                id="single_directory_recursive",
+            ),
+            pytest.param(
+                ("file_root.txt", "folder1", "file_root2.txt"),
+                "/root/dest",
+                True,
+                False,
+                True,
+                id="mixed_files_and_directories_with_mkpath",
+            ),
+            pytest.param(
+                ("folder1", "folder2"),
+                "/root/dest",
+                True,
+                True,
+                True,
+                id="multiple_directories_all_flags",
+            ),
+        ],
+    )
+    def test_import_orchestration(
+        self,
+        mocker,
+        linux_container_with_shared_dir,
+        temp_shared_dir,
+        sources,
+        destination,
+        recursive,
+        force,
+        mkpath,
+    ):
+        """Verify that import_files correctly copies files to shared dir and runs dda command."""
+        # Get source paths from fixtures
+        fixtures_dir = Path(__file__).parent.parent / "fixtures" / "fs_tests"
+        source_paths = [fixtures_dir / source for source in sources]
+
+        # Mock subprocess.wait to capture the dda command
+        mock_subprocess_wait = mocker.patch.object(linux_container_with_shared_dir.app.subprocess, "wait")
+
+        # Execute
+        linux_container_with_shared_dir.import_files(
+            sources=source_paths,
+            destination=destination,
+            recursive=recursive,
+            force=force,
+            mkpath=mkpath,
+        )
+
+        # Verify each source was copied to the shared temp directory
+        for source in sources:
+            shared_path = temp_shared_dir / source
+            fixture_path = fixtures_dir / source
+
+            assert shared_path.exists(), f"Expected {source} to be copied to shared directory"
+
+            if fixture_path.is_file():
+                # For files, compare content
+                assert shared_path.read_text() == fixture_path.read_text()
+            else:
+                # For directories, verify all contents match recursively
+                for fixture_item in fixture_path.rglob("*"):
+                    relative_path = fixture_item.relative_to(fixture_path)
+                    shared_item = shared_path / relative_path
+                    assert shared_item.exists(), f"Missing {relative_path} in copied {source}"
+                    if fixture_item.is_file():
+                        assert shared_item.read_text() == fixture_item.read_text()
+
+        # Verify the dda command was executed with correct arguments
+        mock_subprocess_wait.assert_called_once()
+        command = mock_subprocess_wait.call_args[0][0]
+
+        # The command is wrapped in SSH - the last element contains the actual shell command
+        shell_command = command[-1].removeprefix("cd /root && ")
+        expected = " ".join([
+            "dda env dev fs localimport",
+            str(temp_shared_dir.as_posix()),
+            destination,
+            str(recursive),
+            str(force),
+            str(mkpath),
+        ])
+        assert expected == shell_command
