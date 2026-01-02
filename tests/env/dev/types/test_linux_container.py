@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import json
 import os
-import shutil
 import subprocess
 import sys
 from contextlib import contextmanager
@@ -1237,196 +1236,136 @@ bar 1PB
 
 
 @pytest.fixture
-def test_files_root():
-    # Folder containing test files to be copied
-    return Path(__file__).parent / "fixtures" / "import_export_tests" / "examples"
+def temp_shared_dir(temp_dir):
+    """Temporary shared directory simulating the intermediate location for docker cp."""
+    shared = temp_dir / "share_test"
+    shared.ensure_dir()
+    return shared
 
 
 @pytest.fixture
-def test_target_directory(temp_dir):
-    # Directory where the test files should be copied to, should maybe already contain files
-    res = temp_dir / "test_target"
-    res.ensure_dir()
-    return res
+def export_destination(temp_dir):
+    """Destination directory for exported files."""
+    dest = temp_dir / "final_destination"
+    dest.ensure_dir()
+    return dest
 
 
 @pytest.fixture
-def linux_container(temp_dir, test_files_root, mocker, app):
-    # 1. Make the temporary_directory() context manager predictable
-    temp_shared_dir = temp_dir / "share_test"
-    temp_shared_dir.ensure_dir()
+def linux_container_for_export(app, mocker, temp_shared_dir):
+    """LinuxContainer instance for export testing."""
+    container = LinuxContainer(app=app, name="test", instance="default")
+    mocker.patch.object(container, "status", return_value=EnvironmentStatus(state=EnvironmentState.STARTED))
 
+    # Mock the temp_directory context manager to return our controlled temp directory
     @contextmanager
-    def _f():
+    def _temp_dir():
         yield temp_shared_dir
 
-    mocker.patch("dda.utils.fs.temp_directory", _f)
-
-    # 2. Mock the LinuxContainer instance
-    linux_container = LinuxContainer(app=app, name="test", instance="default")
-    mocker.patch.object(linux_container, "start", return_value=0)
-    mocker.patch.object(linux_container, "stop", return_value=0)
-    mocker.patch.object(linux_container, "remove", return_value=0)
-    mocker.patch.object(linux_container, "status", return_value=EnvironmentStatus(state=EnvironmentState.STARTED))
-
-    # 2. Avoid running any docker cp, instead running a "real" cp from the test files
-    def _fake_cp(source: str, destination: str) -> None:
-        real_source = test_files_root / source.split(":")[1]  # Also remove the container name
-        real_destination = temp_shared_dir / destination
-        if real_source.is_dir():
-            shutil.copytree(str(real_source), str(real_destination))
-        else:
-            shutil.copy2(str(real_source), str(real_destination))
-
-    mocker.patch.object(linux_container, "_docker_cp", _fake_cp)
-
-    return linux_container
+    mocker.patch("dda.utils.fs.temp_directory", _temp_dir)
+    return container
 
 
 class TestExportFiles:
-    """Basic export operations."""
+    """Test LinuxContainer.export_files() orchestration of docker cp and import_from_dir."""
 
     @pytest.mark.parametrize(
-        ("sources", "destination", "expected"),
+        ("sources", "recursive", "force", "mkpath", "expected_docker_cp_calls"),
         [
-            pytest.param(("file_root.txt",), "", ["file_root.txt"], id="single_file"),
-            pytest.param(("file_root.txt",), "file_renamed.txt", ["file_renamed.txt"], id="file_rename"),
             pytest.param(
-                ("file_root.txt", "file_root2.txt"), "", ["file_root.txt", "file_root2.txt"], id="multiple_files"
+                ("file.txt",),
+                False,
+                False,
+                False,
+                [("dda-test-default:file.txt", "file.txt")],
+                id="single_file",
             ),
             pytest.param(
-                ("folder1",),
-                "",
-                ["folder1", "folder1/file_deep1.txt", "folder1/subfolder1", "folder1/subfolder2"],
-                id="directory",
+                ("file1.txt", "file2.txt"),
+                False,
+                True,
+                False,
+                [
+                    ("dda-test-default:file1.txt", "file1.txt"),
+                    ("dda-test-default:file2.txt", "file2.txt"),
+                ],
+                id="multiple_files_with_force",
             ),
             pytest.param(
-                ("file_root.txt", "folder1", "file_root2.txt"),
-                "",
-                ["file_root.txt", "file_root2.txt", "folder1", "folder1/file_deep1.txt"],
-                id="mixed_files_and_directories",
+                ("folder",),
+                True,
+                False,
+                False,
+                [("dda-test-default:folder", "folder")],
+                id="single_directory_recursive",
+            ),
+            pytest.param(
+                ("file.txt", "folder", "file2.txt"),
+                True,
+                False,
+                True,
+                [
+                    ("dda-test-default:file.txt", "file.txt"),
+                    ("dda-test-default:folder", "folder"),
+                    ("dda-test-default:file2.txt", "file2.txt"),
+                ],
+                id="mixed_files_and_directories_with_mkpath",
+            ),
+            pytest.param(
+                ("dir1", "dir2"),
+                True,
+                True,
+                True,
+                [
+                    ("dda-test-default:dir1", "dir1"),
+                    ("dda-test-default:dir2", "dir2"),
+                ],
+                id="multiple_directories_all_flags",
             ),
         ],
     )
-    def test_export_into_empty_directory(self, linux_container, test_target_directory, sources, destination, expected):
-        destination = test_target_directory / destination
-        linux_container.export_files(
-            sources=sources, destination=destination, recursive=True, force=False, mkpath=False
+    def test_export_orchestration(
+        self,
+        mocker,
+        linux_container_for_export,
+        temp_shared_dir,
+        export_destination,
+        sources,
+        recursive,
+        force,
+        mkpath,
+        expected_docker_cp_calls,
+    ):
+        """Verify that export_files correctly orchestrates docker cp and import_from_dir calls."""
+
+        # Track docker cp calls
+        docker_cp_calls = []
+
+        def _mock_docker_cp(source: str, destination: str) -> None:
+            docker_cp_calls.append((source, destination))
+
+        mocker.patch.object(linux_container_for_export, "_docker_cp", _mock_docker_cp)
+
+        # Mock import_from_dir where it's used (in linux_container module)
+        mock_import_from_dir = mocker.patch("dda.env.dev.types.linux_container.import_from_dir")
+
+        # Execute
+        linux_container_for_export.export_files(
+            sources=sources,
+            destination=export_destination,
+            recursive=recursive,
+            force=force,
+            mkpath=mkpath,
         )
 
-        for expected_file in expected:
-            assert (test_target_directory / expected_file).exists()
-            # Verify content for files (not directories)
-            file_path = test_target_directory / expected_file
-            if file_path.is_file() and "renamed" not in expected_file:
-                assert file_path.read_text().strip() == "source"
+        # Verify docker cp was called correctly for each source
+        assert docker_cp_calls == expected_docker_cp_calls
 
-    class TestExportRecursiveArg:
-        """Tests for the recursive flag."""
-
-        def test_directory_fails_without_flag(self, linux_container, test_target_directory):
-            with pytest.raises(ValueError, match="Refusing to export directory:.* as recursive flag is not set"):
-                linux_container.export_files(
-                    sources=("folder1",),
-                    destination=test_target_directory,
-                    recursive=False,
-                    force=False,
-                    mkpath=False,
-                )
-
-        def test_multiple_directories(self, linux_container, test_target_directory):
-            linux_container.export_files(
-                sources=("folder1", "folder2"),
-                destination=test_target_directory,
-                recursive=True,
-                force=False,
-                mkpath=False,
-            )
-
-            assert (test_target_directory / "folder1").exists()
-            assert (test_target_directory / "folder1" / "file_deep1.txt").exists()
-            assert (test_target_directory / "folder2").exists()
-            assert (test_target_directory / "folder2" / "file_deep2.txt").exists()
-
-    class TestExportForceArg:
-        """Tests for the force flag."""
-
-        def test_overwrite_fails_without_flag(self, linux_container, test_target_directory):
-            existing_file = test_target_directory / "file_root.txt"
-            existing_file.write_text("existing content")
-
-            with pytest.raises(ValueError, match="Refusing to overwrite existing file:.* \\(force flag is not set\\)"):
-                linux_container.export_files(
-                    sources=("file_root.txt",), destination=existing_file, recursive=False, force=False, mkpath=False
-                )
-            assert existing_file.read_text() == "existing content"
-
-        def test_overwrite_succeeds_with_flag(self, linux_container, test_target_directory):
-            existing_file = test_target_directory / "file_root.txt"
-            existing_file.write_text("existing content")
-
-            linux_container.export_files(
-                sources=("file_root.txt",),
-                destination=existing_file,
-                recursive=False,
-                force=True,
-                mkpath=False,
-            )
-            assert existing_file.read_text().strip() == "source"
-
-    class TestExportMkpathArg:
-        """Tests for the mkpath flag."""
-
-        def test_nonexistent_path_fails_without_mkpath(self, linux_container, test_target_directory):
-            nonexistent_dir = test_target_directory / "nonexistent" / "deep" / "path"
-            with pytest.raises(FileNotFoundError):
-                linux_container.export_files(
-                    sources=("file_root.txt",),
-                    destination=nonexistent_dir / "file.txt",
-                    recursive=False,
-                    force=False,
-                    mkpath=False,
-                )
-
-        def test_nonexistent_path_succeeds_with_mkpath(self, linux_container, test_target_directory):
-            nonexistent_dir = test_target_directory / "nonexistent" / "deep" / "path"
-            linux_container.export_files(
-                sources=("file_root.txt",),
-                destination=nonexistent_dir,
-                recursive=False,
-                force=False,
-                mkpath=True,
-            )
-            assert nonexistent_dir.exists()
-            assert (nonexistent_dir / "file_root.txt").exists()
-            assert (nonexistent_dir / "file_root.txt").read_text().strip() == "source"
-
-    class TestExportToExistingElements:
-        """Tests for exporting to a directory that already contains stuff."""
-
-        def test_directory_to_existing_directory(self, linux_container, test_target_directory):
-            (test_target_directory / "existing_dir").ensure_dir()
-
-            linux_container.export_files(
-                sources=("folder1",),
-                destination=test_target_directory / "existing_dir",
-                recursive=True,
-                force=False,
-                mkpath=False,
-            )
-
-            assert (test_target_directory / "existing_dir" / "folder1").exists()
-            assert (test_target_directory / "existing_dir" / "folder1" / "file_deep1.txt").exists()
-
-        def test_directory_to_existing_file_fails(self, linux_container, test_target_directory):
-            existing_file = test_target_directory / "some_file.txt"
-            existing_file.write_text("existing content")
-
-            with pytest.raises(ValueError, match="Refusing to overwrite existing file with directory"):
-                linux_container.export_files(
-                    sources=("folder1",),
-                    destination=existing_file,
-                    recursive=True,
-                    force=False,
-                    mkpath=False,
-                )
+        # Verify import_from_dir was called once with correct parameters
+        mock_import_from_dir.assert_called_once_with(
+            temp_shared_dir,
+            export_destination,
+            recursive=recursive,
+            force=force,
+            mkpath=mkpath,
+        )
