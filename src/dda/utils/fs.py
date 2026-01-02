@@ -180,12 +180,14 @@ class Path(pathlib.Path):
 
 
 @contextmanager
-def temp_directory() -> Generator[Path, None, None]:
+def temp_directory(dir: str | Path | None = None) -> Generator[Path, None, None]:  # noqa: A002
     """
     A context manager that creates a temporary directory and yields a path to it. Example:
 
     ```python
     with temp_directory() as td:
+        ...
+    with temp_directory("/tmp") as td:
         ...
     ```
 
@@ -194,7 +196,7 @@ def temp_directory() -> Generator[Path, None, None]:
     """
     from tempfile import TemporaryDirectory
 
-    with TemporaryDirectory() as d:
+    with TemporaryDirectory(dir=dir) as d:
         yield Path(d).resolve()
 
 
