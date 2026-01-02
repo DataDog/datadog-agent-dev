@@ -505,7 +505,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                     "dev",
                     "fs",
                     "localimport",
-                    temp_dir.as_posix(),  # Source = shared directory in the dev env
+                    f"/.shared/{temp_dir.name}",  # Source = shared directory in the dev env
                     destination,  # Destination = final destination in the dev env
                     str(recursive),
                     str(force),

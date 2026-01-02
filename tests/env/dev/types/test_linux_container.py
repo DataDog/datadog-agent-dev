@@ -1498,7 +1498,7 @@ class TestImportFiles:
         shell_command = command[-1].removeprefix("cd /root && ")
         expected = " ".join([
             "dda env dev fs localimport",
-            str(temp_shared_dir.as_posix()),
+            f"/.shared/{temp_shared_dir.name}",
             destination,
             str(recursive),
             str(force),

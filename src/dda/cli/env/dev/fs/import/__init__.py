@@ -56,9 +56,7 @@ def cmd(
     )
     status = env.status()
 
-    # TODO: This might end up depending on the environment type.
-    # For `linux-container` though, `docker cp` also works on stopped containers.
-    possible_states = {EnvironmentState.STARTED, EnvironmentState.STOPPED}
+    possible_states = {EnvironmentState.STARTED}
     if status.state not in possible_states:
         app.abort(
             f"Developer environment `{env_type}` is in state `{status.state}`, must be one of: "
