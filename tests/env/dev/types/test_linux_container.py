@@ -35,12 +35,12 @@ def host_user_args():
     return [] if sys.platform == "win32" else ["-e", f"HOST_UID={os.getuid()}", "-e", f"HOST_GID={os.getgid()}"]
 
 
-def get_starship_mount(shared_dir: Path) -> list[str]:
+def get_starship_mount(global_shared_dir: Path) -> list[str]:
     starship_config_file = Path.home() / ".config" / "starship.toml"
     if not starship_config_file.exists():
         return []
 
-    return ["-v", f"{shared_dir / 'shell' / 'starship.toml'}:/root/.shared/shell/starship.toml"]
+    return ["-v", f"{global_shared_dir / 'shell' / 'starship.toml'}:/root/.shared/shell/starship.toml"]
 
 
 def get_cache_volumes() -> list[str]:
@@ -196,8 +196,9 @@ class TestStart:
 
         assert_ssh_config_written(write_server_config, "localhost")
 
-        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / ".shared"
-        starship_mount = get_starship_mount(shared_dir)
+        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
+        global_shared_dir = shared_dir.parent.parent / ".shared"
+        starship_mount = get_starship_mount(global_shared_dir)
         cache_volumes = get_cache_volumes()
         assert calls == [
             (
@@ -231,9 +232,11 @@ class TestStart:
                         GitEnvVars.AUTHOR_NAME,
                         "-e",
                         GitEnvVars.AUTHOR_EMAIL,
+                        "-v",
+                        f"{shared_dir}:/.shared",
                         *starship_mount,
                         "-v",
-                        f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
+                        f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
                         *cache_volumes,
                         "-v",
                         f"{repo_dir}:/root/repos/datadog-agent",
@@ -276,8 +279,9 @@ class TestStart:
 
         assert_ssh_config_written(write_server_config, "localhost")
 
-        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / ".shared"
-        starship_mount = get_starship_mount(shared_dir)
+        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
+        global_shared_dir = shared_dir.parent.parent / ".shared"
+        starship_mount = get_starship_mount(global_shared_dir)
         cache_volumes = get_cache_volumes()
         assert calls == [
             (
@@ -311,9 +315,11 @@ class TestStart:
                         GitEnvVars.AUTHOR_NAME,
                         "-e",
                         GitEnvVars.AUTHOR_EMAIL,
+                        "-v",
+                        f"{shared_dir}:/.shared",
                         *starship_mount,
                         "-v",
-                        f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
+                        f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
                         *cache_volumes,
                         "datadog/agent-dev-env-linux",
                     ],
@@ -374,8 +380,9 @@ class TestStart:
 
         assert_ssh_config_written(write_server_config, "localhost")
 
-        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / ".shared"
-        starship_mount = get_starship_mount(shared_dir)
+        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
+        global_shared_dir = shared_dir.parent.parent / ".shared"
+        starship_mount = get_starship_mount(global_shared_dir)
         cache_volumes = get_cache_volumes()
         assert calls == [
             (
@@ -404,10 +411,12 @@ class TestStart:
                         "-e",
                         GitEnvVars.AUTHOR_NAME,
                         "-e",
-                        "GIT_AUTHOR_EMAIL",
+                        GitEnvVars.AUTHOR_EMAIL,
+                        "-v",
+                        f"{shared_dir}:/.shared",
                         *starship_mount,
                         "-v",
-                        f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
+                        f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
                         *cache_volumes,
                         "-v",
                         f"{repo_dir}:/root/repos/datadog-agent",
@@ -458,8 +467,9 @@ class TestStart:
 
         assert_ssh_config_written(write_server_config, "localhost")
 
-        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / ".shared"
-        starship_mount = get_starship_mount(shared_dir)
+        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
+        global_shared_dir = shared_dir.parent.parent / ".shared"
+        starship_mount = get_starship_mount(global_shared_dir)
         cache_volumes = get_cache_volumes()
         assert calls == [
             (
@@ -493,9 +503,11 @@ class TestStart:
                         GitEnvVars.AUTHOR_NAME,
                         "-e",
                         GitEnvVars.AUTHOR_EMAIL,
+                        "-v",
+                        f"{shared_dir}:/.shared",
                         *starship_mount,
                         "-v",
-                        f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
+                        f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
                         *cache_volumes,
                         "-v",
                         f"{repo1_dir}:/root/repos/datadog-agent",
@@ -541,8 +553,9 @@ class TestStart:
 
         assert_ssh_config_written(write_server_config, "localhost")
 
-        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / ".shared"
-        starship_mount = get_starship_mount(shared_dir)
+        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
+        global_shared_dir = shared_dir.parent.parent / ".shared"
+        starship_mount = get_starship_mount(global_shared_dir)
         cache_volumes = get_cache_volumes()
         assert calls == [
             (
@@ -576,9 +589,11 @@ class TestStart:
                         GitEnvVars.AUTHOR_NAME,
                         "-e",
                         GitEnvVars.AUTHOR_EMAIL,
+                        "-v",
+                        f"{shared_dir}:/.shared",
                         *starship_mount,
                         "-v",
-                        f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
+                        f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
                         *cache_volumes,
                         "datadog/agent-dev-env-linux",
                     ],
@@ -633,8 +648,9 @@ class TestStart:
     def test_extra_volume_specs(self, dda, helpers, mocker, temp_dir, host_user_args, volume_specs):
         mocker.patch("dda.utils.ssh.write_server_config")
 
-        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / ".shared"
-        starship_mount = get_starship_mount(shared_dir)
+        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
+        global_shared_dir = shared_dir.parent.parent / ".shared"
+        starship_mount = get_starship_mount(global_shared_dir)
         cache_volumes = get_cache_volumes()
 
         with (
@@ -694,9 +710,11 @@ class TestStart:
                         GitEnvVars.AUTHOR_NAME,
                         "-e",
                         GitEnvVars.AUTHOR_EMAIL,
+                        "-v",
+                        f"{shared_dir}:/.shared",
                         *starship_mount,
                         "-v",
-                        f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
+                        f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
                         *cache_volumes,
                         *[(x if x != "-v" else "--volume") for x in volume_specs],
                         "datadog/agent-dev-env-linux",
@@ -734,8 +752,9 @@ class TestStart:
     def test_extra_mounts(self, dda, helpers, mocker, temp_dir, host_user_args, mount_specs):
         mocker.patch("dda.utils.ssh.write_server_config")
 
-        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / ".shared"
-        starship_mount = get_starship_mount(shared_dir)
+        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
+        global_shared_dir = shared_dir.parent.parent / ".shared"
+        starship_mount = get_starship_mount(global_shared_dir)
         cache_volumes = get_cache_volumes()
 
         with (
@@ -796,9 +815,11 @@ class TestStart:
                         GitEnvVars.AUTHOR_NAME,
                         "-e",
                         GitEnvVars.AUTHOR_EMAIL,
+                        "-v",
+                        f"{shared_dir}:/.shared",
                         *starship_mount,
                         "-v",
-                        f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
+                        f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
                         *cache_volumes,
                         *[(x if x != "-m" else "--mount") for x in mount_specs],
                         "datadog/agent-dev-env-linux",

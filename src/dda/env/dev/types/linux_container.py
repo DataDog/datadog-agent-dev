@@ -177,6 +177,8 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             if self.config.arch is not None:
                 command.extend(("--platform", f"linux/{self.config.arch}"))
 
+            command.extend(("-v", f"{self.shared_dir}:/.shared"))
+
             for shared_shell_file in self.shell.collect_shared_files():
                 unix_path = shared_shell_file.relative_to(self.global_shared_dir).as_posix()
                 command.extend(("-v", f"{shared_shell_file}:{self.home_dir}/.shared/{unix_path}"))
