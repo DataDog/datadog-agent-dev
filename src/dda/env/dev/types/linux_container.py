@@ -450,11 +450,12 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
 
         return f"{self.home_dir}/repos/{repo}"
 
-    def _docker_cp(self, source: str, destination: str) -> None:
+    def _docker_cp(self, source: str, destination: str, cwd: Path | None = None) -> None:
         # TODO: Make this a proper method on the Docker tool
         self.docker.wait(
             ["cp", source, destination],
             message=f"Copying file or directory: {source}",
+            cwd=cwd,
         )
 
     def export_files(
@@ -471,7 +472,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         with temp_directory() as wd:
             # 2. Copy the files from the container to the temporary directory using `docker cp`
             for source in sources:
-                self._docker_cp(self.container_name + ":" + source, os.path.basename(source))
+                self._docker_cp(self.container_name + ":" + source, os.path.basename(source), cwd=wd)
 
             # 3. Import from the shared dir into the final destination
             import_from_dir(wd, destination, recursive=recursive, force=force, mkpath=mkpath)

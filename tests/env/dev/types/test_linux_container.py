@@ -1365,7 +1365,7 @@ class TestExportFiles:
         # Track docker cp calls
         docker_cp_calls = []
 
-        def _mock_docker_cp(source: str, destination: str) -> None:
+        def _mock_docker_cp(source: str, destination: str, cwd: Path | None = None) -> None:  # noqa: ARG001
             docker_cp_calls.append((source, destination))
 
         mocker.patch.object(linux_container_with_shared_dir, "_docker_cp", _mock_docker_cp)
