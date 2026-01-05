@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 @click.option("--id", "instance", default="default", help="Unique identifier for the environment")
 @click.argument("sources", nargs=-1, required=True)
 @click.argument("destination", required=True, type=click.Path(resolve_path=True, path_type=Path))
-@click.option("--recursive", "-r", is_flag=True, help="Import files and directories recursively.")
+@click.option("--recursive", "-r", is_flag=True, help="Export files and directories recursively.")
 @click.option(
     "--force",
     "-f",

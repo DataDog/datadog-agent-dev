@@ -197,9 +197,9 @@ class DeveloperEnvironmentInterface(ABC, Generic[ConfigT]):
         This method imports files from the host filesystem into the developer environment.
 
         Parameters:
-            sources: The paths to files/directories in the developer environment to export.
-            destination: The destination directory on the host filesystem.
-            recursive: Whether to export files and directories recursively. If False, all sources must be files.
+            sources: The paths to files/directories on the host filesystem to import.
+            destination: The destination directory in the developer environment.
+            recursive: Whether to import files and directories recursively. If False, all sources must be files.
             force: Whether to overwrite existing files. Without this option, an error will be raised if the destination file/directory already exists.
             mkpath: Whether to create the destination directories and their parents if they do not exist.
         """

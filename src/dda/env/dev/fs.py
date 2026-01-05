@@ -62,12 +62,11 @@ def handle_overwrite(dest: Path, *, force: bool) -> None:
 
 
 def import_from_dir(source_dir: Path, destination_spec: Path, *, recursive: bool, force: bool, mkpath: bool) -> None:
-    from shutil import move
-
     """
     Import files and directories from a given directory into a destination directory on the "host" filesystem.
     "Host" in this context refers to the environment `dda` is being executed in: if that is inside of a dev env, then we mean the dev env's file system.
     """
+    from shutil import move
 
     if mkpath:
         destination_spec.ensure_dir()

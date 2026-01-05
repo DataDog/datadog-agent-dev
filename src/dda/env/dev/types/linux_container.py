@@ -491,7 +491,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
 
         # 1. Create a temporary directory in a location that is bind-mounted into the container
         with temp_directory(dir=self.shared_dir) as temp_dir:
-            # 2. Copy the files from the source to the shared directory using
+            # 2. Copy the files from the source to the shared directory
             for source in sources:
                 if source.is_dir():
                     copytree(source, temp_dir / source.name)
