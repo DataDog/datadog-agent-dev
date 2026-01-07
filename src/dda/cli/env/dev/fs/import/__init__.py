@@ -18,33 +18,23 @@ if TYPE_CHECKING:
 @dynamic_command(short_help="""Import files and directories into a developer environment""")
 @option_env_type()
 @click.option("--id", "instance", default="default", help="Unique identifier for the environment")
-@click.argument("sources", nargs=-1, required=True, type=click.Path(exists=True, resolve_path=True, path_type=Path))
+@click.argument("source", required=True, type=click.Path(exists=True, resolve_path=True, path_type=Path))
 @click.argument("destination", required=True)
-@click.option("--recursive", "-r", is_flag=True, help="Import files and directories recursively.")
-@click.option(
-    "--force",
-    "-f",
-    is_flag=True,
-    help="Overwrite existing files. Without this option, an error will be raised if the destination file already exists.",
-)
-@click.option(
-    "--mkpath", is_flag=True, help="Create the destination directories and their parents if they do not exist."
-)
 @pass_app
 def cmd(
     app: Application,
     *,
     env_type: str,
     instance: str,
-    sources: tuple[Path, ...],
+    source: Path,
     destination: str,  # Passed as string since it is inside the env filesystem
-    recursive: bool,
-    force: bool,
-    mkpath: bool,
 ) -> None:
     """
     Import files and directories into a developer environment, using an interface similar to `cp`.
     The last path specified is the destination directory inside the environment.
+
+    Paths within the environment (destination) need to be passed as _absolute paths_.
+    Paths on the host filesystem (source) can be relative or absolute.
     """
     from dda.env.dev import get_dev_env
     from dda.env.models import EnvironmentState
@@ -56,14 +46,12 @@ def cmd(
     )
     status = env.status()
 
-    possible_states = {EnvironmentState.STARTED}
-    if status.state not in possible_states:
+    if status.state != EnvironmentState.STARTED:
         app.abort(
-            f"Developer environment `{env_type}` is in state `{status.state}`, must be one of: "
-            f"{', '.join(sorted(possible_states))}"
+            f"Developer environment `{env_type}` is in state `{status.state}`, must be {EnvironmentState.STARTED}."
         )
 
     try:
-        env.import_files(sources, destination, recursive, force, mkpath)
+        env.import_path(source, destination)
     except Exception as error:  # noqa: BLE001
         app.abort(f"Failed to import files: {error}")

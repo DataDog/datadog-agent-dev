@@ -20,17 +20,11 @@ if TYPE_CHECKING:
 )
 @option_env_type()
 @click.option("--id", "instance", default="default", help="Unique identifier for the environment")
-@click.argument("sources", nargs=-1, required=True)
-@click.argument("destination", required=True, type=click.Path(resolve_path=True, path_type=Path))
-@click.option("--recursive", "-r", is_flag=True, help="Export files and directories recursively.")
-@click.option(
-    "--force",
-    "-f",
-    is_flag=True,
-    help="Overwrite existing files. Without this option, an error will be raised if the destination file already exists.",
-)
-@click.option(
-    "--mkpath", is_flag=True, help="Create the destination directories and their parents if they do not exist."
+@click.argument("source", required=True)
+@click.argument(
+    "destination",
+    required=True,
+    type=click.Path(file_okay=True, dir_okay=True, writable=True, resolve_path=True, path_type=Path),
 )
 @pass_app
 def cmd(
@@ -38,15 +32,15 @@ def cmd(
     *,
     env_type: str,
     instance: str,
-    sources: tuple[str, ...],  # Passed as string since they are inside the env filesystem
+    source: str,  # Passed as string since it is inside the env filesystem
     destination: Path,
-    recursive: bool,
-    force: bool,
-    mkpath: bool,
 ) -> None:
     """
     Export files and directories from a developer environment, using an interface similar to `cp`.
     The last path specified is the destination directory on the host filesystem.
+
+    Paths within the environment (source) need to be passed as _absolute paths_.
+    Paths on the host filesystem (destination) can be relative or absolute.
     """
     from dda.env.dev import get_dev_env
     from dda.env.models import EnvironmentState
@@ -58,16 +52,12 @@ def cmd(
     )
     status = env.status()
 
-    # TODO: This might end up depending on the environment type.
-    # For `linux-container` though, `docker cp` also works on stopped containers.
-    possible_states = {EnvironmentState.STARTED, EnvironmentState.STOPPED}
-    if status.state not in possible_states:
+    if status.state != EnvironmentState.STARTED:
         app.abort(
-            f"Developer environment `{env_type}` is in state `{status.state}`, must be one of: "
-            f"{', '.join(sorted(possible_states))}"
+            f"Developer environment `{env_type}` is in state `{status.state}`, must be {EnvironmentState.STARTED}."
         )
 
     try:
-        env.export_files(sources, destination, recursive, force, mkpath)
+        env.export_path(source, destination)
     except Exception as error:  # noqa: BLE001
         app.abort(f"Failed to export files: {error}")

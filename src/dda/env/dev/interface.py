@@ -164,44 +164,32 @@ class DeveloperEnvironmentInterface(ABC, Generic[ConfigT]):
         """
 
     @abstractmethod
-    def export_files(
+    def export_path(
         self,
-        sources: tuple[str, ...],  # Passed as string since they are inside the env filesystem
+        source: str,  # Passed as string since it is inside the env filesystem
         destination: Path,
-        recursive: bool,  # noqa: FBT001
-        force: bool,  # noqa: FBT001
-        mkpath: bool,  # noqa: FBT001
     ) -> None:
         """
-        This method exports files from the developer environment to the host filesystem.
+        This method exports a file or directory from the developer environment to the host filesystem.
 
         Parameters:
-            sources: The paths to files/directories in the developer environment to export.
+            source: The path to the file/directory in the developer environment to export.
             destination: The destination directory on the host filesystem.
-            recursive: Whether to export files and directories recursively. If False, all sources must be files.
-            force: Whether to overwrite existing files. Without this option, an error will be raised if the destination file/directory already exists.
-            mkpath: Whether to create the destination directories and their parents if they do not exist.
         """
         raise NotImplementedError
 
     @abstractmethod
-    def import_files(
+    def import_path(
         self,
-        sources: tuple[Path, ...],
+        source: Path,
         destination: str,  # Passed as string since it is inside the env filesystem
-        recursive: bool,  # noqa: FBT001
-        force: bool,  # noqa: FBT001
-        mkpath: bool,  # noqa: FBT001
     ) -> None:
         """
-        This method imports files from the host filesystem into the developer environment.
+        This method imports a file or directory from the host filesystem into the developer environment.
 
         Parameters:
-            sources: The paths to files/directories on the host filesystem to import.
+            sources: The path to the file/directory on the host filesystem to import.
             destination: The destination directory in the developer environment.
-            recursive: Whether to import files and directories recursively. If False, all sources must be files.
-            force: Whether to overwrite existing files. Without this option, an error will be raised if the destination file/directory already exists.
-            mkpath: Whether to create the destination directories and their parents if they do not exist.
         """
         raise NotImplementedError
 

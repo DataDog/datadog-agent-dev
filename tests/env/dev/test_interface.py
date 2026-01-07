@@ -34,22 +34,16 @@ class Container(DeveloperEnvironmentInterface):
 
     def run_command(self, command: list[str], *, repo: str | None = None) -> None: ...
 
-    def export_files(
+    def export_path(
         self,
-        sources: tuple[str, ...],
+        source: str,
         destination: Path,
-        recursive: bool,  # noqa: FBT001
-        force: bool,  # noqa: FBT001
-        mkpath: bool,  # noqa: FBT001
     ) -> None: ...
 
-    def import_files(
+    def import_path(
         self,
-        sources: tuple[Path, ...],
+        source: Path,
         destination: str,
-        recursive: bool,  # noqa: FBT001
-        force: bool,  # noqa: FBT001
-        mkpath: bool,  # noqa: FBT001
     ) -> None: ...
 
 
