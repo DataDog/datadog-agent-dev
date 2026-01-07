@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING, Annotated, Any, Literal, NoReturn
 
 import msgspec
 
-from dda.env.dev.fs import import_from_dir
 from dda.env.dev.interface import DeveloperEnvironmentConfig, DeveloperEnvironmentInterface
 from dda.utils.git.constants import GitEnvVars
 
@@ -450,14 +449,6 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
 
         return f"{self.home_dir}/repos/{repo}"
 
-    def _docker_cp(self, source: str, destination: str, cwd: Path | None = None) -> None:
-        # TODO: Make this a proper method on the Docker tool
-        self.docker.wait(
-            ["cp", source, destination],
-            message=f"Copying file or directory: {source}",
-            cwd=cwd,
-        )
-
     def export_files(
         self,
         sources: tuple[str, ...],
@@ -466,16 +457,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         force: bool,  # noqa: FBT001
         mkpath: bool,  # noqa: FBT001
     ) -> None:
-        from dda.utils.fs import temp_directory
-
-        # 1. Create a temporary directory on the host filesystem
-        with temp_directory() as wd:
-            # 2. Copy the files from the container to the temporary directory using `docker cp`
-            for source in sources:
-                self._docker_cp(self.container_name + ":" + source, os.path.basename(source), cwd=wd)
-
-            # 3. Import from the shared dir into the final destination
-            import_from_dir(wd, destination, recursive=recursive, force=force, mkpath=mkpath)
+        raise NotImplementedError
 
     def import_files(
         self,
@@ -485,32 +467,4 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         force: bool,  # noqa: FBT001
         mkpath: bool,  # noqa: FBT001
     ) -> None:
-        from shutil import copy2, copytree
-
-        from dda.utils.fs import temp_directory
-
-        # 1. Create a temporary directory in a location that is bind-mounted into the container
-        with temp_directory(dir=self.shared_dir) as temp_dir:
-            # 2. Copy the files from the source to the shared directory
-            for source in sources:
-                if source.is_dir():
-                    copytree(source, temp_dir / source.name)
-                else:
-                    copy2(source, temp_dir / source.name)
-
-            # 3. Run `dda env dev fs localimport` inside the dev env so that the files are copied from this shared directory into their final destination
-            self.app.subprocess.wait(
-                self.construct_command([
-                    "dda",
-                    "env",
-                    "dev",
-                    "fs",
-                    "localimport",
-                    f"/.shared/{temp_dir.name}",  # Source = shared directory in the dev env
-                    destination,  # Destination = final destination in the dev env
-                    str(recursive),
-                    str(force),
-                    str(mkpath),
-                ]),
-                message="Importing files into the dev env...",
-            )
+        raise NotImplementedError
