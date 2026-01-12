@@ -220,4 +220,27 @@ def temp_file(suffix: str = "") -> Generator[Path, None, None]:
         yield Path(f.name).resolve()
 
 
+def cp_r(source: Path, destination: Path) -> None:
+    """
+    Copies a file or directory from the source to the destination while matching the behavior of `cp -r`.
+
+    Parameters:
+        source: The source path.
+        destination: The destination path.
+
+    Returns:
+        None.
+    """
+    from shutil import copy2, copytree
+
+    if source.is_dir():
+        # Match cp -r behavior: if destination exists and is a directory,
+        # copy source as a subdirectory inside it
+        if destination.exists() and destination.is_dir():
+            destination /= source.name
+        copytree(str(source), str(destination), dirs_exist_ok=True)
+    else:
+        copy2(str(source), str(destination))
+
+
 register_type_hooks(Path, encode=str, decode=Path)

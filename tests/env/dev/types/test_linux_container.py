@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import json
 import os
-import shutil
 import subprocess
 import sys
 from contextlib import contextmanager
@@ -17,7 +16,7 @@ import pytest
 from dda.config.constants import AppEnvVars
 from dda.env.dev.types.linux_container import LinuxContainer
 from dda.env.models import EnvironmentState, EnvironmentStatus
-from dda.utils.fs import Path
+from dda.utils.fs import Path, cp_r
 from dda.utils.git.constants import GitEnvVars
 
 pytestmark = [pytest.mark.usefixtures("private_storage")]
@@ -1261,7 +1260,7 @@ bar 1PB
 def test_files_root():
     # Folder containing test files to be copied
     # Stands in for an arbitrary path on the source filesystem
-    return Path(__file__).parent / "fixtures" / "import_export_tests" / "examples"
+    return Path(__file__).parent.parent.parent.parent / "fixtures" / "import_export_tests" / "examples"
 
 
 @pytest.fixture
@@ -1311,11 +1310,7 @@ def linux_container(test_files_root, mocker, app):
             msg = f"File not found: {real_source}"
             raise FileNotFoundError(msg)
 
-        # NOTE: From my testing, this matches the behavior of `cp -r`, but shutil makes no such guarantees
-        if real_source.is_dir():
-            shutil.copytree(str(real_source), str(real_destination), dirs_exist_ok=True)
-        else:
-            shutil.copy2(str(real_source), str(real_destination))
+        cp_r(real_source, real_destination)
 
     mocker.patch.object(linux_container, "_container_cp", _fake_cp)
 
