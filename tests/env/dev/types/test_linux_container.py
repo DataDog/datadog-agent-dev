@@ -1273,7 +1273,21 @@ def test_target_directory(temp_dir):
 
 
 @pytest.fixture
-def linux_container(test_files_root, mocker, app):
+def test_container_directory(temp_dir):
+    # Directory representing the container's filesystem for import tests
+    # Stands in for the container's root directory
+    res = temp_dir / "container_root"
+    res.ensure_dir()
+    return res
+
+
+@pytest.fixture
+def linux_container(test_files_root, test_container_directory, mocker, app):
+    """Fixture for both export and import tests.
+
+    - For export: reads from test_files_root (container source) via _container_cp
+    - For import: writes to test_container_directory (container destination) via _container_mv
+    """
     # 1. Create a linux container instance
     linux_container = LinuxContainer(app=app, name="test", instance="default")
 
@@ -1313,6 +1327,37 @@ def linux_container(test_files_root, mocker, app):
         cp_r(real_source, real_destination)
 
     mocker.patch.object(linux_container, "_container_cp", _fake_cp)
+
+    # 3. Avoid running anything inside a container - instead run a "real" mv on the host
+    def _fake_mv(source: str, destination: str) -> None:
+        # _fake_mv replaces _container_mv, so both source and destination are passed absolute paths in the container
+
+        # The shared directory is mounted as `/.shared` in the container
+        # Pseudo-chroot from `container:/.shared` to `host:linux_container.shared_dir/`
+        real_source = linux_container.shared_dir / Path(source).relative_to("/.shared")
+
+        # Pseudo-chroot from `container:/` to `host:test_container_directory/`
+        real_destination = test_container_directory / Path(destination).relative_to("/")
+
+        # Check the source exists otherwise the is_dir check will be nonsensical
+        if not real_source.exists():
+            msg = f"File not found: {real_source}"
+            raise FileNotFoundError(msg)
+
+        # Simulate mv behavior: if destination is a directory, move source into it
+        if real_destination.is_dir():
+            real_destination /= real_source.name
+
+        # Use cp_r followed by removal to simulate move
+        cp_r(real_source, real_destination)
+        if real_source.is_dir():
+            import shutil
+
+            shutil.rmtree(real_source)
+        else:
+            real_source.unlink()
+
+    mocker.patch.object(linux_container, "_container_mv", _fake_mv)
 
     return linux_container
 
@@ -1361,3 +1406,58 @@ class TestExportFiles:
 
             with pytest.raises(FileExistsError, match=f"File exists: '{existing_file}'"):
                 linux_container.export_path(source="/folder1", destination=existing_file)
+
+
+class TestImportFiles:
+    """Basic import operations."""
+
+    @pytest.mark.parametrize(
+        ("source", "destination", "expected"),
+        [
+            pytest.param("file_root.txt", "/file_root.txt", ["/file_root.txt"], id="single_file"),
+            pytest.param("file_root.txt", "/file_renamed.txt", ["/file_renamed.txt"], id="file_rename"),
+            pytest.param(
+                "folder1",
+                "/folder1",
+                ["/folder1", "/folder1/file_deep1.txt", "/folder1/subfolder1", "/folder1/subfolder2"],
+                id="directory",
+            ),
+        ],
+    )
+    def test_import_into_empty_directory(
+        self, linux_container, test_container_directory, test_files_root, source, destination, expected
+    ):
+        source_path = test_files_root / source
+        linux_container.import_path(source=source_path, destination=destination)
+
+        for expected_file in expected:
+            # Verify file exists in the "container" (simulated as test_container_directory)
+            container_path = test_container_directory / Path(expected_file).relative_to("/")
+            assert container_path.exists()
+            # Verify content for files (not directories)
+            if container_path.is_file() and "renamed" not in expected_file:
+                assert container_path.read_text().strip() == "source"
+
+    class TestImportToExistingElements:
+        """Tests for importing to a container directory that already contains stuff."""
+
+        def test_directory_to_existing_directory(self, linux_container, test_container_directory, test_files_root):
+            # Create an existing directory in the "container"
+            existing_dir = test_container_directory / "existing_dir"
+            existing_dir.ensure_dir()
+
+            source_path = test_files_root / "folder1"
+            linux_container.import_path(source=source_path, destination="/existing_dir")
+
+            # Verify the folder was imported into the existing directory
+            assert (test_container_directory / "existing_dir" / "folder1").exists()
+            assert (test_container_directory / "existing_dir" / "folder1" / "file_deep1.txt").exists()
+
+        def test_directory_to_existing_file_fails(self, linux_container, test_container_directory, test_files_root):
+            # Create an existing file in the "container"
+            existing_file = test_container_directory / "some_file.txt"
+            existing_file.write_text("existing content")
+
+            source_path = test_files_root / "folder1"
+            with pytest.raises(FileExistsError):
+                linux_container.import_path(source=source_path, destination="/some_file.txt")
