@@ -1401,10 +1401,17 @@ class TestExportFiles:
             assert (test_target_directory / "existing_dir" / "folder1" / "file_deep1.txt").exists()
 
         def test_directory_to_existing_file_fails(self, linux_container, test_target_directory):
+            from dda.utils.platform import PLATFORM_ID
+
             existing_file = test_target_directory / "some_file.txt"
             existing_file.write_text("existing content")
 
-            with pytest.raises(FileExistsError, match=f"File exists: '{existing_file}'"):
+            message = (
+                "Cannot create a file when that file already exists: '.*'"
+                if PLATFORM_ID == "windows"
+                else f"File exists: '{existing_file}'"
+            )
+            with pytest.raises(FileExistsError, match=message):
                 linux_container.export_path(source="/folder1", destination=existing_file)
 
 
