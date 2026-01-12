@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Annotated, Any, Literal, NoReturn
 import msgspec
 
 from dda.env.dev.interface import DeveloperEnvironmentConfig, DeveloperEnvironmentInterface
+from dda.utils.fs import temp_directory
 from dda.utils.git.constants import GitEnvVars
 
 if TYPE_CHECKING:
@@ -449,12 +450,34 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
 
         return f"{self.home_dir}/repos/{repo}"
 
+    def _container_cp(self, source: str, destination: str, *args: Any) -> None:
+        """Runs a `cp -r` command inside the context of the container"""
+        self.run_command(["cp", "-r", f'"{source}"', f'"{destination}"', *args])
+
     def export_path(
         self,
         source: str,
         destination: Path,
     ) -> None:
-        raise NotImplementedError
+        from os.path import basename
+        from shutil import move
+
+        # 0. Ensure that both paths are absolute, knowing source represents a path in the container
+        if not source.startswith("/"):
+            msg = "source must be an absolute path in the container filesystem"
+            raise ValueError(msg)
+
+        destination = destination.resolve()
+
+        # 1. Create a temporary directory within the shared directory
+        with temp_directory(self.shared_dir) as wd:
+            # 2. Run `cp -r` inside the container to copy from inside the container into that shared directory
+            # NOTE: When running `cp -r folder1 folder2`, the _contents_ of `folder1` are copied into `folder2`
+            # We want instead to copy such that `folder1` is moved into `folder2`: `folder2/folder1`
+            # To accomplish this, we explicitly add the basename of the source to the destination
+            self._container_cp(source, f"/.shared/{wd.name}/{basename(source)}")
+            # 3. shutil.move that source into the final destination
+            move(wd / basename(source), destination)
 
     def import_path(
         self,

@@ -5,8 +5,10 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import sys
+from contextlib import contextmanager
 from subprocess import CompletedProcess
 
 import msgspec
@@ -14,6 +16,7 @@ import pytest
 
 from dda.config.constants import AppEnvVars
 from dda.env.dev.types.linux_container import LinuxContainer
+from dda.env.models import EnvironmentState, EnvironmentStatus
 from dda.utils.fs import Path
 from dda.utils.git.constants import GitEnvVars
 
@@ -1252,3 +1255,114 @@ bar 1PB
                 """
             ),
         )
+
+
+@pytest.fixture
+def test_files_root():
+    # Folder containing test files to be copied
+    # Stands in for an arbitrary path on the source filesystem
+    return Path(__file__).parent / "fixtures" / "import_export_tests" / "examples"
+
+
+@pytest.fixture
+def test_target_directory(temp_dir):
+    # Directory where the test files should be copied to, should maybe already contain files
+    # Stands in for an arbitrary path on the destination filesystem
+    res = temp_dir / "test_target"
+    res.ensure_dir()
+    return res
+
+
+@pytest.fixture
+def linux_container(test_files_root, mocker, app):
+    # 1. Create a linux container instance
+    linux_container = LinuxContainer(app=app, name="test", instance="default")
+
+    # 2. Make the temporary_directory() context manager predictable
+    # linux_container.shared_dir is already forced to be in a temp directory by the `isolation` fixt\ure
+    temp_shared_dir = linux_container.shared_dir / "share_test_temp"
+    temp_shared_dir.ensure_dir()
+
+    @contextmanager
+    def _f(*args):  # noqa: ARG001 - args are not used but kept for signature match
+        yield temp_shared_dir
+
+    mocker.patch("dda.env.dev.types.linux_container.temp_directory", _f)
+
+    # 2. Mock the LinuxContainer instance
+    mocker.patch.object(linux_container, "start", return_value=0)
+    mocker.patch.object(linux_container, "stop", return_value=0)
+    mocker.patch.object(linux_container, "remove", return_value=0)
+    mocker.patch.object(linux_container, "status", return_value=EnvironmentStatus(state=EnvironmentState.STARTED))
+
+    # 3. Avoid running anything inside a container - instead run a "real" cp from the test files
+    def _fake_cp(source: str, destination: str) -> None:
+        # _fake_cp replaces _container_cp, so both source and destination are passed absolute paths in the container
+
+        # Pseudo-chroot from `container:/` to `host:test_files_root/`
+        real_source = test_files_root / Path(source).relative_to("/")
+
+        # The shared directory is mounted as `/.shared` in the container
+        # Pseudo-chroot from `container:/.shared` to `host:linux_container.shared_dir/`
+        real_destination = linux_container.shared_dir / Path(destination).relative_to("/.shared")
+
+        # Check the source exists otherwise the is_dir check will be nonsensical
+        if not real_source.exists():
+            msg = f"File not found: {real_source}"
+            raise FileNotFoundError(msg)
+
+        # NOTE: From my testing, this matches the behavior of `cp -r`, but shutil makes no such guarantees
+        if real_source.is_dir():
+            shutil.copytree(str(real_source), str(real_destination), dirs_exist_ok=True)
+        else:
+            shutil.copy2(str(real_source), str(real_destination))
+
+    mocker.patch.object(linux_container, "_container_cp", _fake_cp)
+
+    return linux_container
+
+
+class TestExportFiles:
+    """Basic export operations."""
+
+    @pytest.mark.parametrize(
+        ("source", "destination", "expected"),
+        [
+            pytest.param("/file_root.txt", "", ["file_root.txt"], id="single_file"),
+            pytest.param("/file_root.txt", "file_renamed.txt", ["file_renamed.txt"], id="file_rename"),
+            pytest.param(
+                "/folder1",
+                "",
+                ["folder1", "folder1/file_deep1.txt", "folder1/subfolder1", "folder1/subfolder2"],
+                id="directory",
+            ),
+        ],
+    )
+    def test_export_into_empty_directory(self, linux_container, test_target_directory, source, destination, expected):
+        destination = test_target_directory / destination
+        linux_container.export_path(source=source, destination=destination)
+
+        for expected_file in expected:
+            assert (test_target_directory / expected_file).exists()
+            # Verify content for files (not directories)
+            file_path = test_target_directory / expected_file
+            if file_path.is_file() and "renamed" not in expected_file:
+                assert file_path.read_text().strip() == "source"
+
+    class TestExportToExistingElements:
+        """Tests for exporting to a directory that already contains stuff."""
+
+        def test_directory_to_existing_directory(self, linux_container, test_target_directory):
+            (test_target_directory / "existing_dir").ensure_dir()
+
+            linux_container.export_path(source="/folder1", destination=test_target_directory / "existing_dir")
+
+            assert (test_target_directory / "existing_dir" / "folder1").exists()
+            assert (test_target_directory / "existing_dir" / "folder1" / "file_deep1.txt").exists()
+
+        def test_directory_to_existing_file_fails(self, linux_container, test_target_directory):
+            existing_file = test_target_directory / "some_file.txt"
+            existing_file.write_text("existing content")
+
+            with pytest.raises(FileExistsError, match=f"File exists: '{existing_file}'"):
+                linux_container.export_path(source="/folder1", destination=existing_file)
