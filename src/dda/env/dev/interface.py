@@ -188,7 +188,7 @@ class DeveloperEnvironmentInterface(ABC, Generic[ConfigT]):
         This method imports a file or directory from the host filesystem into the developer environment.
 
         Parameters:
-            sources: The path to the file/directory on the host filesystem to import.
+            source: The path to the file/directory on the host filesystem to import.
             destination: The destination directory in the developer environment.
         """
         raise NotImplementedError
