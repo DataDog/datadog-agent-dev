@@ -10,7 +10,7 @@ import msgspec
 import pytest
 
 from dda.types.hooks import dec_hook, enc_hook
-from dda.utils.fs import Path, temp_directory, temp_file
+from dda.utils.fs import Path, cp_r, temp_directory, temp_file
 
 
 class TestPath:
@@ -131,3 +131,99 @@ def test_temp_directory():
         assert temp_dir.is_dir()
 
     assert not temp_dir.exists()
+
+
+@pytest.fixture
+def test_files_root():
+    # Folder containing test files to be copied
+    # Stands in for an arbitrary path on the source filesystem
+    return Path(__file__).parent.parent / "fixtures" / "import_export_tests" / "examples"
+
+
+def _check_path_equality(path1: Path, path2: Path) -> None:
+    if path1.is_file():
+        assert path2.is_file()
+        assert path1.read_text() == path2.read_text()
+        return
+
+    if path1.is_dir():
+        assert path2.is_dir()
+        assert {p.name for p in path1.iterdir()} == {p.name for p in path2.iterdir()}
+        return
+
+    # Here destination must be nonexistent
+    assert not path1.exists()
+    assert not path2.exists()
+
+
+class TestCpR:
+    """Test the cp_r function to verify it behaves like 'cp -r'."""
+
+    @pytest.mark.parametrize(
+        "source",
+        [
+            pytest.param("file_root.txt", id="single_file"),
+            pytest.param("folder1", id="directory"),
+            pytest.param("folder2", id="deep_directory"),
+        ],
+    )
+    def test_destination_not_exist(self, temp_dir, app, test_files_root, source):
+        """Test behavior match when the destination does not exist"""
+        source = test_files_root / source
+        destination = temp_dir / "destination_not_exist"
+        assert not destination.exists()
+        cp_r(source, destination)
+
+        destination2 = temp_dir / "destination_not_exist2"
+        assert not destination2.exists()
+        app.subprocess.run(["cp", "-r", str(source), str(destination2)])
+
+        # Check destination and destination2 are the same
+        _check_path_equality(destination, destination2)
+
+    @pytest.mark.parametrize(
+        "source",
+        [
+            pytest.param("file_root.txt", id="single_file"),
+            pytest.param("folder1", id="directory"),
+            pytest.param("folder2", id="deep_directory"),
+        ],
+    )
+    def test_destination_is_directory(self, temp_dir, app, test_files_root, source):
+        """Test behavior match when the destination is a directory"""
+        source = test_files_root / source
+        destination = temp_dir / "destination_is_directory"
+        destination.mkdir()
+        cp_r(source, destination)
+
+        destination2 = temp_dir / "destination_not_exist2"
+        destination2.mkdir()
+        app.subprocess.run(["cp", "-r", str(source), str(destination2)])
+
+        # Check destination and destination2 are the same
+        _check_path_equality(destination, destination2)
+
+    @pytest.mark.parametrize(
+        ("source", "should_error"),
+        [
+            pytest.param("file_root.txt", False, id="single_file"),
+            pytest.param("folder1", True, id="directory"),  # cp -r on a directory to a file should error
+            pytest.param("folder2", True, id="deep_directory"),
+        ],
+    )
+    def test_destination_is_file(self, temp_dir, app, test_files_root, source, should_error):
+        """Test behavior match when the destination is an existing file"""
+        source = test_files_root / source
+        destination = temp_dir / "destination_is_file"
+        destination.write_text("existing content")
+        if should_error:
+            with pytest.raises(FileExistsError):
+                cp_r(source, destination)
+            return  # Don't bother running cp -r if it should error
+        cp_r(source, destination)
+
+        destination2 = temp_dir / "destination_is_file2"
+        destination2.write_text("existing content2")
+        app.subprocess.run(["cp", "-r", str(source), str(destination2)])
+        # Check destination and destination2 are the same
+        _check_path_equality(destination, destination2)

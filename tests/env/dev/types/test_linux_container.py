@@ -7,6 +7,7 @@ import json
 import os
 import subprocess
 import sys
+from contextlib import contextmanager
 from subprocess import CompletedProcess
 
 import msgspec
@@ -14,7 +15,8 @@ import pytest
 
 from dda.config.constants import AppEnvVars
 from dda.env.dev.types.linux_container import LinuxContainer
-from dda.utils.fs import Path
+from dda.env.models import EnvironmentState, EnvironmentStatus
+from dda.utils.fs import Path, cp_r
 from dda.utils.git.constants import GitEnvVars
 
 pytestmark = [pytest.mark.usefixtures("private_storage")]
@@ -33,12 +35,12 @@ def host_user_args():
     return [] if sys.platform == "win32" else ["-e", f"HOST_UID={os.getuid()}", "-e", f"HOST_GID={os.getgid()}"]
 
 
-def get_starship_mount(shared_dir: Path) -> list[str]:
+def get_starship_mount(global_shared_dir: Path) -> list[str]:
     starship_config_file = Path.home() / ".config" / "starship.toml"
     if not starship_config_file.exists():
         return []
 
-    return ["-v", f"{shared_dir / 'shell' / 'starship.toml'}:/root/.shared/shell/starship.toml"]
+    return ["-v", f"{global_shared_dir / 'shell' / 'starship.toml'}:/root/.shared/shell/starship.toml"]
 
 
 def get_cache_volumes() -> list[str]:
@@ -194,8 +196,9 @@ class TestStart:
 
         assert_ssh_config_written(write_server_config, "localhost")
 
-        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / ".shared"
-        starship_mount = get_starship_mount(shared_dir)
+        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
+        global_shared_dir = shared_dir.parent.parent / ".shared"
+        starship_mount = get_starship_mount(global_shared_dir)
         cache_volumes = get_cache_volumes()
         assert calls == [
             (
@@ -229,9 +232,11 @@ class TestStart:
                         GitEnvVars.AUTHOR_NAME,
                         "-e",
                         GitEnvVars.AUTHOR_EMAIL,
+                        "-v",
+                        f"{shared_dir}:/.shared",
                         *starship_mount,
                         "-v",
-                        f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
+                        f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
                         *cache_volumes,
                         "-v",
                         f"{repo_dir}:/root/repos/datadog-agent",
@@ -274,8 +279,9 @@ class TestStart:
 
         assert_ssh_config_written(write_server_config, "localhost")
 
-        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / ".shared"
-        starship_mount = get_starship_mount(shared_dir)
+        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
+        global_shared_dir = shared_dir.parent.parent / ".shared"
+        starship_mount = get_starship_mount(global_shared_dir)
         cache_volumes = get_cache_volumes()
         assert calls == [
             (
@@ -309,9 +315,11 @@ class TestStart:
                         GitEnvVars.AUTHOR_NAME,
                         "-e",
                         GitEnvVars.AUTHOR_EMAIL,
+                        "-v",
+                        f"{shared_dir}:/.shared",
                         *starship_mount,
                         "-v",
-                        f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
+                        f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
                         *cache_volumes,
                         "datadog/agent-dev-env-linux",
                     ],
@@ -372,8 +380,9 @@ class TestStart:
 
         assert_ssh_config_written(write_server_config, "localhost")
 
-        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / ".shared"
-        starship_mount = get_starship_mount(shared_dir)
+        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
+        global_shared_dir = shared_dir.parent.parent / ".shared"
+        starship_mount = get_starship_mount(global_shared_dir)
         cache_volumes = get_cache_volumes()
         assert calls == [
             (
@@ -402,10 +411,12 @@ class TestStart:
                         "-e",
                         GitEnvVars.AUTHOR_NAME,
                         "-e",
-                        "GIT_AUTHOR_EMAIL",
+                        GitEnvVars.AUTHOR_EMAIL,
+                        "-v",
+                        f"{shared_dir}:/.shared",
                         *starship_mount,
                         "-v",
-                        f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
+                        f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
                         *cache_volumes,
                         "-v",
                         f"{repo_dir}:/root/repos/datadog-agent",
@@ -456,8 +467,9 @@ class TestStart:
 
         assert_ssh_config_written(write_server_config, "localhost")
 
-        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / ".shared"
-        starship_mount = get_starship_mount(shared_dir)
+        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
+        global_shared_dir = shared_dir.parent.parent / ".shared"
+        starship_mount = get_starship_mount(global_shared_dir)
         cache_volumes = get_cache_volumes()
         assert calls == [
             (
@@ -491,9 +503,11 @@ class TestStart:
                         GitEnvVars.AUTHOR_NAME,
                         "-e",
                         GitEnvVars.AUTHOR_EMAIL,
+                        "-v",
+                        f"{shared_dir}:/.shared",
                         *starship_mount,
                         "-v",
-                        f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
+                        f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
                         *cache_volumes,
                         "-v",
                         f"{repo1_dir}:/root/repos/datadog-agent",
@@ -539,8 +553,9 @@ class TestStart:
 
         assert_ssh_config_written(write_server_config, "localhost")
 
-        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / ".shared"
-        starship_mount = get_starship_mount(shared_dir)
+        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
+        global_shared_dir = shared_dir.parent.parent / ".shared"
+        starship_mount = get_starship_mount(global_shared_dir)
         cache_volumes = get_cache_volumes()
         assert calls == [
             (
@@ -574,9 +589,11 @@ class TestStart:
                         GitEnvVars.AUTHOR_NAME,
                         "-e",
                         GitEnvVars.AUTHOR_EMAIL,
+                        "-v",
+                        f"{shared_dir}:/.shared",
                         *starship_mount,
                         "-v",
-                        f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
+                        f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
                         *cache_volumes,
                         "datadog/agent-dev-env-linux",
                     ],
@@ -631,8 +648,9 @@ class TestStart:
     def test_extra_volume_specs(self, dda, helpers, mocker, temp_dir, host_user_args, volume_specs):
         mocker.patch("dda.utils.ssh.write_server_config")
 
-        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / ".shared"
-        starship_mount = get_starship_mount(shared_dir)
+        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
+        global_shared_dir = shared_dir.parent.parent / ".shared"
+        starship_mount = get_starship_mount(global_shared_dir)
         cache_volumes = get_cache_volumes()
 
         with (
@@ -692,9 +710,11 @@ class TestStart:
                         GitEnvVars.AUTHOR_NAME,
                         "-e",
                         GitEnvVars.AUTHOR_EMAIL,
+                        "-v",
+                        f"{shared_dir}:/.shared",
                         *starship_mount,
                         "-v",
-                        f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
+                        f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
                         *cache_volumes,
                         *[(x if x != "-v" else "--volume") for x in volume_specs],
                         "datadog/agent-dev-env-linux",
@@ -732,8 +752,9 @@ class TestStart:
     def test_extra_mounts(self, dda, helpers, mocker, temp_dir, host_user_args, mount_specs):
         mocker.patch("dda.utils.ssh.write_server_config")
 
-        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / ".shared"
-        starship_mount = get_starship_mount(shared_dir)
+        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
+        global_shared_dir = shared_dir.parent.parent / ".shared"
+        starship_mount = get_starship_mount(global_shared_dir)
         cache_volumes = get_cache_volumes()
 
         with (
@@ -794,9 +815,11 @@ class TestStart:
                         GitEnvVars.AUTHOR_NAME,
                         "-e",
                         GitEnvVars.AUTHOR_EMAIL,
+                        "-v",
+                        f"{shared_dir}:/.shared",
                         *starship_mount,
                         "-v",
-                        f"{shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
+                        f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
                         *cache_volumes,
                         *[(x if x != "-m" else "--mount") for x in mount_specs],
                         "datadog/agent-dev-env-linux",
@@ -1231,3 +1254,217 @@ bar 1PB
                 """
             ),
         )
+
+
+@pytest.fixture
+def test_files_root():
+    # Folder containing test files to be copied
+    # Stands in for an arbitrary path on the source filesystem
+    return Path(__file__).parent.parent.parent.parent / "fixtures" / "import_export_tests" / "examples"
+
+
+@pytest.fixture
+def test_target_directory(temp_dir):
+    # Directory where the test files should be copied to, should maybe already contain files
+    # Stands in for an arbitrary path on the destination filesystem
+    res = temp_dir / "test_target"
+    res.ensure_dir()
+    return res
+
+
+@pytest.fixture
+def test_container_directory(temp_dir):
+    # Directory representing the container's filesystem for import tests
+    # Stands in for the container's root directory
+    res = temp_dir / "container_root"
+    res.ensure_dir()
+    return res
+
+
+@pytest.fixture
+def linux_container(test_files_root, test_container_directory, mocker, app):
+    """Fixture for both export and import tests.
+
+    - For export: reads from test_files_root (container source) via _container_cp
+    - For import: writes to test_container_directory (container destination) via _container_mv
+    """
+    # 1. Create a linux container instance
+    linux_container = LinuxContainer(app=app, name="test", instance="default")
+
+    # 2. Make the temporary_directory() context manager predictable
+    # linux_container.shared_dir is already forced to be in a temp directory by the `isolation` fixt\ure
+    temp_shared_dir = linux_container.shared_dir / "share_test_temp"
+    temp_shared_dir.ensure_dir()
+
+    @contextmanager
+    def _f(*args):  # noqa: ARG001 - args are not used but kept for signature match
+        yield temp_shared_dir
+
+    mocker.patch("dda.env.dev.types.linux_container.temp_directory", _f)
+
+    # 2. Mock the LinuxContainer instance
+    mocker.patch.object(linux_container, "start", return_value=0)
+    mocker.patch.object(linux_container, "stop", return_value=0)
+    mocker.patch.object(linux_container, "remove", return_value=0)
+    mocker.patch.object(linux_container, "status", return_value=EnvironmentStatus(state=EnvironmentState.STARTED))
+
+    # 3. Avoid running anything inside a container - instead run a "real" cp from the test files
+    def _fake_cp(source: str, destination: str) -> None:
+        # _fake_cp replaces _container_cp, so both source and destination are passed absolute paths in the container
+
+        # Pseudo-chroot from `container:/` to `host:test_files_root/`
+        real_source = test_files_root / Path(source).relative_to("/")
+
+        # The shared directory is mounted as `/.shared` in the container
+        # Pseudo-chroot from `container:/.shared` to `host:linux_container.shared_dir/`
+        real_destination = linux_container.shared_dir / Path(destination).relative_to("/.shared")
+
+        # Check the source exists otherwise the is_dir check will be nonsensical
+        if not real_source.exists():
+            msg = f"File not found: {real_source}"
+            raise FileNotFoundError(msg)
+
+        cp_r(real_source, real_destination)
+
+    mocker.patch.object(linux_container, "_container_cp", _fake_cp)
+
+    # 3. Avoid running anything inside a container - instead run a "real" mv on the host
+    def _fake_mv(source: str, destination: str) -> None:
+        # _fake_mv replaces _container_mv, so both source and destination are passed absolute paths in the container
+
+        # The shared directory is mounted as `/.shared` in the container
+        # Pseudo-chroot from `container:/.shared` to `host:linux_container.shared_dir/`
+        real_source = linux_container.shared_dir / Path(source).relative_to("/.shared")
+
+        # Pseudo-chroot from `container:/` to `host:test_container_directory/`
+        real_destination = test_container_directory / Path(destination).relative_to("/")
+
+        # Check the source exists otherwise the is_dir check will be nonsensical
+        if not real_source.exists():
+            msg = f"File not found: {real_source}"
+            raise FileNotFoundError(msg)
+
+        # Simulate mv behavior: if destination is a directory, move source into it
+        if real_destination.is_dir():
+            real_destination /= real_source.name
+
+        # Use cp_r followed by removal to simulate move
+        cp_r(real_source, real_destination)
+        if real_source.is_dir():
+            import shutil
+
+            shutil.rmtree(real_source)
+        else:
+            real_source.unlink()
+
+    mocker.patch.object(linux_container, "_container_mv", _fake_mv)
+
+    return linux_container
+
+
+class TestExportFiles:
+    """Basic export operations."""
+
+    @pytest.mark.parametrize(
+        ("source", "destination", "expected"),
+        [
+            pytest.param("/file_root.txt", "", ["file_root.txt"], id="single_file"),
+            pytest.param("/file_root.txt", "file_renamed.txt", ["file_renamed.txt"], id="file_rename"),
+            pytest.param(
+                "/folder1",
+                "",
+                ["folder1", "folder1/file_deep1.txt", "folder1/subfolder1", "folder1/subfolder2"],
+                id="directory",
+            ),
+        ],
+    )
+    def test_export_into_empty_directory(self, linux_container, test_target_directory, source, destination, expected):
+        destination = test_target_directory / destination
+        linux_container.export_path(source=source, destination=destination)
+
+        for expected_file in expected:
+            assert (test_target_directory / expected_file).exists()
+            # Verify content for files (not directories)
+            file_path = test_target_directory / expected_file
+            if file_path.is_file() and "renamed" not in expected_file:
+                assert file_path.read_text().strip() == "source"
+
+    class TestExportToExistingElements:
+        """Tests for exporting to a directory that already contains stuff."""
+
+        def test_directory_to_existing_directory(self, linux_container, test_target_directory):
+            (test_target_directory / "existing_dir").ensure_dir()
+
+            linux_container.export_path(source="/folder1", destination=test_target_directory / "existing_dir")
+
+            assert (test_target_directory / "existing_dir" / "folder1").exists()
+            assert (test_target_directory / "existing_dir" / "folder1" / "file_deep1.txt").exists()
+
+        def test_directory_to_existing_file_fails(self, linux_container, test_target_directory):
+            from dda.utils.platform import PLATFORM_ID
+
+            existing_file = test_target_directory / "some_file.txt"
+            existing_file.write_text("existing content")
+
+            message = (
+                "Cannot create a file when that file already exists: '.*'"
+                if PLATFORM_ID == "windows"
+                else f"File exists: '{existing_file}'"
+            )
+            with pytest.raises(FileExistsError, match=message):
+                linux_container.export_path(source="/folder1", destination=existing_file)
+
+
+class TestImportFiles:
+    """Basic import operations."""
+
+    @pytest.mark.parametrize(
+        ("source", "destination", "expected"),
+        [
+            pytest.param("file_root.txt", "/file_root.txt", ["/file_root.txt"], id="single_file"),
+            pytest.param("file_root.txt", "/file_renamed.txt", ["/file_renamed.txt"], id="file_rename"),
+            pytest.param(
+                "folder1",
+                "/folder1",
+                ["/folder1", "/folder1/file_deep1.txt", "/folder1/subfolder1", "/folder1/subfolder2"],
+                id="directory",
+            ),
+        ],
+    )
+    def test_import_into_empty_directory(
+        self, linux_container, test_container_directory, test_files_root, source, destination, expected
+    ):
+        source_path = test_files_root / source
+        linux_container.import_path(source=source_path, destination=destination)
+
+        for expected_file in expected:
+            # Verify file exists in the "container" (simulated as test_container_directory)
+            container_path = test_container_directory / Path(expected_file).relative_to("/")
+            assert container_path.exists()
+            # Verify content for files (not directories)
+            if container_path.is_file() and "renamed" not in expected_file:
+                assert container_path.read_text().strip() == "source"
+
+    class TestImportToExistingElements:
+        """Tests for importing to a container directory that already contains stuff."""
+
+        def test_directory_to_existing_directory(self, linux_container, test_container_directory, test_files_root):
+            # Create an existing directory in the "container"
+            existing_dir = test_container_directory / "existing_dir"
+            existing_dir.ensure_dir()
+
+            source_path = test_files_root / "folder1"
+            linux_container.import_path(source=source_path, destination="/existing_dir")
+
+            # Verify the folder was imported into the existing directory
+            assert (test_container_directory / "existing_dir" / "folder1").exists()
+            assert (test_container_directory / "existing_dir" / "folder1" / "file_deep1.txt").exists()
+
+        def test_directory_to_existing_file_fails(self, linux_container, test_container_directory, test_files_root):
+            # Create an existing file in the "container"
+            existing_file = test_container_directory / "some_file.txt"
+            existing_file.write_text("existing content")
+
+            source_path = test_files_root / "folder1"
+            with pytest.raises(FileExistsError):
+                linux_container.import_path(source=source_path, destination="/some_file.txt")

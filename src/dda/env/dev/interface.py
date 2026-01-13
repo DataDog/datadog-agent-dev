@@ -163,6 +163,36 @@ class DeveloperEnvironmentInterface(ABC, Generic[ConfigT]):
                 [configured repository][dda.env.dev.interface.DeveloperEnvironmentConfig.repos].
         """
 
+    @abstractmethod
+    def export_path(
+        self,
+        source: str,  # Passed as string since it is inside the env filesystem
+        destination: Path,
+    ) -> None:
+        """
+        This method exports a file or directory from the developer environment to the host filesystem.
+
+        Parameters:
+            source: The path to the file/directory in the developer environment to export.
+            destination: The destination directory on the host filesystem.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def import_path(
+        self,
+        source: Path,
+        destination: str,  # Passed as string since it is inside the env filesystem
+    ) -> None:
+        """
+        This method imports a file or directory from the host filesystem into the developer environment.
+
+        Parameters:
+            source: The path to the file/directory on the host filesystem to import.
+            destination: The destination directory in the developer environment.
+        """
+        raise NotImplementedError
+
     def launch_gui(self) -> NoReturn:
         """
         This method starts an interactive GUI inside the developer environment using e.g. RDP or VNC.

@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Annotated, Any, Literal, NoReturn
 import msgspec
 
 from dda.env.dev.interface import DeveloperEnvironmentConfig, DeveloperEnvironmentInterface
+from dda.utils.fs import cp_r, temp_directory
 from dda.utils.git.constants import GitEnvVars
 
 if TYPE_CHECKING:
@@ -19,6 +20,7 @@ if TYPE_CHECKING:
     from dda.tools.docker import Docker
     from dda.utils.container.model import Mount
     from dda.utils.editors.interface import EditorInterface
+    from dda.utils.fs import Path
 
 
 class LinuxContainerConfig(DeveloperEnvironmentConfig):
@@ -174,6 +176,8 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             ))
             if self.config.arch is not None:
                 command.extend(("--platform", f"linux/{self.config.arch}"))
+
+            command.extend(("-v", f"{self.shared_dir}:/.shared"))
 
             for shared_shell_file in self.shell.collect_shared_files():
                 unix_path = shared_shell_file.relative_to(self.global_shared_dir).as_posix()
@@ -445,3 +449,56 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             repo = self.default_repo
 
         return f"{self.home_dir}/repos/{repo}"
+
+    def _container_cp(self, source: str, destination: str, *args: Any) -> None:
+        """Runs a `cp -r` command inside the context of the container"""
+        self.run_command(["cp", "-r", f'"{source}"', f'"{destination}"', *args])
+
+    def _container_mv(self, source: str, destination: str, *args: Any) -> None:
+        """Runs a `mv` command inside the context of the container"""
+        self.run_command(["mv", f'"{source}"', f'"{destination}"', *args])
+
+    def export_path(
+        self,
+        source: str,
+        destination: Path,
+    ) -> None:
+        from os.path import basename
+        from shutil import move
+
+        # 0. Ensure that both paths are absolute, knowing source represents a path in the container
+        if not source.startswith("/"):
+            msg = "source must be an absolute path in the container filesystem"
+            raise ValueError(msg)
+
+        destination = destination.resolve()
+
+        # 1. Create a temporary directory within the shared directory
+        with temp_directory(self.shared_dir) as wd:
+            # 2. Run `cp -r` inside the container to copy from inside the container into that shared directory
+            # NOTE: When running `cp -r folder1 folder2`, the _contents_ of `folder1` are copied into `folder2`
+            # We want instead to copy such that `folder1` is moved into `folder2`: `folder2/folder1`
+            # To accomplish this, we explicitly add the basename of the source to the destination
+            self._container_cp(source, f"/.shared/{wd.name}/{basename(source)}")
+            # 3. shutil.move that source into the final destination
+            move(wd / basename(source), destination)
+
+    def import_path(
+        self,
+        source: Path,
+        destination: str,
+    ) -> None:
+        # 0. Ensure that both paths are absolute, knowing destination represents a path in the container
+        if not destination.startswith("/"):
+            msg = "destination must be an absolute path in the container filesystem"
+            raise ValueError(msg)
+
+        source = source.resolve()
+
+        # 1. Create a temporary directory within the shared directory
+        with temp_directory(self.shared_dir) as wd:
+            # 2. Copy the source into the temporary directory using cp_r
+            # NOTE: Same as above, we add the basename to the destination so it works as expected with directories
+            cp_r(source, wd / source.name)
+            # 3. mv from the shared directory into the final destination inside the container
+            self._container_mv(f"/.shared/{wd.name}/{source.name}", destination)
