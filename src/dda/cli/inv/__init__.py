@@ -70,9 +70,6 @@ def cmd(
         return
 
     features = ["legacy-tasks", *extra_features]
-    invoke_args = [arg for arg in args if not arg.startswith("-")]
-    if invoke_args and Path.cwd().name == "test-infra-definitions":
-        features.append("legacy-test-infra-definitions")
 
     workdir = Path.cwd()
     if repo:
