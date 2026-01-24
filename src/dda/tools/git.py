@@ -82,6 +82,20 @@ class Git(Tool):
 
         return self.capture(["config", "--get", "user.email"]).strip()
 
+    def get_repo_root(self) -> Path:
+        """
+        Get the root directory of the Git repository in the current working directory.
+        Will raise RuntimeErrorif the current working directory is not a Git repository.
+        """
+        from dda.utils.fs import Path
+
+        # Use check=False because we don't want to SystemExit if the command fails, instead handling it manually.
+        result = self.capture(["rev-parse", "--show-toplevel"], check=False).strip()
+        if not result:
+            msg = "Failed to get repo root. Make sure the current working directory is part of a Git repository."
+            raise RuntimeError(msg)
+        return Path(result)
+
     def get_remote(self, remote_name: str = "origin") -> Remote:
         """
         Get the details of the given remote for the Git repository in the current working directory.
