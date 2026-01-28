@@ -1430,6 +1430,7 @@ class TestRepositoryResolution:
 
         container = LinuxContainer(app=app, name="test", instance="test")
         with worktree_dir.as_cwd():
+            # Testing internal repository resolution logic directly
             resolved = container._resolve_repository_path("datadog-agent")  # noqa: SLF001
 
         assert resolved == worktree_dir
@@ -1443,6 +1444,7 @@ class TestRepositoryResolution:
 
         container = LinuxContainer(app=app, name="test", instance="test")
         with repo_dir.as_cwd():
+            # Testing internal repository resolution logic directly
             resolved = container._resolve_repository_path("datadog-agent")  # noqa: SLF001
 
         assert resolved == repo_dir
