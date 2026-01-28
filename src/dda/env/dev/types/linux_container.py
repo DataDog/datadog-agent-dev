@@ -187,15 +187,9 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 command.extend(("--mount", mount.as_csv()))
 
             if not self.config.clone:
-                from dda.utils.fs import Path
-
-                repos_path = Path.cwd().parent
                 for repo_spec in self.config.repos:
                     repo = repo_spec.split("@")[0]
-                    repo_path = repos_path / repo
-                    if not repo_path.is_dir():
-                        self.app.abort(f"Local repository not found: {repo}")
-
+                    repo_path = self._resolve_repository_path(repo_spec)
                     command.extend(("-v", f"{repo_path}:{self.repo_path(repo)}"))
 
             for mount_spec in self.config.extra_mount_specs:
@@ -449,6 +443,81 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             repo = self.default_repo
 
         return f"{self.home_dir}/repos/{repo}"
+
+    def _resolve_repository_path(self, repo_spec: str) -> Path:
+        """
+        Resolve the local path for a repository specification.
+
+        Tries multiple strategies:
+        1. Check if current directory is the requested repo (git-aware, handles worktrees)
+        2. Check parent directory for repo (backward compatible)
+
+        Args:
+            repo_spec: Repository specification (e.g., "datadog-agent" or "datadog-agent@branch")
+
+        Returns:
+            Path to the repository
+
+        Raises:
+            Aborts if repository cannot be found
+        """
+        from dda.utils.fs import Path
+
+        repo_name = repo_spec.split("@")[0]  # Strip @branch/@tag if present
+
+        # Strategy 1: Check if current directory is a git repository matching the repo name
+        cwd = Path.cwd()
+        if self._is_matching_repository(cwd, repo_name):
+            return cwd
+
+        # Strategy 2: Check parent directory (existing behavior, backward compatible)
+        parent_repo_path = cwd.parent / repo_name
+        if parent_repo_path.is_dir():
+            if self._is_matching_repository(parent_repo_path, repo_name):
+                return parent_repo_path
+            # Fallback: If not a git repo but directory exists, use it for backward compat
+            return parent_repo_path
+
+        self.app.abort(f"Local repository not found: {repo_name}")
+
+    def _is_matching_repository(self, path: Path, expected_repo_name: str) -> bool:
+        """
+        Check if the given path is a git repository matching the expected repository name.
+
+        Uses git remote URL to determine the repository name, which works for:
+        - Regular repositories
+        - Git worktrees (regardless of directory name)
+        - Nested repository structures
+
+        Args:
+            path: Path to check
+            expected_repo_name: Expected repository name (e.g., "datadog-agent")
+
+        Returns:
+            True if the path is a git repository matching the expected name
+        """
+        if not path.is_dir():
+            return False
+
+        git_dir = path / ".git"
+        if not git_dir.exists():
+            return False
+
+        # Use git to get the repository name from the remote URL
+        try:
+            # Change to the target directory temporarily to get its remote
+            import os
+
+            original_cwd = os.getcwd()
+            try:
+                os.chdir(path)
+                remote = self.app.tools.git.get_remote()
+                return remote.repo == expected_repo_name
+            finally:
+                os.chdir(original_cwd)
+        except Exception:
+            # Not a git repository or no remote configured
+            return False
 
     def _container_cp(self, source: str, destination: str, *args: Any) -> None:
         """Runs a `cp -r` command inside the context of the container"""

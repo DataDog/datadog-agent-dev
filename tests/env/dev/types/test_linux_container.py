@@ -1415,6 +1415,39 @@ class TestExportFiles:
                 linux_container.export_path(source="/folder1", destination=existing_file)
 
 
+class TestRepositoryResolution:
+    """Tests for git-aware repository resolution logic."""
+
+    def test_git_worktree_current_directory(self, app, mocker, temp_dir):
+        """Test git worktree with arbitrary directory name is detected as current directory."""
+        worktree_dir = temp_dir / "my_feature_branch"
+        worktree_dir.ensure_dir()
+        (worktree_dir / ".git").touch()
+
+        mock_remote = mocker.MagicMock()
+        mock_remote.repo = "datadog-agent"
+        mocker.patch.object(app.tools.git, "get_remote", return_value=mock_remote)
+
+        container = LinuxContainer(app=app, name="test", instance="test")
+        with worktree_dir.as_cwd():
+            resolved = container._resolve_repository_path("datadog-agent")
+
+        assert resolved == worktree_dir
+
+    def test_backward_compatibility_parent_directory(self, app, mocker, temp_dir):
+        """Test non-git directory is found via parent/repo_name (backward compatible)."""
+        repo_dir = temp_dir / "datadog-agent"
+        repo_dir.ensure_dir()
+
+        mocker.patch.object(app.tools.git, "get_remote", side_effect=Exception("Not a git repo"))
+
+        container = LinuxContainer(app=app, name="test", instance="test")
+        with repo_dir.as_cwd():
+            resolved = container._resolve_repository_path("datadog-agent")
+
+        assert resolved == repo_dir
+
+
 class TestImportFiles:
     """Basic import operations."""
 
