@@ -478,7 +478,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             # Fallback: If not a git repo but directory exists, use it for backward compat
             return parent_repo_path
 
-        self.app.abort(f"Local repository not found: {repo_name}")
+        self.app.abort(f"Local repository not found: {repo_name}")  # noqa: RET503
 
     def _is_matching_repository(self, path: Path, expected_repo_name: str) -> bool:
         """
@@ -515,7 +515,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 return remote.repo == expected_repo_name
             finally:
                 os.chdir(original_cwd)
-        except Exception:
+        except Exception:  # noqa: BLE001
             # Not a git repository or no remote configured
             return False
 
