@@ -479,7 +479,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             return parent_repo_path
 
         self.app.abort(f"Local repository not found: {repo_name}")
-        return None  # type: ignore[return-value]  # abort() never returns
+        return None  # abort() never returns, but ruff requires an explicit return
 
     def _is_matching_repository(self, path: Path, expected_repo_name: str) -> bool:
         """
