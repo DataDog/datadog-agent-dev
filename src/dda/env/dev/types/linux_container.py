@@ -189,7 +189,9 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 for repo_spec in self.config.repos:
                     repo = repo_spec.split("@")[0]
                     repo_path = self._resolve_repository_path(repo_spec)
-                    command.extend(("-v", f"{repo_path}:{self.repo_path(repo)}"))
+                    # Mount to base repo path (without worktree subdirectory)
+                    mount_dest = f"{self.home_dir}/repos/{repo}"
+                    command.extend(("-v", f"{repo_path}:{mount_dest}"))
 
             for mount_spec in self.config.extra_mount_specs:
                 command.extend(("--mount", mount_spec))
@@ -441,7 +443,56 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         if repo is None:
             repo = self.default_repo
 
-        return f"{self.home_dir}/repos/{repo}"
+        base_path = f"{self.home_dir}/repos/{repo}"
+
+        # Check if we're currently in a worktree - if so, append the worktree subdirectory
+        worktree_subdir = self._get_worktree_subdirectory()
+        if worktree_subdir:
+            return f"{base_path}/{worktree_subdir}"
+
+        return base_path
+
+    def _get_worktree_subdirectory(self) -> str | None:
+        """
+        If the current directory is a worktree inside the mounted main repository,
+        returns the relative path from the main repo to the worktree.
+
+        Returns:
+            Relative path like ".worktrees/branch-name" or None if not in a worktree
+        """
+        cwd = Path.cwd()
+        git_dir = cwd / ".git"
+
+        # Not a git worktree if .git is not a file
+        if not git_dir.is_file():
+            return None
+
+        try:
+            # Read the .git file to find the main repo
+            gitdir_content = git_dir.read_text().strip()
+            if not gitdir_content.startswith("gitdir: "):
+                return None
+
+            # Extract path like: gitdir: /path/to/main/.git/worktrees/branch
+            worktree_git_path = gitdir_content[8:]  # Remove "gitdir: " prefix
+            # Navigate up to find main repo: /path/to/main/.git/worktrees/branch -> /path/to/main
+            main_repo_path = Path(worktree_git_path).parent.parent.parent
+
+            # Calculate relative path from main repo to current worktree directory
+            try:
+                relative_path = cwd.relative_to(main_repo_path)
+                return str(relative_path)
+            except ValueError:
+                # Worktree is outside the main repo - not supported
+                self.app.abort(
+                    f"Git worktree at {cwd} is outside the main repository at {main_repo_path}.\n"
+                    f"External worktrees are not currently supported. Please run dda commands from:\n"
+                    f"  - The main repository directory, or\n"
+                    f"  - A worktree inside the main repository (e.g., {main_repo_path}/.worktrees/branch-name)"
+                )
+        except Exception:  # noqa: BLE001
+            # If anything fails, assume not a worktree
+            return None
 
     def _resolve_repository_path(self, repo_spec: str) -> Path:
         """
