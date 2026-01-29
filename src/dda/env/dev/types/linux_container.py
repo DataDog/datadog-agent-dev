@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Annotated, Any, Literal, NoReturn
 import msgspec
 
 from dda.env.dev.interface import DeveloperEnvironmentConfig, DeveloperEnvironmentInterface
-from dda.utils.fs import cp_r, temp_directory
+from dda.utils.fs import Path, cp_r, temp_directory
 from dda.utils.git.constants import GitEnvVars
 
 if TYPE_CHECKING:
@@ -20,7 +20,6 @@ if TYPE_CHECKING:
     from dda.tools.docker import Docker
     from dda.utils.container.model import Mount
     from dda.utils.editors.interface import EditorInterface
-    from dda.utils.fs import Path
 
 
 class LinuxContainerConfig(DeveloperEnvironmentConfig):
@@ -467,21 +466,23 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
 
         # Strategy 1: Check if current directory is a git repository matching the repo name
         cwd = Path.cwd()
-        if self._is_matching_repository(cwd, repo_name):
-            return cwd
+        is_match, resolved_path = self._is_matching_repository(cwd, repo_name)
+        if is_match:
+            return resolved_path
 
         # Strategy 2: Check parent directory (existing behavior, backward compatible)
         parent_repo_path = cwd.parent / repo_name
         if parent_repo_path.is_dir():
-            if self._is_matching_repository(parent_repo_path, repo_name):
-                return parent_repo_path
+            is_match, resolved_path = self._is_matching_repository(parent_repo_path, repo_name)
+            if is_match:
+                return resolved_path
             # Fallback: If not a git repo but directory exists, use it for backward compat
             return parent_repo_path
 
         self.app.abort(f"Local repository not found: {repo_name}")
         return None  # abort() never returns, but ruff requires an explicit return
 
-    def _is_matching_repository(self, path: Path, expected_repo_name: str) -> bool:
+    def _is_matching_repository(self, path: Path, expected_repo_name: str) -> tuple[bool, Path]:
         """
         Check if the given path is a git repository matching the expected repository name.
 
@@ -490,19 +491,24 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         - Git worktrees (regardless of directory name)
         - Nested repository structures
 
+        For worktrees, returns the main repository root path instead of the worktree path,
+        since worktrees need access to the main repository's .git directory to function.
+
         Args:
             path: Path to check
             expected_repo_name: Expected repository name (e.g., "datadog-agent")
 
         Returns:
-            True if the path is a git repository matching the expected name
+            Tuple of (is_match, resolved_path) where:
+            - is_match: True if the path is a git repository matching the expected name
+            - resolved_path: For worktrees, the main repo root; for regular repos, the path itself
         """
         if not path.is_dir():
-            return False
+            return False, path
 
         git_dir = path / ".git"
         if not git_dir.exists():
-            return False
+            return False, path
 
         # Use git to get the repository name from the remote URL
         try:
@@ -513,13 +519,29 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             try:
                 os.chdir(path)
                 remote = self.app.tools.git.get_remote()
-                return remote.repo == expected_repo_name
+
+                if remote.repo != expected_repo_name:
+                    return False, path
+
+                # If this is a worktree, find the main repository root
+                if git_dir.is_file():
+                    # This is a worktree - read the .git file to find the main repo
+                    gitdir_content = git_dir.read_text().strip()
+                    if gitdir_content.startswith("gitdir: "):
+                        # Extract path like: gitdir: /path/to/main/.git/worktrees/branch
+                        worktree_git_path = gitdir_content[8:]  # Remove "gitdir: " prefix
+                        # Navigate up to find main repo: /path/to/main/.git/worktrees/branch -> /path/to/main
+                        main_repo_path = Path(worktree_git_path).parent.parent.parent
+                        return True, main_repo_path
+
+                # Regular repository
+                return True, path
             finally:
                 os.chdir(original_cwd)
         # Catch all git-related exceptions (subprocess errors, missing git, no remote, etc.)
         except Exception:  # noqa: BLE001
             # Not a git repository or no remote configured
-            return False
+            return False, path
 
     def _container_cp(self, source: str, destination: str, *args: Any) -> None:
         """Runs a `cp -r` command inside the context of the container"""

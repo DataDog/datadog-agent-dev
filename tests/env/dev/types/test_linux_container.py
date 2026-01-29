@@ -1418,11 +1418,18 @@ class TestExportFiles:
 class TestRepositoryResolution:
     """Tests for git-aware repository resolution logic."""
 
-    def test_git_worktree_current_directory(self, app, mocker, temp_dir):
-        """Test git worktree with arbitrary directory name is detected as current directory."""
+    def test_git_worktree_resolves_to_main_repo(self, app, mocker, temp_dir):
+        """Test git worktree resolves to main repository root, not the worktree directory."""
+        # Create main repository structure
+        main_repo = temp_dir / "datadog-agent"
+        main_repo.ensure_dir()
+        (main_repo / ".git").ensure_dir()
+
+        # Create worktree with arbitrary directory name
         worktree_dir = temp_dir / "my_feature_branch"
         worktree_dir.ensure_dir()
-        (worktree_dir / ".git").touch()
+        # Write .git file that points to main repo (like real worktrees do)
+        (worktree_dir / ".git").write_text(f"gitdir: {main_repo}/.git/worktrees/my_feature_branch")
 
         mock_remote = mocker.MagicMock()
         mock_remote.repo = "datadog-agent"
@@ -1433,7 +1440,8 @@ class TestRepositoryResolution:
             # Testing internal repository resolution logic directly
             resolved = container._resolve_repository_path("datadog-agent")  # noqa: SLF001
 
-        assert resolved == worktree_dir
+        # Should resolve to main repo, not worktree, so git commands work in container
+        assert resolved == main_repo
 
     def test_backward_compatibility_parent_directory(self, app, mocker, temp_dir):
         """Test non-git directory is found via parent/repo_name (backward compatible)."""
