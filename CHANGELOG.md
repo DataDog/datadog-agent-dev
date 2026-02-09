@@ -8,9 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+## 0.32.0 - 2026-02-05
+
 ***Added:***
 
 - Add dependencies for working with DotSlash files
+- SubprocessRunner.wait returns command exit code 
+- Add -v flag on dda env dev to mount an arbitrary volume
+- Add dda env dev fs import/export to interact with devenv file system
+- Merge dependency group of legacy-tasks with legacy-test-infra-definitions
 
 ## 0.31.0 - 2025-11-27
 
