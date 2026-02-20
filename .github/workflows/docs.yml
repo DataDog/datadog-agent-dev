@@ -13,13 +13,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         # Fetch all history for applying timestamps to every page
         fetch-depth: 0
 
     - name: Set up Python
-      uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
       with:
         python-version: '3.12'
 
@@ -30,7 +30,7 @@ jobs:
       run: dda run docs build
 
     - name: Check links
-      uses: lycheeverse/lychee-action@885c65f3dc543b57c898c8099f4e08c8afd178a2
+      uses: lycheeverse/lychee-action@a8c4c7cb88f0c7386610c35eb25108e448569cb0
       with:
         lycheeVersion: "v0.20.1"
         fail: true
@@ -38,7 +38,7 @@ jobs:
         # Remove `--index-files index.html` when this fix is released https://github.com/lycheeverse/lychee/pull/1843
         args: site --index-files index.html
 
-    - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+    - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
       with:
         name: documentation
         path: site
@@ -54,7 +54,7 @@ jobs:
       contents: write
 
     steps:
-    - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+    - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
       with:
         name: documentation
         path: site
