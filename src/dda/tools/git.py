@@ -245,6 +245,35 @@ class Git(Tool):
 
         return ChangeSet.from_patches(patches)
 
+    def get_repo_root(self, path: Path | None = None) -> Path:
+        """
+        Get the root of the Git repository the given path is in.
+        If no path is provided, the current working directory is used.
+
+        If the path is not in a Git repository or does not exist, a ValueError is raised.
+
+        Returns:
+            The root of the Git repository as a dda.utils.fs.Path object.
+        """
+        from dda.utils.fs import Path
+
+        if path is None:
+            path = Path.cwd()
+
+        if not path.exists():
+            msg = f"Path {path} does not exist"
+            raise ValueError(msg)
+
+        if not path.is_dir():
+            path = path.parent
+
+        res = self.capture(["rev-parse", "--show-toplevel"], cwd=path, check=False).strip()
+        if not res or res.startswith("fatal:"):
+            msg = f"Path {path} is not in a Git repository: {res}"
+            raise ValueError(msg)
+
+        return Path(res)
+
     def _get_working_tree_patch(self) -> str:
         from dda.utils.fs import temp_directory
 
