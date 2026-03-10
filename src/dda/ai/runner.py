@@ -43,36 +43,69 @@ Rules:
 """
 
 
+_CLAUDE_FLAGS = "--print --output-format stream-json --verbose --dangerously-skip-permissions"
+
+
 def _build_claude_cmd(agent_id: str, prompt: str, repo_path: str) -> str:
     slug = "-".join(prompt.lower().split()[:4]).replace("/", "-")[:40]
     system = SYSTEM_PROMPT.format(agent_id=agent_id, slug=slug)
     full_prompt = f"{system}\n\nTask:\n{prompt}"
     escaped = shlex.quote(full_prompt)
-    return f"cd {repo_path} && claude --print --output-format stream-json {escaped}"
+    return f"cd {repo_path} && claude {_CLAUDE_FLAGS} {escaped}"
 
 
 def _extract_text_from_event(line: str) -> str:
-    """Parse a Claude stream-json event line and return visible text, or empty string."""
+    """
+    Parse a Claude stream-json event and return human-readable text.
+
+    Event types we surface:
+    - type=assistant, content[].type=text     → the text itself
+    - type=assistant, content[].type=tool_use → "⚙ ToolName: key_input_preview"
+    - type=user,     content[].type=tool_result with stdout → first line of stdout
+    - type=result                              → final result text (already shown above)
+    """
     line = line.strip()
     if not line:
         return ""
     try:
         event = json.loads(line)
     except json.JSONDecodeError:
-        return line  # pass raw line through if not JSON
+        return ""
 
     etype = event.get("type", "")
-    # assistant text delta
-    if etype == "content_block_delta":
-        delta = event.get("delta", {})
-        if delta.get("type") == "text_delta":
-            return delta.get("text", "")
-    # tool use / result summaries
-    if etype == "message_delta":
-        return ""
-    if etype == "message_stop":
-        return ""
-    # Fallback: if it's a plain text line (non-JSON upstream), return as-is
+
+    if etype == "assistant":
+        parts = []
+        for block in event.get("message", {}).get("content", []):
+            btype = block.get("type", "")
+            if btype == "text":
+                text = block.get("text", "").strip()
+                if text:
+                    parts.append(text)
+            elif btype == "tool_use":
+                name = block.get("name", "")
+                inp = block.get("input", {})
+                # Show the most informative field of the tool input
+                preview = (
+                    inp.get("command")
+                    or inp.get("pattern")
+                    or inp.get("file_path")
+                    or inp.get("description")
+                    or str(inp)[:80]
+                )
+                parts.append(f"⚙ {name}: {preview}")
+        return "\n".join(parts)
+
+    if etype == "user":
+        # Show stdout from tool results (first non-empty line, truncated)
+        for block in event.get("message", {}).get("content", []):
+            if block.get("type") == "tool_result":
+                tool_result = event.get("tool_use_result", {})
+                stdout = tool_result.get("stdout", "").strip()
+                if stdout:
+                    first_line = stdout.splitlines()[0]
+                    return f"  → {first_line[:120]}"
+
     return ""
 
 
@@ -119,7 +152,7 @@ def send_confirmation(session: AgentSession, message: str) -> Iterator[str]:
         "Continue from where you left off."
     )
     escaped = shlex.quote(continuation)
-    cmd = f"cd {session.repo_path} && claude --print --output-format stream-json {escaped}"
+    cmd = f"cd {session.repo_path} && claude {_CLAUDE_FLAGS} {escaped}"
 
     log_file = open(session.log_path, "a", buffering=1)  # noqa: WPS515, SIM115
     try:
