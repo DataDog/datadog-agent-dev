@@ -206,7 +206,7 @@ legacy-test-infra-definitions = [
     "boto3>=1.28.0",
     "colorama>=0.4.6",
     "lxml~=5.2.2",
-    "pydantic==2.11.4",
+    "pydantic==2.12.5",
     "PyGithub==1.59.1",
     "pyperclip==1.11.0",
     "pyright==1.1.391",
