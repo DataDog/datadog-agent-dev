@@ -39,8 +39,8 @@ class SubprocessRunner:
         Run a command and wait for it to complete.
 
         /// warning
-        On Windows, programs that require user interaction should use the
-        [`attach`][dda.utils.process.SubprocessRunner.attach] method instead.
+        Commands that require direct inheritance of the current process standard streams may still prefer the
+        [`attach`][dda.utils.process.SubprocessRunner.attach] method.
         ///
 
         Parameters:
@@ -70,7 +70,8 @@ class SubprocessRunner:
 
         /// warning
         This method does not support sending telemetry upon errors and should only be preferred over
-        [`run`][dda.utils.process.SubprocessRunner.run] when the command requires user interaction.
+        [`run`][dda.utils.process.SubprocessRunner.run] when the command requires direct inheritance of the current
+        process standard streams.
         ///
 
         Parameters:
@@ -288,7 +289,6 @@ class SubprocessRunner:
             return process.returncode, process.stdout if capture else ""
 
         import tempfile
-        import threading
 
         from dda.utils.platform._pty.session import PtySession
 
@@ -298,19 +298,21 @@ class SubprocessRunner:
             self.__app.abort(str(error))
 
         with tempfile.SpooledTemporaryFile(mode="w+", encoding=encoding, newline="") as out, pty:
-            event = threading.Event()
-            thread = threading.Thread(target=pty.capture, args=([sys.stdout, out], event), daemon=True)
-            thread.start()
+            stdin_reader = None
+            if self.__app.console.is_interactive and sys.__stdin__ is not None and sys.__stdin__.isatty():
+                stdin_reader = sys.__stdin__
+
+            io_handle = pty.start_io(sys.stdout, out, stdin_reader=stdin_reader)
             interrupted = False
             try:
                 pty.wait()
             except KeyboardInterrupt:
                 interrupted = True
                 pty.terminate()
+                io_handle.cancel()
                 raise
             finally:
-                event.set()
-                thread.join()
+                io_handle.join()
 
                 if (exit_code := pty.get_exit_code()) is None:
                     exit_code = 1

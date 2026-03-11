@@ -20,3 +20,5 @@ ignore = [
 "release/**/*" = ["INP001"]
 # Saving the start time comes before imports
 "src/dda/cli/__init__.py" = ["E402"]
+"tests/utils/pty/test_handle.py" = ["PLC2701"]
+"tests/utils/pty/test_windows_vt.py" = ["PLC2701", "SLF001"]
