@@ -50,6 +50,12 @@ class FakeWinPty:
         self.cancelled = True
 
 
+def _windows_pty_session_type() -> Any:
+    from dda.utils.platform._pty import windows
+
+    return cast(Any, windows).PtySession
+
+
 def test_winpty_adapter_wraps_low_level_api():
     raw_pty = FakeWinPty()
     pty = WinPtyAdapter(raw_pty)
@@ -125,13 +131,13 @@ def test_windows_vt_shim_fast_path():
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Windows only test")
 def test_windows_session_forwards_custom_stdin():
-    from dda.utils.platform._pty.windows import PtySession
+    pty_session_type = _windows_pty_session_type()
 
     class FakePty:
         def isalive(self) -> bool:
             return True
 
-    session = PtySession.__new__(PtySession)
+    session = pty_session_type.__new__(pty_session_type)
     session.pty = FakePty()
     writes: list[str] = []
     session._write_stdin = writes.append  # type: ignore[method-assign]
@@ -143,7 +149,7 @@ def test_windows_session_forwards_custom_stdin():
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Windows only test")
 def test_windows_session_wait_polls_exitstatus():
-    from dda.utils.platform._pty.windows import PtySession
+    pty_session_type = _windows_pty_session_type()
 
     class FakePty:
         def __init__(self) -> None:
@@ -153,7 +159,7 @@ def test_windows_session_wait_polls_exitstatus():
             self.calls += 1
             return 0 if self.calls >= 3 else None
 
-    session = PtySession.__new__(PtySession)
+    session = pty_session_type.__new__(pty_session_type)
     session.pty = FakePty()
 
     session.wait()
@@ -163,13 +169,13 @@ def test_windows_session_wait_polls_exitstatus():
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Windows only test")
 def test_windows_session_interrupts_main_on_ctrl_c(monkeypatch: pytest.MonkeyPatch) -> None:
-    from dda.utils.platform._pty.windows import PtySession
+    pty_session_type = _windows_pty_session_type()
 
     class FakePty:
         def isalive(self) -> bool:
             return True
 
-    session = PtySession.__new__(PtySession)
+    session = pty_session_type.__new__(pty_session_type)
     cast(Any, session).pty = FakePty()
     writes: list[str] = []
     cast(Any, session)._write_stdin = writes.append
