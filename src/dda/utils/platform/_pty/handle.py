@@ -50,10 +50,6 @@ class ThreadedPtyIoHandle(PtyIoHandle):
         if self._stdin_thread is not None:
             self._stdin_thread.start()
 
-    @property
-    def stop_event(self) -> threading.Event:
-        return self._stop_event
-
     def cancel(self) -> None:
         self._cancelled = True
         self._stop_event.set()
@@ -66,17 +62,9 @@ class ThreadedPtyIoHandle(PtyIoHandle):
         self._raise_background_error()
 
     def _join_reader_thread(self) -> None:
-        if not self._cancelled:
-            # Let the reader drain naturally after process exit so we do not
-            # truncate captured output by forcing cancellation too early. If the
-            # read side wedges after the process has already exited, give it a
-            # grace period and then cancel the read so teardown can complete.
-            self._reader_thread.join(timeout=self._reader_join_timeout)
-            if self._reader_thread.is_alive():
-                self._cancel_reader_if_needed()
-                self._reader_thread.join(timeout=self.POST_CANCEL_JOIN_TIMEOUT)
-            return
-
+        # Prefer letting the reader drain on its own so we preserve trailing
+        # output. If it is still running after the configured wait, cancel the
+        # active read and give teardown a short grace period to complete.
         self._reader_thread.join(timeout=self._reader_join_timeout)
         if self._reader_thread.is_alive():
             self._cancel_reader_if_needed()

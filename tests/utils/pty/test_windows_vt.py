@@ -12,13 +12,14 @@ from typing import Any, cast
 
 import pytest
 
+from dda.utils.platform._pty.handle import ThreadedPtyIoHandle
 from dda.utils.platform._pty.windows_vt import VT_QUERY_REPLIES, WindowsVtShim, WinPtyAdapter
 
 
 class FakeWinPty:
     def __init__(self) -> None:
         self.spawn_calls: list[tuple[str, str | None, str | None, str | None]] = []
-        self.read_calls = 0
+        self.read_calls: list[bool] = []
         self.write_calls: list[str] = []
         self.cancelled = False
         self.pid = 42
@@ -29,8 +30,8 @@ class FakeWinPty:
         self.spawn_calls.append((appname, cmdline, cwd, env))
         return True
 
-    def read(self) -> str:
-        self.read_calls += 1
+    def read(self, *, blocking: bool = False) -> str:
+        self.read_calls.append(blocking)
         return "output"
 
     def write(self, data: str) -> int:
@@ -62,6 +63,7 @@ def test_winpty_adapter_wraps_low_level_api():
 
     assert pty.spawn("python", cmdline="-V", cwd="C:/", env="FOO=bar\0") is True
     assert pty.read() == "output"
+    assert pty.read(blocking=True) == "output"
     assert pty.write("hello") == 5
     assert pty.isalive() is True
     assert pty.iseof() is False
@@ -71,7 +73,7 @@ def test_winpty_adapter_wraps_low_level_api():
     pty.cancel_io()
 
     assert raw_pty.spawn_calls == [("python", "-V", "C:/", "FOO=bar\0")]
-    assert raw_pty.read_calls == 1
+    assert raw_pty.read_calls == [False, True]
     assert raw_pty.write_calls == ["hello"]
     assert raw_pty.cancelled is True
 
@@ -165,6 +167,83 @@ def test_windows_session_wait_polls_exitstatus():
     session.wait()
 
     assert session.pty.calls == 3
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Windows only test")
+def test_windows_session_reader_uses_blocking_reads():
+    pty_session_type = _windows_pty_session_type()
+
+    class FakePty:
+        def __init__(self) -> None:
+            self.read_calls: list[bool] = []
+
+        def read(self, *, blocking: bool = False) -> str:
+            self.read_calls.append(blocking)
+            return "output" if len(self.read_calls) == 1 else ""
+
+        def isalive(self) -> bool:
+            return len(self.read_calls) < 2
+
+        def iseof(self) -> bool:
+            return len(self.read_calls) >= 2
+
+    session = pty_session_type.__new__(pty_session_type)
+    cast(Any, session).pty = FakePty()
+    cast(Any, session)._vt_shim = WindowsVtShim()
+
+    live_writer = io.StringIO()
+    capture_writer = io.StringIO()
+    session._drain_output_body(live_writer, capture_writer, threading.Event())
+
+    assert cast(Any, session).pty.read_calls == [True, True]
+    assert live_writer.getvalue() == "output"
+    assert capture_writer.getvalue() == "output"
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Windows only test")
+def test_windows_session_cancel_stops_reader(monkeypatch: pytest.MonkeyPatch) -> None:
+    pty_session_type = _windows_pty_session_type()
+    reader_started = threading.Event()
+    shutdown = threading.Event()
+
+    class FakePty:
+        def __init__(self) -> None:
+            self.cancelled = False
+
+        def read(self, *, blocking: bool = False) -> str:
+            assert blocking is True
+            reader_started.set()
+            return ""
+
+        def isalive(self) -> bool:
+            return not shutdown.is_set()
+
+        def iseof(self) -> bool:
+            return False
+
+        def cancel_io(self) -> None:
+            self.cancelled = True
+
+    session = pty_session_type.__new__(pty_session_type)
+    cast(Any, session).pty = FakePty()
+    cast(Any, session)._vt_shim = WindowsVtShim()
+    cast(Any, session).READ_INTERVAL_SECONDS = 0.001
+    monkeypatch.setattr(ThreadedPtyIoHandle, "POST_CANCEL_JOIN_TIMEOUT", 0.05)
+
+    handle = session.start_io(io.StringIO(), io.StringIO())
+    cast(Any, handle)._reader_join_timeout = 0.01
+
+    try:
+        assert reader_started.wait(timeout=1.0) is True
+
+        handle.cancel()
+        handle.join()
+
+        assert cast(Any, session).pty.cancelled is True
+        assert cast(Any, handle)._reader_thread.is_alive() is False
+    finally:
+        shutdown.set()
+        cast(Any, handle)._reader_thread.join(timeout=1.0)
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Windows only test")

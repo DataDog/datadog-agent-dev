@@ -86,40 +86,47 @@ class PtySession(PtySessionInterface):
         *,
         stdin_reader: TextReader | None = None,
     ) -> PtyIoHandle:
-        stop_event = threading.Event()
-        stdin_target = self._get_stdin_target(stdin_reader, stop_event)
+        stdin_stop_event = threading.Event()
+        reader_cancel_event = threading.Event()
+        stdin_target = self._get_stdin_target(stdin_reader, stdin_stop_event)
 
         return ThreadedPtyIoHandle(
-            lambda: self._drain_output(live_writer, capture_writer),
-            stop_event=stop_event,
+            lambda: self._drain_output(live_writer, capture_writer, reader_cancel_event),
+            stop_event=stdin_stop_event,
             stdin_target=stdin_target,
-            cancel_reader=self._cancel_io,
+            cancel_reader=lambda: self._cancel_io(reader_cancel_event),
             reader_join_timeout=1.0,
         )
 
-    def _drain_output(self, live_writer: TextWriter, capture_writer: TextWriter) -> None:
+    def _drain_output(
+        self, live_writer: TextWriter, capture_writer: TextWriter, reader_cancel_event: threading.Event
+    ) -> None:
         try:
-            self._drain_output_body(live_writer, capture_writer)
+            self._drain_output_body(live_writer, capture_writer, reader_cancel_event)
         finally:
             self._write_output(live_writer, capture_writer, self._vt_shim.finish())
             capture_writer.flush()
 
-    def _drain_output_body(self, live_writer: TextWriter, capture_writer: TextWriter) -> None:
-        while True:
+    def _drain_output_body(
+        self, live_writer: TextWriter, capture_writer: TextWriter, reader_cancel_event: threading.Event
+    ) -> None:
+        while not reader_cancel_event.is_set():
             try:
-                output = self.pty.read()
+                # pywinpty 3 can block until output is ready. This avoids the
+                # coarse poll/sleep loop and lets `cancel_io()` break the read
+                # promptly during teardown.
+                output = self.pty.read(blocking=True)
             except winpty.WinptyError:
-                if self.pty.iseof() or not self.pty.isalive():
+                if reader_cancel_event.is_set() or self.pty.iseof() or not self.pty.isalive():
                     break
 
                 time.sleep(self.READ_INTERVAL_SECONDS)
                 continue
 
             if not output:
-                if self.pty.iseof() or not self.pty.isalive():
+                if reader_cancel_event.is_set() or self.pty.iseof() or not self.pty.isalive():
                     break
 
-                time.sleep(self.READ_INTERVAL_SECONDS)
                 continue
 
             output, replies = self._vt_shim.process(output)
@@ -140,7 +147,8 @@ class PtySession(PtySessionInterface):
     def get_exit_code(self) -> int | None:
         return self.pty.get_exitstatus()
 
-    def _cancel_io(self) -> None:
+    def _cancel_io(self, reader_cancel_event: threading.Event) -> None:
+        reader_cancel_event.set()
         with suppress(winpty.WinptyError):
             self.pty.cancel_io()
 

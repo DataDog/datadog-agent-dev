@@ -39,8 +39,8 @@ class WinPtyAdapter:
     def spawn(self, appname: str, *, cmdline: str | None, cwd: str | None, env: str | None) -> bool:
         return self._pty.spawn(appname, cmdline=cmdline, cwd=cwd, env=env)
 
-    def read(self) -> str:
-        return self._pty.read()
+    def read(self, *, blocking: bool = False) -> str:
+        return self._pty.read(blocking=blocking)
 
     def write(self, data: str) -> int:
         return self._pty.write(data)
