@@ -77,6 +77,14 @@ jobs:
         directory: coverage_data
         use_oidc: true
 
+    - name: Upload coverage to Datadog
+      if: always()
+      continue-on-error: true
+      uses: DataDog/coverage-upload-github-action@v1
+      with:
+        api_key: ${{ secrets.DD_API_KEY }}
+        files: coverage_data
+
   check:
     if: always()
     needs:
