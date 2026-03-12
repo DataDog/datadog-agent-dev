@@ -106,10 +106,11 @@ def test_threaded_pty_io_handle_join_does_not_block_on_stuck_input_thread():
 
 def test_threaded_pty_io_handle_join_does_not_cancel_natural_reader_shutdown():
     stop_event = threading.Event()
+    started = threading.Event()
     cancelled = False
 
     def reader() -> None:
-        time.sleep(0.01)
+        started.set()
 
     def cancel_reader() -> None:
         nonlocal cancelled
@@ -121,6 +122,7 @@ def test_threaded_pty_io_handle_join_does_not_cancel_natural_reader_shutdown():
         cancel_reader=cancel_reader,
         reader_join_timeout=0.05,
     )
+    assert started.wait(timeout=1.0) is True
     handle.join()
 
     assert cancelled is False
