@@ -30,13 +30,12 @@ jobs:
       run: dda run docs build
 
     - name: Check links
-      uses: lycheeverse/lychee-action@885c65f3dc543b57c898c8099f4e08c8afd178a2
+      uses: lycheeverse/lychee-action@8646ba30535128ac92d33dfc9133794bfdd9b411
       with:
-        lycheeVersion: "v0.20.1"
+        lycheeVersion: v0.23.0
         fail: true
         failIfEmpty: true
-        # Remove `--index-files index.html` when this fix is released https://github.com/lycheeverse/lychee/pull/1843
-        args: site --index-files index.html
+        args: site
 
     - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
