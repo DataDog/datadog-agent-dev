@@ -78,6 +78,10 @@ class PtySession(PtySessionInterface):
             lambda: self._drain_output(live_writer, capture_writer),
             stop_event=stop_event,
             cancel_reader=self._close_fd,
+            # Let the PTY reader drain trailing output after process exit, but
+            # do not wait forever if a descendant inherited the PTY fds and
+            # keeps the child side open.
+            reader_join_timeout=1.0,
         )
 
     def _drain_output(self, live_writer: TextWriter, capture_writer: TextWriter) -> None:
