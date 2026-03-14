@@ -5,14 +5,16 @@ from __future__ import annotations
 
 import io
 import subprocess
+import threading
 from typing import TYPE_CHECKING, cast
 
+from dda.utils.platform._pty.handle import ThreadedPtyIoHandle
 from dda.utils.platform._pty.interface import PtySessionInterface
 
 if TYPE_CHECKING:
-    import threading
-
     from dda.utils.fs import Path
+    from dda.utils.platform._pty.handle import PtyIoHandle
+    from dda.utils.platform._pty.interface import TextReader, TextWriter
 
 
 class PtySession(PtySessionInterface):
@@ -36,16 +38,32 @@ class PtySession(PtySessionInterface):
             bufsize=1,
         )
 
-    def capture(self, writers: list[io.TextIOWrapper], stop_event: threading.Event) -> None:
-        while not stop_event.is_set():
-            pipe: io.TextIOWrapper = cast(io.TextIOWrapper, self.process.stdout)
-            output = pipe.read(self.READ_CHUNK_SIZE)
-            if not output:
-                break
+    def start_io(
+        self,
+        live_writer: TextWriter,
+        capture_writer: TextWriter,
+        *,
+        stdin_reader: TextReader | None = None,
+    ) -> PtyIoHandle:
+        _ = stdin_reader
+        stop_event = threading.Event()
+        return ThreadedPtyIoHandle(
+            lambda: self._drain_output(live_writer, capture_writer),
+            stop_event=stop_event,
+        )
 
-            for writer in writers:
-                writer.write(output)
-                writer.flush()
+    def _drain_output(self, live_writer: TextWriter, capture_writer: TextWriter) -> None:
+        try:
+            self._drain_output_body(live_writer, capture_writer)
+        finally:
+            capture_writer.flush()
+
+    def _drain_output_body(self, live_writer: TextWriter, capture_writer: TextWriter) -> None:
+        pipe: io.TextIOWrapper = cast(io.TextIOWrapper, self.process.stdout)
+        while output := pipe.read(self.READ_CHUNK_SIZE):
+            live_writer.write(output)
+            live_writer.flush()
+            capture_writer.write(output)
 
     def wait(self) -> None:
         self.process.wait()

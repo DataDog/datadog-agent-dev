@@ -7,13 +7,23 @@ import io
 import os
 import shutil
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
-    import threading
     from types import TracebackType
 
     from dda.utils.fs import Path
+    from dda.utils.platform._pty.handle import PtyIoHandle
+
+
+class TextWriter(Protocol):
+    def write(self, text: str, /) -> object: ...
+
+    def flush(self) -> object: ...
+
+
+class TextReader(Protocol):
+    def read(self, size: int = -1, /) -> str: ...
 
 
 class PtySessionInterface(ABC):
@@ -42,7 +52,13 @@ class PtySessionInterface(ABC):
         self.executable = executable_path
 
     @abstractmethod
-    def capture(self, writers: list[io.TextIOWrapper], stop_event: threading.Event) -> None: ...
+    def start_io(
+        self,
+        live_writer: TextWriter,
+        capture_writer: TextWriter,
+        *,
+        stdin_reader: TextReader | None = None,
+    ) -> PtyIoHandle: ...
 
     @abstractmethod
     def wait(self) -> None: ...
