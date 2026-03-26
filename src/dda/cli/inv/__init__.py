@@ -60,6 +60,13 @@ def cmd(
 ) -> None:
     """
     Invoke a local task.
+
+    Use the `--` argument separator to forward everything to the Invoke CLI within
+    the managed Python virtual environment. For example, this shows the help text:
+
+    ```
+    dda inv -- -h
+    ```
     """
     from dda.utils.fs import Path
 
