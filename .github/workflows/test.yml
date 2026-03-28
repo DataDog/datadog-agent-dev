@@ -77,6 +77,13 @@ jobs:
         directory: coverage_data
         use_oidc: true
 
+    - name: Upload coverage to Datadog
+      if: always()
+      continue-on-error: true
+      run: npx @datadog/datadog-ci coverage upload coverage_data
+      env:
+        DD_API_KEY: ${{ secrets.DD_API_KEY }}
+
   check:
     if: always()
     needs:
