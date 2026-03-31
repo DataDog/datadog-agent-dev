@@ -48,7 +48,10 @@ TESTCASE_RESULTS = [
 @pytest.fixture(scope="module", autouse=True)
 def install_deps_once(dda):
     dda("self", "dep", "sync", "-f", "codeowners")
-    with patch("dda.cli.base.ensure_features_installed", return_value=None):
+    with (
+        patch("dda.cli.base.ensure_features_installed", return_value=None),
+        patch("dda.tools.git.Git.get_repo_root", side_effect=lambda _path=None: Path.cwd()),
+    ):
         yield
 
 
