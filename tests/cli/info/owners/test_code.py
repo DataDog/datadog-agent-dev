@@ -169,3 +169,109 @@ def test_human_output(
             """
         ),
     )
+
+
+# --- Subdirectory path resolution tests ---
+# These tests verify the behavior matrix from the plan:
+# paths are given relative to CWD and resolved to repo-root-relative paths.
+
+FIXTURES_DIR = Path(__file__).parent / "fixtures"
+
+
+def _resolved_fixture(name: str) -> Path:
+    return Path((FIXTURES_DIR / name).resolve())
+
+
+def test_file_from_subdirectory(
+    dda: CliRunner,
+) -> None:
+    """CWD-relative file path from subdirectory is resolved to repo-root-relative."""
+    fixture_root = _resolved_fixture("test3")
+    with (fixture_root / "subdir1").as_cwd(), patch("dda.tools.git.Git.get_repo_root", return_value=fixture_root):
+        result = dda("info", "owners", "code", "--json", "testfile1.txt")
+
+    result.check(
+        exit_code=0,
+        stdout_json={"subdir1/testfile1.txt": ["@owner1"]},
+    )
+
+
+def test_directory_from_subdirectory(
+    dda: CliRunner,
+) -> None:
+    """Current directory '.' from subdirectory resolves to repo-root-relative dir with trailing slash."""
+    fixture_root = _resolved_fixture("test3")
+    with (fixture_root / "subdir1").as_cwd(), patch("dda.tools.git.Git.get_repo_root", return_value=fixture_root):
+        result = dda("info", "owners", "code", "--json", ".")
+
+    result.check(
+        exit_code=0,
+        stdout_json={"subdir1/": ["@owner1"]},
+    )
+
+
+def test_parent_traversal_from_subdirectory(
+    dda: CliRunner,
+) -> None:
+    """Paths with '..' from subdirectory are resolved correctly."""
+    fixture_root = _resolved_fixture("test3")
+    with (fixture_root / "subdir1").as_cwd(), patch("dda.tools.git.Git.get_repo_root", return_value=fixture_root):
+        result = dda("info", "owners", "code", "--json", "../subdir2/testfile2.txt")
+
+    result.check(
+        exit_code=0,
+        stdout_json={"subdir2/testfile2.txt": ["@owner3"]},
+    )
+
+
+def test_nonexistent_path_from_subdirectory(
+    dda: CliRunner,
+) -> None:
+    """Non-existent paths produce an error."""
+    fixture_root = _resolved_fixture("test3")
+    with (fixture_root / "subdir1").as_cwd(), patch("dda.tools.git.Git.get_repo_root", return_value=fixture_root):
+        result = dda("info", "owners", "code", "--json", "nonexistent.go", catch_exceptions=True)
+
+    result.check_exit_code(1)
+
+
+def test_explicit_codeowners_from_subdirectory(
+    dda: CliRunner,
+) -> None:
+    """Explicit --owners path is resolved from CWD, not from repo root."""
+    fixture_root = _resolved_fixture("test3")
+    with (fixture_root / "subdir1").as_cwd(), patch("dda.tools.git.Git.get_repo_root", return_value=fixture_root):
+        # custom_CODEOWNERS is at fixtures/custom_CODEOWNERS, two levels up from subdir1
+        result = dda("info", "owners", "code", "--json", "--owners", "../../custom_CODEOWNERS", "testfile1.txt")
+
+    # custom_CODEOWNERS has "* @DataDog/team-everything", which matches subdir1/testfile1.txt
+    result.check(
+        exit_code=0,
+        stdout_json={"subdir1/testfile1.txt": ["@DataDog/team-everything"]},
+    )
+
+
+def test_multiple_paths_from_subdirectory(
+    dda: CliRunner,
+) -> None:
+    """Multiple paths from a subdirectory are all resolved correctly."""
+    fixture_root = _resolved_fixture("test3")
+    with (fixture_root / "subdir1").as_cwd(), patch("dda.tools.git.Git.get_repo_root", return_value=fixture_root):
+        result = dda(
+            "info",
+            "owners",
+            "code",
+            "--json",
+            "testfile1.txt",
+            "../subdir2/testfile2.txt",
+            "../subdir2",
+        )
+
+    result.check(
+        exit_code=0,
+        stdout_json={
+            "subdir1/testfile1.txt": ["@owner1"],
+            "subdir2/testfile2.txt": ["@owner3"],
+            "subdir2/": ["@owner2"],
+        },
+    )
