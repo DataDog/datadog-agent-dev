@@ -59,7 +59,7 @@ def cmd(app: Application, paths: tuple[Path, ...], *, owners_filepath: Path | No
         owners_filepath = Path((cwd / owners_filepath).resolve())
 
     # Process each path with dynamic repo root detection
-    res: dict[str, list[str]] = {}
+    res: dict[str, list[str | None]] = {}
     owners_cache: dict[Path, codeowners.CodeOwners] = {}
 
     errors: list[str] = []
@@ -89,7 +89,8 @@ def cmd(app: Application, paths: tuple[Path, ...], *, owners_filepath: Path | No
 
         with repo_root.as_cwd():
             formatted_path = format_path_for_codeowners(repo_relative)
-            res[formatted_path] = [owner[1] for owner in owners_cache[co_file].of(formatted_path)]
+            resolved_owners = owners_cache[co_file].of(formatted_path)
+            res[formatted_path] = [owner[1] for owner in resolved_owners] if resolved_owners else [None]
 
     if res:
         if json:
@@ -98,7 +99,7 @@ def cmd(app: Application, paths: tuple[Path, ...], *, owners_filepath: Path | No
             app.output(dumps(res))
         else:
             # Note: paths here are in POSIX format, so they will use / even on Windows
-            display_res = {path: ", ".join(owners) for path, owners in res.items()}
+            display_res = {path: ", ".join(str(x) for x in owners) for path, owners in res.items()}
             app.display_table(display_res, stderr=False)
 
     if errors:
