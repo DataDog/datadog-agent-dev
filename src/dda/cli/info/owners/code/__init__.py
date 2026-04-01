@@ -109,7 +109,11 @@ def cmd(app: Application, paths: tuple[Path, ...], *, owners_path_override: Path
             continue
 
         with repo_root.as_cwd():
-            formatted_path = format_path_for_codeowners(repo_relative)
+            try:
+                formatted_path = format_path_for_codeowners(repo_relative)
+            except ValueError as e:
+                errors.append(str(e))
+                continue
             resolved_owners = owners.of(formatted_path)
             res[formatted_path] = [owner[1] for owner in resolved_owners] if resolved_owners else [None]
 
