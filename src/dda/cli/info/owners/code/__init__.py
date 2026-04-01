@@ -11,6 +11,8 @@ from dda.cli.base import dynamic_command, pass_app
 from dda.utils.fs import Path
 
 if TYPE_CHECKING:
+    import codeowners
+
     from dda.cli.application import Application
 
 
@@ -20,6 +22,29 @@ def _find_existing_ancestor(path: Path) -> Path:
     while not check.exists():
         check = check.parent
     return check
+
+
+def _display_result(app: Application, res: dict[str, list[str | None]], *, json: bool) -> None:
+    if json:
+        from json import dumps
+
+        app.output(dumps(res))
+    else:
+        # Note: paths here are in POSIX format, so they will use / even on Windows
+        display_res = {path: ", ".join(str(x) for x in owners) for path, owners in res.items()}
+        app.display_table(display_res, stderr=False)
+
+
+def _load_owners(path: Path, owners_cache: dict[Path, codeowners.CodeOwners]) -> codeowners.CodeOwners:
+    if path in owners_cache:
+        return owners_cache[path]
+
+    import codeowners
+
+    # Can raise FileNotFoundError
+    owners = codeowners.CodeOwners(path.read_text(encoding="utf-8"))
+    owners_cache[path] = owners
+    return owners
 
 
 @dynamic_command(short_help="Find code owners of files and directories", features=["codeowners"])
@@ -32,7 +57,7 @@ def _find_existing_ancestor(path: Path) -> Path:
 @click.option(
     "--owners",
     "-f",
-    "owners_filepath",
+    "owners_path_override",
     type=click.Path(dir_okay=False, exists=True, path_type=Path),
     help="Path to CODEOWNERS file",
     default=None,
@@ -44,19 +69,17 @@ def _find_existing_ancestor(path: Path) -> Path:
     help="Format the output as JSON",
 )
 @pass_app
-def cmd(app: Application, paths: tuple[Path, ...], *, owners_filepath: Path | None, json: bool) -> None:
+def cmd(app: Application, paths: tuple[Path, ...], *, owners_path_override: Path | None, json: bool) -> None:
     """
     Gets the code owners for the specified paths.
     """
-    import codeowners
-
     from dda.cli.info.owners.format import format_path_for_codeowners
 
     cwd = Path.cwd()
 
     # Resolve explicit --owners path from CWD before any CWD changes
-    if owners_filepath is not None:
-        owners_filepath = Path((cwd / owners_filepath).resolve())
+    if owners_path_override is not None:
+        owners_path_override = owners_path_override.resolve()
 
     # Process each path with dynamic repo root detection
     res: dict[str, list[str | None]] = {}
@@ -76,31 +99,22 @@ def cmd(app: Application, paths: tuple[Path, ...], *, owners_filepath: Path | No
 
         repo_relative = Path(abs_path.relative_to(repo_root))
 
-        # Load CODEOWNERS (auto-detect from repo root, or use explicit)
-        co_file = owners_filepath if owners_filepath is not None else repo_root / ".github" / "CODEOWNERS"
-        if co_file not in owners_cache:
-            try:
-                owners = codeowners.CodeOwners(co_file.read_text(encoding="utf-8"))
-            except FileNotFoundError:
-                msg = f"CODEOWNERS file not found for {abs_path}: {co_file} does not exist"
-                errors.append(msg)
-                continue
-            owners_cache[co_file] = owners
+        # Load CODEOWNERS file from repo root
+        try:
+            owners_path = owners_path_override or repo_root / ".github" / "CODEOWNERS"
+            owners = _load_owners(owners_path, owners_cache)
+        except FileNotFoundError:
+            msg = f"CODEOWNERS file not found for {abs_path}: {owners_path} does not exist"
+            errors.append(msg)
+            continue
 
         with repo_root.as_cwd():
             formatted_path = format_path_for_codeowners(repo_relative)
-            resolved_owners = owners_cache[co_file].of(formatted_path)
+            resolved_owners = owners.of(formatted_path)
             res[formatted_path] = [owner[1] for owner in resolved_owners] if resolved_owners else [None]
 
     if res:
-        if json:
-            from json import dumps
-
-            app.output(dumps(res))
-        else:
-            # Note: paths here are in POSIX format, so they will use / even on Windows
-            display_res = {path: ", ".join(str(x) for x in owners) for path, owners in res.items()}
-            app.display_table(display_res, stderr=False)
+        _display_result(app, res, json=json)
 
     if errors:
         app.display_error("\n".join(errors), stderr=True)
