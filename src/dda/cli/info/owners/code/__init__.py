@@ -73,6 +73,8 @@ def cmd(app: Application, paths: tuple[Path, ...], *, owners_path_override: Path
     """
     Gets the code owners for the specified paths.
     """
+    import os
+
     from dda.cli.info.owners.format import format_path_for_codeowners
 
     cwd = Path.cwd()
@@ -87,7 +89,8 @@ def cmd(app: Application, paths: tuple[Path, ...], *, owners_path_override: Path
 
     errors: list[str] = []
     for path in paths:
-        abs_path = Path((cwd / path).resolve())
+        # Avoid resolving symlinks as they might point outside the repo
+        abs_path = Path(os.path.normpath(cwd / path))
 
         # Determine repo root from the file's location
         try:
