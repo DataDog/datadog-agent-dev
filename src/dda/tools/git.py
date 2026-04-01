@@ -267,7 +267,13 @@ class Git(Tool):
         if not path.is_dir():
             path = path.parent
 
-        res = self.capture(["rev-parse", "--show-toplevel"], cwd=path, check=False).strip()
+        res = self.capture(
+            ["rev-parse", "--show-toplevel"],
+            cwd=path,
+            check=False,
+            cross_streams=True,
+        ).strip()
+
         if not res or res.startswith("fatal:"):
             msg = f"Path {path} is not in a Git repository: {res}"
             raise ValueError(msg)
