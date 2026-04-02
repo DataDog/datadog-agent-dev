@@ -38,7 +38,7 @@ class Shell(ABC):
             shared_files.append(shared_starship_config_file)
 
             self.shared_dir.ensure_dir()
-            shutil.copy(starship_config_file, shared_starship_config_file)
+            shutil.copyfile(starship_config_file, shared_starship_config_file)
 
         return shared_files
 
