@@ -86,9 +86,10 @@ jobs:
     - name: Upload coverage to Datadog
       if: steps.dd-sts.outputs.api_key != ''
       continue-on-error: true
-      run: npx @datadog/datadog-ci coverage upload coverage_data
-      env:
-        DD_API_KEY: ${{ steps.dd-sts.outputs.api_key }}
+      uses: DataDog/coverage-upload-github-action@9bbbf86d16f7db1b14c5b885e61cf0d96053686a # v1.0.0
+      with:
+        api_key: ${{ steps.dd-sts.outputs.api_key }}
+        files: coverage_data
 
   check:
     if: always()
