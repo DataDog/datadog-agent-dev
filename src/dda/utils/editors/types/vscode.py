@@ -12,7 +12,7 @@ from dda.utils.fs import Path
 
 class VSCodeEditorInterface(EditorInterface):
     def open_via_ssh(self, *, server: str, port: int, path: str) -> None:
-        self.app.subprocess.run(["code", "--remote", f"ssh-remote+root@{server}:{port}", path])
+        self.app.subprocess.run(["code", "--remote", f"ssh-remote+dd@{server}:{port}", path])
 
     def add_mcp_server(self, *, name: str, url: str) -> None:
         config = self.__load_config()
@@ -28,7 +28,7 @@ class VSCodeEditorInterface(EditorInterface):
 
     @staticmethod
     def __get_mcp_server_config(config: dict[str, Any]) -> dict[str, Any]:
-        # https://code.visualstudio.com/docs/copilot/chat/mcp-servers#_add-an-mcp-server-to-your-user-settings
+        # https://code.visualstudio.com/docs/copilot/customization/mcp-servers#_add-an-mcp-server
         return config.setdefault("mcp", {}).setdefault("servers", {})
 
     def __load_config(self) -> dict[str, Any]:

@@ -32,7 +32,11 @@ def updated_config(config_file):
 
 @pytest.fixture(scope="module")
 def host_user_args():
-    return [] if sys.platform == "win32" else ["-e", f"HOST_UID={os.getuid()}", "-e", f"HOST_GID={os.getgid()}"]
+    return (
+        ["-e", "HOST_UID=1002", "-e", "HOST_GID=1002"]
+        if sys.platform == "win32"
+        else ["-e", f"HOST_UID={os.getuid()}", "-e", f"HOST_GID={os.getgid()}"]
+    )
 
 
 def get_starship_mount(global_shared_dir: Path) -> list[str]:
@@ -40,31 +44,24 @@ def get_starship_mount(global_shared_dir: Path) -> list[str]:
     if not starship_config_file.exists():
         return []
 
-    return ["-v", f"{global_shared_dir / 'shell' / 'starship.toml'}:/root/.shared/shell/starship.toml"]
+    return ["-v", f"{global_shared_dir / 'shell' / 'starship.toml'}:/.shared/shell/starship.toml"]
+
+
+def get_volumes() -> list[str]:
+    return [*get_data_volumes(), *get_cache_volumes()]
+
+
+def get_data_volumes() -> list[str]:
+    return [
+        "--mount",
+        "type=volume,src=dda-env-dev-linux-container-data,dst=/var/lib/dd",
+    ]
 
 
 def get_cache_volumes() -> list[str]:
     return [
         "--mount",
-        "type=volume,src=dda-env-dev-linux-container-go_build_cache,dst=/root/.cache/go-build",
-        "--mount",
-        "type=volume,src=dda-env-dev-linux-container-go_mod_cache,dst=/go/pkg/mod",
-        "--mount",
-        "type=volume,src=dda-env-dev-linux-container-pip_cache,dst=/root/.cache/pip",
-        "--mount",
-        "type=volume,src=dda-env-dev-linux-container-uv_cache,dst=/root/.cache/uv",
-        "--mount",
-        "type=volume,src=dda-env-dev-linux-container-cargo_registry,dst=/root/.cargo/registry",
-        "--mount",
-        "type=volume,src=dda-env-dev-linux-container-cargo_git,dst=/root/.cargo/git",
-        "--mount",
-        "type=volume,src=dda-env-dev-linux-container-omnibus_gems,dst=/omnibus/vendor/bundle",
-        "--mount",
-        "type=volume,src=dda-env-dev-linux-container-omnibus_cache,dst=/omnibus/cache",
-        "--mount",
-        "type=volume,src=dda-env-dev-linux-container-omnibus_git_cache,dst=/tmp/omnibus-git-cache",
-        "--mount",
-        "type=volume,src=dda-env-dev-linux-container-vscode_extensions,dst=/root/.vscode-extensions",
+        "type=volume,src=dda-env-dev-linux-container-cache,dst=/var/cache/dd",
     ]
 
 
@@ -199,7 +196,7 @@ class TestStart:
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
         global_shared_dir = shared_dir.parent.parent / ".shared"
         starship_mount = get_starship_mount(global_shared_dir)
-        cache_volumes = get_cache_volumes()
+        volumes = get_volumes()
         assert calls == [
             (
                 ([helpers.locate("docker"), "pull", "datadog/agent-dev-env-linux"],),
@@ -216,9 +213,9 @@ class TestStart:
                         "--name",
                         "dda-linux-container-default",
                         "-p",
-                        "61938:22",
+                        "26090:22",
                         "-p",
-                        "50069:9000",
+                        "31381:9000",
                         "-v",
                         "/var/run/docker.sock:/var/run/docker.sock",
                         *host_user_args,
@@ -236,10 +233,10 @@ class TestStart:
                         f"{shared_dir}:/.shared",
                         *starship_mount,
                         "-v",
-                        f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
-                        *cache_volumes,
+                        f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/.shared/shell/zsh/.zsh_history",
+                        *volumes,
                         "-v",
-                        f"{repo_dir}:/root/repos/datadog-agent",
+                        f"{repo_dir}:/repos/datadog-agent",
                         "datadog/agent-dev-env-linux",
                     ],
                 ),
@@ -282,7 +279,7 @@ class TestStart:
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
         global_shared_dir = shared_dir.parent.parent / ".shared"
         starship_mount = get_starship_mount(global_shared_dir)
-        cache_volumes = get_cache_volumes()
+        volumes = get_volumes()
         assert calls == [
             (
                 ([helpers.locate("docker"), "pull", "datadog/agent-dev-env-linux"],),
@@ -299,9 +296,9 @@ class TestStart:
                         "--name",
                         "dda-linux-container-default",
                         "-p",
-                        "61938:22",
+                        "26090:22",
                         "-p",
-                        "50069:9000",
+                        "31381:9000",
                         "-v",
                         "/var/run/docker.sock:/var/run/docker.sock",
                         *host_user_args,
@@ -319,8 +316,8 @@ class TestStart:
                         f"{shared_dir}:/.shared",
                         *starship_mount,
                         "-v",
-                        f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
-                        *cache_volumes,
+                        f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/.shared/shell/zsh/.zsh_history",
+                        *volumes,
                         "datadog/agent-dev-env-linux",
                     ],
                 ),
@@ -334,10 +331,10 @@ class TestStart:
                         "-q",
                         "-t",
                         "-p",
-                        "61938",
-                        "root@localhost",
+                        "26090",
+                        "dd@localhost",
                         "--",
-                        "cd /root && git dd-clone datadog-agent",
+                        "cd /home/dd && git dd-clone datadog-agent",
                     ],
                 ),
                 {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE},
@@ -383,7 +380,7 @@ class TestStart:
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
         global_shared_dir = shared_dir.parent.parent / ".shared"
         starship_mount = get_starship_mount(global_shared_dir)
-        cache_volumes = get_cache_volumes()
+        volumes = get_volumes()
         assert calls == [
             (
                 (
@@ -396,9 +393,9 @@ class TestStart:
                         "--name",
                         "dda-linux-container-default",
                         "-p",
-                        "61938:22",
+                        "26090:22",
                         "-p",
-                        "50069:9000",
+                        "31381:9000",
                         "-v",
                         "/var/run/docker.sock:/var/run/docker.sock",
                         *host_user_args,
@@ -416,10 +413,10 @@ class TestStart:
                         f"{shared_dir}:/.shared",
                         *starship_mount,
                         "-v",
-                        f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
-                        *cache_volumes,
+                        f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/.shared/shell/zsh/.zsh_history",
+                        *volumes,
                         "-v",
-                        f"{repo_dir}:/root/repos/datadog-agent",
+                        f"{repo_dir}:/repos/datadog-agent",
                         "datadog/agent-dev-env-linux",
                     ],
                 ),
@@ -470,7 +467,7 @@ class TestStart:
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
         global_shared_dir = shared_dir.parent.parent / ".shared"
         starship_mount = get_starship_mount(global_shared_dir)
-        cache_volumes = get_cache_volumes()
+        volumes = get_volumes()
         assert calls == [
             (
                 ([helpers.locate("docker"), "pull", "datadog/agent-dev-env-linux"],),
@@ -487,9 +484,9 @@ class TestStart:
                         "--name",
                         "dda-linux-container-default",
                         "-p",
-                        "61938:22",
+                        "26090:22",
                         "-p",
-                        "50069:9000",
+                        "31381:9000",
                         "-v",
                         "/var/run/docker.sock:/var/run/docker.sock",
                         *host_user_args,
@@ -507,12 +504,12 @@ class TestStart:
                         f"{shared_dir}:/.shared",
                         *starship_mount,
                         "-v",
-                        f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
-                        *cache_volumes,
+                        f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/.shared/shell/zsh/.zsh_history",
+                        *volumes,
                         "-v",
-                        f"{repo1_dir}:/root/repos/datadog-agent",
+                        f"{repo1_dir}:/repos/datadog-agent",
                         "-v",
-                        f"{repo2_dir}:/root/repos/integrations-core",
+                        f"{repo2_dir}:/repos/integrations-core",
                         "datadog/agent-dev-env-linux",
                     ],
                 ),
@@ -556,7 +553,7 @@ class TestStart:
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
         global_shared_dir = shared_dir.parent.parent / ".shared"
         starship_mount = get_starship_mount(global_shared_dir)
-        cache_volumes = get_cache_volumes()
+        volumes = get_volumes()
         assert calls == [
             (
                 ([helpers.locate("docker"), "pull", "datadog/agent-dev-env-linux"],),
@@ -573,9 +570,9 @@ class TestStart:
                         "--name",
                         "dda-linux-container-default",
                         "-p",
-                        "61938:22",
+                        "26090:22",
                         "-p",
-                        "50069:9000",
+                        "31381:9000",
                         "-v",
                         "/var/run/docker.sock:/var/run/docker.sock",
                         *host_user_args,
@@ -593,8 +590,8 @@ class TestStart:
                         f"{shared_dir}:/.shared",
                         *starship_mount,
                         "-v",
-                        f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
-                        *cache_volumes,
+                        f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/.shared/shell/zsh/.zsh_history",
+                        *volumes,
                         "datadog/agent-dev-env-linux",
                     ],
                 ),
@@ -608,10 +605,10 @@ class TestStart:
                         "-q",
                         "-t",
                         "-p",
-                        "61938",
-                        "root@localhost",
+                        "26090",
+                        "dd@localhost",
                         "--",
-                        "cd /root && git dd-clone datadog-agent tag",
+                        "cd /home/dd && git dd-clone datadog-agent tag",
                     ],
                 ),
                 {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE},
@@ -624,10 +621,10 @@ class TestStart:
                         "-q",
                         "-t",
                         "-p",
-                        "61938",
-                        "root@localhost",
+                        "26090",
+                        "dd@localhost",
                         "--",
-                        "cd /root && git dd-clone integrations-core",
+                        "cd /home/dd && git dd-clone integrations-core",
                     ],
                 ),
                 {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE},
@@ -651,7 +648,7 @@ class TestStart:
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
         global_shared_dir = shared_dir.parent.parent / ".shared"
         starship_mount = get_starship_mount(global_shared_dir)
-        cache_volumes = get_cache_volumes()
+        volumes = get_volumes()
 
         with (
             temp_dir.as_cwd(),
@@ -694,9 +691,9 @@ class TestStart:
                         "--name",
                         "dda-linux-container-default",
                         "-p",
-                        "61938:22",
+                        "26090:22",
                         "-p",
-                        "50069:9000",
+                        "31381:9000",
                         "-v",
                         "/var/run/docker.sock:/var/run/docker.sock",
                         *host_user_args,
@@ -714,8 +711,8 @@ class TestStart:
                         f"{shared_dir}:/.shared",
                         *starship_mount,
                         "-v",
-                        f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
-                        *cache_volumes,
+                        f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/.shared/shell/zsh/.zsh_history",
+                        *volumes,
                         *[(x if x != "-v" else "--volume") for x in volume_specs],
                         "datadog/agent-dev-env-linux",
                     ],
@@ -755,7 +752,7 @@ class TestStart:
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
         global_shared_dir = shared_dir.parent.parent / ".shared"
         starship_mount = get_starship_mount(global_shared_dir)
-        cache_volumes = get_cache_volumes()
+        volumes = get_volumes()
 
         with (
             temp_dir.as_cwd(),
@@ -799,9 +796,9 @@ class TestStart:
                         "--name",
                         "dda-linux-container-default",
                         "-p",
-                        "61938:22",
+                        "26090:22",
                         "-p",
-                        "50069:9000",
+                        "31381:9000",
                         "-v",
                         "/var/run/docker.sock:/var/run/docker.sock",
                         *host_user_args,
@@ -819,8 +816,8 @@ class TestStart:
                         f"{shared_dir}:/.shared",
                         *starship_mount,
                         "-v",
-                        f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
-                        *cache_volumes,
+                        f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/.shared/shell/zsh/.zsh_history",
+                        *volumes,
                         *[(x if x != "-m" else "--mount") for x in mount_specs],
                         "datadog/agent-dev-env-linux",
                     ],
@@ -942,10 +939,10 @@ class TestShell:
                         "-q",
                         "-t",
                         "-p",
-                        "61938",
-                        "root@localhost",
+                        "26090",
+                        "dd@localhost",
                         "--",
-                        "cd /root/repos/datadog-agent && zsh -l -i",
+                        "cd /repos/datadog-agent && zsh -l -i",
                     ],
                 ),
                 {},
@@ -990,10 +987,10 @@ class TestRun:
                 "-q",
                 "-t",
                 "-p",
-                "61938",
-                "root@localhost",
+                "26090",
+                "dd@localhost",
                 "--",
-                "cd /root/repos/datadog-agent && echo foo",
+                "cd /repos/datadog-agent && echo foo",
             ],
         )
 
@@ -1040,8 +1037,8 @@ class TestCode:
             [
                 "code",
                 "--remote",
-                "ssh-remote+root@localhost:61938",
-                "/root/repos/datadog-agent",
+                "ssh-remote+dd@localhost:26090",
+                "/repos/datadog-agent",
             ],
         )
 
@@ -1073,8 +1070,8 @@ class TestCode:
             [
                 "cursor",
                 "--remote",
-                "ssh-remote+root@localhost:61938",
-                "/root/repos/datadog-agent",
+                "ssh-remote+dd@localhost:26090",
+                "/repos/datadog-agent",
             ],
         )
 
@@ -1109,8 +1106,8 @@ class TestCode:
             [
                 "cursor",
                 "--remote",
-                "ssh-remote+root@localhost:61938",
-                "/root/repos/datadog-agent",
+                "ssh-remote+dd@localhost:26090",
+                "/repos/datadog-agent",
             ],
         )
 
@@ -1141,7 +1138,7 @@ class TestRemoveCache:
                 1: CompletedProcess(
                     [], returncode=0, stdout=json.dumps([{"State": {"Status": "exited", "ExitCode": 0}}])
                 ),
-                2: CompletedProcess([], returncode=0, stdout="foo\ndda-env-dev-linux-container-go_build_cache\nbar"),
+                2: CompletedProcess([], returncode=0, stdout="foo\ndda-env-dev-linux-container-cache\nbar"),
                 # Capture volume removal
             },
         ) as calls:
@@ -1158,7 +1155,7 @@ class TestRemoveCache:
 
         assert calls == [
             (
-                ([helpers.locate("docker"), "volume", "rm", "dda-env-dev-linux-container-go_build_cache"],),
+                ([helpers.locate("docker"), "volume", "rm", "dda-env-dev-linux-container-cache"],),
                 {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": mocker.ANY},
             ),
         ]
@@ -1174,8 +1171,8 @@ class TestCacheSize:
                     returncode=0,
                     stdout="""\
 foo 1TB
-dda-env-dev-linux-container-go_build_cache 512MB
-dda-env-dev-linux-container-go_mod_cache 1GB
+dda-env-dev-linux-container-cache 512MB
+dda-env-dev-linux-container-data 1GB
 bar 1PB
 """,
                 ),
@@ -1187,13 +1184,13 @@ bar 1PB
             exit_code=0,
             stdout=helpers.dedent(
                 """
-                1.50 GiB
+                512.00 MiB
                 """
             ),
             output=helpers.dedent(
                 """
                 Calculating cache size
-                1.50 GiB
+                512.00 MiB
                 """
             ),
         )
@@ -1231,8 +1228,8 @@ bar 1PB
                     returncode=0,
                     stdout="""\
 foo 1TB
-dda-env-dev-linux-container-go_build_cache 1000B
-dda-env-dev-linux-container-go_mod_cache 23B
+dda-env-dev-linux-container-cache 1000B
+dda-env-dev-linux-container-data 23B
 bar 1PB
 """,
                 ),
@@ -1244,13 +1241,13 @@ bar 1PB
             exit_code=0,
             stdout=helpers.dedent(
                 """
-                1023 B
+                1000 B
                 """
             ),
             output=helpers.dedent(
                 """
                 Calculating cache size
-                1023 B
+                1000 B
                 """
             ),
         )

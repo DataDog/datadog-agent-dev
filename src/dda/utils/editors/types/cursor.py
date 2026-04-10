@@ -12,7 +12,7 @@ from dda.utils.fs import Path
 
 class CursorEditorInterface(EditorInterface):
     def open_via_ssh(self, *, server: str, port: int, path: str) -> None:
-        self.app.subprocess.run(["cursor", "--remote", f"ssh-remote+root@{server}:{port}", path])
+        self.app.subprocess.run(["cursor", "--remote", f"ssh-remote+dd@{server}:{port}", path])
 
     def add_mcp_server(self, *, name: str, url: str) -> None:
         config = self.__load_mcp_config()
@@ -28,7 +28,7 @@ class CursorEditorInterface(EditorInterface):
 
     @staticmethod
     def __get_mcp_server_config(config: dict[str, Any]) -> dict[str, Any]:
-        # https://docs.cursor.com/context/mcp#using-mcp-json
+        # https://cursor.com/docs/context/mcp#using-mcpjson
         return config.setdefault("mcpServers", {})
 
     def __load_mcp_config(self) -> dict[str, Any]:
@@ -47,5 +47,5 @@ class CursorEditorInterface(EditorInterface):
 
     @cached_property
     def __mcp_config_file(self) -> Path:
-        # https://docs.cursor.com/context/mcp#configuration-locations
+        # https://cursor.com/docs/context/mcp#configuration-locations
         return Path.home() / ".cursor" / "mcp.json"
