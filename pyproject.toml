@@ -42,7 +42,7 @@ dependencies = [
   "pyjson5~=1.6.9",
   "pywinpty~=3.0.3; sys_platform == 'win32'",
   "rich~=14.0",
-  "rich-click~=1.8.9",
+  "rich-click~=1.9.7",
   "tomlkit~=0.13",
   "truststore~=0.10.1",
   # https://peps.python.org/pep-0696/
