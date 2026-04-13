@@ -48,7 +48,10 @@ TESTCASE_RESULTS = [
 @pytest.fixture(scope="module", autouse=True)
 def install_deps_once(dda):
     dda("self", "dep", "sync", "-f", "codeowners")
-    with patch("dda.cli.base.ensure_features_installed", return_value=None):
+    with (
+        patch("dda.cli.base.ensure_features_installed", return_value=None),
+        patch("dda.tools.git.Git.get_repo_root", side_effect=lambda _path=None: Path.cwd()),
+    ):
         yield
 
 
@@ -165,4 +168,88 @@ def test_human_output(
             └──────────────────────┴─────────────────────────────────────────┘
             """
         ),
+    )
+
+
+# --- Subdirectory path resolution tests ---
+# These tests verify that paths given relative to CWD are resolved to repo-root-relative paths.
+
+FIXTURES_DIR = Path(__file__).parent / "fixtures"
+
+
+def _resolved_fixture(name: str) -> Path:
+    return Path((FIXTURES_DIR / name).resolve())
+
+
+@pytest.mark.parametrize(
+    ("subdir", "input_paths", "expected_result"),
+    [
+        pytest.param(
+            "subdir1",
+            ["testfile1.txt"],
+            {"subdir1/testfile1.txt": ["@owner1"]},
+            id="file",
+        ),
+        pytest.param(
+            "subdir1",
+            ["."],
+            {"subdir1/": ["@owner1"]},
+            id="current_directory",
+        ),
+        pytest.param(
+            "subdir1",
+            ["../subdir2/testfile2.txt"],
+            {"subdir2/testfile2.txt": ["@owner3"]},
+            id="parent_traversal",
+        ),
+        pytest.param(
+            "subdir1",
+            ["testfile1.txt", "../subdir2/testfile2.txt", "../subdir2"],
+            {
+                "subdir1/testfile1.txt": ["@owner1"],
+                "subdir2/testfile2.txt": ["@owner3"],
+                "subdir2/": ["@owner2"],
+            },
+            id="multiple_paths",
+        ),
+    ],
+)
+def test_subdirectory_path_resolution(
+    dda: CliRunner,
+    subdir: str,
+    input_paths: list[str],
+    expected_result: dict[str, list[str]],
+) -> None:
+    fixture_root = _resolved_fixture("test3")
+    with (fixture_root / subdir).as_cwd(), patch("dda.tools.git.Git.get_repo_root", return_value=fixture_root):
+        result = dda("info", "owners", "code", "--json", *input_paths)
+
+    result.check(
+        exit_code=0,
+        stdout_json=expected_result,
+    )
+
+
+def test_nonexistent_path_from_subdirectory(
+    dda: CliRunner,
+) -> None:
+    fixture_root = _resolved_fixture("test3")
+    with (fixture_root / "subdir1").as_cwd(), patch("dda.tools.git.Git.get_repo_root", return_value=fixture_root):
+        result = dda("info", "owners", "code", "--json", "nonexistent.go", catch_exceptions=True)
+
+    result.check_exit_code(1)
+
+
+def test_explicit_codeowners_from_subdirectory(
+    dda: CliRunner,
+) -> None:
+    fixture_root = _resolved_fixture("test3")
+    with (fixture_root / "subdir1").as_cwd(), patch("dda.tools.git.Git.get_repo_root", return_value=fixture_root):
+        # custom_CODEOWNERS is at fixtures/custom_CODEOWNERS, two levels up from subdir1
+        result = dda("info", "owners", "code", "--json", "--owners", "../../custom_CODEOWNERS", "testfile1.txt")
+
+    # custom_CODEOWNERS has "* @DataDog/team-everything", which matches subdir1/testfile1.txt
+    result.check(
+        exit_code=0,
+        stdout_json={"subdir1/testfile1.txt": ["@DataDog/team-everything"]},
     )

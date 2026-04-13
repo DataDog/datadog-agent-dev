@@ -7,6 +7,8 @@ import random
 import re
 from typing import TYPE_CHECKING
 
+import pytest
+
 from dda.utils.fs import Path
 from dda.utils.git.changeset import ChangedFile, ChangeSet, ChangeType
 from dda.utils.git.commit import GitPersonDetails
@@ -106,6 +108,52 @@ def test_get_patch(app: Application, temp_repo: Path) -> None:
                 assert pattern.match(line)
             else:
                 assert line == pattern
+
+
+@pytest.mark.parametrize(
+    "location",
+    [
+        "cwd",
+        "repo_root",
+        "subdirectory",
+        "file",
+    ],
+)
+def test_get_repo_root_from_locations(app: Application, temp_repo: Path, location: str) -> None:
+    """get_repo_root() returns repo root when called from cwd, repo root, subdir, or file path."""
+    expected_root = temp_repo.resolve()
+
+    if location == "cwd":
+        with temp_repo.as_cwd():
+            root = app.tools.git.get_repo_root()
+    elif location == "repo_root":
+        root = app.tools.git.get_repo_root(temp_repo)
+    elif location == "subdirectory":
+        subdir = temp_repo / "sub" / "nested"
+        subdir.mkdir(parents=True)
+        root = app.tools.git.get_repo_root(subdir)
+    else:  # file
+        with temp_repo.as_cwd():
+            app.tools.git.commit_file(Path("somefile.txt"), content="x", commit_message="Add file")
+        root = app.tools.git.get_repo_root(temp_repo / "somefile.txt")
+
+    assert root == expected_root
+    assert root.is_dir()
+
+
+def test_get_repo_root_path_does_not_exist(app: Application, temp_dir: Path) -> None:
+    """get_repo_root(path) raises ValueError when path does not exist."""
+    nonexistent = temp_dir / "does-not-exist"
+    with pytest.raises(ValueError, match=r"Path .* does not exist"):
+        app.tools.git.get_repo_root(nonexistent)
+
+
+def test_get_repo_root_not_in_repo(app: Application, temp_dir: Path) -> None:
+    """get_repo_root(path) raises ValueError when path is not in a Git repository."""
+    not_repo = temp_dir / "not-a-repo"
+    not_repo.mkdir()
+    with pytest.raises(ValueError, match=r"is not in a Git repository"):
+        app.tools.git.get_repo_root(not_repo)
 
 
 def test_get_changes(app: Application, repo_setup_working_tree: tuple[Path, ChangeSet]) -> None:
