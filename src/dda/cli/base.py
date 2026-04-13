@@ -488,7 +488,7 @@ def ensure_features_installed(
         command.extend(["--only-group", feature])
 
     with temp_directory() as temp_dir:
-        data_dir = Path(sysconfig.get_path("data")) / "dda-data"
+        data_dir = Path(sysconfig.get_path("data")) / "share" / "dda-data"
         for filename in ("uv.lock", "pyproject.toml"):
             data_file = data_dir / filename
             shutil.copy(data_file, temp_dir)
