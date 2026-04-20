@@ -34,9 +34,21 @@ class Go(Tool):
 
     @contextmanager
     def execution_context(self, command: list[str]) -> Generator[ExecutionContext, None, None]:
+        gotoolchain = f"go{self.version}" if self.version else ""
+        gopath = self.app.config.tools.go.gopath.strip()
+        gocache = self.app.config.tools.go.gocache.strip()
+        env_vars = {}
+
+        if gotoolchain:
+            env_vars["GOTOOLCHAIN"] = gotoolchain
+        if gopath:
+            env_vars["GOPATH"] = gopath
+        if gocache:
+            env_vars["GOCACHE"] = gocache
+
         yield ExecutionContext(
             command=[self.path, *command],
-            env_vars={"GOTOOLCHAIN": f"go{self.version}"} if self.version else {},
+            env_vars=env_vars,
         )
 
     @cached_property

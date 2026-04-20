@@ -7,6 +7,8 @@ import random
 import re
 from typing import TYPE_CHECKING
 
+import pytest
+
 from dda.utils.fs import Path
 from dda.utils.git.changeset import ChangedFile, ChangeSet, ChangeType
 from dda.utils.git.commit import GitPersonDetails
@@ -55,6 +57,21 @@ def test_author_details(app: Application, mocker, default_git_author: GitAuthorC
         assert app.tools.git.author_name == "Foo Bar 2"
         mocker.patch("dda.tools.git.Git.capture", return_value="foo@bar2.baz")
         assert app.tools.git.author_email == "foo@bar2.baz"
+
+
+def test_get_repo_root(app: Application, temp_repo: Path, temp_dir: Path) -> None:
+    with temp_repo.as_cwd():
+        # Case 1: Get the repo root from the current working directory
+        assert app.tools.git.get_repo_root() == temp_repo
+        # Case 2: Get the repo root from a subdirectory
+        temp_repo_subdir = temp_repo / "subdir"
+        temp_repo_subdir.mkdir()
+        with temp_repo_subdir.as_cwd():
+            assert app.tools.git.get_repo_root() == temp_repo
+
+    with temp_dir.as_cwd(), pytest.raises(RuntimeError):
+        # Case 3: Get the repo root from a directory that is not a Git repository
+        app.tools.git.get_repo_root()
 
 
 def test_get_remote(app: Application, temp_repo_with_remote: Path) -> None:
