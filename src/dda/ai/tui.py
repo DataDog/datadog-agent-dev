@@ -6,11 +6,9 @@ from __future__ import annotations
 from collections import deque
 from typing import TYPE_CHECKING
 
-from rich.columns import Columns
 from rich.console import Console, Group
 from rich.live import Live
 from rich.panel import Panel
-from rich.rule import Rule
 from rich.text import Text
 
 if TYPE_CHECKING:
@@ -35,9 +33,11 @@ _LOG_LINES = 25
 class AgentTUI:
     """Rich Live TUI for a single agent session."""
 
-    def __init__(self, session: AgentSession, *, console: Console | None = None):
+    def __init__(self, session: AgentSession):
         self._session = session
-        self._console = console or Console()
+        # Always use a dedicated console — never inherit app.console which has
+        # markup=False and other constraints that break Rich Live rendering.
+        self._console = Console()
         self._log_buf: deque[str] = deque(maxlen=_LOG_LINES)
         self._confirm_message: str = ""
         self._live = Live(
@@ -95,6 +95,34 @@ class AgentTUI:
             self._live.start()
         return answer
 
+    def show_changes_and_prompt(self, commits: str, diff: str, message: str) -> str:
+        """
+        Stop the live renderer, display git commits and diff, then ask for
+        confirmation.  Returns the user's answer (stripped).
+        """
+        from rich.panel import Panel
+        from rich.syntax import Syntax
+
+        self._live.stop()
+        try:
+            if commits.strip():
+                self._console.print(
+                    Panel(commits.strip(), title="[bold magenta]COMMITS[/bold magenta]", border_style="magenta")
+                )
+            if diff.strip():
+                self._console.print(
+                    Panel(
+                        Syntax(diff, "diff", theme="monokai", word_wrap=True),
+                        title="[bold magenta]CHANGES[/bold magenta]",
+                        border_style="magenta",
+                    )
+                )
+            self._console.print()
+            answer = self._console.input(f"[yellow]⚡ {message}[/yellow] [dim][y/N][/dim] ").strip()
+        finally:
+            self._live.start()
+        return answer
+
     # ------------------------------------------------------------------
     # Rendering
     # ------------------------------------------------------------------
@@ -107,31 +135,23 @@ class AgentTUI:
         phase_style = _PHASE_STYLE.get(str(s.phase), "")
         phase_str = str(s.phase).replace("_", " ")
 
-        # Header
-        header_parts = [
-            Text(f"dda ai", style="bold"),
-            Text(f"  agent: {s.id}", style="dim"),
-            Text(f"  workspace: {s.workspace}", style="cyan"),
-        ]
-        if s.branch:
-            header_parts.append(Text(f"  branch: {s.branch}", style="magenta"))
-        if s.pr_url:
-            header_parts.append(Text(f"  PR: {s.pr_url}", style="blue underline"))
-
-        header = Columns(header_parts, padding=(0, 0))
-
+        # Header — one panel: meta + phase + task summary
         phase_text = Text()
         if str(s.phase) in _PHASE_SPINNER:
             phase_text.append("⠸ ", style="cyan")
         phase_text.append(phase_str, style=phase_style)
 
-        # Task panel
-        task_panel = Panel(
-            Text(s.prompt[:200], overflow="fold"),
-            title="[bold]TASK[/bold]",
-            border_style="dim",
-            padding=(0, 1),
-        )
+        meta = Text()
+        meta.append("dda ai", style="bold")
+        meta.append(f"  agent: {s.id}", style="dim")
+        meta.append(f"  workspace: {s.workspace}", style="cyan")
+        if s.branch:
+            meta.append(f"  branch: {s.branch}", style="magenta")
+        if s.pr_url:
+            meta.append(f"  PR: {s.pr_url}", style="blue underline")
+        meta.append("  phase: ")
+        meta.append_text(phase_text)
+        meta.append(f"\n  task: {s.prompt[:120]}", style="dim")
 
         # Log panel
         log_lines = Text(overflow="fold")
@@ -145,12 +165,7 @@ class AgentTUI:
         )
 
         parts: list = [
-            Panel(
-                Group(header, Text("  phase: ") + phase_text),
-                border_style="bold blue",
-                padding=(0, 1),
-            ),
-            task_panel,
+            Panel(meta, border_style="bold blue", padding=(0, 1)),
             log_panel,
         ]
 

@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
-import time
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -15,76 +14,105 @@ if TYPE_CHECKING:
     from dda.cli.application import Application
 
 
-@dynamic_command(short_help="Show live status of an agent session")
+@dynamic_command(short_help="Show status of an agent session")
 @click.argument("agent_id", required=False, default=None)
+@click.option("--logs", "-l", is_flag=True, default=False, help="Print the raw log file instead of parsed output")
 @pass_app
-def cmd(app: Application, *, agent_id: str | None) -> None:
+def cmd(app: Application, *, agent_id: str | None, logs: bool) -> None:
     """
-    Show the live TUI for an agent session.
+    Print a snapshot of an agent session.
 
     If AGENT_ID is omitted and exactly one active session exists, it is used
     automatically. Use `dda ai list` to see all session IDs.
+
+    \b
+    Examples:
+      dda ai status
+      dda ai status abc12345
+      dda ai status --logs
+      dda ai status abc12345 --logs
     """
-    from dda.ai.agent import find_active_session, load_all_sessions, load_session
-    from dda.ai.tui import AgentTUI
+    from rich.panel import Panel
+    from rich.text import Text
+
+    from dda.ai.agent import find_active_session, load_all_sessions, load_session, reconcile_session_phase
+    from dda.ai.runner import _iter_log_events, _parse_event
+    from dda.ai.tui import _PHASE_SPINNER, _PHASE_STYLE
+    from dda.ai.workspace import run_remote
 
     if agent_id:
         session = load_session(app, agent_id)
     else:
         session = find_active_session(app)
         if session is None:
-            # Fall back to most recent session
             all_sessions = load_all_sessions(app)
             if not all_sessions:
                 app.abort("No agent sessions found. Run `dda ai run` to start one.")
             session = all_sessions[0]
 
-    log_path = Path(session.log_path)
+    # --- Reconcile phase from remote log, then fetch content for display ---
+    reconcile_session_phase(app, session)
 
-    with AgentTUI(session, console=app.console) as tui:
-        # Replay existing log
-        if log_path.is_file():
-            for line in log_path.read_text().splitlines():
-                tui.append_log(line)
+    # Concatenate all remote logs in order so the full history is shown,
+    # including output from previous runs before any --resume.
+    # Fall back to the local log if no remote paths are available.
+    if session.remote_log_paths:
+        cat_cmd = " ".join(session.remote_log_paths)
+        result = run_remote(session.workspace, f"cat {cat_cmd} 2>/dev/null")
+        raw_content = result.stdout
+    else:
+        parts = []
+        for lp in session.log_paths:
+            p = Path(lp)
+            if p.is_file():
+                parts.append(p.read_text())
+        raw_content = "\n".join(parts)
 
-        # Tail new lines if still active
-        from dda.ai.agent import ACTIVE_PHASES
+    # --- Raw log mode ---
+    if logs:
+        if raw_content:
+            app.console.out(raw_content)
+        else:
+            app.display("No log content available.")
+        return
 
-        if session.phase not in ACTIVE_PHASES:
-            # Session finished — just display static view, then exit
-            time.sleep(2)
-            return
+    # --- Header (printed after phase reconciliation so it shows the right phase) ---
+    console = app.console
 
-        # Watch for new log lines and session state changes
-        seen_size = log_path.stat().st_size if log_path.is_file() else 0
-        try:
-            while True:
-                # Reload session state
-                from dda.ai.agent import load_session as _reload
+    phase_style = _PHASE_STYLE.get(str(session.phase), "")
+    phase_str = str(session.phase).replace("_", " ")
+    phase_text = Text()
+    if str(session.phase) in _PHASE_SPINNER:
+        phase_text.append("⠸ ", style="cyan")
+    phase_text.append(phase_str, style=phase_style)
 
-                session = _reload(app, session.id)
-                tui.update_session(session)
+    meta = Text()
+    meta.append("dda ai", style="bold")
+    meta.append(f"  agent: {session.id}", style="dim")
+    meta.append(f"  workspace: {session.workspace}", style="cyan")
+    if session.branch:
+        meta.append(f"  branch: {session.branch}", style="magenta")
+    if session.pr_url:
+        meta.append(f"  PR: {session.pr_url}", style="blue underline")
+    meta.append("  phase: ")
+    meta.append_text(phase_text)
+    meta.append(f"\n  task: {session.prompt[:120]}", style="dim")
 
-                if session.phase not in ACTIVE_PHASES:
-                    time.sleep(1)
-                    return
+    console.print(Panel(meta, border_style="bold blue", padding=(0, 1)))
 
-                # Read new log content
-                if log_path.is_file():
-                    current_size = log_path.stat().st_size
-                    if current_size > seen_size:
-                        with log_path.open() as f:
-                            f.seek(seen_size)
-                            new_content = f.read()
-                        for line in new_content.splitlines():
-                            tui.append_log(line)
-                        seen_size = current_size
+    # --- Claude output (full history) ---
+    if raw_content:
+        flat: list[str] = []
+        for event in _iter_log_events(raw_content):
+            try:
+                text = _parse_event(event)
+            except Exception:  # noqa: BLE001
+                continue
+            if text:
+                flat.extend(text.splitlines())
 
-                # Surface awaiting confirmation
-                if session.phase.startswith("awaiting"):
-                    msg = "Agent is awaiting confirmation. Run `dda ai run` to interact."
-                    tui.set_confirm_prompt(msg)
-
-                time.sleep(1)
-        except KeyboardInterrupt:
-            pass
+        if flat:
+            log_text = Text(overflow="fold")
+            for line in flat:
+                log_text.append(line + "\n", style="dim")
+            console.print(Panel(log_text, title="[bold]CLAUDE OUTPUT[/bold]", border_style="dim", padding=(0, 1)))

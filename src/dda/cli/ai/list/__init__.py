@@ -18,42 +18,35 @@ def cmd(app: Application) -> None:
     List all agent sessions with their current status.
     """
     from rich.table import Table
+    from rich.text import Text
 
-    from dda.ai.agent import load_all_sessions
+    from dda.ai.agent import ACTIVE_PHASES, load_all_sessions, reconcile_session_phase
+    from dda.ai.tui import _PHASE_STYLE
 
     sessions = load_all_sessions(app)
     if not sessions:
         app.display("No agent sessions found.")
         return
 
+    # Reconcile phase for any active sessions so the table reflects reality.
+    for s in sessions:
+        if s.phase in ACTIVE_PHASES:
+            reconcile_session_phase(app, s)
+
     table = Table(show_header=True, header_style="bold")
     table.add_column("ID", style="cyan", no_wrap=True)
-    table.add_column("Workspace")
-    table.add_column("Phase")
-    table.add_column("Branch", style="magenta")
-    table.add_column("PR", style="blue")
-    table.add_column("Created")
+    table.add_column("Phase", no_wrap=True)
+    table.add_column("Task")
+    table.add_column("Created", no_wrap=True)
 
-    _PHASE_STYLE = {
-        "running": "cyan",
-        "awaiting_pr_confirm": "yellow",
-        "monitoring_ci": "blue",
-        "awaiting_ci_fix_confirm": "yellow",
-        "done": "green",
-        "failed": "red",
-        "cancelled": "dim",
-        "created": "dim",
-    }
-
-    for s in sessions:
+    for s in sessions[:10]:
         style = _PHASE_STYLE.get(str(s.phase), "")
+        phase_text = Text(str(s.phase).replace("_", " "), style=style)
         created = s.created_at[:19].replace("T", " ")
         table.add_row(
             s.id,
-            s.workspace,
-            f"[{style}]{s.phase}[/{style}]" if style else str(s.phase),
-            s.branch or "-",
-            s.pr_url or "-",
+            phase_text,
+            s.prompt[:60],
             created,
         )
 
