@@ -76,9 +76,9 @@ class LinuxContainerConfig(DeveloperEnvironmentConfig):
 Additional host directories to be mounted into the dev env. This option may be supplied multiple
 times, and has the same syntax as the `-v/--volume` flag of `docker run`. Examples:
 
-- `./some-repo:/root/repos/some-repo`
+- `./some-repo:/repos/some-repo`
 - `/tmp/some-location:/location:ro`
-- `~/projects:/root/projects:ro`
+- `~/projects:/projects:ro`
 """
                 ),
             }
@@ -181,7 +181,10 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
 
             for shared_shell_file in self.shell.collect_shared_files():
                 unix_path = shared_shell_file.relative_to(self.global_shared_dir).as_posix()
-                command.extend(("-v", f"{shared_shell_file}:{self.home_dir}/.shared/{unix_path}"))
+                command.extend(("-v", f"{shared_shell_file}:/.shared/{unix_path}"))
+
+            for mount in self.data_volumes:
+                command.extend(("--mount", mount.as_csv()))
 
             for mount in self.cache_volumes:
                 command.extend(("--mount", mount.as_csv()))
@@ -358,19 +361,19 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
 
     @cached_property
     def ssh_port(self) -> int:
-        from dda.utils.network.protocols import derive_dynamic_port
+        from dda.utils.network.protocols import derive_service_port
 
-        return derive_dynamic_port(f"{self.container_name}-ssh")
+        return derive_service_port(f"{self.container_name}-ssh")
 
     @cached_property
     def mcp_port(self) -> int:
-        from dda.utils.network.protocols import derive_dynamic_port
+        from dda.utils.network.protocols import derive_service_port
 
-        return derive_dynamic_port(f"{self.container_name}-mcp")
+        return derive_service_port(f"{self.container_name}-mcp")
 
     @cached_property
     def home_dir(self) -> str:
-        return "/root"
+        return "/home/dd"
 
     @cached_property
     def container_name(self) -> str:
@@ -383,31 +386,21 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         return get_shell(self.config.shell)(self.global_shared_dir)
 
     @cached_property
+    def data_volumes(self) -> list[Mount]:
+        from dda.utils.container.model import Mount
+
+        return [
+            # Root data directory
+            Mount(type="volume", path="/var/lib/dd", source=self.get_volume_name("data")),
+        ]
+
+    @cached_property
     def cache_volumes(self) -> list[Mount]:
         from dda.utils.container.model import Mount
 
         return [
-            # `go env GOCACHE`
-            Mount(type="volume", path="/root/.cache/go-build", source=self.get_volume_name("go_build_cache")),
-            # `go env GOMODCACHE`
-            Mount(type="volume", path="/go/pkg/mod", source=self.get_volume_name("go_mod_cache")),
-            # `pip cache dir`
-            Mount(type="volume", path="/root/.cache/pip", source=self.get_volume_name("pip_cache")),
-            # `uv cache dir`
-            Mount(type="volume", path="/root/.cache/uv", source=self.get_volume_name("uv_cache")),
-            # Rust
-            Mount(type="volume", path="/root/.cargo/registry", source=self.get_volume_name("cargo_registry")),
-            Mount(type="volume", path="/root/.cargo/git", source=self.get_volume_name("cargo_git")),
-            # Omnibus
-            Mount(type="volume", path="/omnibus/vendor/bundle", source=self.get_volume_name("omnibus_gems")),
-            Mount(type="volume", path="/omnibus/cache", source=self.get_volume_name("omnibus_cache")),
-            Mount(
-                type="volume",
-                path="/tmp/omnibus-git-cache",  # noqa: S108
-                source=self.get_volume_name("omnibus_git_cache"),
-            ),
-            # VS Code/Cursor
-            Mount(type="volume", path="/root/.vscode-extensions", source=self.get_volume_name("vscode_extensions")),
+            # Root cache directory
+            Mount(type="volume", path="/var/cache/dd", source=self.get_volume_name("cache")),
         ]
 
     def cache_volume_names(self) -> list[str]:
@@ -437,7 +430,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
     def ssh_base_command(self) -> list[str]:
         from dda.utils.ssh import ssh_base_command
 
-        return ssh_base_command("root@localhost", self.ssh_port)
+        return ssh_base_command("dd@localhost", self.ssh_port)
 
     def ensure_ssh_config(self) -> None:
         from dda.env.ssh import ensure_ssh_config
@@ -448,7 +441,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         if repo is None:
             repo = self.default_repo
 
-        return f"{self.home_dir}/repos/{repo}"
+        return f"/repos/{repo}"
 
     def _container_cp(self, source: str, destination: str, *args: Any) -> None:
         """Runs a `cp -r` command inside the context of the container"""
