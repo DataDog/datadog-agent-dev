@@ -358,15 +358,15 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
 
     @cached_property
     def ssh_port(self) -> int:
-        from dda.utils.network.protocols import derive_dynamic_port
+        from dda.utils.network.protocols import derive_service_port
 
-        return derive_dynamic_port(f"{self.container_name}-ssh")
+        return derive_service_port(f"{self.container_name}-ssh")
 
     @cached_property
     def mcp_port(self) -> int:
-        from dda.utils.network.protocols import derive_dynamic_port
+        from dda.utils.network.protocols import derive_service_port
 
-        return derive_dynamic_port(f"{self.container_name}-mcp")
+        return derive_service_port(f"{self.container_name}-mcp")
 
     @cached_property
     def home_dir(self) -> str:
