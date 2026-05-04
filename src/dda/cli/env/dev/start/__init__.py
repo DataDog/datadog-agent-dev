@@ -36,11 +36,15 @@ def cmd(ctx: click.Context, *, env_type: str, instance: str) -> None:
     """
     Start a developer environment.
     """
+    import re
     import msgspec
 
     from dda.env.models import EnvironmentState
 
     app: Application = ctx.obj
+
+    if not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9_-]*", instance):
+        app.abort(f"Invalid --id '{instance}': must match [a-zA-Z0-9][a-zA-Z0-9_-]*")
 
     dynamic_context = ctx.get_dynamic_sibling()  # type: ignore[attr-defined]
     dynamic_options = {

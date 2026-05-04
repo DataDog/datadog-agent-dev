@@ -68,6 +68,17 @@ def get_cache_volumes() -> list[str]:
     ]
 
 
+def save_default_env_config(temp_dir: Path, **fields) -> None:
+    """Persist a `LinuxContainerConfig` to the env's storage path so commands like `shell`,
+    `run`, and `code` (which don't go through `start`) can resolve `default_repo`.
+    """
+    from dda.env.dev.types.linux_container import LinuxContainerConfig
+
+    config_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default"
+    config_dir.ensure_dir()
+    (config_dir / "config.json").write_bytes(msgspec.json.encode(LinuxContainerConfig(**fields)))
+
+
 def assert_ssh_config_written(method, hostname):
     method.assert_called_once_with(
         hostname,
@@ -88,7 +99,8 @@ def test_default_config(app):
         "cli": "docker",
         "image": "datadog/agent-dev-env-linux",
         "no_pull": False,
-        "repos": ["datadog-agent"],
+        "repos": [],
+        "base-ref": "origin/HEAD",
         "shell": "zsh",
         "extra_volume_specs": [],
         "extra_mount_specs": [],
@@ -138,6 +150,26 @@ class TestStatus:
 
 
 class TestStart:
+    @pytest.mark.parametrize(
+        "invalid_id",
+        [
+            pytest.param("has spaces", id="spaces"),
+            pytest.param("-starts-with-dash", id="leading-dash"),
+            pytest.param("", id="empty"),
+            pytest.param("has/slash", id="slash"),
+        ],
+    )
+    def test_invalid_id(self, dda, helpers, invalid_id):
+        result = dda("env", "dev", "start", "--id", invalid_id)
+        result.check(
+            exit_code=1,
+            output=helpers.dedent(
+                f"""
+                Invalid --id '{invalid_id}': must match [a-zA-Z0-9][a-zA-Z0-9_-]*
+                """
+            ),
+        )
+
     def test_already_started(self, dda, helpers):
         with helpers.hybrid_patch(
             "subprocess.run",
@@ -158,28 +190,20 @@ class TestStart:
         )
 
     def test_default(self, dda, helpers, mocker, temp_dir, host_user_args):
-        repos_dir = temp_dir / "repos"
-        repos_dir.ensure_dir()
-        repo_dir = repos_dir / "datadog-agent"
-        repo_dir.ensure_dir()
-
         write_server_config = mocker.patch("dda.utils.ssh.write_server_config")
-        with (
-            repo_dir.as_cwd(),
-            helpers.hybrid_patch(
-                "subprocess.run",
-                return_values={
-                    # Start command checks the status
-                    1: CompletedProcess([], returncode=0, stdout="{}"),
-                    # Start method checks the status
-                    2: CompletedProcess([], returncode=0, stdout="{}"),
-                    # Capture image pull
-                    # Capture container run
-                    # Readiness check
-                    5: CompletedProcess([], returncode=0, stdout="Server listening on :: port 22"),
-                },
-            ) as calls,
-        ):
+        with helpers.hybrid_patch(
+            "subprocess.run",
+            return_values={
+                # Start command checks the status
+                1: CompletedProcess([], returncode=0, stdout="{}"),
+                # Start method checks the status
+                2: CompletedProcess([], returncode=0, stdout="{}"),
+                # Capture image pull
+                # Capture container run
+                # Readiness check
+                5: CompletedProcess([], returncode=0, stdout="Server listening on :: port 22"),
+            },
+        ) as calls:
             result = dda("env", "dev", "start")
 
         result.check(
@@ -237,8 +261,6 @@ class TestStart:
                         "-v",
                         f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
                         *cache_volumes,
-                        "-v",
-                        f"{repo_dir}:/root/repos/datadog-agent",
                         "datadog/agent-dev-env-linux",
                     ],
                 ),
@@ -247,27 +269,19 @@ class TestStart:
         ]
 
     def test_no_pull(self, dda, helpers, mocker, temp_dir, host_user_args):
-        repos_dir = temp_dir / "repos"
-        repos_dir.ensure_dir()
-        repo_dir = repos_dir / "datadog-agent"
-        repo_dir.ensure_dir()
-
         write_server_config = mocker.patch("dda.utils.ssh.write_server_config")
-        with (
-            repo_dir.as_cwd(),
-            helpers.hybrid_patch(
-                "subprocess.run",
-                return_values={
-                    # Start command checks the status
-                    1: CompletedProcess([], returncode=0, stdout="{}"),
-                    # Start method checks the status
-                    2: CompletedProcess([], returncode=0, stdout="{}"),
-                    # Capture container run
-                    # Readiness check
-                    4: CompletedProcess([], returncode=0, stdout="Server listening on :: port 22"),
-                },
-            ) as calls,
-        ):
+        with helpers.hybrid_patch(
+            "subprocess.run",
+            return_values={
+                # Start command checks the status
+                1: CompletedProcess([], returncode=0, stdout="{}"),
+                # Start method checks the status
+                2: CompletedProcess([], returncode=0, stdout="{}"),
+                # Capture container run
+                # Readiness check
+                4: CompletedProcess([], returncode=0, stdout="Server listening on :: port 22"),
+            },
+        ) as calls:
             result = dda("env", "dev", "start", "--no-pull")
 
         result.check(
@@ -320,8 +334,6 @@ class TestStart:
                         "-v",
                         f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
                         *cache_volumes,
-                        "-v",
-                        f"{repo_dir}:/root/repos/datadog-agent",
                         "datadog/agent-dev-env-linux",
                     ],
                 ),
@@ -701,7 +713,8 @@ class TestRemove:
 
 
 class TestShell:
-    def test_default(self, dda, helpers, mocker):
+    def test_default(self, dda, helpers, mocker, temp_dir):
+        save_default_env_config(temp_dir, repos=["datadog-agent"])
         with helpers.hybrid_patch(
             "subprocess.run",
             return_values={
@@ -751,7 +764,8 @@ class TestRun:
             ),
         )
 
-    def test_default(self, dda, helpers, mocker):
+    def test_default(self, dda, helpers, mocker, temp_dir):
+        save_default_env_config(temp_dir, repos=["datadog-agent"])
         write_server_config = mocker.patch("dda.utils.ssh.write_server_config")
         run = mocker.patch("dda.utils.process.SubprocessRunner.run")
 
@@ -796,7 +810,8 @@ class TestCode:
             ),
         )
 
-    def test_default(self, dda, helpers, mocker):
+    def test_default(self, dda, helpers, mocker, temp_dir):
+        save_default_env_config(temp_dir, repos=["datadog-agent"])
         write_server_config = mocker.patch("dda.utils.ssh.write_server_config")
         run = mocker.patch("dda.utils.process.SubprocessRunner.run")
 
@@ -829,7 +844,8 @@ class TestCode:
             ],
         )
 
-    def test_editor_flag(self, dda, helpers, mocker):
+    def test_editor_flag(self, dda, helpers, mocker, temp_dir):
+        save_default_env_config(temp_dir, repos=["datadog-agent"])
         write_server_config = mocker.patch("dda.utils.ssh.write_server_config")
         run = mocker.patch("dda.utils.process.SubprocessRunner.run")
 
@@ -862,7 +878,8 @@ class TestCode:
             ],
         )
 
-    def test_editor_config(self, dda, config_file, helpers, mocker):
+    def test_editor_config(self, dda, config_file, helpers, mocker, temp_dir):
+        save_default_env_config(temp_dir, repos=["datadog-agent"])
         config_file.data["env"]["dev"]["editor"] = "cursor"
         config_file.save()
 

@@ -24,6 +24,7 @@ class DevEnvConfig(Struct, frozen=True):
     default_type: str = field(name="default-type", default=DEFAULT_DEV_ENV)
     universal_shell: bool = field(name="universal-shell", default=False)
     editor: str = DEFAULT_EDITOR
+    worktree_helper_image: str = field(name="worktree-helper-image", default="alpine/git")
 
     def __post_init__(self) -> None:
         if self.editor not in AVAILABLE_EDITORS:

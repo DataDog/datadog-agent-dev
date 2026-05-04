@@ -59,7 +59,8 @@ class TestConfig:
         container = Container(app=app, name="test", instance="default")
 
         assert msgspec.to_builtins(container.config) == {
-            "repos": ["datadog-agent"],
+            "repos": [],
+            "base-ref": "origin/HEAD",
         }
 
     def test_save(self, app):
@@ -80,4 +81,4 @@ class TestConfig:
 
         container = Container(app=app, name="test", instance="default")
         container.remove_config()
-        assert container.config.repos == ["datadog-agent"]
+        assert container.config.repos == []

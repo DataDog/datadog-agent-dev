@@ -21,17 +21,34 @@ class DeveloperEnvironmentConfig(msgspec.Struct, kw_only=True):
                 "params": ["-r", "--repo"],
                 "help": (
                     """\
-The Datadog repositories to work on, optionally with a particular branch or tag. This option may be
-supplied multiple times. Examples:
+Repositories to work on inside the dev env. Each entry has the form `repo[@ref]`, where `ref` is an
+optional branch, tag, or commit. This option may be supplied multiple times. Examples:
 
-- `datadog-agent` (default)
+- `datadog-agent`
 - `datadog-agent@user/test`
 - `integrations-core@X.Y.Z`
+
+When no repository is specified, the dev env auto-detects one from the current working directory.
 """
                 ),
             }
         ),
-    ] = msgspec.field(default_factory=lambda: ["datadog-agent"])
+    ] = msgspec.field(default_factory=list)
+    base_ref: Annotated[
+        str,
+        msgspec.Meta(
+            extra={
+                "params": ["--base-ref"],
+                "help": (
+                    """\
+The ref to base new branches on when creating worktrees (default: `origin/HEAD`, which resolves to
+the remote default branch). Only used when a new branch is being created in worktree-volume mode;
+ignored in bind-mount mode.
+"""
+                ),
+            }
+        ),
+    ] = msgspec.field(name="base-ref", default="origin/HEAD")
 
 
 if TYPE_CHECKING:
