@@ -186,16 +186,8 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             for mount in self.cache_volumes:
                 command.extend(("--mount", mount.as_csv()))
 
-            from dda.utils.fs import Path
-
-            repos_path = Path.cwd().parent
-            for repo_spec in self.config.repos:
-                repo = repo_spec.split("@")[0]
-                repo_path = repos_path / repo
-                if not repo_path.is_dir():
-                    self.app.abort(f"Local repository not found: {repo}")
-
-                command.extend(("-v", f"{repo_path}:{self.repo_path(repo)}"))
+            for host_path, container_path in self._local_repo_mount_specs():
+                command.extend(("-v", f"{host_path}:{container_path}"))
 
             for mount_spec in self.config.extra_mount_specs:
                 command.extend(("--mount", mount_spec))
@@ -436,6 +428,26 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             repo = self.default_repo
 
         return f"{self.home_dir}/repos/{repo}"
+
+    def _local_repo_mount_specs(self) -> list[tuple[Path, str]]:
+        """Resolve `(host_path, container_path)` pairs for each configured repo, sourcing
+        host paths from sibling directories of the current working directory (i.e.
+        `../{repo}` for each entry in `config.repos`).
+
+        Used in bind-mount mode to expose the user's local checkouts inside the dev
+        container. Aborts if any expected sibling directory is missing.
+        """
+        from dda.utils.fs import Path
+
+        repos_path = Path.cwd().parent
+        specs: list[tuple[Path, str]] = []
+        for repo_spec in self.config.repos:
+            repo = repo_spec.split("@")[0]
+            repo_path = repos_path / repo
+            if not repo_path.is_dir():
+                self.app.abort(f"Local repository not found: {repo}")
+            specs.append((repo_path, self.repo_path(repo)))
+        return specs
 
     def _container_cp(self, source: str, destination: str, *args: Any) -> None:
         """Runs a `cp -r` command inside the context of the container"""

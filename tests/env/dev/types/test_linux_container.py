@@ -435,11 +435,7 @@ class TestStart:
     )
     def test_extra_volume_specs(self, dda, helpers, mocker, temp_dir, host_user_args, volume_specs):
         mocker.patch("dda.utils.ssh.write_server_config")
-
-        repos_dir = temp_dir / "repos"
-        repos_dir.ensure_dir()
-        repo_dir = repos_dir / "datadog-agent"
-        repo_dir.ensure_dir()
+        mocker.patch.object(LinuxContainer, "_local_repo_mount_specs", return_value=[])
 
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
         global_shared_dir = shared_dir.parent.parent / ".shared"
@@ -447,7 +443,7 @@ class TestStart:
         cache_volumes = get_cache_volumes()
 
         with (
-            repo_dir.as_cwd(),
+            temp_dir.as_cwd(),
             helpers.hybrid_patch(
                 "subprocess.run",
                 return_values={
@@ -506,8 +502,6 @@ class TestStart:
                         "-v",
                         f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
                         *cache_volumes,
-                        "-v",
-                        f"{repo_dir}:/root/repos/datadog-agent",
                         *[(x if x != "-v" else "--volume") for x in volume_specs],
                         "datadog/agent-dev-env-linux",
                     ],
@@ -543,11 +537,7 @@ class TestStart:
     )
     def test_extra_mounts(self, dda, helpers, mocker, temp_dir, host_user_args, mount_specs):
         mocker.patch("dda.utils.ssh.write_server_config")
-
-        repos_dir = temp_dir / "repos"
-        repos_dir.ensure_dir()
-        repo_dir = repos_dir / "datadog-agent"
-        repo_dir.ensure_dir()
+        mocker.patch.object(LinuxContainer, "_local_repo_mount_specs", return_value=[])
 
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
         global_shared_dir = shared_dir.parent.parent / ".shared"
@@ -555,7 +545,7 @@ class TestStart:
         cache_volumes = get_cache_volumes()
 
         with (
-            repo_dir.as_cwd(),
+            temp_dir.as_cwd(),
             helpers.hybrid_patch(
                 "subprocess.run",
                 return_values={
@@ -615,8 +605,6 @@ class TestStart:
                         "-v",
                         f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
                         *cache_volumes,
-                        "-v",
-                        f"{repo_dir}:/root/repos/datadog-agent",
                         *[(x if x != "-m" else "--mount") for x in mount_specs],
                         "datadog/agent-dev-env-linux",
                     ],
