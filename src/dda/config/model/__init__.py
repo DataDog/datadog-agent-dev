@@ -10,6 +10,7 @@ from msgspec import Struct, convert, field, to_builtins
 from dda.config.model.env import EnvConfig
 from dda.config.model.github import GitHubConfig
 from dda.config.model.orgs import OrgConfig
+from dda.config.model.repos import RepoConfig, default_repos
 from dda.config.model.storage import StorageDirs
 from dda.config.model.telemetry import TelemetryConfig
 from dda.config.model.terminal import TerminalConfig
@@ -30,6 +31,7 @@ class RootConfig(Struct, frozen=True, omit_defaults=True):
     """
 
     orgs: dict[str, OrgConfig] = field(default_factory=_default_orgs)
+    repos: dict[str, RepoConfig] = field(default_factory=default_repos)
     env: EnvConfig = field(default_factory=EnvConfig)
     envs: dict[str, dict[str, Any]] = {}
     tools: ToolsConfig = field(default_factory=ToolsConfig)

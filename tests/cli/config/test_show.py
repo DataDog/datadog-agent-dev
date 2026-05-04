@@ -21,10 +21,17 @@ def test_default_scrubbed(dda, config_file, helpers, default_cache_dir, default_
             f"""
             [orgs.default]
 
+            [repos.DataDog]
+            url = "git@github.com:DataDog"
+
+            [repos.ddoghq]
+            url = "git@github.com:ddoghq"
+
             [env.dev]
             default-type = "{DEFAULT_DEV_ENV}"
             universal-shell = false
             editor = "vscode"
+            worktree-helper-image = "alpine/git"
 
             [tools.bazel]
             managed = "auto"
@@ -85,10 +92,17 @@ def test_reveal(dda, config_file, helpers, default_cache_dir, default_data_dir, 
             f"""
             [orgs.default]
 
+            [repos.DataDog]
+            url = "git@github.com:DataDog"
+
+            [repos.ddoghq]
+            url = "git@github.com:ddoghq"
+
             [env.dev]
             default-type = "{DEFAULT_DEV_ENV}"
             universal-shell = false
             editor = "vscode"
+            worktree-helper-image = "alpine/git"
 
             [tools.bazel]
             managed = "auto"
