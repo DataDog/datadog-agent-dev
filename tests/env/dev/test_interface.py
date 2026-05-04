@@ -59,7 +59,6 @@ class TestConfig:
         container = Container(app=app, name="test", instance="default")
 
         assert msgspec.to_builtins(container.config) == {
-            "clone": False,
             "repos": ["datadog-agent"],
         }
 

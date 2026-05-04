@@ -32,14 +32,6 @@ supplied multiple times. Examples:
             }
         ),
     ] = msgspec.field(default_factory=lambda: ["datadog-agent"])
-    clone: Annotated[
-        bool,
-        msgspec.Meta(
-            extra={
-                "help": "Clone the repositories remotely rather than using local checkouts",
-            }
-        ),
-    ] = False
 
 
 if TYPE_CHECKING:

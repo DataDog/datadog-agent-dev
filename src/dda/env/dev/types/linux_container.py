@@ -186,17 +186,16 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             for mount in self.cache_volumes:
                 command.extend(("--mount", mount.as_csv()))
 
-            if not self.config.clone:
-                from dda.utils.fs import Path
+            from dda.utils.fs import Path
 
-                repos_path = Path.cwd().parent
-                for repo_spec in self.config.repos:
-                    repo = repo_spec.split("@")[0]
-                    repo_path = repos_path / repo
-                    if not repo_path.is_dir():
-                        self.app.abort(f"Local repository not found: {repo}")
+            repos_path = Path.cwd().parent
+            for repo_spec in self.config.repos:
+                repo = repo_spec.split("@")[0]
+                repo_path = repos_path / repo
+                if not repo_path.is_dir():
+                    self.app.abort(f"Local repository not found: {repo}")
 
-                    command.extend(("-v", f"{repo_path}:{self.repo_path(repo)}"))
+                command.extend(("-v", f"{repo_path}:{self.repo_path(repo)}"))
 
             for mount_spec in self.config.extra_mount_specs:
                 command.extend(("--mount", mount_spec))
@@ -226,18 +225,6 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 wait_for(self.check_readiness, timeout=30, interval=0.3)
 
             self.ensure_ssh_config()
-
-            if self.config.clone:
-                for repo_spec in self.config.repos:
-                    repo, _, ref = repo_spec.partition("@")
-                    if ref:
-                        clone_command = ["git", "dd-clone", repo, ref]
-                        wait_message = f"Cloning repository: {repo}@{ref}"
-                    else:
-                        clone_command = ["git", "dd-clone", repo]
-                        wait_message = f"Cloning repository: {repo}"
-
-                    self.app.subprocess.wait(self.construct_command(clone_command), message=wait_message)
 
     def stop(self) -> None:
         self.docker.wait(

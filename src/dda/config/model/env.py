@@ -15,7 +15,6 @@ class DevEnvConfig(Struct, frozen=True):
     ```toml
     [env.dev]
     default-type = "linux-container"
-    clone-repos = false
     universal-shell = false
     editor = "vscode"
     ```
@@ -23,7 +22,6 @@ class DevEnvConfig(Struct, frozen=True):
     """
 
     default_type: str = field(name="default-type", default=DEFAULT_DEV_ENV)
-    clone_repos: bool = field(name="clone-repos", default=False)
     universal_shell: bool = field(name="universal-shell", default=False)
     editor: str = DEFAULT_EDITOR
 

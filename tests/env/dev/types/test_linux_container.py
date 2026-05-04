@@ -86,7 +86,6 @@ def test_default_config(app):
     assert msgspec.to_builtins(container.config) == {
         "arch": None,
         "cli": "docker",
-        "clone": False,
         "image": "datadog/agent-dev-env-linux",
         "no_pull": False,
         "repos": ["datadog-agent"],
@@ -244,103 +243,6 @@ class TestStart:
                     ],
                 ),
                 {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": mocker.ANY},
-            ),
-        ]
-
-    def test_clone(self, dda, helpers, mocker, temp_dir, host_user_args):
-        write_server_config = mocker.patch("dda.utils.ssh.write_server_config")
-        with helpers.hybrid_patch(
-            "subprocess.run",
-            return_values={
-                # Start command checks the status
-                1: CompletedProcess([], returncode=0, stdout="{}"),
-                # Start method checks the status
-                2: CompletedProcess([], returncode=0, stdout="{}"),
-                # Capture image pull
-                # Capture container run
-                # Readiness check
-                5: CompletedProcess([], returncode=0, stdout="Server listening on :: port 22"),
-                # Capture repo cloning
-            },
-        ) as calls:
-            result = dda("env", "dev", "start", "--clone")
-
-        result.check(
-            exit_code=0,
-            output=helpers.dedent(
-                """
-                Pulling image: datadog/agent-dev-env-linux
-                Creating and starting container: dda-linux-container-default
-                Waiting for container: dda-linux-container-default
-                Cloning repository: datadog-agent
-                """
-            ),
-        )
-
-        assert_ssh_config_written(write_server_config, "localhost")
-
-        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
-        global_shared_dir = shared_dir.parent.parent / ".shared"
-        starship_mount = get_starship_mount(global_shared_dir)
-        cache_volumes = get_cache_volumes()
-        assert calls == [
-            (
-                ([helpers.locate("docker"), "pull", "datadog/agent-dev-env-linux"],),
-                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": mocker.ANY},
-            ),
-            (
-                (
-                    [
-                        helpers.locate("docker"),
-                        "run",
-                        "--pull",
-                        "never",
-                        "-d",
-                        "--name",
-                        "dda-linux-container-default",
-                        "-p",
-                        "61938:22",
-                        "-p",
-                        "50069:9000",
-                        "-v",
-                        "/var/run/docker.sock:/var/run/docker.sock",
-                        *host_user_args,
-                        "-e",
-                        "DD_SHELL",
-                        "-e",
-                        AppEnvVars.TELEMETRY_API_KEY,
-                        "-e",
-                        AppEnvVars.TELEMETRY_USER_MACHINE_ID,
-                        "-e",
-                        GitEnvVars.AUTHOR_NAME,
-                        "-e",
-                        GitEnvVars.AUTHOR_EMAIL,
-                        "-v",
-                        f"{shared_dir}:/.shared",
-                        *starship_mount,
-                        "-v",
-                        f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
-                        *cache_volumes,
-                        "datadog/agent-dev-env-linux",
-                    ],
-                ),
-                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": mocker.ANY},
-            ),
-            (
-                (
-                    [
-                        helpers.locate("ssh"),
-                        "-A",
-                        "-q",
-                        "-t",
-                        "-p",
-                        "61938",
-                        "root@localhost",
-                        "--",
-                        "cd /root && git dd-clone datadog-agent",
-                    ],
-                ),
-                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE},
             ),
         ]
 
@@ -520,120 +422,6 @@ class TestStart:
             ),
         ]
 
-    def test_multiple_clones(self, dda, helpers, mocker, temp_dir, host_user_args):
-        write_server_config = mocker.patch("dda.utils.ssh.write_server_config")
-        with helpers.hybrid_patch(
-            "subprocess.run",
-            return_values={
-                # Start command checks the status
-                1: CompletedProcess([], returncode=0, stdout="{}"),
-                # Start method checks the status
-                2: CompletedProcess([], returncode=0, stdout="{}"),
-                # Capture image pull
-                # Capture container run
-                # Readiness check
-                5: CompletedProcess([], returncode=0, stdout="Server listening on :: port 22"),
-                # Capture repo cloning
-            },
-        ) as calls:
-            result = dda("env", "dev", "start", "-r", "datadog-agent@tag", "-r", "integrations-core", "--clone")
-
-        result.check(
-            exit_code=0,
-            output=helpers.dedent(
-                """
-                Pulling image: datadog/agent-dev-env-linux
-                Creating and starting container: dda-linux-container-default
-                Waiting for container: dda-linux-container-default
-                Cloning repository: datadog-agent@tag
-                Cloning repository: integrations-core
-                """
-            ),
-        )
-
-        assert_ssh_config_written(write_server_config, "localhost")
-
-        shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
-        global_shared_dir = shared_dir.parent.parent / ".shared"
-        starship_mount = get_starship_mount(global_shared_dir)
-        cache_volumes = get_cache_volumes()
-        assert calls == [
-            (
-                ([helpers.locate("docker"), "pull", "datadog/agent-dev-env-linux"],),
-                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": mocker.ANY},
-            ),
-            (
-                (
-                    [
-                        helpers.locate("docker"),
-                        "run",
-                        "--pull",
-                        "never",
-                        "-d",
-                        "--name",
-                        "dda-linux-container-default",
-                        "-p",
-                        "61938:22",
-                        "-p",
-                        "50069:9000",
-                        "-v",
-                        "/var/run/docker.sock:/var/run/docker.sock",
-                        *host_user_args,
-                        "-e",
-                        "DD_SHELL",
-                        "-e",
-                        AppEnvVars.TELEMETRY_API_KEY,
-                        "-e",
-                        AppEnvVars.TELEMETRY_USER_MACHINE_ID,
-                        "-e",
-                        GitEnvVars.AUTHOR_NAME,
-                        "-e",
-                        GitEnvVars.AUTHOR_EMAIL,
-                        "-v",
-                        f"{shared_dir}:/.shared",
-                        *starship_mount,
-                        "-v",
-                        f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
-                        *cache_volumes,
-                        "datadog/agent-dev-env-linux",
-                    ],
-                ),
-                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": mocker.ANY},
-            ),
-            (
-                (
-                    [
-                        helpers.locate("ssh"),
-                        "-A",
-                        "-q",
-                        "-t",
-                        "-p",
-                        "61938",
-                        "root@localhost",
-                        "--",
-                        "cd /root && git dd-clone datadog-agent tag",
-                    ],
-                ),
-                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE},
-            ),
-            (
-                (
-                    [
-                        helpers.locate("ssh"),
-                        "-A",
-                        "-q",
-                        "-t",
-                        "-p",
-                        "61938",
-                        "root@localhost",
-                        "--",
-                        "cd /root && git dd-clone integrations-core",
-                    ],
-                ),
-                {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE},
-            ),
-        ]
-
     @pytest.mark.parametrize(
         ("volume_specs"),
         [
@@ -648,13 +436,18 @@ class TestStart:
     def test_extra_volume_specs(self, dda, helpers, mocker, temp_dir, host_user_args, volume_specs):
         mocker.patch("dda.utils.ssh.write_server_config")
 
+        repos_dir = temp_dir / "repos"
+        repos_dir.ensure_dir()
+        repo_dir = repos_dir / "datadog-agent"
+        repo_dir.ensure_dir()
+
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
         global_shared_dir = shared_dir.parent.parent / ".shared"
         starship_mount = get_starship_mount(global_shared_dir)
         cache_volumes = get_cache_volumes()
 
         with (
-            temp_dir.as_cwd(),
+            repo_dir.as_cwd(),
             helpers.hybrid_patch(
                 "subprocess.run",
                 return_values={
@@ -665,12 +458,10 @@ class TestStart:
                     # Capture container run
                     # Readiness check
                     4: CompletedProcess([], returncode=0, stdout="Server listening on :: port 22"),
-                    # Repo cloning
-                    5: CompletedProcess([], returncode=0, stdout="{}"),
                 },
             ) as calls,
         ):
-            result = dda("env", "dev", "start", "--no-pull", "--clone", *volume_specs)
+            result = dda("env", "dev", "start", "--no-pull", *volume_specs)
 
         result.check(
             exit_code=0,
@@ -678,7 +469,6 @@ class TestStart:
                 """
                 Creating and starting container: dda-linux-container-default
                 Waiting for container: dda-linux-container-default
-                Cloning repository: datadog-agent
                 """
             ),
         )
@@ -716,6 +506,8 @@ class TestStart:
                         "-v",
                         f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
                         *cache_volumes,
+                        "-v",
+                        f"{repo_dir}:/root/repos/datadog-agent",
                         *[(x if x != "-v" else "--volume") for x in volume_specs],
                         "datadog/agent-dev-env-linux",
                     ],
@@ -752,13 +544,18 @@ class TestStart:
     def test_extra_mounts(self, dda, helpers, mocker, temp_dir, host_user_args, mount_specs):
         mocker.patch("dda.utils.ssh.write_server_config")
 
+        repos_dir = temp_dir / "repos"
+        repos_dir.ensure_dir()
+        repo_dir = repos_dir / "datadog-agent"
+        repo_dir.ensure_dir()
+
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
         global_shared_dir = shared_dir.parent.parent / ".shared"
         starship_mount = get_starship_mount(global_shared_dir)
         cache_volumes = get_cache_volumes()
 
         with (
-            temp_dir.as_cwd(),
+            repo_dir.as_cwd(),
             helpers.hybrid_patch(
                 "subprocess.run",
                 return_values={
@@ -769,12 +566,10 @@ class TestStart:
                     # Capture container run
                     # Readiness check
                     4: CompletedProcess([], returncode=0, stdout="Server listening on :: port 22"),
-                    # Repo cloning
-                    5: CompletedProcess([], returncode=0, stdout="{}"),
                 },
             ) as calls,
         ):
-            result = dda("env", "dev", "start", "--no-pull", "--clone", *mount_specs)
+            result = dda("env", "dev", "start", "--no-pull", *mount_specs)
 
         result.check(
             exit_code=0,
@@ -782,7 +577,6 @@ class TestStart:
                 """
                 Creating and starting container: dda-linux-container-default
                 Waiting for container: dda-linux-container-default
-                Cloning repository: datadog-agent
                 """
             ),
         )
@@ -821,6 +615,8 @@ class TestStart:
                         "-v",
                         f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/root/.shared/shell/zsh/.zsh_history",
                         *cache_volumes,
+                        "-v",
+                        f"{repo_dir}:/root/repos/datadog-agent",
                         *[(x if x != "-m" else "--mount") for x in mount_specs],
                         "datadog/agent-dev-env-linux",
                     ],
