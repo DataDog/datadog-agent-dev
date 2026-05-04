@@ -6,6 +6,7 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
+from pathlib import Path
 from unittest import mock
 
 
@@ -108,20 +109,21 @@ def test_dependencies(dda, helpers, temp_dir, uv_on_path, mocker):
         ),
     )
 
-    expected_path = str(uv_on_path.with_stem(f"{uv_on_path.stem}-{uv_on_path.id}"))
-    assert subprocess_run.call_args_list == [
-        mock.call(
-            [
-                expected_path,
-                "pip",
-                "install",
-                "--python",
-                sys.executable,
-                "-r",
-                mocker.ANY,
-            ],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            encoding="utf-8",
-        ),
-    ]
+    expected_name = uv_on_path.with_stem(f"{uv_on_path.stem}-{uv_on_path.id}").name
+    (call,) = subprocess_run.call_args_list
+
+    assert Path(call.args[0][0]).name == expected_name
+    assert call == mock.call(
+        [
+            mocker.ANY,
+            "pip",
+            "install",
+            "--python",
+            sys.executable,
+            "-r",
+            mocker.ANY,
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        encoding="utf-8",
+    )

@@ -39,16 +39,15 @@ class UV(Tool):
 
         import shutil
 
-        from dda.utils.fs import Path
+        from dda.utils.fs import Path, temp_directory
 
         path = Path(self.path)
-        safe_path = path.with_stem(f"{path.stem}-{path.id}")
-        shutil.copy2(self.path, safe_path)
-
-        try:
+        safe_name = path.with_stem(f"{path.stem}-{path.id}").name
+        with temp_directory() as temp_dir:
+            # Always use a temporary directory to avoid permission issues.
+            safe_path = temp_dir / safe_name
+            shutil.copy2(self.path, safe_path)
             yield ExecutionContext(command=[str(safe_path), *command], env_vars={})
-        finally:
-            safe_path.unlink()
 
     @cached_property
     def path(self) -> str | None:
