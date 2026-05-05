@@ -59,7 +59,14 @@ def test_author_details(app: Application, mocker, default_git_author: GitAuthorC
 
 def test_get_remote(app: Application, temp_repo_with_remote: Path) -> None:
     with temp_repo_with_remote.as_cwd():
-        assert app.tools.git.get_remote().url == "https://github.com/foo/bar"
+        remote = app.tools.git.get_remote()
+        assert remote is not None
+        assert remote.url == "https://github.com/foo/bar"
+
+
+def test_get_remote_none(app: Application, temp_repo: Path) -> None:
+    with temp_repo.as_cwd():
+        assert app.tools.git.get_remote() is None
 
 
 # TODO: Add more testcases here with different refs
@@ -144,3 +151,84 @@ def test_get_changes(app: Application, repo_setup_working_tree: tuple[Path, Chan
 # TODO: Implement this test - diffing with a merge base
 def test_get_changes_merge_base() -> None:
     pass
+
+
+class TestRepoDetection:
+    def test_get_git_dir_not_in_git(self, app: Application, tmp_path: Path) -> None:
+        non_git = Path(tmp_path) / "not-a-repo"
+        non_git.mkdir()
+        with non_git.as_cwd():
+            assert app.tools.git.get_git_dir() is None
+
+    def test_get_git_dir_in_repo(self, app: Application, temp_repo: Path) -> None:
+        with temp_repo.as_cwd():
+            git_dir = app.tools.git.get_git_dir()
+        assert git_dir is not None
+        assert git_dir == temp_repo / ".git"
+
+    def test_get_toplevel_not_in_git(self, app: Application, tmp_path: Path) -> None:
+        non_git = Path(tmp_path) / "not-a-repo"
+        non_git.mkdir()
+        with non_git.as_cwd():
+            assert app.tools.git.get_toplevel() is None
+
+    def test_get_toplevel_in_repo(self, app: Application, temp_repo: Path) -> None:
+        with temp_repo.as_cwd():
+            toplevel = app.tools.git.get_toplevel()
+        assert toplevel == temp_repo
+
+    def test_is_bare_repository_false(self, app: Application, temp_repo: Path) -> None:
+        with temp_repo.as_cwd():
+            assert not app.tools.git.is_bare_repository()
+
+    def test_is_bare_repository_true(self, app: Application, tmp_path: Path, temp_repo: Path) -> None:
+        bare_path = Path(tmp_path) / "bare.git"
+        app.subprocess.capture(["git", "clone", "--bare", str(temp_repo), str(bare_path)])
+        with bare_path.as_cwd():
+            assert app.tools.git.is_bare_repository()
+
+    def test_get_git_common_dir_main_worktree(self, app: Application, temp_repo: Path) -> None:
+        with temp_repo.as_cwd():
+            # --git-common-dir may return a relative path; resolve inside the CWD context
+            common = app.tools.git.get_git_common_dir().resolve()
+        assert common == (temp_repo / ".git").resolve()
+
+    def test_get_git_common_dir_linked_worktree(self, app: Application, tmp_path: Path, temp_repo: Path) -> None:
+        app.tools.git.capture(["commit", "--allow-empty", "-m", "init"], cwd=str(temp_repo))
+        wt_path = Path(tmp_path) / "wt"
+        app.tools.git.capture(["worktree", "add", "-b", "feat", str(wt_path), "HEAD"], cwd=str(temp_repo))
+        with wt_path.as_cwd():
+            common = app.tools.git.get_git_common_dir()
+        assert common.resolve() == (temp_repo / ".git").resolve()
+
+    def test_has_ref_existing(self, app: Application, temp_repo: Path) -> None:
+        with temp_repo.as_cwd():
+            app.tools.git.capture(["commit", "--allow-empty", "-m", "init"])
+        assert app.tools.git.has_ref("main", cwd=temp_repo)
+
+    def test_has_ref_missing(self, app: Application, temp_repo: Path) -> None:
+        assert not app.tools.git.has_ref("nonexistent-branch-xyz", cwd=temp_repo)
+
+
+class TestCloneAndFetch:
+    def test_clone(self, app: Application, tmp_path: Path, temp_repo: Path) -> None:
+        app.tools.git.capture(["commit", "--allow-empty", "-m", "init"], cwd=str(temp_repo))
+        dest = Path(tmp_path) / "clone"
+        app.tools.git.clone(str(temp_repo), dest)
+        assert (dest / ".git").is_dir()
+
+    def test_clone_bare(self, app: Application, tmp_path: Path, temp_repo: Path) -> None:
+        app.tools.git.capture(["commit", "--allow-empty", "-m", "init"], cwd=str(temp_repo))
+        dest = Path(tmp_path) / "bare.git"
+        app.tools.git.clone(str(temp_repo), dest, bare=True)
+        assert (dest / "HEAD").is_file()
+        assert not (dest / ".git").exists()
+
+    def test_fetch(self, app: Application, tmp_path: Path, temp_repo: Path) -> None:
+        app.tools.git.capture(["commit", "--allow-empty", "-m", "init"], cwd=str(temp_repo))
+        dest = Path(tmp_path) / "clone"
+        app.tools.git.clone(str(temp_repo), dest)
+        app.tools.git.capture(["commit", "--allow-empty", "-m", "second"], cwd=str(temp_repo))
+        app.tools.git.fetch("origin", cwd=dest)
+        log = app.tools.git.capture(["log", "--oneline", "origin/main"], cwd=str(dest))
+        assert "second" in log

@@ -82,17 +82,91 @@ class Git(Tool):
 
         return self.capture(["config", "--get", "user.email"]).strip()
 
-    def get_remote(self, remote_name: str = "origin") -> Remote:
+    def clone(self, url: str, path: Path, *, bare: bool = False) -> None:
         """
-        Get the details of the given remote for the Git repository in the current working directory.
+        Clone a repository from *url* into *path*.
+        """
+        args = ["clone"]
+        if bare:
+            args.append("--bare")
+        args.extend([url, str(path)])
+        self.wait(args, message=f"Cloning: {path.name}")
+
+    def fetch(self, remote: str = "origin", *, prune: bool = False, cwd: Path | None = None) -> None:
+        """
+        Fetch from *remote*, optionally pruning deleted refs.
+        """
+        args = ["fetch", remote]
+        if prune:
+            args.append("--prune")
+        kwargs: dict[str, Any] = {"message": f"Fetching: {remote}"}
+        if cwd is not None:
+            kwargs["cwd"] = str(cwd)
+        self.wait(args, **kwargs)
+
+    def has_ref(self, name: str, *, cwd: Path | None = None) -> bool:
+        """
+        Return True if *name* resolves to a valid ref in the repository.
+        """
+        kwargs: dict[str, Any] = {"check": False}
+        if cwd is not None:
+            kwargs["cwd"] = str(cwd)
+        return self.run(["rev-parse", "--verify", "--quiet", name], **kwargs) == 0
+
+    def get_git_dir(self) -> Path | None:
+        """
+        Return the absolute path of the ``.git`` directory (or the bare repo dir).
+
+        Returns None when the current working directory is not inside any git repository.
+        """
+        from dda.utils.fs import Path
+
+        result = self.capture(["rev-parse", "--absolute-git-dir"], check=False).strip()
+        return Path(result) if result else None
+
+    def get_toplevel(self) -> Path | None:
+        """
+        Return the root of the current working copy (``git rev-parse --show-toplevel``).
+
+        Returns None when the CWD is not inside a working tree (bare repo, inside ``.git/``,
+        or not in git at all).
+        """
+        from dda.utils.fs import Path
+
+        result = self.capture(["rev-parse", "--show-toplevel"], check=False).strip()
+        return Path(result) if result else None
+
+    def get_git_common_dir(self) -> Path:
+        """
+        Return the common git directory (``git rev-parse --git-common-dir``).
+
+        For the main worktree this equals the ``.git`` dir; for a linked worktree it
+        points to the main repo's ``.git`` directory.
+        """
+        from dda.utils.fs import Path
+
+        return Path(self.capture(["rev-parse", "--git-common-dir"]).strip())
+
+    def is_bare_repository(self) -> bool:
+        """
+        Return True if the current repository is a bare clone.
+        """
+        return self.capture(["rev-parse", "--is-bare-repository"]).strip() == "true"
+
+    def get_remote(self, remote_name: str = "origin", *, cwd: Path | None = None) -> Remote | None:
+        """
+        Return a :class:`Remote` for *remote_name*, or ``None`` if no such remote is configured.
         """
         from dda.utils.git.remote import Remote
 
+        kwargs: dict[str, Any] = {"check": False}
+        if cwd is not None:
+            kwargs["cwd"] = str(cwd)
         remote_url = self.capture(
             ["config", "--get", f"remote.{remote_name}.url"],
+            **kwargs,
         ).strip()
-
-        return Remote(remote_url)
+        return Remote(remote_url) if remote_url else None
 
     def get_commit(self, ref: str = "HEAD") -> Commit:
         """
