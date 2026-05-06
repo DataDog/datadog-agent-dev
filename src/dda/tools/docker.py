@@ -37,3 +37,14 @@ class Docker(Tool):
 
     def get_image_digest(self, image_spec: str) -> str:
         return self.capture(["image", "inspect", image_spec, "--format", "{{.Id}}"])
+
+    def volume_exists(self, name: str) -> bool:
+        output = self.capture(["volume", "ls", "--quiet", "--filter", f"name={name}"]).strip()
+        return name in output.splitlines()
+
+    def volume_remove(self, name: str) -> None:
+        self.wait(["volume", "rm", name])
+
+    def volume_list(self) -> list[str]:
+        output = self.capture(["volume", "ls", "--quiet"]).strip()
+        return output.splitlines() if output else []
