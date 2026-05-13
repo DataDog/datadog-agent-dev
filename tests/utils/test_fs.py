@@ -124,6 +124,46 @@ class TestPath:
         with pytest.raises((IsADirectoryError, PermissionError)):
             non_file_path.hexdigest()
 
+    @pytest.mark.requires_unix
+    def test_write_atomic_respects_umask_for_new_files(self, tmp_path):
+        path = Path(tmp_path, "new-config.toml")
+        old_umask = os.umask(0o002)
+        try:
+            path.write_atomic("setting = true\n", "w", encoding="utf-8")
+        finally:
+            os.umask(old_umask)
+
+        assert path.stat().st_mode & 0o777 == 0o664
+
+    @pytest.mark.requires_unix
+    def test_write_atomic_preserves_existing_permissions(self, tmp_path):
+        path = Path(tmp_path, "config.toml")
+        path.write_text("setting = false\n", encoding="utf-8")
+        path.chmod(0o640)
+
+        old_umask = os.umask(0o077)
+        try:
+            path.write_atomic("setting = true\n", "w", encoding="utf-8")
+        finally:
+            os.umask(old_umask)
+
+        assert path.stat().st_mode & 0o777 == 0o640
+
+    @pytest.mark.requires_unix
+    def test_open_atomic_uses_existing_permissions_for_temporary_file(self, tmp_path):
+        path = Path(tmp_path, "config.toml")
+        path.write_text("setting = false\n", encoding="utf-8")
+        path.chmod(0o600)
+
+        old_umask = os.umask(0o002)
+        try:
+            with path.open_atomic("w", encoding="utf-8") as f:
+                f.write("setting = true\n")
+                (temporary_path,) = tmp_path.glob(".config.toml.*.tmp")
+                assert temporary_path.stat().st_mode & 0o777 == 0o600
+        finally:
+            os.umask(old_umask)
+
 
 def test_temp_directory():
     with temp_directory() as temp_dir:

@@ -57,7 +57,7 @@ def cmd(app: Application, key: str, value: str | None) -> None:
             new_value = default_branch
 
         new_config[key] = new_value
-        new_config = new_config[key]  # type: ignore[assignment]
+        new_config = new_config[key]
 
         key = value
         value = data.pop()

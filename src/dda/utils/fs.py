@@ -6,7 +6,7 @@ from __future__ import annotations
 import os
 import pathlib
 import sys
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from functools import cached_property
 from typing import IO, TYPE_CHECKING, Any
 
@@ -107,15 +107,55 @@ class Path(pathlib.Path):
             *args: Additional arguments to pass to [`os.fdopen`][os.fdopen].
             **kwargs: Additional keyword arguments to pass to [`os.fdopen`][os.fdopen].
         """
-        from tempfile import mkstemp
+        from secrets import token_hex
+        from stat import S_IMODE
 
-        fd, path = mkstemp(dir=self.parent)
-        with os.fdopen(fd, *args, **kwargs) as f:
-            yield f
-            f.flush()
-            disk_sync(fd)
+        try:
+            original_permissions = S_IMODE(self.stat().st_mode)
+        except FileNotFoundError:
+            original_permissions = None
 
-        os.replace(path, self)
+        flags = os.O_CREAT | os.O_EXCL | os.O_RDWR
+        open_mode = kwargs.get("mode", args[0] if args else "")
+        if "b" in open_mode:
+            flags |= getattr(os, "O_BINARY", 0)
+
+        fd = -1
+        for _ in range(100):
+            path = self.parent / f".{self.name}.{token_hex(8)}.tmp"
+            try:
+                fd = os.open(
+                    path,
+                    flags,
+                    original_permissions if original_permissions is not None else 0o666,
+                )
+                break
+            except FileExistsError:
+                continue
+        else:
+            msg = f"Unable to create a temporary file for {self}"
+            raise FileExistsError(msg)
+
+        replaced = False
+        try:
+            with os.fdopen(fd, *args, **kwargs) as f:
+                fd = -1
+                yield f
+                f.flush()
+                disk_sync(f.fileno())
+
+            if original_permissions is not None:
+                os.chmod(path, original_permissions)
+
+            os.replace(path, self)
+            replaced = True
+        finally:
+            if fd != -1:
+                with suppress(OSError):
+                    os.close(fd)
+            if not replaced:
+                with suppress(FileNotFoundError):
+                    os.unlink(path)
 
     @contextmanager
     def as_cwd(self) -> Generator[Path, None, None]:
