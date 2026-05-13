@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+## 0.33.2 - 2026-05-13
+
 ***Fixed:***
 
 - Fix the allowed range of exposed developer environment ports
