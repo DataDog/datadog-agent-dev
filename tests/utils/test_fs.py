@@ -126,7 +126,7 @@ class TestPath:
 
     @pytest.mark.requires_unix
     def test_write_atomic_respects_umask_for_new_files(self, tmp_path):
-        path = Path(tmp_path, "config.toml")
+        path = Path(tmp_path, "new-config.toml")
         old_umask = os.umask(0o002)
         try:
             path.write_atomic("setting = true\n", "w", encoding="utf-8")

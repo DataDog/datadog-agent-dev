@@ -28,7 +28,7 @@ def test_standard(dda, config_file, helpers):
 
 
 @pytest.mark.requires_unix
-def test_restore_permissions(dda, config_file):
+def test_restore_permissions(dda, config_file, helpers):
     config_file.path.unlink()
 
     old_umask = os.umask(0o002)
@@ -37,7 +37,14 @@ def test_restore_permissions(dda, config_file):
     finally:
         os.umask(old_umask)
 
-    result.check(exit_code=0)
+    result.check(
+        exit_code=0,
+        output=helpers.dedent(
+            """
+            Settings were successfully restored.
+            """
+        ),
+    )
     assert config_file.path.stat().st_mode & 0o777 == 0o664
 
 
