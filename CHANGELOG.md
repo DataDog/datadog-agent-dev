@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+## 0.33.3 - 2026-05-14
+
 ***Fixed:***
 
 - Fix race condition in the telemetry daemon payload processing logic
