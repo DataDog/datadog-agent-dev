@@ -122,7 +122,7 @@ class Path(pathlib.Path):
 
         fd = -1
         for _ in range(100):
-            path = self.parent / f".{self.name}.{token_hex(8)}.tmp"
+            path = self.parent / f".tmp.{token_hex(8)}.tmp"
             try:
                 fd = os.open(
                     path,

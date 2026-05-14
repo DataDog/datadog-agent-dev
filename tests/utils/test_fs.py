@@ -159,7 +159,7 @@ class TestPath:
         try:
             with path.open_atomic("w", encoding="utf-8") as f:
                 f.write("setting = true\n")
-                (temporary_path,) = tmp_path.glob(".config.toml.*.tmp")
+                (temporary_path,) = tmp_path.glob(".tmp.*.tmp")
                 assert temporary_path.stat().st_mode & 0o777 == 0o600
         finally:
             os.umask(old_umask)
