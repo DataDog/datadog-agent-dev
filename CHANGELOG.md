@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+## 0.34.0 - 2026-05-18
+
 ***Changed:***
 
 - Only support the latest version of the developer environment image for the `linux-container` developer environment type
