@@ -313,182 +313,53 @@ jobs:
         path: installers/*
         if-no-files-found: error
 
-  macos-packaging:
-    name: Build macOS installer and sign/notarize artifacts
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+  macos-packaging-signed:
+    name: Build macOS installer and sign/notarize artifacts on protected branch/tag
+    if: github.event_name == 'push'
     needs:
     - binaries
     - python-artifacts
     runs-on: macos-15
-
-    env:
-      VERSION: ${{ needs.python-artifacts.outputs.version }}
-      NOTARY_WAIT_TIME: "3600"  # 1 hour
+    environment:
+      name: protected
 
     steps:
     - name: Checkout code
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-    - name: Set up Python
-      uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+    - name: Build and sign macOS package
+      uses: ./.github/actions/build-macos-package
       with:
-        python-version: "${{ env.PYTHON_VERSION }}"
+        version: ${{ needs.python-artifacts.outputs.version }}
+        app-name: ${{ env.APP_NAME }}
+        python-version: ${{ env.PYTHON_VERSION }}
+        pyoxidizer-version: ${{ env.PYOXIDIZER_VERSION }}
+        apple-application-certificate: ${{ secrets.APPLE_DEVELOPER_ID_APPLICATION_CERTIFICATE }}
+        apple-application-private-key: ${{ secrets.APPLE_DEVELOPER_ID_APPLICATION_PRIVATE_KEY }}
+        apple-installer-certificate: ${{ secrets.APPLE_DEVELOPER_ID_INSTALLER_CERTIFICATE }}
+        apple-installer-private-key: ${{ secrets.APPLE_DEVELOPER_ID_INSTALLER_PRIVATE_KEY }}
+        apple-api-key: ${{ secrets.APPLE_APP_STORE_CONNECT_API_DATA }}
 
-    - name: Install UV
-      uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57 # v8.0.0
+  macos-packaging-unsigned:
+    name: Build macOS installer without signing
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    needs:
+    - binaries
+    - python-artifacts
+    runs-on: macos-15
 
-    - name: Install PyOxidizer ${{ env.PYOXIDIZER_VERSION }}
-      run: uv pip install --system pyoxidizer==${{ env.PYOXIDIZER_VERSION }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-    - name: Install rcodesign
-      env:
-        ARCHIVE_NAME: "apple-codesign-0.27.0-x86_64-apple-darwin"
-      run: >-
-        curl -L
-        "https://github.com/indygreg/apple-platform-rs/releases/download/apple-codesign%2F0.27.0/$ARCHIVE_NAME.tar.gz"
-        |
-        tar --strip-components=1 -xzf - -C /usr/local/bin "$ARCHIVE_NAME/rcodesign"
-
-    - name: Download staged binaries
-      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+    - name: Build macOS package (unsigned)
+      uses: ./.github/actions/build-macos-package
       with:
-        pattern: staged-${{ runner.os }}-*
-        path: archives
-        merge-multiple: true
-
-    - name: Extract staged binaries
-      run: |-
-        mkdir bin
-
-        cd archives
-        for f in *; do
-          binary_id=${f:0:${#f}-7}
-          tar -xzf "$f" -C ../bin
-          mv "../bin/${{ env.APP_NAME }}" "../bin/$binary_id"
-        done
-
-    - name: Write credentials
-      env:
-        APPLE_APP_STORE_CONNECT_API_DATA: "${{ secrets.APPLE_APP_STORE_CONNECT_API_DATA }}"
-        APPLE_DEVELOPER_ID_APPLICATION_CERTIFICATE: "${{ secrets.APPLE_DEVELOPER_ID_APPLICATION_CERTIFICATE }}"
-        APPLE_DEVELOPER_ID_APPLICATION_PRIVATE_KEY: "${{ secrets.APPLE_DEVELOPER_ID_APPLICATION_PRIVATE_KEY }}"
-        APPLE_DEVELOPER_ID_INSTALLER_CERTIFICATE: "${{ secrets.APPLE_DEVELOPER_ID_INSTALLER_CERTIFICATE }}"
-        APPLE_DEVELOPER_ID_INSTALLER_PRIVATE_KEY: "${{ secrets.APPLE_DEVELOPER_ID_INSTALLER_PRIVATE_KEY }}"
-      run: |-
-        echo "$APPLE_APP_STORE_CONNECT_API_DATA" > /tmp/app-store-connect.json
-        echo "$APPLE_DEVELOPER_ID_APPLICATION_CERTIFICATE" > /tmp/certificate-application.pem
-        echo "$APPLE_DEVELOPER_ID_APPLICATION_PRIVATE_KEY" > /tmp/private-key-application.pem
-        echo "$APPLE_DEVELOPER_ID_INSTALLER_CERTIFICATE" > /tmp/certificate-installer.pem
-        echo "$APPLE_DEVELOPER_ID_INSTALLER_PRIVATE_KEY" > /tmp/private-key-installer.pem
-
-    # https://developer.apple.com/documentation/security/hardened_runtime
-    - name: Sign binaries
-      run: |-
-        for f in bin/*; do
-          rcodesign sign -vv \
-          --pem-source /tmp/certificate-application.pem \
-          --pem-source /tmp/private-key-application.pem \
-          --code-signature-flags runtime \
-          "$f"
-        done
-
-    # https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution
-    - name: Notarize binaries
-      run: |-
-        mkdir notarize-bin
-
-        cd bin
-        for f in *; do
-          zip "../notarize-bin/$f.zip" "$f"
-        done
-
-        cd ../notarize-bin
-        for f in *; do
-          rcodesign notary-submit -vv \
-          --max-wait-seconds ${{ env.NOTARY_WAIT_TIME }} \
-          --api-key-path /tmp/app-store-connect.json \
-          "$f"
-        done
-
-    - name: Archive binaries
-      run: |-
-        rm archives/*
-
-        cd bin
-        for f in *; do
-          mv "$f" "${{ env.APP_NAME }}"
-          tar -czf "../archives/$f.tar.gz" "${{ env.APP_NAME }}"
-          mv "${{ env.APP_NAME }}" "$f"
-        done
-
-    # bin/<APP_NAME>-<TARGET> -> targets/<TARGET>/<APP_NAME>
-    - name: Prepare binaries
-      run: |-
-        mkdir targets
-        for f in bin/*; do
-          if [[ "$f" =~ ${{ env.APP_NAME }}-(.+)$ ]]; then
-            target="${BASH_REMATCH[1]}"
-            mkdir "targets/$target"
-            mv "$f" "targets/$target/${{ env.APP_NAME }}"
-          fi
-        done
-
-    - name: Build universal binary
-      run: >-
-        pyoxidizer build macos_universal_binary
-        --release
-        --var version ${{ env.VERSION }}
-
-    - name: Prepare universal binary
-      id: binary
-      run: |-
-        binary=$(echo build/*/release/*/${{ env.APP_NAME }})
-        chmod 755 "$binary"
-        echo "path=$binary" >> "$GITHUB_OUTPUT"
-
-    - name: Build PKG
-      run: >-
-        python release/macos/build_pkg.py
-        --binary ${{ steps.binary.outputs.path }}
-        --version ${{ env.VERSION }}
-        staged
-
-    - name: Stage PKG
-      id: pkg
-      run: |-
-        mkdir signed
-        pkg_file="$(ls staged)"
-        echo "path=$pkg_file" >> "$GITHUB_OUTPUT"
-
-    - name: Sign PKG
-      run: >-
-        rcodesign sign -vv
-        --pem-source /tmp/certificate-installer.pem
-        --pem-source /tmp/private-key-installer.pem
-        "staged/${{ steps.pkg.outputs.path }}"
-        "signed/${{ steps.pkg.outputs.path }}"
-
-    - name: Notarize PKG
-      run: >-
-        rcodesign notary-submit -vv
-        --max-wait-seconds ${{ env.NOTARY_WAIT_TIME }}
-        --api-key-path /tmp/app-store-connect.json
-        --staple
-        "signed/${{ steps.pkg.outputs.path }}"
-
-    - name: Upload binaries
-      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
-      with:
-        name: standalone-${{ runner.os }}
-        path: archives/*
-        if-no-files-found: error
-
-    - name: Upload installer
-      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
-      with:
-        name: installers-${{ runner.os }}
-        path: signed/${{ steps.pkg.outputs.path }}
-        if-no-files-found: error
+        version: ${{ needs.python-artifacts.outputs.version }}
+        app-name: ${{ env.APP_NAME }}
+        python-version: ${{ env.PYTHON_VERSION }}
+        pyoxidizer-version: ${{ env.PYOXIDIZER_VERSION }}
+        should-sign: "false"
 
   publish-release:
     name: Publish distributions
@@ -496,7 +367,7 @@ jobs:
     needs:
     - binaries
     - windows-packaging
-    - macos-packaging
+    - macos-packaging-signed
     runs-on: ubuntu-latest
 
     permissions:

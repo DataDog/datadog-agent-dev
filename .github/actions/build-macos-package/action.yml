@@ -1,0 +1,230 @@
+name: Build macOS Package
+description: Build macOS PKG installer with optional signing and notarization
+
+inputs:
+  version:
+    description: Version of the application
+    required: true
+  app-name:
+    description: Name of the application
+    required: true
+  python-version:
+    description: Python version to use
+    required: true
+  pyoxidizer-version:
+    description: PyOxidizer version to use
+    required: true
+  notary-wait-seconds:
+    description: Maximum wait time when notarizing
+    default: "3600"
+    required: false
+  should-sign:
+    description: Whether to sign and notarize the binaries
+    default: "true"
+    required: false
+  apple-application-certificate:
+    description: Apple Developer ID Application Certificate (PEM)
+    required: false
+  apple-application-private-key:
+    description: Apple Developer ID Application Private Key (PEM)
+    required: false
+  apple-installer-certificate:
+    description: Apple Developer ID Installer Certificate (PEM)
+    required: false
+  apple-installer-private-key:
+    description: Apple Developer ID Installer Private Key (PEM)
+    required: false
+  apple-api-key:
+    description: Apple App Store Connect API Key (JSON)
+    required: false
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+      with:
+        python-version: "${{ inputs.python-version }}"
+
+    - name: Install UV
+      uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57 # v8.0.0
+
+    - name: Install PyOxidizer ${{ inputs.pyoxidizer-version }}
+      shell: bash
+      run: uv pip install --system pyoxidizer==${{ inputs.pyoxidizer-version }}
+
+    - name: Install rcodesign
+      shell: bash
+      env:
+        ARCHIVE_NAME: "apple-codesign-0.27.0-x86_64-apple-darwin"
+      run: >-
+        curl -L
+        "https://github.com/indygreg/apple-platform-rs/releases/download/apple-codesign%2F0.27.0/$ARCHIVE_NAME.tar.gz"
+        |
+        tar --strip-components=1 -xzf - -C /usr/local/bin "$ARCHIVE_NAME/rcodesign"
+
+    - name: Download staged binaries
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      with:
+        pattern: staged-${{ runner.os }}-*
+        path: archives
+        merge-multiple: true
+
+    - name: Extract staged binaries
+      shell: bash
+      run: |-
+        mkdir bin
+
+        cd archives
+        for f in *; do
+          binary_id=${f:0:${#f}-7}
+          tar -xzf "$f" -C ../bin
+          mv "../bin/${{ inputs.app-name }}" "../bin/$binary_id"
+        done
+
+    # Secrets are only materialized inside the protected environment. This step
+    # is skipped on the unsigned path, so secrets.* expressions in the calling
+    # workflow never expand into this runner.
+    - name: Write credentials
+      if: inputs.should-sign == 'true'
+      shell: bash
+      env:
+        APPLE_APP_STORE_CONNECT_API_DATA: ${{ inputs.apple-api-key }}
+        APPLE_DEVELOPER_ID_APPLICATION_CERTIFICATE: ${{ inputs.apple-application-certificate }}
+        APPLE_DEVELOPER_ID_APPLICATION_PRIVATE_KEY: ${{ inputs.apple-application-private-key }}
+        APPLE_DEVELOPER_ID_INSTALLER_CERTIFICATE: ${{ inputs.apple-installer-certificate }}
+        APPLE_DEVELOPER_ID_INSTALLER_PRIVATE_KEY: ${{ inputs.apple-installer-private-key }}
+      run: |-
+        echo "$APPLE_APP_STORE_CONNECT_API_DATA" > /tmp/app-store-connect.json
+        echo "$APPLE_DEVELOPER_ID_APPLICATION_CERTIFICATE" > /tmp/certificate-application.pem
+        echo "$APPLE_DEVELOPER_ID_APPLICATION_PRIVATE_KEY" > /tmp/private-key-application.pem
+        echo "$APPLE_DEVELOPER_ID_INSTALLER_CERTIFICATE" > /tmp/certificate-installer.pem
+        echo "$APPLE_DEVELOPER_ID_INSTALLER_PRIVATE_KEY" > /tmp/private-key-installer.pem
+
+    # https://developer.apple.com/documentation/security/hardened_runtime
+    - name: Sign binaries
+      if: inputs.should-sign == 'true'
+      shell: bash
+      run: |-
+        for f in bin/*; do
+          rcodesign sign -vv \
+          --pem-source /tmp/certificate-application.pem \
+          --pem-source /tmp/private-key-application.pem \
+          --code-signature-flags runtime \
+          "$f"
+        done
+
+    # https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution
+    - name: Notarize binaries
+      if: inputs.should-sign == 'true'
+      shell: bash
+      run: |-
+        mkdir notarize-bin
+
+        cd bin
+        for f in *; do
+          zip "../notarize-bin/$f.zip" "$f"
+        done
+
+        cd ../notarize-bin
+        for f in *; do
+          rcodesign notary-submit -vv \
+          --max-wait-seconds ${{ inputs.notary-wait-seconds }} \
+          --api-key-path /tmp/app-store-connect.json \
+          "$f"
+        done
+
+    - name: Archive binaries
+      shell: bash
+      run: |-
+        rm archives/*
+
+        cd bin
+        for f in *; do
+          mv "$f" "${{ inputs.app-name }}"
+          tar -czf "../archives/$f.tar.gz" "${{ inputs.app-name }}"
+          mv "${{ inputs.app-name }}" "$f"
+        done
+
+    # bin/<APP_NAME>-<TARGET> -> targets/<TARGET>/<APP_NAME>
+    - name: Prepare binaries
+      shell: bash
+      run: |-
+        mkdir targets
+        for f in bin/*; do
+          if [[ "$f" =~ ${{ inputs.app-name }}-(.+)$ ]]; then
+            target="${BASH_REMATCH[1]}"
+            mkdir "targets/$target"
+            mv "$f" "targets/$target/${{ inputs.app-name }}"
+          fi
+        done
+
+    - name: Build universal binary
+      shell: bash
+      run: >-
+        pyoxidizer build macos_universal_binary
+        --release
+        --var version ${{ inputs.version }}
+
+    - name: Prepare universal binary
+      id: binary
+      shell: bash
+      run: |-
+        binary=$(echo build/*/release/*/${{ inputs.app-name }})
+        chmod 755 "$binary"
+        echo "path=$binary" >> "$GITHUB_OUTPUT"
+
+    - name: Build PKG
+      shell: bash
+      run: >-
+        python release/macos/build_pkg.py
+        --binary ${{ steps.binary.outputs.path }}
+        --version ${{ inputs.version }}
+        staged
+
+    - name: Stage PKG
+      id: pkg
+      shell: bash
+      run: |-
+        mkdir signed
+        pkg_file="$(ls staged)"
+        echo "path=$pkg_file" >> "$GITHUB_OUTPUT"
+
+    - name: Sign PKG
+      if: inputs.should-sign == 'true'
+      shell: bash
+      run: >-
+        rcodesign sign -vv
+        --pem-source /tmp/certificate-installer.pem
+        --pem-source /tmp/private-key-installer.pem
+        "staged/${{ steps.pkg.outputs.path }}"
+        "signed/${{ steps.pkg.outputs.path }}"
+
+    - name: Copy unsigned PKG
+      if: inputs.should-sign != 'true'
+      shell: bash
+      run: cp "staged/${{ steps.pkg.outputs.path }}" "signed/${{ steps.pkg.outputs.path }}"
+
+    - name: Notarize PKG
+      if: inputs.should-sign == 'true'
+      shell: bash
+      run: >-
+        rcodesign notary-submit -vv
+        --max-wait-seconds ${{ inputs.notary-wait-seconds }}
+        --api-key-path /tmp/app-store-connect.json
+        --staple
+        "signed/${{ steps.pkg.outputs.path }}"
+
+    - name: Upload binaries
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+      with:
+        name: standalone-${{ runner.os }}
+        path: archives/*
+        if-no-files-found: error
+
+    - name: Upload installer
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+      with:
+        name: installers-${{ runner.os }}
+        path: signed/${{ steps.pkg.outputs.path }}
+        if-no-files-found: error
