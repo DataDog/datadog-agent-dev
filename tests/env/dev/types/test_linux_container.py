@@ -191,6 +191,7 @@ class TestStart:
 
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
         global_shared_dir = shared_dir.parent.parent / ".shared"
+        xdg_open_script_path = shared_dir.parent / "bin" / "xdg-open"
         starship_mount = get_starship_mount(global_shared_dir)
         volumes = get_volumes()
         assert calls == [
@@ -208,6 +209,8 @@ class TestStart:
                         "-d",
                         "--name",
                         "dda-linux-container-default",
+                        "--add-host",
+                        "host.docker.internal:host-gateway",
                         "-p",
                         "26090:22",
                         "-p",
@@ -225,6 +228,12 @@ class TestStart:
                         GitEnvVars.AUTHOR_NAME,
                         "-e",
                         GitEnvVars.AUTHOR_EMAIL,
+                        "-e",
+                        "DDA_BROWSER_PROXY_PORT",
+                        "-e",
+                        "BROWSER",
+                        "-v",
+                        f"{xdg_open_script_path}:/usr/local/bin/xdg-open:ro",
                         "-v",
                         f"{shared_dir}:/.shared",
                         *starship_mount,
@@ -274,6 +283,7 @@ class TestStart:
 
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
         global_shared_dir = shared_dir.parent.parent / ".shared"
+        xdg_open_script_path = shared_dir.parent / "bin" / "xdg-open"
         starship_mount = get_starship_mount(global_shared_dir)
         volumes = get_volumes()
         assert calls == [
@@ -291,6 +301,8 @@ class TestStart:
                         "-d",
                         "--name",
                         "dda-linux-container-default",
+                        "--add-host",
+                        "host.docker.internal:host-gateway",
                         "-p",
                         "26090:22",
                         "-p",
@@ -308,6 +320,12 @@ class TestStart:
                         GitEnvVars.AUTHOR_NAME,
                         "-e",
                         GitEnvVars.AUTHOR_EMAIL,
+                        "-e",
+                        "DDA_BROWSER_PROXY_PORT",
+                        "-e",
+                        "BROWSER",
+                        "-v",
+                        f"{xdg_open_script_path}:/usr/local/bin/xdg-open:ro",
                         "-v",
                         f"{shared_dir}:/.shared",
                         *starship_mount,
@@ -375,6 +393,7 @@ class TestStart:
 
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
         global_shared_dir = shared_dir.parent.parent / ".shared"
+        xdg_open_script_path = shared_dir.parent / "bin" / "xdg-open"
         starship_mount = get_starship_mount(global_shared_dir)
         volumes = get_volumes()
         assert calls == [
@@ -388,6 +407,8 @@ class TestStart:
                         "-d",
                         "--name",
                         "dda-linux-container-default",
+                        "--add-host",
+                        "host.docker.internal:host-gateway",
                         "-p",
                         "26090:22",
                         "-p",
@@ -405,6 +426,12 @@ class TestStart:
                         GitEnvVars.AUTHOR_NAME,
                         "-e",
                         GitEnvVars.AUTHOR_EMAIL,
+                        "-e",
+                        "DDA_BROWSER_PROXY_PORT",
+                        "-e",
+                        "BROWSER",
+                        "-v",
+                        f"{xdg_open_script_path}:/usr/local/bin/xdg-open:ro",
                         "-v",
                         f"{shared_dir}:/.shared",
                         *starship_mount,
@@ -462,6 +489,7 @@ class TestStart:
 
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
         global_shared_dir = shared_dir.parent.parent / ".shared"
+        xdg_open_script_path = shared_dir.parent / "bin" / "xdg-open"
         starship_mount = get_starship_mount(global_shared_dir)
         volumes = get_volumes()
         assert calls == [
@@ -479,6 +507,8 @@ class TestStart:
                         "-d",
                         "--name",
                         "dda-linux-container-default",
+                        "--add-host",
+                        "host.docker.internal:host-gateway",
                         "-p",
                         "26090:22",
                         "-p",
@@ -496,6 +526,12 @@ class TestStart:
                         GitEnvVars.AUTHOR_NAME,
                         "-e",
                         GitEnvVars.AUTHOR_EMAIL,
+                        "-e",
+                        "DDA_BROWSER_PROXY_PORT",
+                        "-e",
+                        "BROWSER",
+                        "-v",
+                        f"{xdg_open_script_path}:/usr/local/bin/xdg-open:ro",
                         "-v",
                         f"{shared_dir}:/.shared",
                         *starship_mount,
@@ -548,6 +584,7 @@ class TestStart:
 
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
         global_shared_dir = shared_dir.parent.parent / ".shared"
+        xdg_open_script_path = shared_dir.parent / "bin" / "xdg-open"
         starship_mount = get_starship_mount(global_shared_dir)
         volumes = get_volumes()
         assert calls == [
@@ -565,6 +602,8 @@ class TestStart:
                         "-d",
                         "--name",
                         "dda-linux-container-default",
+                        "--add-host",
+                        "host.docker.internal:host-gateway",
                         "-p",
                         "26090:22",
                         "-p",
@@ -582,6 +621,12 @@ class TestStart:
                         GitEnvVars.AUTHOR_NAME,
                         "-e",
                         GitEnvVars.AUTHOR_EMAIL,
+                        "-e",
+                        "DDA_BROWSER_PROXY_PORT",
+                        "-e",
+                        "BROWSER",
+                        "-v",
+                        f"{xdg_open_script_path}:/usr/local/bin/xdg-open:ro",
                         "-v",
                         f"{shared_dir}:/.shared",
                         *starship_mount,
@@ -643,6 +688,7 @@ class TestStart:
 
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
         global_shared_dir = shared_dir.parent.parent / ".shared"
+        xdg_open_script_path = shared_dir.parent / "bin" / "xdg-open"
         starship_mount = get_starship_mount(global_shared_dir)
         volumes = get_volumes()
 
@@ -686,6 +732,8 @@ class TestStart:
                         "-d",
                         "--name",
                         "dda-linux-container-default",
+                        "--add-host",
+                        "host.docker.internal:host-gateway",
                         "-p",
                         "26090:22",
                         "-p",
@@ -703,6 +751,12 @@ class TestStart:
                         GitEnvVars.AUTHOR_NAME,
                         "-e",
                         GitEnvVars.AUTHOR_EMAIL,
+                        "-e",
+                        "DDA_BROWSER_PROXY_PORT",
+                        "-e",
+                        "BROWSER",
+                        "-v",
+                        f"{xdg_open_script_path}:/usr/local/bin/xdg-open:ro",
                         "-v",
                         f"{shared_dir}:/.shared",
                         *starship_mount,
@@ -747,6 +801,7 @@ class TestStart:
 
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
         global_shared_dir = shared_dir.parent.parent / ".shared"
+        xdg_open_script_path = shared_dir.parent / "bin" / "xdg-open"
         starship_mount = get_starship_mount(global_shared_dir)
         volumes = get_volumes()
 
@@ -791,6 +846,8 @@ class TestStart:
                         "-d",
                         "--name",
                         "dda-linux-container-default",
+                        "--add-host",
+                        "host.docker.internal:host-gateway",
                         "-p",
                         "26090:22",
                         "-p",
@@ -808,6 +865,12 @@ class TestStart:
                         GitEnvVars.AUTHOR_NAME,
                         "-e",
                         GitEnvVars.AUTHOR_EMAIL,
+                        "-e",
+                        "DDA_BROWSER_PROXY_PORT",
+                        "-e",
+                        "BROWSER",
+                        "-v",
+                        f"{xdg_open_script_path}:/usr/local/bin/xdg-open:ro",
                         "-v",
                         f"{shared_dir}:/.shared",
                         *starship_mount,
