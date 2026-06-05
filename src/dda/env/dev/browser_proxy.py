@@ -80,7 +80,8 @@ def _find_redirect_url(
     if depth > _MAX_REDIRECT_DEPTH:
         return None
     for key in ("redirect_uri", "redirect_url", "redirect"):
-        value = (params.get(key) or [None])[0]
+        values = params.get(key)
+        value = values[0] if values else None
         if value:
             with contextlib.suppress(Exception):
                 return urllib.parse.urlparse(value)
