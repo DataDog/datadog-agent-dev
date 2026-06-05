@@ -8,6 +8,32 @@ import sys
 from functools import cached_property
 from typing import TYPE_CHECKING, Annotated, Any, Literal, NoReturn
 
+# Script installed inside the container as /usr/local/bin/xdg-open.  It
+# forwards browser-open requests to the host daemon via host.docker.internal.
+_XDG_OPEN_SCRIPT = """\
+#!/usr/bin/env python3
+import os, sys, urllib.parse, urllib.request
+
+def main():
+    if len(sys.argv) < 2:
+        sys.exit(1)
+    url = sys.argv[1]
+    port = os.environ.get("DDA_BROWSER_PROXY_PORT", "")
+    if not port:
+        sys.exit(0)
+    encoded = urllib.parse.quote(url, safe="")
+    try:
+        urllib.request.urlopen(
+            f"http://host.docker.internal:{port}/open?url={encoded}",
+            timeout=5,
+        )
+    except Exception as exc:
+        print(f"browser-proxy: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+main()
+"""
+
 import msgspec
 
 from dda.env.dev.interface import DeveloperEnvironmentConfig, DeveloperEnvironmentInterface
@@ -128,6 +154,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         status = self.__latest_status if self.__latest_status is not None else self.status()
         if status.state == EnvironmentState.STOPPED:
             self.docker.wait(["start", self.container_name], message=f"Starting container: {self.container_name}")
+            self._start_browser_proxy()
         else:
             from dda.config.constants import AppEnvVars
             from dda.utils.process import EnvVars
@@ -140,6 +167,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 self.docker.wait(pull_command, message=f"Pulling image: {self.config.image}")
 
             self.shared_dir.ensure_dir()
+            self._write_xdg_open_script()
             command = [
                 "run",
                 "--pull",
@@ -147,6 +175,8 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 "-d",
                 "--name",
                 self.container_name,
+                "--add-host",
+                "host.docker.internal:host-gateway",
                 "-p",
                 f"{self.ssh_port}:22",
                 "-p",
@@ -173,6 +203,12 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 GitEnvVars.AUTHOR_NAME,
                 "-e",
                 GitEnvVars.AUTHOR_EMAIL,
+                "-e",
+                "DDA_BROWSER_PROXY_PORT",
+                "-e",
+                "BROWSER",
+                "-v",
+                f"{self._xdg_open_script_path}:/usr/local/bin/xdg-open:ro",
             ))
             if self.config.arch is not None:
                 command.extend(("--platform", f"linux/{self.config.arch}"))
@@ -211,6 +247,8 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
 
             env = EnvVars()
             env["DD_SHELL"] = self.config.shell
+            env["DDA_BROWSER_PROXY_PORT"] = str(self.browser_proxy_port)
+            env["BROWSER"] = "xdg-open"
             env[AppEnvVars.TELEMETRY_USER_MACHINE_ID] = self.app.telemetry.user.machine_id
             if self.app.telemetry.api_key is not None:
                 env[AppEnvVars.TELEMETRY_API_KEY] = self.app.telemetry.api_key
@@ -228,6 +266,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             with self.app.status(f"Waiting for container: {self.container_name}"):
                 wait_for(self.check_readiness, timeout=30, interval=0.3)
 
+            self._start_browser_proxy()
             self.ensure_ssh_config()
 
             if self.config.clone:
@@ -247,6 +286,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             ["stop", "-t", "0", self.container_name],
             message=f"Stopping container: {self.container_name}",
         )
+        self._stop_browser_proxy()
 
     def remove(self) -> None:
         self.docker.wait(["rm", "-f", self.container_name], message=f"Removing container: {self.container_name}")
@@ -372,6 +412,16 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         return derive_service_port(f"{self.container_name}-mcp")
 
     @cached_property
+    def browser_proxy_port(self) -> int:
+        from dda.utils.network.protocols import derive_service_port
+
+        return derive_service_port(f"{self.container_name}-browser-proxy")
+
+    @cached_property
+    def _xdg_open_script_path(self) -> Any:
+        return self.storage_dirs.data / "bin" / "xdg-open"
+
+    @cached_property
     def home_dir(self) -> str:
         return "/home/dd"
 
@@ -411,6 +461,47 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         if self.config.arch is not None:
             name += f"-{self.config.arch}"
         return name
+
+    def _write_xdg_open_script(self) -> None:
+        self._xdg_open_script_path.parent.ensure_dir()
+        self._xdg_open_script_path.write_text(_XDG_OPEN_SCRIPT, encoding="utf-8")
+        os.chmod(self._xdg_open_script_path, 0o755)
+
+    def _start_browser_proxy(self) -> None:
+        import psutil
+
+        pid_file = self.storage_dirs.data / "browser-proxy.pid"
+        if pid_file.is_file():
+            try:
+                pid = int(pid_file.read_text().strip())
+                if psutil.Process(pid).is_running():
+                    return
+            except (ValueError, psutil.NoSuchProcess):
+                pass
+            pid_file.unlink()
+
+        pid = self.app.subprocess.spawn_daemon([
+            sys.executable,
+            "-m",
+            "dda.env.dev.browser_proxy",
+            str(self.browser_proxy_port),
+            "--ssh-port",
+            str(self.ssh_port),
+        ])
+        pid_file.write_text(str(pid), encoding="utf-8")
+
+    def _stop_browser_proxy(self) -> None:
+        import psutil
+
+        pid_file = self.storage_dirs.data / "browser-proxy.pid"
+        if not pid_file.is_file():
+            return
+        try:
+            pid = int(pid_file.read_text().strip())
+            psutil.Process(pid).kill()
+        except (ValueError, psutil.NoSuchProcess):
+            pass
+        pid_file.unlink()
 
     def construct_command(self, command: list[str], *, cwd: str | None = None) -> list[str]:
         if cwd is None:
