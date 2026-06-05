@@ -148,23 +148,26 @@ def _setup_port_forward(ssh_port: int, callback_port: int) -> None:
 
 
 def _wait_for_port_bound(proc: subprocess.Popen, port: int) -> bool:
-    """Return True once ssh has bound *port* on 127.0.0.1, False on timeout or
-    early ssh exit.
+    """Return True once *our* ssh process has bound *port* on 127.0.0.1.
 
     Detection strategy: try to bind the port ourselves — if that raises
-    EADDRINUSE it means ssh already owns it.
+    EADDRINUSE we know *something* holds it.  We then confirm it is our ssh
+    process (not a pre-existing listener or another container's tunnel) by
+    checking that ``proc`` is still alive.  If ssh exited, the port was already
+    taken by someone else and the forward was never established.
     """
     deadline = time.monotonic() + _TUNNEL_BIND_TIMEOUT
     while time.monotonic() < deadline:
         if proc.poll() is not None:
-            return False  # ssh exited early (e.g. ExitOnForwardFailure)
+            return False  # ssh exited early
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.bind(("127.0.0.1", port))
             # Still bindable — ssh not ready yet
             time.sleep(0.05)
         except OSError:
-            return True  # EADDRINUSE: ssh has claimed the port
+            # Port is taken — verify it is our ssh process still running
+            return proc.poll() is None
     return False
 
 
