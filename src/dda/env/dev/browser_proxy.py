@@ -13,8 +13,11 @@ Designed to be started as a detached subprocess by ``LinuxContainer``.
   an SSH local-port-forward is established *before* the browser opens so that
   the auth callback from the browser reaches the container service.
 """
+
 from __future__ import annotations
 
+import contextlib
+import shutil
 import socket
 import subprocess
 import sys
@@ -36,7 +39,7 @@ _ssh_port: int | None = None
 
 
 class _Handler(BaseHTTPRequestHandler):
-    def do_GET(self) -> None:
+    def do_GET(self) -> None:  # noqa: N802
         parsed = urllib.parse.urlparse(self.path)
         if parsed.path == "/open":
             params = urllib.parse.parse_qs(parsed.query)
@@ -79,26 +82,22 @@ def _find_redirect_url(
     for key in ("redirect_uri", "redirect_url", "redirect"):
         value = (params.get(key) or [None])[0]
         if value:
-            try:
+            with contextlib.suppress(Exception):
                 return urllib.parse.urlparse(value)
-            except Exception:  # noqa: BLE001
-                pass
     # Recurse into nested URL-valued query parameters.
     for values in params.values():
         for v in values:
-            try:
+            with contextlib.suppress(Exception):
                 nested = urllib.parse.urlparse(v)
                 if nested.query:
                     found = _find_redirect_url(urllib.parse.parse_qs(nested.query), depth + 1)
                     if found is not None:
                         return found
-            except Exception:  # noqa: BLE001
-                pass
     return None
 
 
 def _is_localhost(host: str) -> bool:
-    return host in ("localhost", "127.0.0.1", "::1", "0.0.0.0")
+    return host in {"localhost", "127.0.0.1", "::1", "0.0.0.0"}  # noqa: S104
 
 
 # ---------------------------------------------------------------------------
@@ -113,9 +112,10 @@ def _setup_port_forward(ssh_port: int, callback_port: int) -> None:
     Blocks until the port is bound (or the attempt times out / fails) so the
     caller can safely open the browser immediately after returning.
     """
+    ssh = shutil.which("ssh") or "ssh"
     proc = subprocess.Popen(
         [
-            "ssh",
+            ssh,
             "-N",
             "-q",
             "-p",
@@ -139,10 +139,8 @@ def _setup_port_forward(ssh_port: int, callback_port: int) -> None:
 
     def _cleanup() -> None:
         time.sleep(_TUNNEL_LIFETIME)
-        try:
+        with contextlib.suppress(Exception):
             proc.terminate()
-        except Exception:  # noqa: BLE001
-            pass
 
     threading.Thread(target=_cleanup, daemon=True).start()
 
@@ -178,9 +176,9 @@ def _wait_for_port_bound(proc: subprocess.Popen, port: int) -> bool:
 
 def _open_browser(url: str) -> None:
     if sys.platform == "darwin":
-        subprocess.run(["open", url], check=False)  # noqa: S603, S607
+        subprocess.run(["open", url], check=False)  # noqa: S607
     elif sys.platform == "linux":
-        subprocess.run(["xdg-open", url], check=False)  # noqa: S603, S607
+        subprocess.run(["xdg-open", url], check=False)  # noqa: S607
     else:
         import webbrowser
 

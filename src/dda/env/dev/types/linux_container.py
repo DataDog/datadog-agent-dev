@@ -8,6 +8,12 @@ import sys
 from functools import cached_property
 from typing import TYPE_CHECKING, Annotated, Any, Literal, NoReturn
 
+import msgspec
+
+from dda.env.dev.interface import DeveloperEnvironmentConfig, DeveloperEnvironmentInterface
+from dda.utils.fs import cp_r, temp_directory
+from dda.utils.git.constants import GitEnvVars
+
 # Script installed inside the container as /usr/local/bin/xdg-open.  It
 # forwards browser-open requests to the host daemon via host.docker.internal.
 _XDG_OPEN_SCRIPT = """\
@@ -33,12 +39,6 @@ def main():
 
 main()
 """
-
-import msgspec
-
-from dda.env.dev.interface import DeveloperEnvironmentConfig, DeveloperEnvironmentInterface
-from dda.utils.fs import cp_r, temp_directory
-from dda.utils.git.constants import GitEnvVars
 
 if TYPE_CHECKING:
     from dda.env.models import EnvironmentStatus
@@ -465,7 +465,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
     def _write_xdg_open_script(self) -> None:
         self._xdg_open_script_path.parent.ensure_dir()
         self._xdg_open_script_path.write_text(_XDG_OPEN_SCRIPT, encoding="utf-8")
-        os.chmod(self._xdg_open_script_path, 0o755)
+        os.chmod(self._xdg_open_script_path, 0o755)  # noqa: S103
 
     def _start_browser_proxy(self) -> None:
         import psutil
