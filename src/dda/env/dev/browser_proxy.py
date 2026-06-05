@@ -37,6 +37,10 @@ _TUNNEL_BIND_TIMEOUT = 5.0
 
 _ssh_port: int | None = None
 
+# Maps callback_port → live SSH Popen for that tunnel.
+_active_tunnels: dict[int, subprocess.Popen] = {}
+_tunnel_lock = threading.Lock()
+
 
 class _Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802
@@ -110,38 +114,55 @@ def _setup_port_forward(ssh_port: int, callback_port: int) -> None:
     """Bind ``127.0.0.1:{callback_port}`` on the host and forward it to the
     container's ``localhost:{callback_port}`` via SSH local port forwarding.
 
-    Blocks until the port is bound (or the attempt times out / fails) so the
-    caller can safely open the browser immediately after returning.
+    Serialised per ``callback_port``: if a live tunnel already exists for that
+    port, this is a no-op.  Uses ``ExitOnForwardFailure=yes`` (safe here
+    because ``-F /dev/null`` suppresses user SSH configs that may add failing
+    reverse-forwards) so SSH exits immediately when the port is pre-occupied,
+    making ``_wait_for_port_bound`` return False rather than treating a
+    pre-existing listener as our own tunnel.
     """
-    ssh = shutil.which("ssh") or "ssh"
-    proc = subprocess.Popen(
-        [
-            ssh,
-            "-N",
-            "-q",
-            "-p",
-            str(ssh_port),
-            "-o",
-            "StrictHostKeyChecking=no",
-            "-o",
-            "UserKnownHostsFile=/dev/null",
-            "-L",
-            f"127.0.0.1:{callback_port}:localhost:{callback_port}",
-            "dd@localhost",
-        ],
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
+    with _tunnel_lock:
+        existing = _active_tunnels.get(callback_port)
+        if existing is not None and existing.poll() is None:
+            return  # live tunnel already installed for this port
 
-    if not _wait_for_port_bound(proc, callback_port):
-        proc.terminate()
-        return
+        ssh = shutil.which("ssh") or "ssh"
+        proc = subprocess.Popen(
+            [
+                ssh,
+                "-N",
+                "-q",
+                "-F",
+                "/dev/null",
+                "-o",
+                "ExitOnForwardFailure=yes",
+                "-o",
+                "StrictHostKeyChecking=no",
+                "-o",
+                "UserKnownHostsFile=/dev/null",
+                "-p",
+                str(ssh_port),
+                "-L",
+                f"127.0.0.1:{callback_port}:localhost:{callback_port}",
+                "dd@localhost",
+            ],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+        if not _wait_for_port_bound(proc, callback_port):
+            proc.terminate()
+            return
+
+        _active_tunnels[callback_port] = proc
 
     def _cleanup() -> None:
         time.sleep(_TUNNEL_LIFETIME)
-        with contextlib.suppress(Exception):
-            proc.terminate()
+        with _tunnel_lock:
+            with contextlib.suppress(Exception):
+                proc.terminate()
+            _active_tunnels.pop(callback_port, None)
 
     threading.Thread(target=_cleanup, daemon=True).start()
 
