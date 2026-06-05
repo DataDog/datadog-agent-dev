@@ -14,31 +14,34 @@ from dda.env.dev.interface import DeveloperEnvironmentConfig, DeveloperEnvironme
 from dda.utils.fs import cp_r, temp_directory
 from dda.utils.git.constants import GitEnvVars
 
-# Script installed inside the container as /usr/local/bin/xdg-open.  It
-# forwards browser-open requests to the host daemon via host.docker.internal.
-_XDG_OPEN_SCRIPT = """\
+
+def _make_xdg_open_script(port: int) -> str:
+    """Return the xdg-open script with the proxy port embedded at write time.
+
+    The port is baked in rather than read from an environment variable so the
+    script works in SSH sessions, which do not inherit Docker ``-e`` variables.
+    """
+    return f"""\
 #!/usr/bin/env python3
-import os, sys, urllib.parse, urllib.request
+import sys, urllib.parse, urllib.request
 
 def main():
     if len(sys.argv) < 2:
         sys.exit(1)
     url = sys.argv[1]
-    port = os.environ.get("DDA_BROWSER_PROXY_PORT", "")
-    if not port:
-        sys.exit(0)
     encoded = urllib.parse.quote(url, safe="")
     try:
         urllib.request.urlopen(
-            f"http://host.docker.internal:{port}/open?url={encoded}",
+            f"http://host.docker.internal:{port}/open?url={{encoded}}",
             timeout=5,
         )
     except Exception as exc:
-        print(f"browser-proxy: {exc}", file=sys.stderr)
+        print(f"browser-proxy: {{exc}}", file=sys.stderr)
         sys.exit(1)
 
 main()
 """
+
 
 if TYPE_CHECKING:
     from dda.env.models import EnvironmentStatus
@@ -464,7 +467,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
 
     def _write_xdg_open_script(self) -> None:
         self._xdg_open_script_path.parent.ensure_dir()
-        self._xdg_open_script_path.write_text(_XDG_OPEN_SCRIPT, encoding="utf-8")
+        self._xdg_open_script_path.write_text(_make_xdg_open_script(self.browser_proxy_port), encoding="utf-8")
         os.chmod(self._xdg_open_script_path, 0o755)  # noqa: S103
 
     def _start_browser_proxy(self) -> None:
