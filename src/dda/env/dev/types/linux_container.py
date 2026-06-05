@@ -468,6 +468,8 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         os.chmod(self._xdg_open_script_path, 0o755)  # noqa: S103
 
     def _start_browser_proxy(self) -> None:
+        if sys.platform == "win32":
+            return
         import psutil
 
         pid_file = self.storage_dirs.data / "browser-proxy.pid"
@@ -491,6 +493,8 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         pid_file.write_text(str(pid), encoding="utf-8")
 
     def _stop_browser_proxy(self) -> None:
+        if sys.platform == "win32":
+            return
         import psutil
 
         pid_file = self.storage_dirs.data / "browser-proxy.pid"
