@@ -33,7 +33,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 _MAX_REDIRECT_DEPTH = 5
 
 # How long to keep an SSH tunnel alive after it is established (seconds).
-_TUNNEL_LIFETIME = 600
+_TUNNEL_LIFETIME = 300
 
 # How long to wait for SSH to bind the callback port (seconds).
 _TUNNEL_BIND_TIMEOUT = 5.0
