@@ -217,7 +217,11 @@ class TestStart:
                         "/var/run/docker.sock:/var/run/docker.sock",
                         *([] if sys.platform == "win32" else ["--add-host", "host.docker.internal:host-gateway"]),
                         *host_user_args,
-                        *([] if sys.platform == "win32" else ["-e", "BROWSER", "-v", f"{xdg_open_script_path}:/usr/local/bin/xdg-open:ro"]),
+                        *(
+                            []
+                            if sys.platform == "win32"
+                            else ["-e", "BROWSER", "-v", f"{xdg_open_script_path}:/usr/local/bin/xdg-open:ro"]
+                        ),
                         "-e",
                         "DD_SHELL",
                         "-e",
@@ -303,7 +307,11 @@ class TestStart:
                         "/var/run/docker.sock:/var/run/docker.sock",
                         *([] if sys.platform == "win32" else ["--add-host", "host.docker.internal:host-gateway"]),
                         *host_user_args,
-                        *([] if sys.platform == "win32" else ["-e", "BROWSER", "-v", f"{xdg_open_script_path}:/usr/local/bin/xdg-open:ro"]),
+                        *(
+                            []
+                            if sys.platform == "win32"
+                            else ["-e", "BROWSER", "-v", f"{xdg_open_script_path}:/usr/local/bin/xdg-open:ro"]
+                        ),
                         "-e",
                         "DD_SHELL",
                         "-e",
@@ -403,7 +411,11 @@ class TestStart:
                         "/var/run/docker.sock:/var/run/docker.sock",
                         *([] if sys.platform == "win32" else ["--add-host", "host.docker.internal:host-gateway"]),
                         *host_user_args,
-                        *([] if sys.platform == "win32" else ["-e", "BROWSER", "-v", f"{xdg_open_script_path}:/usr/local/bin/xdg-open:ro"]),
+                        *(
+                            []
+                            if sys.platform == "win32"
+                            else ["-e", "BROWSER", "-v", f"{xdg_open_script_path}:/usr/local/bin/xdg-open:ro"]
+                        ),
                         "-e",
                         "DD_SHELL",
                         "-e",
@@ -497,7 +509,11 @@ class TestStart:
                         "/var/run/docker.sock:/var/run/docker.sock",
                         *([] if sys.platform == "win32" else ["--add-host", "host.docker.internal:host-gateway"]),
                         *host_user_args,
-                        *([] if sys.platform == "win32" else ["-e", "BROWSER", "-v", f"{xdg_open_script_path}:/usr/local/bin/xdg-open:ro"]),
+                        *(
+                            []
+                            if sys.platform == "win32"
+                            else ["-e", "BROWSER", "-v", f"{xdg_open_script_path}:/usr/local/bin/xdg-open:ro"]
+                        ),
                         "-e",
                         "DD_SHELL",
                         "-e",
@@ -586,7 +602,11 @@ class TestStart:
                         "/var/run/docker.sock:/var/run/docker.sock",
                         *([] if sys.platform == "win32" else ["--add-host", "host.docker.internal:host-gateway"]),
                         *host_user_args,
-                        *([] if sys.platform == "win32" else ["-e", "BROWSER", "-v", f"{xdg_open_script_path}:/usr/local/bin/xdg-open:ro"]),
+                        *(
+                            []
+                            if sys.platform == "win32"
+                            else ["-e", "BROWSER", "-v", f"{xdg_open_script_path}:/usr/local/bin/xdg-open:ro"]
+                        ),
                         "-e",
                         "DD_SHELL",
                         "-e",
@@ -710,7 +730,11 @@ class TestStart:
                         "/var/run/docker.sock:/var/run/docker.sock",
                         *([] if sys.platform == "win32" else ["--add-host", "host.docker.internal:host-gateway"]),
                         *host_user_args,
-                        *([] if sys.platform == "win32" else ["-e", "BROWSER", "-v", f"{xdg_open_script_path}:/usr/local/bin/xdg-open:ro"]),
+                        *(
+                            []
+                            if sys.platform == "win32"
+                            else ["-e", "BROWSER", "-v", f"{xdg_open_script_path}:/usr/local/bin/xdg-open:ro"]
+                        ),
                         "-e",
                         "DD_SHELL",
                         "-e",
@@ -818,7 +842,11 @@ class TestStart:
                         "/var/run/docker.sock:/var/run/docker.sock",
                         *([] if sys.platform == "win32" else ["--add-host", "host.docker.internal:host-gateway"]),
                         *host_user_args,
-                        *([] if sys.platform == "win32" else ["-e", "BROWSER", "-v", f"{xdg_open_script_path}:/usr/local/bin/xdg-open:ro"]),
+                        *(
+                            []
+                            if sys.platform == "win32"
+                            else ["-e", "BROWSER", "-v", f"{xdg_open_script_path}:/usr/local/bin/xdg-open:ro"]
+                        ),
                         "-e",
                         "DD_SHELL",
                         "-e",
