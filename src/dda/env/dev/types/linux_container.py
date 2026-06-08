@@ -180,8 +180,6 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 "-d",
                 "--name",
                 self.container_name,
-                "--add-host",
-                "host.docker.internal:host-gateway",
                 "-p",
                 f"{self.ssh_port}:22",
                 "-p",
@@ -191,10 +189,16 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             ]
             if sys.platform != "win32":
                 command.extend((
+                    "--add-host",
+                    "host.docker.internal:host-gateway",
                     "-e",
                     f"HOST_UID={os.getuid()}",
                     "-e",
                     f"HOST_GID={os.getgid()}",
+                    "-e",
+                    "BROWSER",
+                    "-v",
+                    f"{self._xdg_open_script_path}:/usr/local/bin/xdg-open:ro",
                 ))
 
             command.extend((
@@ -208,10 +212,6 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 GitEnvVars.AUTHOR_NAME,
                 "-e",
                 GitEnvVars.AUTHOR_EMAIL,
-                "-e",
-                "BROWSER",
-                "-v",
-                f"{self._xdg_open_script_path}:/usr/local/bin/xdg-open:ro",
             ))
             if self.config.arch is not None:
                 command.extend(("--platform", f"linux/{self.config.arch}"))
