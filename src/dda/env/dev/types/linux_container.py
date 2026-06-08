@@ -15,11 +15,13 @@ from dda.utils.fs import cp_r, temp_directory
 from dda.utils.git.constants import GitEnvVars
 
 
-def _make_xdg_open_script(port: int) -> str:
-    """Return the xdg-open script with the proxy port embedded at write time.
+def _make_xdg_open_script(proxy_port: int, ssh_port: int) -> str:
+    """Return the xdg-open script with both ports embedded at write time.
 
-    The port is baked in rather than read from an environment variable so the
-    script works in SSH sessions, which do not inherit Docker ``-e`` variables.
+    Both the shared proxy port and the container's own SSH port are baked in
+    so the script works in SSH sessions (which do not inherit Docker ``-e``
+    variables) and so the single shared daemon knows which container to tunnel
+    back to for OAuth callbacks.
     """
     return f"""\
 #!/usr/bin/env python3
@@ -32,7 +34,7 @@ def main():
     encoded = urllib.parse.quote(url, safe="")
     try:
         urllib.request.urlopen(
-            f"http://host.docker.internal:{port}/open?url={{encoded}}",
+            f"http://host.docker.internal:{proxy_port}/open?url={{encoded}}&ssh_port={ssh_port}",
             timeout=5,
         )
     except Exception as exc:
@@ -207,8 +209,6 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 "-e",
                 GitEnvVars.AUTHOR_EMAIL,
                 "-e",
-                "DDA_BROWSER_PROXY_PORT",
-                "-e",
                 "BROWSER",
                 "-v",
                 f"{self._xdg_open_script_path}:/usr/local/bin/xdg-open:ro",
@@ -250,7 +250,6 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
 
             env = EnvVars()
             env["DD_SHELL"] = self.config.shell
-            env["DDA_BROWSER_PROXY_PORT"] = str(self.browser_proxy_port)
             env["BROWSER"] = "xdg-open"
             env[AppEnvVars.TELEMETRY_USER_MACHINE_ID] = self.app.telemetry.user.machine_id
             if self.app.telemetry.api_key is not None:
@@ -289,7 +288,6 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             ["stop", "-t", "0", self.container_name],
             message=f"Stopping container: {self.container_name}",
         )
-        self._stop_browser_proxy()
 
     def remove(self) -> None:
         self.docker.wait(["rm", "-f", self.container_name], message=f"Removing container: {self.container_name}")
@@ -329,6 +327,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
 
     def launch_shell(self, *, repo: str | None = None) -> NoReturn:
         self.ensure_ssh_config()
+        self._start_browser_proxy()
         ssh_command = self.ssh_base_command()
         ssh_command.append(self.shell.get_login_command(cwd=self.repo_path(repo)))
         process = self.app.subprocess.attach(ssh_command, check=False)
@@ -339,6 +338,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             self.app.abort(f"Unsupported editor: {editor.name}")
 
         self.ensure_ssh_config()
+        self._start_browser_proxy()
         repo_path = self.repo_path(repo)
 
         # TODO: Currently, we do not support aggregating local commands from multiple repositories as a single tool
@@ -358,6 +358,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
 
     def run_command(self, command: list[str], *, repo: str | None = None) -> None:
         self.ensure_ssh_config()
+        self._start_browser_proxy()
         self.app.subprocess.run(self.construct_command(command, cwd=self.repo_path(repo)))
 
     def remove_cache(self) -> None:
@@ -418,7 +419,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
     def browser_proxy_port(self) -> int:
         from dda.utils.network.protocols import derive_service_port
 
-        return derive_service_port(f"{self.container_name}-browser-proxy")
+        return derive_service_port("dda-browser-proxy")
 
     @cached_property
     def _xdg_open_script_path(self) -> Any:
@@ -467,7 +468,9 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
 
     def _write_xdg_open_script(self) -> None:
         self._xdg_open_script_path.parent.ensure_dir()
-        self._xdg_open_script_path.write_text(_make_xdg_open_script(self.browser_proxy_port), encoding="utf-8")
+        self._xdg_open_script_path.write_text(
+            _make_xdg_open_script(self.browser_proxy_port, self.ssh_port), encoding="utf-8"
+        )
         os.chmod(self._xdg_open_script_path, 0o755)  # noqa: S103
 
     def _start_browser_proxy(self) -> None:
@@ -475,7 +478,9 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             return
         import psutil
 
-        pid_file = self.storage_dirs.data / "browser-proxy.pid"
+        storage = self.app.config.storage.join("browser-proxy")
+        storage.data.ensure_dir()
+        pid_file = storage.data / "server.pid"
         if pid_file.is_file():
             try:
                 pid = int(pid_file.read_text().strip())
@@ -490,25 +495,8 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             "-m",
             "dda.env.dev.browser_proxy",
             str(self.browser_proxy_port),
-            "--ssh-port",
-            str(self.ssh_port),
         ])
         pid_file.write_text(str(pid), encoding="utf-8")
-
-    def _stop_browser_proxy(self) -> None:
-        if sys.platform == "win32":
-            return
-        import psutil
-
-        pid_file = self.storage_dirs.data / "browser-proxy.pid"
-        if not pid_file.is_file():
-            return
-        try:
-            pid = int(pid_file.read_text().strip())
-            psutil.Process(pid).kill()
-        except (ValueError, psutil.NoSuchProcess):
-            pass
-        pid_file.unlink()
 
     def construct_command(self, command: list[str], *, cwd: str | None = None) -> list[str]:
         if cwd is None:

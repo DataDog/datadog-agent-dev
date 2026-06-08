@@ -1,17 +1,20 @@
 # SPDX-FileCopyrightText: 2025-present Datadog, Inc. <dev@datadoghq.com>
 #
 # SPDX-License-Identifier: MIT
-"""Browser proxy daemon.
+"""Browser proxy daemon — shared across all dev containers.
 
 Serves a minimal HTTP endpoint that opens URLs in the host's default browser.
-Designed to be started as a detached subprocess by ``LinuxContainer``.
+Started once on the host; all containers share the same instance.
 
 * Binds to ``0.0.0.0`` so Docker containers can reach it via
   ``host.docker.internal``.
-* Accepts ``GET /open?url=<url>`` and opens only ``http``/``https`` URLs.
+* Accepts ``GET /open?url=<url>&ssh_port=<port>`` and opens only
+  ``http``/``https`` URLs.
 * When the URL contains a ``redirect_uri`` pointing at ``localhost:{port}``,
   an SSH local-port-forward is established *before* the browser opens so that
   the auth callback from the browser reaches the container service.
+* ``ssh_port`` is supplied per-request (embedded in each container's
+  xdg-open script) so the single daemon can serve multiple containers.
 """
 
 from __future__ import annotations
@@ -35,10 +38,10 @@ _TUNNEL_LIFETIME = 600
 # How long to wait for SSH to bind the callback port (seconds).
 _TUNNEL_BIND_TIMEOUT = 5.0
 
-_ssh_port: int | None = None
-
-# Maps callback_port → live SSH Popen for that tunnel.
-_active_tunnels: dict[int, subprocess.Popen] = {}
+# Maps (ssh_port, callback_port) → live SSH Popen for that tunnel.
+# Keyed by both ports so tunnels from different containers to the same
+# callback port are tracked independently.
+_active_tunnels: dict[tuple[int, int], subprocess.Popen] = {}
 _tunnel_lock = threading.Lock()
 
 
@@ -51,7 +54,12 @@ class _Handler(BaseHTTPRequestHandler):
             if urls:
                 url = urls[0]
                 if url.startswith(("http://", "https://")):
-                    _handle_open(url)
+                    ssh_ports = params.get("ssh_port", [])
+                    try:
+                        ssh_port: int | None = int(ssh_ports[0]) if ssh_ports else None
+                    except ValueError:
+                        ssh_port = None
+                    _handle_open(url, ssh_port)
         self.send_response(200)
         self.end_headers()
 
@@ -64,14 +72,14 @@ class _Handler(BaseHTTPRequestHandler):
 # ---------------------------------------------------------------------------
 
 
-def _handle_open(url: str) -> None:
+def _handle_open(url: str, ssh_port: int | None) -> None:
     parsed = urllib.parse.urlparse(url)
     redirect = _find_redirect_url(urllib.parse.parse_qs(parsed.query))
 
     if redirect is not None and _is_localhost(redirect.hostname or ""):
         port = redirect.port or (443 if redirect.scheme == "https" else 80)
-        if _ssh_port is not None:
-            _setup_port_forward(_ssh_port, port)
+        if ssh_port is not None:
+            _setup_port_forward(ssh_port, port)
 
     _open_browser(url)
 
@@ -114,17 +122,18 @@ def _setup_port_forward(ssh_port: int, callback_port: int) -> None:
     """Bind ``127.0.0.1:{callback_port}`` on the host and forward it to the
     container's ``localhost:{callback_port}`` via SSH local port forwarding.
 
-    Serialised per ``callback_port``: if a live tunnel already exists for that
-    port, this is a no-op.  Uses ``ExitOnForwardFailure=yes`` (safe here
-    because ``-F /dev/null`` suppresses user SSH configs that may add failing
-    reverse-forwards) so SSH exits immediately when the port is pre-occupied,
-    making ``_wait_for_port_bound`` return False rather than treating a
-    pre-existing listener as our own tunnel.
+    Serialised per ``(ssh_port, callback_port)`` pair: if a live tunnel already
+    exists for that container+port combination, this is a no-op.  Uses
+    ``ExitOnForwardFailure=yes`` (safe here because ``-F /dev/null`` suppresses
+    user SSH configs that may add failing reverse-forwards) so SSH exits
+    immediately when the port is pre-occupied, making ``_wait_for_port_bound``
+    return False rather than treating a pre-existing listener as our own tunnel.
     """
+    tunnel_key = (ssh_port, callback_port)
     with _tunnel_lock:
-        existing = _active_tunnels.get(callback_port)
+        existing = _active_tunnels.get(tunnel_key)
         if existing is not None and existing.poll() is None:
-            return  # live tunnel already installed for this port
+            return  # live tunnel already installed for this container+port
 
         ssh = shutil.which("ssh") or "ssh"
         proc = subprocess.Popen(
@@ -155,14 +164,14 @@ def _setup_port_forward(ssh_port: int, callback_port: int) -> None:
             proc.terminate()
             return
 
-        _active_tunnels[callback_port] = proc
+        _active_tunnels[tunnel_key] = proc
 
     def _cleanup() -> None:
         time.sleep(_TUNNEL_LIFETIME)
         with _tunnel_lock:
             with contextlib.suppress(Exception):
                 proc.terminate()
-            _active_tunnels.pop(callback_port, None)
+            _active_tunnels.pop(tunnel_key, None)
 
     threading.Thread(target=_cleanup, daemon=True).start()
 
@@ -212,9 +221,7 @@ def _open_browser(url: str) -> None:
 # ---------------------------------------------------------------------------
 
 
-def serve(port: int, ssh_port: int | None = None) -> None:
-    global _ssh_port  # noqa: PLW0603
-    _ssh_port = ssh_port
+def serve(port: int) -> None:
     HTTPServer(("0.0.0.0", port), _Handler).serve_forever()  # noqa: S104
 
 
@@ -223,6 +230,5 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("port", type=int)
-    parser.add_argument("--ssh-port", type=int, default=None)
     args = parser.parse_args()
-    serve(args.port, args.ssh_port)
+    serve(args.port)
