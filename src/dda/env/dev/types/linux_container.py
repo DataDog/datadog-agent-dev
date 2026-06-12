@@ -147,7 +147,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         status = self.__latest_status if self.__latest_status is not None else self.status()
         if status.state == EnvironmentState.STOPPED:
             self.docker.wait(["start", self.container_name], message=f"Starting container: {self.container_name}")
-            self._ensure_browser_proxy_started()
+            self.ensure_browser_proxy_started()
         else:
             from dda.config.constants import AppEnvVars
             from dda.utils.process import EnvVars
@@ -256,7 +256,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             with self.app.status(f"Waiting for container: {self.container_name}"):
                 wait_for(self.check_readiness, timeout=30, interval=0.3)
 
-            self._ensure_browser_proxy_started()
+            self.ensure_browser_proxy_started()
             self.ensure_ssh_config()
 
             if self.config.clone:
@@ -315,7 +315,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
 
     def launch_shell(self, *, repo: str | None = None) -> NoReturn:
         self.ensure_ssh_config()
-        self._ensure_browser_proxy_started()
+        self.ensure_browser_proxy_started()
         ssh_command = self.ssh_base_command()
         ssh_command.append(self.shell.get_login_command(cwd=self.repo_path(repo)))
         process = self.app.subprocess.attach(ssh_command, check=False)
@@ -326,7 +326,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             self.app.abort(f"Unsupported editor: {editor.name}")
 
         self.ensure_ssh_config()
-        self._ensure_browser_proxy_started()
+        self.ensure_browser_proxy_started()
         repo_path = self.repo_path(repo)
 
         # TODO: Currently, we do not support aggregating local commands from multiple repositories as a single tool
@@ -346,7 +346,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
 
     def run_command(self, command: list[str], *, repo: str | None = None) -> None:
         self.ensure_ssh_config()
-        self._ensure_browser_proxy_started()
+        self.ensure_browser_proxy_started()
         self.app.subprocess.run(self.construct_command(command, cwd=self.repo_path(repo)))
 
     def remove_cache(self) -> None:
@@ -454,37 +454,6 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             _make_xdg_open_script(self.browser_proxy_port, self.ssh_port), encoding="utf-8"
         )
         os.chmod(self._xdg_open_script_path, 0o755)  # noqa: S103
-
-    def _ensure_browser_proxy_started(self) -> None:
-        """
-        Start the shared browser proxy daemon if it is not already running.
-        Useful to open browser on the host machine from the container, to handle authentication
-        callbacks.
-        """
-        import psutil
-
-        storage = self.app.config.storage.join("browser-proxy")
-        storage.data.ensure_dir()
-        pid_file = storage.data / "server.pid"
-        log_file = storage.data / "browser-proxy.log"
-        if pid_file.is_file():
-            try:
-                pid = int(pid_file.read_text().strip())
-                proc = psutil.Process(pid)
-                if proc.is_running() and "dda.env.dev.browser_proxy" in " ".join(proc.cmdline()):
-                    return
-            except (ValueError, psutil.NoSuchProcess, psutil.AccessDenied):
-                pass
-            pid_file.unlink()
-        pid = self.app.subprocess.spawn_daemon([
-            sys.executable,
-            "-m",
-            "dda.env.dev.browser_proxy",
-            str(self.browser_proxy_port),
-            "--log-file",
-            str(log_file),
-        ])
-        pid_file.write_text(str(pid), encoding="utf-8")
 
     def construct_command(self, command: list[str], *, cwd: str | None = None) -> list[str]:
         if cwd is None:
