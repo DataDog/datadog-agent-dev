@@ -484,20 +484,23 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         storage = self.app.config.storage.join("browser-proxy")
         storage.data.ensure_dir()
         pid_file = storage.data / "server.pid"
+        log_file = storage.data / "browser-proxy.log"
         if pid_file.is_file():
             try:
                 pid = int(pid_file.read_text().strip())
-                if psutil.Process(pid).is_running():
+                proc = psutil.Process(pid)
+                if proc.is_running() and "dda.env.dev.browser_proxy" in " ".join(proc.cmdline()):
                     return
-            except (ValueError, psutil.NoSuchProcess):
+            except (ValueError, psutil.NoSuchProcess, psutil.AccessDenied):
                 pass
             pid_file.unlink()
-
         pid = self.app.subprocess.spawn_daemon([
             sys.executable,
             "-m",
             "dda.env.dev.browser_proxy",
             str(self.browser_proxy_port),
+            "--log-file",
+            str(log_file),
         ])
         pid_file.write_text(str(pid), encoding="utf-8")
 
