@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2025-present Datadog, Inc. <dev@datadoghq.com>
+# SPDX-FileCopyrightText: 2026-present Datadog, Inc. <dev@datadoghq.com>
 #
 # SPDX-License-Identifier: MIT
 """Browser proxy daemon — shared across all dev containers.
@@ -206,14 +206,9 @@ def _wait_for_port_bound(proc: subprocess.Popen, port: int) -> bool:
 
 
 def _open_browser(url: str) -> None:
-    if sys.platform == "darwin":
-        subprocess.run(["open", url], check=False)  # noqa: S607
-    elif sys.platform == "linux":
-        subprocess.run(["xdg-open", url], check=False)  # noqa: S607
-    else:
-        import webbrowser
+    import webbrowser
 
-        webbrowser.open(url)
+    webbrowser.open(url)
 
 
 # ---------------------------------------------------------------------------
