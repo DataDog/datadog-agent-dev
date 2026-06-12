@@ -56,6 +56,8 @@ nav:
   - Extend:
     - Local commands: how-to/extend/local.md
     - Plugins: how-to/extend/plugin.md
+  - Developer environments:
+    - Browser forwarding: how-to/dev-env/browser-forwarding.md
   - Feature flags:
     - CI: how-to/feature-flags/ci.md
 - Tutorials:
