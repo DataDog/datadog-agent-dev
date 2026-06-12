@@ -278,6 +278,16 @@ class DeveloperEnvironmentInterface(ABC, Generic[ConfigT]):
         return self.storage_dirs.data.parent.joinpath(".shared")
 
     @cached_property
+    def browser_proxy_port(self) -> int:
+        """
+        The port used by the shared browser proxy daemon on the host.
+        All environment types that support browser forwarding share this port.
+        """
+        from dda.utils.network.protocols import derive_service_port
+
+        return derive_service_port("dda-browser-proxy")
+
+    @cached_property
     def default_repo(self) -> str:
         """
         The default repository to work on.

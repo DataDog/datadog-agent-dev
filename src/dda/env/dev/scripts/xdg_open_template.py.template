@@ -1,0 +1,32 @@
+#!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026-present Datadog, Inc. <dev@datadoghq.com>
+#
+# SPDX-License-Identifier: MIT
+#
+# This script is mounted into dev containers as /usr/local/bin/xdg-open.
+# It forwards open requests to the browser proxy daemon running on the host.
+#
+# {proxy_port} and {ssh_port} are substituted at container start time so the
+# script works inside SSH sessions (which do not inherit Docker -e variables)
+# and so the daemon knows which container to tunnel back to for OAuth callbacks.
+import sys
+import urllib.parse
+import urllib.request
+
+
+def main() -> None:
+    if len(sys.argv) < 2:
+        sys.exit(1)
+    url = sys.argv[1]
+    encoded = urllib.parse.quote(url, safe="")
+    try:
+        urllib.request.urlopen(
+            f"http://host.docker.internal:{proxy_port}/open?url={encoded}&ssh_port={ssh_port}",
+            timeout=5,
+        )
+    except Exception as exc:
+        print(f"browser-proxy: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+
+main()

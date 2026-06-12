@@ -16,33 +16,21 @@ from dda.utils.git.constants import GitEnvVars
 
 
 def _make_xdg_open_script(proxy_port: int, ssh_port: int) -> str:
-    """Return the xdg-open script with both ports embedded at write time.
+    """Return the xdg-open script with both ports substituted.
 
     Both the shared proxy port and the container's own SSH port are baked in
     so the script works in SSH sessions (which do not inherit Docker ``-e``
     variables) and so the single shared daemon knows which container to tunnel
     back to for OAuth callbacks.
     """
-    return f"""\
-#!/usr/bin/env python3
-import sys, urllib.parse, urllib.request
+    import importlib.resources
 
-def main():
-    if len(sys.argv) < 2:
-        sys.exit(1)
-    url = sys.argv[1]
-    encoded = urllib.parse.quote(url, safe="")
-    try:
-        urllib.request.urlopen(
-            f"http://host.docker.internal:{proxy_port}/open?url={{encoded}}&ssh_port={ssh_port}",
-            timeout=5,
-        )
-    except Exception as exc:
-        print(f"browser-proxy: {{exc}}", file=sys.stderr)
-        sys.exit(1)
-
-main()
-"""
+    template = (
+        importlib.resources.files("dda.env.dev.scripts")
+        .joinpath("xdg_open_template.py.template")
+        .read_text(encoding="utf-8")
+    )
+    return template.format(proxy_port=proxy_port, ssh_port=ssh_port)
 
 
 if TYPE_CHECKING:
@@ -414,12 +402,6 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         from dda.utils.network.protocols import derive_service_port
 
         return derive_service_port(f"{self.container_name}-mcp")
-
-    @cached_property
-    def browser_proxy_port(self) -> int:
-        from dda.utils.network.protocols import derive_service_port
-
-        return derive_service_port("dda-browser-proxy")
 
     @cached_property
     def _xdg_open_script_path(self) -> Any:
