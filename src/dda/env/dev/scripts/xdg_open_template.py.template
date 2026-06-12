@@ -21,11 +21,11 @@ def main() -> None:
     encoded = urllib.parse.quote(url, safe="")
     try:
         urllib.request.urlopen(
-            f"http://host.docker.internal:{proxy_port}/open?url={encoded}&ssh_port={ssh_port}",
+            f"http://host.docker.internal:{proxy_port}/open?url={{encoded}}&ssh_port={ssh_port}",
             timeout=5,
         )
     except Exception as exc:
-        print(f"browser-proxy: {exc}", file=sys.stderr)
+        print(f"browser-proxy: {{exc}}", file=sys.stderr)
         sys.exit(1)
 
 
