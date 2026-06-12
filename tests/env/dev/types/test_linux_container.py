@@ -30,6 +30,15 @@ def updated_config(config_file):
         config_file.save()
 
 
+@pytest.fixture(autouse=True)
+def mock_spawn_daemon(mocker):
+    # Prevent spawn_daemon from launching real processes during tests. On Windows
+    # a real Popen inherits the test CWD (a temp dir), holding a directory handle
+    # that blocks pytest cleanup (WinError 32). Mocking here keeps all platforms
+    # consistent without skipping browser-proxy logic in production code.
+    mocker.patch("dda.utils.process.SubprocessRunner.spawn_daemon", return_value=0)
+
+
 @pytest.fixture(scope="module")
 def host_user_args():
     return [] if sys.platform == "win32" else ["-e", f"HOST_UID={os.getuid()}", "-e", f"HOST_GID={os.getgid()}"]

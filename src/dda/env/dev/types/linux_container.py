@@ -474,9 +474,11 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         os.chmod(self._xdg_open_script_path, 0o755)  # noqa: S103
 
     def _ensure_browser_proxy_started(self) -> None:
-        """Start the shared browser proxy daemon if it is not already running."""
-        if sys.platform == "win32":
-            return
+        """
+        Start the shared browser proxy daemon if it is not already running.
+        Useful to open browser on the host machine from the container, to handle authentication
+        callbacks.
+        """
         import psutil
 
         storage = self.app.config.storage.join("browser-proxy")
