@@ -149,7 +149,7 @@ plugins:
         - https://docs.python.org/3/objects.inv
         - https://click.palletsprojects.com/en/8.1.x/objects.inv
         - https://rich.readthedocs.io/en/stable/objects.inv
-        - https://jcristharif.com/msgspec/objects.inv
+        - https://msgspec.dev/objects.inv
 
 markdown_extensions:
 # Built-in

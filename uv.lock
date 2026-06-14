@@ -667,6 +667,7 @@ legacy-release = [
 legacy-tasks = [
     { name = "atlassian-python-api" },
     { name = "beautifulsoup4" },
+    { name = "binary" },
     { name = "boto3" },
     { name = "codeowners" },
     { name = "colorama" },
@@ -872,6 +873,7 @@ legacy-release = [
 legacy-tasks = [
     { name = "atlassian-python-api", specifier = "==4.0.7" },
     { name = "beautifulsoup4", specifier = "~=4.12.3" },
+    { name = "binary", specifier = "==1.0.2" },
     { name = "boto3", specifier = "==1.38.8" },
     { name = "boto3", specifier = ">=1.28.0" },
     { name = "codeowners", specifier = "==0.6.0" },
