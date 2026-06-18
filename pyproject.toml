@@ -51,6 +51,8 @@ dependencies = [
   "watchfiles~=1.1.1",
 ]
 
+# Legacy groups are installed in isolation (`--only-group`, no core dependencies),
+# so any core dependency a group needs must be repeated here.
 [dependency-groups]
 self-dev = [
     "hatch",
@@ -151,6 +153,7 @@ legacy-tasks = [
     { include-group = "legacy-notifications" },
     { include-group = "legacy-release" },
     { include-group = "legacy-test-infra-definitions" },
+    "binary==1.0.2",
     "debugpy==1.8.2",
     "rich==14.0.0",
     "watchdog==6.0.0",
