@@ -30,6 +30,15 @@ def updated_config(config_file):
         config_file.save()
 
 
+@pytest.fixture(autouse=True)
+def mock_spawn_daemon(mocker):
+    # Prevent spawn_daemon from launching real processes during tests. On Windows
+    # a real Popen inherits the test CWD (a temp dir), holding a directory handle
+    # that blocks pytest cleanup (WinError 32). Mocking here keeps all platforms
+    # consistent without skipping browser-proxy logic in production code.
+    mocker.patch("dda.utils.process.SubprocessRunner.spawn_daemon", return_value=0)
+
+
 @pytest.fixture(scope="module")
 def host_user_args():
     return [] if sys.platform == "win32" else ["-e", f"HOST_UID={os.getuid()}", "-e", f"HOST_GID={os.getgid()}"]
@@ -191,6 +200,7 @@ class TestStart:
 
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
         global_shared_dir = shared_dir.parent.parent / ".shared"
+        xdg_open_script_path = shared_dir.parent / "bin" / "xdg-open"
         starship_mount = get_starship_mount(global_shared_dir)
         volumes = get_volumes()
         assert calls == [
@@ -214,7 +224,13 @@ class TestStart:
                         "31381:9000",
                         "-v",
                         "/var/run/docker.sock:/var/run/docker.sock",
+                        *([] if sys.platform == "win32" else ["--add-host", "host.docker.internal:host-gateway"]),
                         *host_user_args,
+                        *(
+                            []
+                            if sys.platform == "win32"
+                            else ["-e", "BROWSER", "-v", f"{xdg_open_script_path}:/usr/local/bin/xdg-open:ro"]
+                        ),
                         "-e",
                         "DD_SHELL",
                         "-e",
@@ -274,6 +290,7 @@ class TestStart:
 
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
         global_shared_dir = shared_dir.parent.parent / ".shared"
+        xdg_open_script_path = shared_dir.parent / "bin" / "xdg-open"
         starship_mount = get_starship_mount(global_shared_dir)
         volumes = get_volumes()
         assert calls == [
@@ -297,7 +314,13 @@ class TestStart:
                         "31381:9000",
                         "-v",
                         "/var/run/docker.sock:/var/run/docker.sock",
+                        *([] if sys.platform == "win32" else ["--add-host", "host.docker.internal:host-gateway"]),
                         *host_user_args,
+                        *(
+                            []
+                            if sys.platform == "win32"
+                            else ["-e", "BROWSER", "-v", f"{xdg_open_script_path}:/usr/local/bin/xdg-open:ro"]
+                        ),
                         "-e",
                         "DD_SHELL",
                         "-e",
@@ -375,6 +398,7 @@ class TestStart:
 
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
         global_shared_dir = shared_dir.parent.parent / ".shared"
+        xdg_open_script_path = shared_dir.parent / "bin" / "xdg-open"
         starship_mount = get_starship_mount(global_shared_dir)
         volumes = get_volumes()
         assert calls == [
@@ -394,7 +418,13 @@ class TestStart:
                         "31381:9000",
                         "-v",
                         "/var/run/docker.sock:/var/run/docker.sock",
+                        *([] if sys.platform == "win32" else ["--add-host", "host.docker.internal:host-gateway"]),
                         *host_user_args,
+                        *(
+                            []
+                            if sys.platform == "win32"
+                            else ["-e", "BROWSER", "-v", f"{xdg_open_script_path}:/usr/local/bin/xdg-open:ro"]
+                        ),
                         "-e",
                         "DD_SHELL",
                         "-e",
@@ -462,6 +492,7 @@ class TestStart:
 
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
         global_shared_dir = shared_dir.parent.parent / ".shared"
+        xdg_open_script_path = shared_dir.parent / "bin" / "xdg-open"
         starship_mount = get_starship_mount(global_shared_dir)
         volumes = get_volumes()
         assert calls == [
@@ -485,7 +516,13 @@ class TestStart:
                         "31381:9000",
                         "-v",
                         "/var/run/docker.sock:/var/run/docker.sock",
+                        *([] if sys.platform == "win32" else ["--add-host", "host.docker.internal:host-gateway"]),
                         *host_user_args,
+                        *(
+                            []
+                            if sys.platform == "win32"
+                            else ["-e", "BROWSER", "-v", f"{xdg_open_script_path}:/usr/local/bin/xdg-open:ro"]
+                        ),
                         "-e",
                         "DD_SHELL",
                         "-e",
@@ -548,6 +585,7 @@ class TestStart:
 
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
         global_shared_dir = shared_dir.parent.parent / ".shared"
+        xdg_open_script_path = shared_dir.parent / "bin" / "xdg-open"
         starship_mount = get_starship_mount(global_shared_dir)
         volumes = get_volumes()
         assert calls == [
@@ -571,7 +609,13 @@ class TestStart:
                         "31381:9000",
                         "-v",
                         "/var/run/docker.sock:/var/run/docker.sock",
+                        *([] if sys.platform == "win32" else ["--add-host", "host.docker.internal:host-gateway"]),
                         *host_user_args,
+                        *(
+                            []
+                            if sys.platform == "win32"
+                            else ["-e", "BROWSER", "-v", f"{xdg_open_script_path}:/usr/local/bin/xdg-open:ro"]
+                        ),
                         "-e",
                         "DD_SHELL",
                         "-e",
@@ -643,6 +687,7 @@ class TestStart:
 
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
         global_shared_dir = shared_dir.parent.parent / ".shared"
+        xdg_open_script_path = shared_dir.parent / "bin" / "xdg-open"
         starship_mount = get_starship_mount(global_shared_dir)
         volumes = get_volumes()
 
@@ -692,7 +737,13 @@ class TestStart:
                         "31381:9000",
                         "-v",
                         "/var/run/docker.sock:/var/run/docker.sock",
+                        *([] if sys.platform == "win32" else ["--add-host", "host.docker.internal:host-gateway"]),
                         *host_user_args,
+                        *(
+                            []
+                            if sys.platform == "win32"
+                            else ["-e", "BROWSER", "-v", f"{xdg_open_script_path}:/usr/local/bin/xdg-open:ro"]
+                        ),
                         "-e",
                         "DD_SHELL",
                         "-e",
@@ -747,6 +798,7 @@ class TestStart:
 
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
         global_shared_dir = shared_dir.parent.parent / ".shared"
+        xdg_open_script_path = shared_dir.parent / "bin" / "xdg-open"
         starship_mount = get_starship_mount(global_shared_dir)
         volumes = get_volumes()
 
@@ -797,7 +849,13 @@ class TestStart:
                         "31381:9000",
                         "-v",
                         "/var/run/docker.sock:/var/run/docker.sock",
+                        *([] if sys.platform == "win32" else ["--add-host", "host.docker.internal:host-gateway"]),
                         *host_user_args,
+                        *(
+                            []
+                            if sys.platform == "win32"
+                            else ["-e", "BROWSER", "-v", f"{xdg_open_script_path}:/usr/local/bin/xdg-open:ro"]
+                        ),
                         "-e",
                         "DD_SHELL",
                         "-e",

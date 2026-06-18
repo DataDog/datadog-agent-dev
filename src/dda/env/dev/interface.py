@@ -199,6 +199,44 @@ class DeveloperEnvironmentInterface(ABC, Generic[ConfigT]):
         """
         raise NotImplementedError
 
+    def ensure_browser_proxy_started(self) -> None:
+        """
+        Start the shared browser proxy daemon on the host if it is not already running.
+
+        The daemon forwards browser open requests from inside the environment to the host's
+        default browser, including setting up SSH port forwards for OAuth callbacks.
+        Subclasses that do not support browser forwarding may leave this as a no-op.
+        """
+        import sys
+
+        try:
+            import psutil
+        except ImportError:
+            return
+
+        storage = self.app.config.storage.join("browser-proxy")
+        storage.data.ensure_dir()
+        pid_file = storage.data / "server.pid"
+        log_file = storage.data / "browser-proxy.log"
+        if pid_file.is_file():
+            try:
+                pid = int(pid_file.read_text().strip())
+                proc = psutil.Process(pid)
+                if proc.is_running() and "dda.env.dev.browser_proxy" in " ".join(proc.cmdline()):
+                    return
+            except (ValueError, psutil.NoSuchProcess, psutil.AccessDenied):
+                pass
+            pid_file.unlink()
+        pid = self.app.subprocess.spawn_daemon([
+            sys.executable,
+            "-m",
+            "dda.env.dev.browser_proxy",
+            str(self.browser_proxy_port),
+            "--log-file",
+            str(log_file),
+        ])
+        pid_file.write_text(str(pid), encoding="utf-8")
+
     def remove_cache(self) -> None:
         """
         This method removes the developer environment's cache that is persisted between lifecycles.
@@ -276,6 +314,16 @@ class DeveloperEnvironmentInterface(ABC, Generic[ConfigT]):
         The path to the directory that is used to share data between all environments.
         """
         return self.storage_dirs.data.parent.joinpath(".shared")
+
+    @cached_property
+    def browser_proxy_port(self) -> int:
+        """
+        The port used by the shared browser proxy daemon on the host.
+        All environment types that support browser forwarding share this port.
+        """
+        from dda.utils.network.protocols import derive_service_port
+
+        return derive_service_port("dda-browser-proxy")
 
     @cached_property
     def default_repo(self) -> str:

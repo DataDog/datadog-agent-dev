@@ -14,6 +14,25 @@ from dda.env.dev.interface import DeveloperEnvironmentConfig, DeveloperEnvironme
 from dda.utils.fs import cp_r, temp_directory
 from dda.utils.git.constants import GitEnvVars
 
+
+def _make_xdg_open_script(proxy_port: int, ssh_port: int) -> str:
+    """Return the xdg-open script with both ports substituted.
+
+    Both the shared proxy port and the container's own SSH port are baked in
+    so the script works in SSH sessions (which do not inherit Docker ``-e``
+    variables) and so the single shared daemon knows which container to tunnel
+    back to for OAuth callbacks.
+    """
+    import importlib.resources
+
+    template = (
+        importlib.resources.files("dda.env.dev.scripts")
+        .joinpath("xdg_open_template.py.template")
+        .read_text(encoding="utf-8")
+    )
+    return template.format(proxy_port=proxy_port, ssh_port=ssh_port)
+
+
 if TYPE_CHECKING:
     from dda.env.models import EnvironmentStatus
     from dda.env.shells.interface import Shell
@@ -128,6 +147,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         status = self.__latest_status if self.__latest_status is not None else self.status()
         if status.state == EnvironmentState.STOPPED:
             self.docker.wait(["start", self.container_name], message=f"Starting container: {self.container_name}")
+            self.ensure_browser_proxy_started()
         else:
             from dda.config.constants import AppEnvVars
             from dda.utils.process import EnvVars
@@ -140,6 +160,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 self.docker.wait(pull_command, message=f"Pulling image: {self.config.image}")
 
             self.shared_dir.ensure_dir()
+            self._write_xdg_open_script()
             command = [
                 "run",
                 "--pull",
@@ -156,10 +177,16 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             ]
             if sys.platform != "win32":
                 command.extend((
+                    "--add-host",
+                    "host.docker.internal:host-gateway",
                     "-e",
                     f"HOST_UID={os.getuid()}",
                     "-e",
                     f"HOST_GID={os.getgid()}",
+                    "-e",
+                    "BROWSER",
+                    "-v",
+                    f"{self._xdg_open_script_path}:/usr/local/bin/xdg-open:ro",
                 ))
 
             command.extend((
@@ -211,6 +238,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
 
             env = EnvVars()
             env["DD_SHELL"] = self.config.shell
+            env["BROWSER"] = "xdg-open"
             env[AppEnvVars.TELEMETRY_USER_MACHINE_ID] = self.app.telemetry.user.machine_id
             if self.app.telemetry.api_key is not None:
                 env[AppEnvVars.TELEMETRY_API_KEY] = self.app.telemetry.api_key
@@ -228,6 +256,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             with self.app.status(f"Waiting for container: {self.container_name}"):
                 wait_for(self.check_readiness, timeout=30, interval=0.3)
 
+            self.ensure_browser_proxy_started()
             self.ensure_ssh_config()
 
             if self.config.clone:
@@ -286,6 +315,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
 
     def launch_shell(self, *, repo: str | None = None) -> NoReturn:
         self.ensure_ssh_config()
+        self.ensure_browser_proxy_started()
         ssh_command = self.ssh_base_command()
         ssh_command.append(self.shell.get_login_command(cwd=self.repo_path(repo)))
         process = self.app.subprocess.attach(ssh_command, check=False)
@@ -296,6 +326,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             self.app.abort(f"Unsupported editor: {editor.name}")
 
         self.ensure_ssh_config()
+        self.ensure_browser_proxy_started()
         repo_path = self.repo_path(repo)
 
         # TODO: Currently, we do not support aggregating local commands from multiple repositories as a single tool
@@ -315,6 +346,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
 
     def run_command(self, command: list[str], *, repo: str | None = None) -> None:
         self.ensure_ssh_config()
+        self.ensure_browser_proxy_started()
         self.app.subprocess.run(self.construct_command(command, cwd=self.repo_path(repo)))
 
     def remove_cache(self) -> None:
@@ -372,6 +404,10 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         return derive_service_port(f"{self.container_name}-mcp")
 
     @cached_property
+    def _xdg_open_script_path(self) -> Any:
+        return self.storage_dirs.data / "bin" / "xdg-open"
+
+    @cached_property
     def home_dir(self) -> str:
         return "/home/dd"
 
@@ -411,6 +447,13 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         if self.config.arch is not None:
             name += f"-{self.config.arch}"
         return name
+
+    def _write_xdg_open_script(self) -> None:
+        self._xdg_open_script_path.parent.ensure_dir()
+        self._xdg_open_script_path.write_text(
+            _make_xdg_open_script(self.browser_proxy_port, self.ssh_port), encoding="utf-8"
+        )
+        os.chmod(self._xdg_open_script_path, 0o755)  # noqa: S103
 
     def construct_command(self, command: list[str], *, cwd: str | None = None) -> list[str]:
         if cwd is None:
