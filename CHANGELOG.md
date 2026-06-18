@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+## 0.35.0 - 2026-06-18
+
+***Added:***
+
+- Add browser proxy to automatically forward browser connections to local laptop
+
 ## 0.34.1 - 2026-06-14
 
 ***Fixed:***
