@@ -135,6 +135,8 @@ class DynamicContext(click.RichContext):
                 app.last_error = traceback.format_exc()
 
             from dda.cli import START_TIME, START_TIMESTAMP
+            from dda.config.constants import AppEnvVars
+            from dda.utils.exec_context import detect_actor, detect_medium, running_in_dev_env
             from dda.utils.platform import join_command_args
 
             metadata = {
@@ -146,12 +148,12 @@ class DynamicContext(click.RichContext):
                 metadata["user.name"] = app.telemetry.user.name
                 metadata["user.email"] = app.telemetry.user.email
 
-            if os.environ.get("PRE_COMMIT") == "1":
-                metadata["exec.source"] = "pre-commit"
-            elif os.environ.get("PYCLI_MCP_TOOL_NAME"):
-                metadata["exec.source"] = "mcp"
-            else:
-                metadata["exec.source"] = "human"
+            medium = detect_medium()
+            metadata["exec.medium"] = medium
+            metadata["exec.actor"] = detect_actor(medium)
+            metadata["exec.env.managed"] = str(running_in_dev_env()).lower()
+            if env_type := os.environ.get(AppEnvVars.ENV_TYPE):
+                metadata["exec.env.type"] = env_type
 
             if last_error := app.last_error.strip():
                 # Payload limit is 5MB so we truncate the error message to a little bit less than that
