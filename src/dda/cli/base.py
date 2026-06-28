@@ -151,9 +151,11 @@ class DynamicContext(click.RichContext):
             medium = detect_medium()
             metadata["exec.medium"] = medium
             metadata["exec.actor"] = detect_actor(medium)
-            metadata["exec.env.managed"] = str(running_in_dev_env()).lower()
-            if env_type := os.environ.get(AppEnvVars.ENV_TYPE):
-                metadata["exec.env.type"] = env_type
+            managed = running_in_dev_env()
+            metadata["exec.env.managed"] = "true" if managed else "false"
+            metadata["exec.env.type"] = os.environ.get(AppEnvVars.ENV_TYPE) or "unknown"
+            if managed:
+                metadata["exec.env.manager"] = os.environ.get(AppEnvVars.ENV_MANAGER) or "unknown"
 
             if last_error := app.last_error.strip():
                 # Payload limit is 5MB so we truncate the error message to a little bit less than that
