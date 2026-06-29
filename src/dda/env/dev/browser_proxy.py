@@ -214,7 +214,7 @@ def _setup_port_forward(ssh_port: int, callback_port: int) -> None:
                 "-N",
                 "-q",
                 "-F",
-                "/dev/null",
+                "none",
                 "-o",
                 "ExitOnForwardFailure=yes",
                 "-o",
