@@ -200,6 +200,10 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 GitEnvVars.AUTHOR_NAME,
                 "-e",
                 GitEnvVars.AUTHOR_EMAIL,
+                "-e",
+                AppEnvVars.ENV_TYPE,
+                "-e",
+                AppEnvVars.ENV_MANAGER,
             ))
             if self.config.arch is not None:
                 command.extend(("--platform", f"linux/{self.config.arch}"))
@@ -239,6 +243,8 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             env = EnvVars()
             env["DD_SHELL"] = self.config.shell
             env["BROWSER"] = "xdg-open"
+            env[AppEnvVars.ENV_TYPE] = self.name
+            env[AppEnvVars.ENV_MANAGER] = "dda"
             env[AppEnvVars.TELEMETRY_USER_MACHINE_ID] = self.app.telemetry.user.machine_id
             if self.app.telemetry.api_key is not None:
                 env[AppEnvVars.TELEMETRY_API_KEY] = self.app.telemetry.api_key
