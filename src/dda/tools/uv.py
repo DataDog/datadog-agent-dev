@@ -27,28 +27,11 @@ class UV(Tool):
     ```python
     app.tools.uv.run(["pip", "tree"])
     ```
-
-    This also makes modifying the installation of UV itself safe on Windows.
     """
 
     @contextmanager
     def execution_context(self, command: list[str]) -> Generator[ExecutionContext, None, None]:
-        if self.path is None:
-            yield ExecutionContext(command=["uv", *command], env_vars={})
-            return
-
-        import shutil
-
-        from dda.utils.fs import Path
-
-        path = Path(self.path)
-        safe_path = path.with_stem(f"{path.stem}-{path.id}")
-        shutil.copy2(self.path, safe_path)
-
-        try:
-            yield ExecutionContext(command=[str(safe_path), *command], env_vars={})
-        finally:
-            safe_path.unlink()
+        yield ExecutionContext(command=[self.path or "uv", *command], env_vars={})
 
     @cached_property
     def path(self) -> str | None:

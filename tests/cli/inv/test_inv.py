@@ -33,7 +33,7 @@ def test_default(dda, helpers, temp_dir, uv_on_path, mocker):
         ),
     )
 
-    expected_path = str(uv_on_path.with_stem(f"{uv_on_path.stem}-{uv_on_path.id}"))
+    expected_path = str(uv_on_path)
     assert subprocess_run.call_args_list == [
         mock.call(
             [
