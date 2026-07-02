@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import subprocess
 import sys
-from pathlib import Path
 from unittest import mock
 
 import pytest
@@ -34,41 +33,38 @@ def test_default(dda, helpers, temp_dir, uv_on_path, mocker):
         ),
     )
 
-    expected_name = uv_on_path.with_stem(f"{uv_on_path.stem}-{uv_on_path.id}").name
-    first_call, second_call = subprocess_run.call_args_list
-
-    assert Path(first_call.args[0][0]).name == expected_name
-    assert first_call == mock.call(
-        [
-            mock.ANY,
-            "venv",
-            str(temp_dir / "data" / "venvs" / "legacy"),
-            "--seed",
-            "--python",
-            sys.executable,
-        ],
-        encoding="utf-8",
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-
-    assert Path(second_call.args[0][0]).name == expected_name
-    assert second_call == mock.call(
-        [
-            mock.ANY,
-            "sync",
-            "--frozen",
-            "--no-install-project",
-            "--inexact",
-            "--only-group",
-            "legacy-tasks",
-        ],
-        encoding="utf-8",
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        cwd=mock.ANY,
-        env=mock.ANY,
-    )
+    expected_path = str(uv_on_path)
+    assert subprocess_run.call_args_list == [
+        mock.call(
+            [
+                expected_path,
+                "venv",
+                str(temp_dir / "data" / "venvs" / "legacy"),
+                "--seed",
+                "--python",
+                sys.executable,
+            ],
+            encoding="utf-8",
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        ),
+        mock.call(
+            [
+                expected_path,
+                "sync",
+                "--frozen",
+                "--no-install-project",
+                "--inexact",
+                "--only-group",
+                "legacy-tasks",
+            ],
+            encoding="utf-8",
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            cwd=mock.ANY,
+            env=mock.ANY,
+        ),
+    ]
     assert exit_with.call_args_list == [
         mock.call(
             [
