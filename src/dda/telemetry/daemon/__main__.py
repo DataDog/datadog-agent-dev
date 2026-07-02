@@ -20,7 +20,7 @@ from dda.telemetry.daemon.handler import finalize_error
 from dda.utils.fs import Path
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator
+    from collections.abc import AsyncIterator, Callable
 
     from dda.telemetry.daemon.base import TelemetryClient
 
@@ -30,24 +30,47 @@ WRITE_DIR = Path(os.environ[DaemonEnvVars.WRITE_DIR])
 atexit.register(finalize_error)
 
 
+def create_trace_client(**kwargs: Any) -> TelemetryClient:
+    from dda.telemetry.daemon.trace import TraceTelemetryClient
+
+    return TraceTelemetryClient(**kwargs)
+
+
+def create_log_client(**kwargs: Any) -> TelemetryClient:
+    from dda.telemetry.daemon.log import LogTelemetryClient
+
+    return LogTelemetryClient(**kwargs)
+
+
+CLIENT_FACTORIES: dict[str, Callable[..., TelemetryClient]] = {
+    "trace": create_trace_client,
+    "log": create_log_client,
+}
+
+
+def get_client_id(filename: str) -> str | None:
+    client_id, separator, _ = filename.partition("_")
+    if separator and client_id in CLIENT_FACTORIES and filename.endswith(".json"):
+        return client_id
+
+    return None
+
+
 def get_client(id: str, **kwargs: Any) -> TelemetryClient:  # noqa: A002
-    if id == "trace":
-        from dda.telemetry.daemon.trace import TraceTelemetryClient
+    try:
+        create_client = CLIENT_FACTORIES[id]
+    except KeyError:
+        message = f"Unknown client ID: {id}"
+        raise ValueError(message) from None
 
-        return TraceTelemetryClient(**kwargs)
-
-    if id == "log":
-        from dda.telemetry.daemon.log import LogTelemetryClient
-
-        return LogTelemetryClient(**kwargs)
-
-    message = f"Unknown client ID: {id}"
-    raise ValueError(message)
+    return create_client(**kwargs)
 
 
 async def watch_events(stop_event: asyncio.Event) -> AsyncIterator[Path]:
     # Use as an ordered set
-    existing_files = dict.fromkeys(os.listdir(WRITE_DIR))
+    existing_files = dict.fromkeys(
+        filename for filename in os.listdir(WRITE_DIR) if get_client_id(filename) is not None
+    )
     try:
         async for changes in watchfiles.awatch(
             WRITE_DIR,
@@ -55,9 +78,9 @@ async def watch_events(stop_event: asyncio.Event) -> AsyncIterator[Path]:
             recursive=False,
             rust_timeout=0,
             watch_filter=lambda c, p: (
-                # Only filter the final atomically written file
+                # Only process final atomically written telemetry payloads
                 c == watchfiles.Change.added
-                and not (fn := os.path.basename(p)).startswith("tmp")
+                and get_client_id(fn := os.path.basename(p)) is not None
                 # ... and ignore files that were created before watching
                 and fn not in existing_files
             ),
@@ -83,7 +106,11 @@ async def process_changes(stop_event: asyncio.Event, **kwargs: Any) -> None:
     with ExitStack() as stack:
         clients: dict[str, TelemetryClient] = {}
         async for path in watch_events(stop_event):
-            client_id = path.name.split("_")[0]
+            client_id = get_client_id(path.name)
+            if client_id is None:
+                logging.debug("Ignoring unknown telemetry file: %s", path)
+                continue
+
             if (client := clients.get(client_id)) is None:
                 try:
                     client = get_client(client_id, **kwargs)

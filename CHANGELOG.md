@@ -8,6 +8,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+## 0.35.0 - 2026-06-18
+
+***Added:***
+
+- Add browser proxy to automatically forward browser connections to local laptop
+
+## 0.34.1 - 2026-06-14
+
+***Fixed:***
+
+- Restore the `binary` dependency for the legacy Invoke task environment
+
+## 0.34.0 - 2026-05-18
+
+***Changed:***
+
+- Only support the latest version of the developer environment image for the `linux-container` developer environment type
+
+## 0.33.3 - 2026-05-14
+
+***Fixed:***
+
+- Fix race condition in the telemetry daemon payload processing logic
+
+## 0.33.2 - 2026-05-13
+
+***Fixed:***
+
+- Fix the allowed range of exposed developer environment ports
+- Fix locating the repository root for the `info owners code` command
+- Ensure that atomically-written files remain readable and writable by the owning group
+
 ## 0.33.1 - 2026-03-27
 
 ***Added:***

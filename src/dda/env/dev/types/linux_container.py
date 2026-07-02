@@ -14,6 +14,25 @@ from dda.env.dev.interface import DeveloperEnvironmentConfig, DeveloperEnvironme
 from dda.utils.fs import cp_r, temp_directory
 from dda.utils.git.constants import GitEnvVars
 
+
+def _make_xdg_open_script(proxy_port: int, ssh_port: int) -> str:
+    """Return the xdg-open script with both ports substituted.
+
+    Both the shared proxy port and the container's own SSH port are baked in
+    so the script works in SSH sessions (which do not inherit Docker ``-e``
+    variables) and so the single shared daemon knows which container to tunnel
+    back to for OAuth callbacks.
+    """
+    import importlib.resources
+
+    template = (
+        importlib.resources.files("dda.env.dev.scripts")
+        .joinpath("xdg_open_template.py.template")
+        .read_text(encoding="utf-8")
+    )
+    return template.format(proxy_port=proxy_port, ssh_port=ssh_port)
+
+
 if TYPE_CHECKING:
     from dda.env.models import EnvironmentStatus
     from dda.env.shells.interface import Shell
@@ -76,9 +95,9 @@ class LinuxContainerConfig(DeveloperEnvironmentConfig):
 Additional host directories to be mounted into the dev env. This option may be supplied multiple
 times, and has the same syntax as the `-v/--volume` flag of `docker run`. Examples:
 
-- `./some-repo:/root/repos/some-repo`
+- `./some-repo:/repos/some-repo`
 - `/tmp/some-location:/location:ro`
-- `~/projects:/root/projects:ro`
+- `~/projects:/projects:ro`
 """
                 ),
             }
@@ -128,6 +147,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         status = self.__latest_status if self.__latest_status is not None else self.status()
         if status.state == EnvironmentState.STOPPED:
             self.docker.wait(["start", self.container_name], message=f"Starting container: {self.container_name}")
+            self.ensure_browser_proxy_started()
         else:
             from dda.config.constants import AppEnvVars
             from dda.utils.process import EnvVars
@@ -140,6 +160,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 self.docker.wait(pull_command, message=f"Pulling image: {self.config.image}")
 
             self.shared_dir.ensure_dir()
+            self._write_xdg_open_script()
             command = [
                 "run",
                 "--pull",
@@ -154,6 +175,10 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 "-v",
                 "/var/run/docker.sock:/var/run/docker.sock",
             ]
+            command.extend((
+                "--add-host",
+                "host.docker.internal:host-gateway",
+            ))
             if sys.platform != "win32":
                 command.extend((
                     "-e",
@@ -161,6 +186,12 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                     "-e",
                     f"HOST_GID={os.getgid()}",
                 ))
+            command.extend((
+                "-e",
+                "BROWSER",
+                "-v",
+                f"{self._xdg_open_script_path}:/usr/local/bin/xdg-open:ro",
+            ))
 
             command.extend((
                 "-e",
@@ -173,6 +204,10 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 GitEnvVars.AUTHOR_NAME,
                 "-e",
                 GitEnvVars.AUTHOR_EMAIL,
+                "-e",
+                AppEnvVars.ENV_TYPE,
+                "-e",
+                AppEnvVars.ENV_MANAGER,
             ))
             if self.config.arch is not None:
                 command.extend(("--platform", f"linux/{self.config.arch}"))
@@ -181,7 +216,10 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
 
             for shared_shell_file in self.shell.collect_shared_files():
                 unix_path = shared_shell_file.relative_to(self.global_shared_dir).as_posix()
-                command.extend(("-v", f"{shared_shell_file}:{self.home_dir}/.shared/{unix_path}"))
+                command.extend(("-v", f"{shared_shell_file}:/.shared/{unix_path}"))
+
+            for mount in self.data_volumes:
+                command.extend(("--mount", mount.as_csv()))
 
             for mount in self.cache_volumes:
                 command.extend(("--mount", mount.as_csv()))
@@ -208,6 +246,9 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
 
             env = EnvVars()
             env["DD_SHELL"] = self.config.shell
+            env["BROWSER"] = "xdg-open"
+            env[AppEnvVars.ENV_TYPE] = self.name
+            env[AppEnvVars.ENV_MANAGER] = "dda"
             env[AppEnvVars.TELEMETRY_USER_MACHINE_ID] = self.app.telemetry.user.machine_id
             if self.app.telemetry.api_key is not None:
                 env[AppEnvVars.TELEMETRY_API_KEY] = self.app.telemetry.api_key
@@ -225,6 +266,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             with self.app.status(f"Waiting for container: {self.container_name}"):
                 wait_for(self.check_readiness, timeout=30, interval=0.3)
 
+            self.ensure_browser_proxy_started()
             self.ensure_ssh_config()
 
             if self.config.clone:
@@ -283,6 +325,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
 
     def launch_shell(self, *, repo: str | None = None) -> NoReturn:
         self.ensure_ssh_config()
+        self.ensure_browser_proxy_started()
         ssh_command = self.ssh_base_command()
         ssh_command.append(self.shell.get_login_command(cwd=self.repo_path(repo)))
         process = self.app.subprocess.attach(ssh_command, check=False)
@@ -293,6 +336,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             self.app.abort(f"Unsupported editor: {editor.name}")
 
         self.ensure_ssh_config()
+        self.ensure_browser_proxy_started()
         repo_path = self.repo_path(repo)
 
         # TODO: Currently, we do not support aggregating local commands from multiple repositories as a single tool
@@ -312,6 +356,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
 
     def run_command(self, command: list[str], *, repo: str | None = None) -> None:
         self.ensure_ssh_config()
+        self.ensure_browser_proxy_started()
         self.app.subprocess.run(self.construct_command(command, cwd=self.repo_path(repo)))
 
     def remove_cache(self) -> None:
@@ -358,19 +403,23 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
 
     @cached_property
     def ssh_port(self) -> int:
-        from dda.utils.network.protocols import derive_dynamic_port
+        from dda.utils.network.protocols import derive_service_port
 
-        return derive_dynamic_port(f"{self.container_name}-ssh")
+        return derive_service_port(f"{self.container_name}-ssh")
 
     @cached_property
     def mcp_port(self) -> int:
-        from dda.utils.network.protocols import derive_dynamic_port
+        from dda.utils.network.protocols import derive_service_port
 
-        return derive_dynamic_port(f"{self.container_name}-mcp")
+        return derive_service_port(f"{self.container_name}-mcp")
+
+    @cached_property
+    def _xdg_open_script_path(self) -> Any:
+        return self.storage_dirs.data / "bin" / "xdg-open"
 
     @cached_property
     def home_dir(self) -> str:
-        return "/root"
+        return "/home/dd"
 
     @cached_property
     def container_name(self) -> str:
@@ -383,31 +432,21 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         return get_shell(self.config.shell)(self.global_shared_dir)
 
     @cached_property
+    def data_volumes(self) -> list[Mount]:
+        from dda.utils.container.model import Mount
+
+        return [
+            # Root data directory
+            Mount(type="volume", path="/var/lib/dd", source=self.get_volume_name("data")),
+        ]
+
+    @cached_property
     def cache_volumes(self) -> list[Mount]:
         from dda.utils.container.model import Mount
 
         return [
-            # `go env GOCACHE`
-            Mount(type="volume", path="/root/.cache/go-build", source=self.get_volume_name("go_build_cache")),
-            # `go env GOMODCACHE`
-            Mount(type="volume", path="/go/pkg/mod", source=self.get_volume_name("go_mod_cache")),
-            # `pip cache dir`
-            Mount(type="volume", path="/root/.cache/pip", source=self.get_volume_name("pip_cache")),
-            # `uv cache dir`
-            Mount(type="volume", path="/root/.cache/uv", source=self.get_volume_name("uv_cache")),
-            # Rust
-            Mount(type="volume", path="/root/.cargo/registry", source=self.get_volume_name("cargo_registry")),
-            Mount(type="volume", path="/root/.cargo/git", source=self.get_volume_name("cargo_git")),
-            # Omnibus
-            Mount(type="volume", path="/omnibus/vendor/bundle", source=self.get_volume_name("omnibus_gems")),
-            Mount(type="volume", path="/omnibus/cache", source=self.get_volume_name("omnibus_cache")),
-            Mount(
-                type="volume",
-                path="/tmp/omnibus-git-cache",  # noqa: S108
-                source=self.get_volume_name("omnibus_git_cache"),
-            ),
-            # VS Code/Cursor
-            Mount(type="volume", path="/root/.vscode-extensions", source=self.get_volume_name("vscode_extensions")),
+            # Root cache directory
+            Mount(type="volume", path="/var/cache/dd", source=self.get_volume_name("cache")),
         ]
 
     def cache_volume_names(self) -> list[str]:
@@ -418,6 +457,16 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         if self.config.arch is not None:
             name += f"-{self.config.arch}"
         return name
+
+    def _write_xdg_open_script(self) -> None:
+        self._xdg_open_script_path.parent.ensure_dir()
+        # The script is mounted into and executed by the Linux container, so force LF line endings.
+        # Without `newline="\n"`, `write_text` on a Windows host emits CRLF and the
+        # `#!/usr/bin/env python3` shebang resolves to a nonexistent `python3\r` interpreter.
+        self._xdg_open_script_path.write_text(
+            _make_xdg_open_script(self.browser_proxy_port, self.ssh_port), encoding="utf-8", newline="\n"
+        )
+        os.chmod(self._xdg_open_script_path, 0o755)  # noqa: S103
 
     def construct_command(self, command: list[str], *, cwd: str | None = None) -> list[str]:
         if cwd is None:
@@ -437,7 +486,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
     def ssh_base_command(self) -> list[str]:
         from dda.utils.ssh import ssh_base_command
 
-        return ssh_base_command("root@localhost", self.ssh_port)
+        return ssh_base_command("dd@localhost", self.ssh_port)
 
     def ensure_ssh_config(self) -> None:
         from dda.env.ssh import ensure_ssh_config
@@ -448,7 +497,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         if repo is None:
             repo = self.default_repo
 
-        return f"{self.home_dir}/repos/{repo}"
+        return f"/repos/{repo}"
 
     def _container_cp(self, source: str, destination: str, *args: Any) -> None:
         """Runs a `cp -r` command inside the context of the container"""
