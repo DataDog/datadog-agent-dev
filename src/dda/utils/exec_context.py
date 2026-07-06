@@ -34,40 +34,64 @@ def detect_medium() -> str:
     return "direct"
 
 
+def _agent_actor(name: str, medium: str | None, extra: str) -> str:
+    # Compose the harness identity as `<name>[-<medium>]` (e.g. `claude-cli`). Without a categorized
+    # medium, fall back to the bare name, preserving any uncategorized data as `<name> (...)`.
+    if medium:
+        return f"{name}-{medium}"
+    if extra:
+        return f"{name} {extra}"
+    return name
+
+
+def _detect_claude_actor(product: str, version: str, extra: str) -> str:  # noqa: ARG001
+    # Claude Code: claude-code/2.1.195 (sdk-cli)
+    # Claude Desktop: claude-code/2.1.197 (claude-desktop, agent-sdk/0.3.197)
+    medium: str | None = None
+    if "sdk-cli" in extra:
+        medium = "cli"
+    elif "claude-desktop" in extra:
+        medium = "desktop"
+
+    return _agent_actor("claude", medium, extra)
+
+
 def detect_actor(medium: str) -> str:
     """
     Returns:
         Who invoked the CLI, such as `human` or an AI agent harness like `claude` or `codex`.
     """
     # The agent's environment is invisible across the MCP server, so the only signal is the
-    # client-defined identity that the server forwards from the connection handshake.
+    # client's `User-Agent`, which the server forwards from the per-request HTTP headers.
     if medium == "mcp":
-        client = os.environ.get("PYCLI_MCP_CLIENT_NAME", "")
-        if client == "claude-code":
-            return "claude"
+        # A `User-Agent` looks like `<product>/<version> <extra>`, e.g. `claude-code/2.1.195 (sdk-cli)`.
+        user_agent = os.environ.get("PYCLI_MCP_USER_AGENT", "")
+        product, _, rest = user_agent.partition("/")
+        version, _, extra = rest.partition(" ")
+        extra = extra.strip()
 
-        if client == "claude-ai":
-            return "claude-desktop"
+        actor = None
+        if product == "claude-code":
+            actor = _detect_claude_actor(product, version, extra)
 
-        # Codex clients cannot be distinguished since they all report the same name.
-        if client == "codex-mcp-client":
-            return "codex"
-
-        if client.startswith("cursor-vscode"):
-            return "cursor"
-
-        if client in {"agy", "antigravity-cli", "antigravity-client"}:
-            return "antigravity"
-
-        return client or "unknown"
+        return actor or user_agent or "unknown"
 
     # Every other medium inherits the caller's environment, where harnesses leave identifying markers.
     if entrypoint := os.environ.get("CLAUDE_CODE_ENTRYPOINT"):
-        return "claude-desktop" if entrypoint == "claude-desktop" else "claude"
+        return _agent_actor(
+            "claude",
+            "cli" if entrypoint == "cli" else "desktop" if entrypoint == "claude-desktop" else None,
+            entrypoint,
+        )
 
-    # This is only set in non-CLI contexts, so check it before the general marker.
-    if os.environ.get("CODEX_INTERNAL_ORIGINATOR_OVERRIDE") == "Codex Desktop":
-        return "codex-desktop"
+    # The originator names a specific Codex surface and coexists with the generic CODEX_CI marker in
+    # hosted environments, so categorize it before falling back to that marker.
+    if originator := os.environ.get("CODEX_INTERNAL_ORIGINATOR_OVERRIDE"):
+        return _agent_actor(
+            "codex",
+            "desktop" if originator == "Codex Desktop" else "cloud" if originator == "codex_web_agent" else None,
+            originator,
+        )
 
     if _enabled("CODEX_CI"):
         return "codex"
