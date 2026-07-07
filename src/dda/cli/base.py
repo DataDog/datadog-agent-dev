@@ -136,7 +136,7 @@ class DynamicContext(click.RichContext):
 
             from dda.cli import START_TIME, START_TIMESTAMP
             from dda.config.constants import AppEnvVars
-            from dda.utils.exec_context import detect_actor, detect_medium, running_in_dev_env
+            from dda.telemetry.metadata.execution import detect_actor, detect_medium, running_in_dev_env
             from dda.utils.platform import join_command_args
 
             metadata = {
