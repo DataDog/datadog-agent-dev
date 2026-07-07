@@ -78,7 +78,7 @@ gitlab = [
     "python-gitlab",
 ]
 mcp = [
-    "pycli-mcp~=0.3.0",
+    "pycli-mcp~=0.4.0",
 ]
 virustotal = [
     "vt-py~=0.21.0"

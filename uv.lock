@@ -936,7 +936,7 @@ legacy-test-infra-definitions = [
     { name = "pyyaml", specifier = "==6.0.1" },
     { name = "termcolor", specifier = "==2.5.0" },
 ]
-mcp = [{ name = "pycli-mcp", specifier = "~=0.3.0" }]
+mcp = [{ name = "pycli-mcp", specifier = "~=0.4.0" }]
 self-dev = [{ name = "hatch" }]
 virustotal = [{ name = "vt-py", specifier = "~=0.21.0" }]
 
@@ -2295,15 +2295,15 @@ wheels = [
 
 [[package]]
 name = "pycli-mcp"
-version = "0.3.0"
+version = "0.4.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
     { name = "mcp" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d9/a3/a4d36814e367d5b18e193dcd7551011d77aea19e7e2d7316483f34049ca0/pycli_mcp-0.3.0.tar.gz", hash = "sha256:974ab5ef1de7c87aced779c23da9c8f3ffec7f0e3c012178a5a38d289dbb5c44", size = 35512, upload-time = "2025-06-30T14:52:12.538Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/86/0a/7ad1a0d29202ba6fe9455c325bba90d1307c5b3863f828e1fb09cb839f00/pycli_mcp-0.4.0.tar.gz", hash = "sha256:748a686001f63b8e0cff3f18666f5cdf1d7b419bc965b2fe4c930100dc881ea1", size = 35727, upload-time = "2026-07-04T07:22:04.408Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d3/f3/ed0a043a718dfeedd45af9982eef7652a1ed38d29be9ece4ba1b08f69046/pycli_mcp-0.3.0-py3-none-any.whl", hash = "sha256:0cd5ecd99fdaf5ddf60cf27ed8777f41a53447b65c09e142a7b301dbcc71906a", size = 18550, upload-time = "2025-06-30T14:52:11.43Z" },
+    { url = "https://files.pythonhosted.org/packages/ce/27/9d1a96eae774a466c7180697d9177d5bd16bc640c584bf253d1ed890f824/pycli_mcp-0.4.0-py3-none-any.whl", hash = "sha256:46ba8170d00020fb0b94c885ecac00b1f26dade47a9fb31936756b320c222fd7", size = 21137, upload-time = "2026-07-04T07:22:03.078Z" },
 ]
 
 [[package]]
