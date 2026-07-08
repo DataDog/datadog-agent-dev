@@ -8,6 +8,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+## 0.36.0 - 2026-07-07
+
+***Changed:***
+
+- Install packaged shared data under the standard `share/dda-data` directory
+
+***Added:***
+
+- Add execution context metadata to CLI telemetry
+- Improve MCP-related telemetry
+
+***Fixed:***
+
+- Fix the developer environment browser proxy on Windows
+- Fix a permission error when copying a read-only starship configuration for developer environments
+
 ## 0.35.0 - 2026-06-18
 
 ***Added:***
