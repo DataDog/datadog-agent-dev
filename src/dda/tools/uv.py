@@ -44,9 +44,17 @@ class UV(Tool):
         return shutil.which("uv", path=new_path)
 
     def virtual_env(self, path: Path) -> VirtualEnv:
+        from filelock import FileLock
+
         from dda.utils.venv import VirtualEnv
 
-        if not path.is_dir():
-            self.wait(["venv", str(path), "--seed", "--python", sys.executable], message="Creating virtual environment")
+        # `uv venv` errors if the target already exists, so concurrent creation must be serialized.
+        # No lock is needed afterward: `uv` locks the environment itself during install/sync.
+        path.parent.ensure_dir()
+        with FileLock(f"{path}.lock"):
+            if not path.is_dir():
+                self.wait(
+                    ["venv", str(path), "--seed", "--python", sys.executable], message="Creating virtual environment"
+                )
 
         return VirtualEnv(path)
