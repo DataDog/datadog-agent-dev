@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+## 0.36.1 - 2026-07-09
+
 ***Fixed:***
 
 - Fix a race when multiple `dda` processes concurrently create the shared legacy virtual environment
