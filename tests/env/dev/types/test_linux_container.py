@@ -52,6 +52,25 @@ def get_starship_mount(global_shared_dir: Path) -> list[str]:
     return ["-v", f"{global_shared_dir / 'shell' / 'starship.toml'}:/.shared/shell/starship.toml"]
 
 
+def get_aws_mount(home_dir: str = "/home/dd") -> list[str]:
+    aws_dir = Path.home() / ".aws"
+    if not aws_dir.is_dir():
+        return []
+
+    from dda.utils.container.model import Mount
+
+    return [
+        "--mount",
+        Mount(type="bind", source=str(aws_dir), path=f"{home_dir}/.aws").as_csv(),
+        "-e",
+        "AWS_PROFILE",
+        "-e",
+        "AWS_REGION",
+        "-e",
+        "AWS_DEFAULT_REGION",
+    ]
+
+
 def get_volumes() -> list[str]:
     return [*get_data_volumes(), *get_cache_volumes()]
 
@@ -91,6 +110,7 @@ def test_default_config(app):
         "clone": False,
         "image": "datadog/agent-dev-env-linux",
         "no_pull": False,
+        "no_secrets": False,
         "repos": ["datadog-agent"],
         "shell": "zsh",
         "extra_volume_specs": [],
@@ -263,6 +283,7 @@ class TestStart:
                         "-v",
                         f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/.shared/shell/zsh/.zsh_history",
                         *volumes,
+                        *get_aws_mount(),
                         "-v",
                         f"{repo_dir}:/repos/datadog-agent",
                         "datadog/agent-dev-env-linux",
@@ -357,6 +378,7 @@ class TestStart:
                         "-v",
                         f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/.shared/shell/zsh/.zsh_history",
                         *volumes,
+                        *get_aws_mount(),
                         "datadog/agent-dev-env-linux",
                     ],
                 ),
@@ -465,6 +487,7 @@ class TestStart:
                         "-v",
                         f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/.shared/shell/zsh/.zsh_history",
                         *volumes,
+                        *get_aws_mount(),
                         "-v",
                         f"{repo_dir}:/repos/datadog-agent",
                         "datadog/agent-dev-env-linux",
@@ -567,6 +590,7 @@ class TestStart:
                         "-v",
                         f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/.shared/shell/zsh/.zsh_history",
                         *volumes,
+                        *get_aws_mount(),
                         "-v",
                         f"{repo1_dir}:/repos/datadog-agent",
                         "-v",
@@ -664,6 +688,7 @@ class TestStart:
                         "-v",
                         f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/.shared/shell/zsh/.zsh_history",
                         *volumes,
+                        *get_aws_mount(),
                         "datadog/agent-dev-env-linux",
                     ],
                 ),
@@ -796,6 +821,7 @@ class TestStart:
                         "-v",
                         f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/.shared/shell/zsh/.zsh_history",
                         *volumes,
+                        *get_aws_mount(),
                         *[(x if x != "-v" else "--volume") for x in volume_specs],
                         "datadog/agent-dev-env-linux",
                     ],
@@ -912,6 +938,7 @@ class TestStart:
                         "-v",
                         f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/.shared/shell/zsh/.zsh_history",
                         *volumes,
+                        *get_aws_mount(),
                         *[(x if x != "-m" else "--mount") for x in mount_specs],
                         "datadog/agent-dev-env-linux",
                     ],
@@ -919,6 +946,43 @@ class TestStart:
                 {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": mocker.ANY},
             ),
         ]
+
+    def test_no_secrets(self, dda, helpers, mocker, temp_dir):
+        # `--no-secrets` prevents the container from receiving host credentials even when the host has `~/.aws`.
+        mocker.patch("dda.utils.ssh.write_server_config")
+        with (
+            temp_dir.as_cwd(),
+            helpers.hybrid_patch(
+                "subprocess.run",
+                return_values={
+                    # Start command checks the status
+                    1: CompletedProcess([], returncode=0, stdout="{}"),
+                    # Start method checks the status
+                    2: CompletedProcess([], returncode=0, stdout="{}"),
+                    # Capture container run
+                    # Readiness check
+                    4: CompletedProcess([], returncode=0, stdout="Server listening on :: port 22"),
+                    # Repo cloning
+                    5: CompletedProcess([], returncode=0, stdout="{}"),
+                },
+            ) as calls,
+        ):
+            result = dda("env", "dev", "start", "--no-pull", "--clone", "--no-secrets")
+
+        result.check(
+            exit_code=0,
+            output=helpers.dedent(
+                """
+                Creating and starting container: dda-linux-container-default
+                Waiting for container: dda-linux-container-default
+                Cloning repository: datadog-agent
+                """
+            ),
+        )
+
+        run_command = calls[0][0][0]
+        assert "AWS_PROFILE" not in run_command
+        assert all("/home/dd/.aws" not in arg for arg in run_command)
 
 
 class TestStop:

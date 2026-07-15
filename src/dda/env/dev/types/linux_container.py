@@ -83,6 +83,15 @@ class LinuxContainerConfig(DeveloperEnvironmentConfig):
             }
         ),
     ] = None
+    no_secrets: Annotated[
+        bool,
+        msgspec.Meta(
+            extra={
+                "params": ["--no-secrets"],
+                "help": "Do not share host credentials or secrets (currently the `~/.aws` directory) with the dev env",
+            }
+        ),
+    ] = False
     # This parameter stores the raw volume specifications as provided by the user.
     # Use the `extra_mounts` property to get the list of extra mounts as Mount objects.
     extra_volume_specs: Annotated[
@@ -223,6 +232,24 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
 
             for mount in self.cache_volumes:
                 command.extend(("--mount", mount.as_csv()))
+
+            if not self.config.no_secrets:
+                from dda.utils.container.model import Mount
+                from dda.utils.fs import Path
+
+                aws_dir = Path.home() / ".aws"
+                if aws_dir.is_dir():
+                    # Mount ~/.aws read-write so the container can refresh its SSO token cache.
+                    command.extend((
+                        "--mount",
+                        Mount(type="bind", source=str(aws_dir), path=f"{self.home_dir}/.aws").as_csv(),
+                        "-e",
+                        "AWS_PROFILE",
+                        "-e",
+                        "AWS_REGION",
+                        "-e",
+                        "AWS_DEFAULT_REGION",
+                    ))
 
             if not self.config.clone:
                 from dda.utils.fs import Path
