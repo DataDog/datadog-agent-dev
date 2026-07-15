@@ -18,10 +18,9 @@ from dda.utils.git.constants import GitEnvVars
 def _make_xdg_open_script(proxy_port: int, ssh_port: int) -> str:
     """Return the xdg-open script with both ports substituted.
 
-    Both the shared proxy port and the container's own SSH port are baked in
-    so the script works in SSH sessions (which do not inherit Docker ``-e``
-    variables) and so the single shared daemon knows which container to tunnel
-    back to for OAuth callbacks.
+    The ports are substituted into the script rather than read from the environment so it stays
+    self-contained for the tools that invoke it, and so the single shared daemon knows which
+    container to tunnel back to for OAuth callbacks.
     """
     import importlib.resources
 
@@ -202,6 +201,8 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 f"{self._xdg_open_script_path}:/usr/local/bin/xdg-open:ro",
             ))
 
+            # These forwarded env vars reach SSH `run`/`shell` sessions, not just the daemon, because
+            # the image persists them to /etc/environment and pam_env loads them per session.
             command.extend((
                 "-e",
                 "DD_SHELL",
