@@ -18,10 +18,9 @@ from dda.utils.git.constants import GitEnvVars
 def _make_xdg_open_script(proxy_port: int, ssh_port: int) -> str:
     """Return the xdg-open script with both ports substituted.
 
-    Both the shared proxy port and the container's own SSH port are baked in
-    so the script works in SSH sessions (which do not inherit Docker ``-e``
-    variables) and so the single shared daemon knows which container to tunnel
-    back to for OAuth callbacks.
+    The ports are substituted into the script rather than read from the environment so it stays
+    self-contained for the tools that invoke it, and so the single shared daemon knows which
+    container to tunnel back to for OAuth callbacks.
     """
     import importlib.resources
 
@@ -83,6 +82,15 @@ class LinuxContainerConfig(DeveloperEnvironmentConfig):
             }
         ),
     ] = None
+    no_secrets: Annotated[
+        bool,
+        msgspec.Meta(
+            extra={
+                "params": ["--no-secrets"],
+                "help": "Do not share host credentials or secrets with the dev env",
+            }
+        ),
+    ] = False
     # This parameter stores the raw volume specifications as provided by the user.
     # Use the `extra_mounts` property to get the list of extra mounts as Mount objects.
     extra_volume_specs: Annotated[
@@ -193,6 +201,8 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 f"{self._xdg_open_script_path}:/usr/local/bin/xdg-open:ro",
             ))
 
+            # These forwarded env vars reach SSH `run`/`shell` sessions, not just the daemon, because
+            # the image persists them to /etc/environment and pam_env loads them per session.
             command.extend((
                 "-e",
                 "DD_SHELL",
@@ -208,7 +218,14 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 AppEnvVars.ENV_TYPE,
                 "-e",
                 AppEnvVars.ENV_MANAGER,
+                "-e",
+                "AWS_PROFILE",
+                "-e",
+                "AWS_REGION",
+                "-e",
+                "AWS_DEFAULT_REGION",
             ))
+
             if self.config.arch is not None:
                 command.extend(("--platform", f"linux/{self.config.arch}"))
 
@@ -223,6 +240,9 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
 
             for mount in self.cache_volumes:
                 command.extend(("--mount", mount.as_csv()))
+
+            if not self.config.no_secrets:
+                self._add_secret_mounts(command)
 
             if not self.config.clone:
                 from dda.utils.fs import Path
@@ -457,6 +477,18 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         if self.config.arch is not None:
             name += f"-{self.config.arch}"
         return name
+
+    def _add_secret_mounts(self, command: list[str]) -> None:
+        from dda.utils.container.model import Mount
+        from dda.utils.fs import Path
+
+        # Share ~/.aws read-write so the container can refresh its SSO token cache.
+        aws_dir = Path.home() / ".aws"
+        if aws_dir.is_dir():
+            command.extend((
+                "--mount",
+                Mount(type="bind", source=str(aws_dir), path=f"{self.home_dir}/.aws").as_csv(),
+            ))
 
     def _write_xdg_open_script(self) -> None:
         self._xdg_open_script_path.parent.ensure_dir()
