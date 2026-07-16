@@ -87,7 +87,7 @@ class LinuxContainerConfig(DeveloperEnvironmentConfig):
         msgspec.Meta(
             extra={
                 "params": ["--no-secrets"],
-                "help": "Do not share host credentials or secrets (currently the `~/.aws` directory) with the dev env",
+                "help": "Do not share host credentials or secrets with the dev env",
             }
         ),
     ] = False
@@ -218,7 +218,14 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 AppEnvVars.ENV_TYPE,
                 "-e",
                 AppEnvVars.ENV_MANAGER,
+                "-e",
+                "AWS_PROFILE",
+                "-e",
+                "AWS_REGION",
+                "-e",
+                "AWS_DEFAULT_REGION",
             ))
+
             if self.config.arch is not None:
                 command.extend(("--platform", f"linux/{self.config.arch}"))
 
@@ -235,22 +242,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 command.extend(("--mount", mount.as_csv()))
 
             if not self.config.no_secrets:
-                from dda.utils.container.model import Mount
-                from dda.utils.fs import Path
-
-                aws_dir = Path.home() / ".aws"
-                if aws_dir.is_dir():
-                    # Mount ~/.aws read-write so the container can refresh its SSO token cache.
-                    command.extend((
-                        "--mount",
-                        Mount(type="bind", source=str(aws_dir), path=f"{self.home_dir}/.aws").as_csv(),
-                        "-e",
-                        "AWS_PROFILE",
-                        "-e",
-                        "AWS_REGION",
-                        "-e",
-                        "AWS_DEFAULT_REGION",
-                    ))
+                self._add_secret_mounts(command)
 
             if not self.config.clone:
                 from dda.utils.fs import Path
@@ -485,6 +477,18 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         if self.config.arch is not None:
             name += f"-{self.config.arch}"
         return name
+
+    def _add_secret_mounts(self, command: list[str]) -> None:
+        from dda.utils.container.model import Mount
+        from dda.utils.fs import Path
+
+        # Share ~/.aws read-write so the container can refresh its SSO token cache.
+        aws_dir = Path.home() / ".aws"
+        if aws_dir.is_dir():
+            command.extend((
+                "--mount",
+                Mount(type="bind", source=str(aws_dir), path=f"{self.home_dir}/.aws").as_csv(),
+            ))
 
     def _write_xdg_open_script(self) -> None:
         self._xdg_open_script_path.parent.ensure_dir()

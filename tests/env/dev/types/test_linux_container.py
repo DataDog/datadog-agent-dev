@@ -62,12 +62,6 @@ def get_aws_mount(home_dir: str = "/home/dd") -> list[str]:
     return [
         "--mount",
         Mount(type="bind", source=str(aws_dir), path=f"{home_dir}/.aws").as_csv(),
-        "-e",
-        "AWS_PROFILE",
-        "-e",
-        "AWS_REGION",
-        "-e",
-        "AWS_DEFAULT_REGION",
     ]
 
 
@@ -277,6 +271,12 @@ class TestStart:
                         AppEnvVars.ENV_TYPE,
                         "-e",
                         AppEnvVars.ENV_MANAGER,
+                        "-e",
+                        "AWS_PROFILE",
+                        "-e",
+                        "AWS_REGION",
+                        "-e",
+                        "AWS_DEFAULT_REGION",
                         "-v",
                         f"{shared_dir}:/.shared",
                         *starship_mount,
@@ -372,6 +372,12 @@ class TestStart:
                         AppEnvVars.ENV_TYPE,
                         "-e",
                         AppEnvVars.ENV_MANAGER,
+                        "-e",
+                        "AWS_PROFILE",
+                        "-e",
+                        "AWS_REGION",
+                        "-e",
+                        "AWS_DEFAULT_REGION",
                         "-v",
                         f"{shared_dir}:/.shared",
                         *starship_mount,
@@ -481,6 +487,12 @@ class TestStart:
                         AppEnvVars.ENV_TYPE,
                         "-e",
                         AppEnvVars.ENV_MANAGER,
+                        "-e",
+                        "AWS_PROFILE",
+                        "-e",
+                        "AWS_REGION",
+                        "-e",
+                        "AWS_DEFAULT_REGION",
                         "-v",
                         f"{shared_dir}:/.shared",
                         *starship_mount,
@@ -584,6 +596,12 @@ class TestStart:
                         AppEnvVars.ENV_TYPE,
                         "-e",
                         AppEnvVars.ENV_MANAGER,
+                        "-e",
+                        "AWS_PROFILE",
+                        "-e",
+                        "AWS_REGION",
+                        "-e",
+                        "AWS_DEFAULT_REGION",
                         "-v",
                         f"{shared_dir}:/.shared",
                         *starship_mount,
@@ -682,6 +700,12 @@ class TestStart:
                         AppEnvVars.ENV_TYPE,
                         "-e",
                         AppEnvVars.ENV_MANAGER,
+                        "-e",
+                        "AWS_PROFILE",
+                        "-e",
+                        "AWS_REGION",
+                        "-e",
+                        "AWS_DEFAULT_REGION",
                         "-v",
                         f"{shared_dir}:/.shared",
                         *starship_mount,
@@ -815,6 +839,12 @@ class TestStart:
                         AppEnvVars.ENV_TYPE,
                         "-e",
                         AppEnvVars.ENV_MANAGER,
+                        "-e",
+                        "AWS_PROFILE",
+                        "-e",
+                        "AWS_REGION",
+                        "-e",
+                        "AWS_DEFAULT_REGION",
                         "-v",
                         f"{shared_dir}:/.shared",
                         *starship_mount,
@@ -932,6 +962,12 @@ class TestStart:
                         AppEnvVars.ENV_TYPE,
                         "-e",
                         AppEnvVars.ENV_MANAGER,
+                        "-e",
+                        "AWS_PROFILE",
+                        "-e",
+                        "AWS_REGION",
+                        "-e",
+                        "AWS_DEFAULT_REGION",
                         "-v",
                         f"{shared_dir}:/.shared",
                         *starship_mount,
@@ -981,8 +1017,9 @@ class TestStart:
         )
 
         run_command = calls[0][0][0]
-        assert "AWS_PROFILE" not in run_command
+        # The ~/.aws mount is suppressed, but the non-secret AWS_* selectors are still forwarded.
         assert all("/home/dd/.aws" not in arg for arg in run_command)
+        assert "AWS_PROFILE" in run_command
 
 
 class TestStop:
