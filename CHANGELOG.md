@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+## 0.37.0 - 2026-07-17
+
+***Added:***
+
+- Share host AWS config with the Linux dev env by default
+
 ## 0.36.1 - 2026-07-09
 
 ***Fixed:***
