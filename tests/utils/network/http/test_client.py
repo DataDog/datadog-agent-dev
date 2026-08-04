@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import ssl
 
-import httpx
+import httpx2
 import truststore
 
 from dda.utils.network.http.client import DEFAULT_TIMEOUT, HTTPClient, get_http_client
@@ -15,7 +15,7 @@ class TestGetHTTPClient:
     def test_types(self):
         client = get_http_client()
         assert isinstance(client, HTTPClient)
-        assert isinstance(client, httpx.Client)
+        assert isinstance(client, httpx2.Client)
 
     def test_defaults(self, mocker):
         truststore_context = truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)

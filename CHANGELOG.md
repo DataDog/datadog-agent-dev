@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+***Changed:***
+
+- HTTP requests verify certificates against the operating system trust store by default
+- The `http` feature available to commands now provides the `httpx2` dependency and will remove the `httpx` dependency in a future minor release
+
 ## 0.37.0 - 2026-07-21
 
 ***Added:***

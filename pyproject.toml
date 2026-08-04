@@ -32,7 +32,9 @@ dependencies = [
   "dep-sync~=0.1",
   "filelock~=3.18",
   "find-exe~=0.1",
+  # Retained only for local commands in other repositories that import it.
   "httpx[http2]~=0.28.1",
+  "httpx2[http2]~=2.9.1",
   "hvac~=2.3.0",
   "keyring~=25.6.0",
   "msgspec~=0.18",
@@ -64,6 +66,7 @@ dotslash = [
 ]
 http = [
     "httpx[zstd]",
+    "httpx2[zstd]",
 ]
 gcp = [
     "google-api-python-client~=2.160.0",

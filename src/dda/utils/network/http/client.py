@@ -6,7 +6,7 @@ from __future__ import annotations
 import time
 from typing import TYPE_CHECKING, Any
 
-import httpx
+import httpx2
 
 from dda.utils.retry import DelayedError, FailFastError, wait_for
 
@@ -46,9 +46,9 @@ def get_http_client(**kwargs: Any) -> HTTPClient:
     return HTTPClient(**kwargs)
 
 
-class HTTPClient(httpx.Client):
+class HTTPClient(httpx2.Client):
     """
-    A subclass of [`httpx.Client`](https://www.python-httpx.org/api/#client) that intelligently retries requests.
+    A subclass of [`httpx2.Client`](https://httpx2.pydantic.dev/api/#client) that intelligently retries requests.
 
     /// warning
     This class should never be used directly. Instead, use the
@@ -64,21 +64,21 @@ class HTTPClient(httpx.Client):
         # connection errors
         self.timeout.connect = None
 
-    def send(self, *args: Any, **kwargs: Any) -> httpx.Response:
+    def send(self, *args: Any, **kwargs: Any) -> httpx2.Response:
         return wait_for(
             lambda: _get_response(lambda: super(HTTPClient, self).send(*args, **kwargs)),
             timeout=self.__timeout,
         )
 
 
-def _get_response(sender: Callable[[], httpx.Response]) -> httpx.Response:
+def _get_response(sender: Callable[[], httpx2.Response]) -> httpx2.Response:
     try:
         response = sender()
-    except httpx.ConnectError as e:
+    except httpx2.ConnectError as e:
         if (cause := getattr(e, "__cause__", None)) is not None:
-            import httpcore
+            import httpcore2
 
-            if isinstance(cause, httpcore.ConnectError):
+            if isinstance(cause, httpcore2.ConnectError):
                 import ssl
 
                 internal_error = cause.args[0]
@@ -90,7 +90,7 @@ def _get_response(sender: Callable[[], httpx.Response]) -> httpx.Response:
 
     try:
         response.raise_for_status()
-    except httpx.HTTPStatusError as e:
+    except httpx2.HTTPStatusError as e:
         # Not idempotent
         if e.request.method == "POST":
             raise FailFastError(e) from None

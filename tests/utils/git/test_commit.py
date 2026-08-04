@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from httpx import Response
+from httpx2 import Response
 
 from dda.utils.fs import Path
 from dda.utils.git.commit import Commit, GitPersonDetails

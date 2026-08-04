@@ -5,7 +5,7 @@ import json
 from datetime import datetime
 
 import pytest
-from httpx import Response
+from httpx2 import Response
 
 from dda.utils.fs import Path
 from dda.utils.git.changeset import ChangedFile, ChangeSet

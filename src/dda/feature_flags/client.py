@@ -44,13 +44,13 @@ class DatadogFeatureFlag:
             Dictionary containing the flag configuration response
 
         Raises:
-            httpx.HTTPError: If the request fails
+            httpx2.HTTPError: If the request fails
             RuntimeError: If an unexpected error occurs
         """
         if not self.__client_token:
             return {}
 
-        from httpx import HTTPError
+        from httpx2 import HTTPError
 
         # Build headers
         headers = {
@@ -103,7 +103,7 @@ class DatadogFeatureFlag:
             The flag value or None if the flag is not found
 
         Raises:
-            httpx.HTTPError: If the request fails
+            httpx2.HTTPError: If the request fails
             ValueError: If the flag is not found
             RuntimeError: If an unexpected error occurs
         """
