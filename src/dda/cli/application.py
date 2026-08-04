@@ -196,7 +196,7 @@ class UpdateChecker:
         return now - last_check >= self.__app.config.update.check.get_period_seconds()
 
     def new_release(self) -> tuple[str, str] | None:
-        import httpx
+        import httpx2
         from packaging.version import Version
 
         from dda._version import __version__
@@ -205,7 +205,7 @@ class UpdateChecker:
         with self.__app.github.http.client(timeout=5) as client:
             try:
                 response = client.get("https://api.github.com/repos/DataDog/datadog-agent-dev/releases/latest")
-            except httpx.HTTPStatusError as e:
+            except httpx2.HTTPStatusError as e:
                 # Rate limiting
                 if e.response.headers.get("Retry-After") is not None:
                     github_auth = self.__app.config.github.auth

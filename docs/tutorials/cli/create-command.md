@@ -84,7 +84,7 @@ Agent release data
 
 ## Requiring dependencies
 
-Fetching the Agent's [`release.json`](https://github.com/DataDog/datadog-agent/blob/main/release.json) file requires using an HTTP client. Add the `http` [feature][dda.cli.base.DynamicCommand] to the command to make sure dependencies such as `httpx` are available:
+Fetching the Agent's [`release.json`](https://github.com/DataDog/datadog-agent/blob/main/release.json) file requires using an HTTP client. Add the `http` [feature][dda.cli.base.DynamicCommand] to the command to make sure dependencies such as `httpx2` are available:
 
 /// tab | :octicons-file-code-16: src/dda/cli/agent_release/data/\_\_init\_\_.py
 ```python hl_lines="13 20-30"
@@ -107,14 +107,14 @@ def cmd(app: Application) -> None:
     """
     Show Agent release data.
     """
-    import httpx
+    import httpx2
 
     base = "https://raw.githubusercontent.com"
     repo = "DataDog/datadog-agent"
     branch = "main"
     path = "release.json"
     with app.status("Fetching Agent release data"):
-        response = httpx.get(f"{base}/{repo}/{branch}/{path}")
+        response = httpx2.get(f"{base}/{repo}/{branch}/{path}")
 
     response.raise_for_status()
     app.display_table(response.json())
@@ -174,14 +174,14 @@ def cmd(app: Application) -> None:
         app.display_warning("This command is currently disabled by feature flag.")
         return
 
-    import httpx
+    import httpx2
 
     base = "https://raw.githubusercontent.com"
     repo = "DataDog/datadog-agent"
     branch = "main"
     path = "release.json"
     with app.status("Fetching Agent release data"):
-        response = httpx.get(f"{base}/{repo}/{branch}/{path}")
+        response = httpx2.get(f"{base}/{repo}/{branch}/{path}")
 
     response.raise_for_status()
     app.display_table(response.json())
