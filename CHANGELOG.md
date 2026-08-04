@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+## 0.38.0 - 2026-08-04
+
 ***Changed:***
 
 - HTTP requests verify certificates against the operating system trust store by default
