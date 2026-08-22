@@ -95,36 +95,10 @@ class TestMetadata:
         }
         assert_metadata_equal(metadata, expected)
 
-    @pytest.mark.parametrize(
-        ("command_path", "expected"),
-        [
-            (
-                "dda build bin core-agent",
-                ({"core-agent"}, ArtifactFormat.BIN),
-            ),
-            (
-                "dda build dist deb -c core-agent -c process-agent",
-                (
-                    {"core-agent", "process-agent"},
-                    ArtifactFormat.DEB,
-                ),
-            ),
-            (
-                "dda build dist oci -c core-agent -c process-agent",
-                (
-                    {"core-agent", "process-agent"},
-                    ArtifactFormat.OCI,
-                ),
-            ),
-        ],
-    )
-    def test_analyze_context(self, app, mocker, command_path, expected, example_commit):
+    def test_analyze_context(self, app, mocker, example_commit):
         # Expected values
-        expected_agent_components, expected_artifact_format = expected
         build_platform = Platform.from_alias(platform.system(), platform.machine())
         expected = {
-            "agent_components": expected_agent_components,
-            "artifact_format": expected_artifact_format,
             "commit": example_commit,
             "compatible_platforms": {build_platform},
             "build_platform": build_platform,
@@ -134,13 +108,11 @@ class TestMetadata:
         }
 
         # Setup mocks
-        ctx = mocker.MagicMock()
-        ctx.command_path = command_path
         mocker.patch("dda.tools.git.Git.get_commit", return_value=expected["commit"])
         mocker.patch("dda.tools.git.Git.get_changes", return_value=expected["worktree_diff"])
 
         # Test without special arguments
-        context_details = analyze_context(ctx, app)
+        context_details = analyze_context(app)
 
         for field in expected:
             assert getattr(context_details, field) == expected[field]

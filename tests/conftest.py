@@ -205,6 +205,16 @@ def default_git_author() -> GitAuthorConfig:
 
 
 @pytest.fixture(scope="session")
+def default_gopath() -> Path:
+    return Path(Path.home() / "go")
+
+
+@pytest.fixture(scope="session")
+def default_gocache() -> Path:
+    return Path(Path.home() / ".cache/go-build")
+
+
+@pytest.fixture(scope="session")
 def uv_on_path() -> Path:
     return Path(shutil.which("uv"))
 

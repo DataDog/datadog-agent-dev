@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2025-present Datadog, Inc. <dev@datadoghq.com>
 #
 # SPDX-License-Identifier: MIT
+from __future__ import annotations
 
 from enum import StrEnum, auto
 from typing import ClassVar
@@ -21,7 +22,7 @@ class OS(StrEnum):
     ANY = auto()
 
     @classmethod
-    def from_alias(cls, alias: str) -> "OS":
+    def from_alias(cls, alias: str) -> OS:
         """
         Get the OS enum value from an alias.
         """
@@ -57,7 +58,7 @@ class Arch(StrEnum):
     ANY = auto()
 
     @classmethod
-    def from_alias(cls, alias: str) -> "Arch":
+    def from_alias(cls, alias: str) -> Arch:
         """
         Get the Arch enum value from an alias.
         """
@@ -81,10 +82,10 @@ class Platform(Struct, frozen=True):
     os: OS
     arch: Arch
 
-    ANY: ClassVar["Platform"]
+    ANY: ClassVar[Platform]
 
     @classmethod
-    def from_alias(cls, os_alias: str, arch_alias: str) -> "Platform":
+    def from_alias(cls, os_alias: str, arch_alias: str) -> Platform:
         """
         Get the Platform enum value from an alias.
         """
