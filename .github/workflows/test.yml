@@ -71,12 +71,6 @@ jobs:
         pattern: coverage-*
         path: coverage_data
 
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # v6.0.0
-      with:
-        directory: coverage_data
-        use_oidc: true
-
     - name: Get Datadog credentials
       id: dd-sts
       continue-on-error: true
