@@ -334,10 +334,10 @@ jobs:
         app-name: ${{ env.APP_NAME }}
         python-version: ${{ env.PYTHON_VERSION }}
         pyoxidizer-version: ${{ env.PYOXIDIZER_VERSION }}
-        apple-application-certificate: ${{ secrets.APPLE_DEVELOPER_ID_APPLICATION_CERTIFICATE }}
-        apple-application-private-key: ${{ secrets.APPLE_DEVELOPER_ID_APPLICATION_PRIVATE_KEY }}
-        apple-installer-certificate: ${{ secrets.APPLE_DEVELOPER_ID_INSTALLER_CERTIFICATE }}
-        apple-installer-private-key: ${{ secrets.APPLE_DEVELOPER_ID_INSTALLER_PRIVATE_KEY }}
+        apple-application-p12: ${{ secrets.APPLE_DEVELOPER_ID_APPLICATION_P12 }}
+        apple-application-p12-password: ${{ secrets.APPLE_DEVELOPER_ID_APPLICATION_P12_PASSWORD }}
+        apple-installer-p12: ${{ secrets.APPLE_DEVELOPER_ID_INSTALLER_P12 }}
+        apple-installer-p12-password: ${{ secrets.APPLE_DEVELOPER_ID_INSTALLER_P12_PASSWORD }}
         apple-api-key: ${{ secrets.APPLE_APP_STORE_CONNECT_API_DATA }}
 
   macos-packaging-unsigned:
