@@ -106,12 +106,12 @@ runs:
       if: inputs.should-sign == 'true'
       shell: bash
       env:
-        RCODESIGN_P12_PASSWORD: ${{ inputs.apple-application-p12-password }}
+        SIGNING_P12_PASSWORD: ${{ inputs.apple-application-p12-password }}
       run: |-
         for f in bin/*; do
           rcodesign sign -vv \
           --p12-file /tmp/certificate-application.p12 \
-          --p12-password "$RCODESIGN_P12_PASSWORD" \
+          --p12-password "$SIGNING_P12_PASSWORD" \
           --code-signature-flags runtime \
           "$f"
         done
@@ -196,11 +196,11 @@ runs:
       if: inputs.should-sign == 'true'
       shell: bash
       env:
-        RCODESIGN_P12_PASSWORD: ${{ inputs.apple-installer-p12-password }}
+        SIGNING_P12_PASSWORD: ${{ inputs.apple-installer-p12-password }}
       run: >-
         rcodesign sign -vv
         --p12-file /tmp/certificate-installer.p12
-        --p12-password "$RCODESIGN_P12_PASSWORD"
+        --p12-password "$SIGNING_P12_PASSWORD"
         "staged/${{ steps.pkg.outputs.path }}"
         "signed/${{ steps.pkg.outputs.path }}"
 
