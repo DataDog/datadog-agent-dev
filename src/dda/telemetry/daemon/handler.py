@@ -9,8 +9,12 @@ import os
 from dda.telemetry.constants import DaemonEnvVars
 from dda.utils.fs import Path
 
+LOG_FILE = Path(os.environ[DaemonEnvVars.LOG_FILE])
 ERROR_FILE = Path(os.environ[DaemonEnvVars.ERROR_FILE])
 ERROR_OCCURRED = False
+
+LOG_FILE.parent.ensure_dir()
+ERROR_FILE.parent.ensure_dir()
 
 
 def set_error() -> None:
@@ -33,7 +37,7 @@ class ErrorFilter(logging.Filter):
 
 
 logging.basicConfig(
-    filename=os.environ[DaemonEnvVars.LOG_FILE],
+    filename=LOG_FILE,
     level=os.environ.get(DaemonEnvVars.LOG_LEVEL, "INFO"),
     format="%(asctime)s | %(levelname)s | %(message)s",
 )
