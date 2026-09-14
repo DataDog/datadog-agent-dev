@@ -8,9 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+## 0.38.1 - 2026-09-14
+
 ***Fixed:***
 
 - Ensure telemetry is submitted when its storage directory does not exist
+- Update dependencies
 
 ## 0.38.0 - 2026-08-04
 
