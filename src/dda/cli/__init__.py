@@ -10,6 +10,7 @@ START_TIME = perf_counter_ns()
 START_TIMESTAMP = time_ns()
 
 import os
+import sys
 
 import rich_click as click
 
@@ -206,12 +207,17 @@ def dda(
 
 
 def main() -> None:
+    if sys.platform == "win32":
+        # PyApp isolation ignores PYTHONUTF8 when it starts dda.exe, causing code-page errors for redirected output.
+        # Reconfigure dda's streams until Python 3.15 makes UTF-8 the default.
+        os.environ["PYTHONUTF8"] = "1"
+        for stream in (sys.stdout, sys.stderr):
+            if stream is not None:
+                stream.reconfigure(encoding="utf-8")
+
     try:
         dda(prog_name="dda", windows_expand_args=False)
     except Exception:  # noqa: BLE001
-        import os
-        import sys
-
         import click as click_core
         from rich.console import Console
 
