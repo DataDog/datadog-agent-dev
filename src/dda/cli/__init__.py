@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
+from io import TextIOWrapper
 from time import perf_counter_ns, time_ns
 from typing import TYPE_CHECKING
 
@@ -212,7 +213,7 @@ def main() -> None:
         # Reconfigure dda's streams until Python 3.15 makes UTF-8 the default.
         os.environ["PYTHONUTF8"] = "1"
         for stream in (sys.stdout, sys.stderr):
-            if stream is not None:
+            if isinstance(stream, TextIOWrapper):
                 stream.reconfigure(encoding="utf-8")
 
     try:
