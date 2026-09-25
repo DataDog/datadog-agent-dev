@@ -140,6 +140,14 @@ f.write_text("foo")
         assert output_file.is_file()
         assert output_file.read_text() == "foo"
 
+    def test_attach_missing_executable_aborts(self, app):
+        with pytest.raises(SystemExit):
+            app.subprocess.attach(["dda-test-nonexistent-command"])
+
+    def test_attach_missing_executable_raises(self, app):
+        with pytest.raises(FileNotFoundError):
+            app.subprocess.attach(["dda-test-nonexistent-command"], abort_on_missing=False)
+
     def test_capture_separate_streams(self, app):
         script = """\
 import sys
