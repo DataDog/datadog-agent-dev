@@ -8,6 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+***Added:***
+
+- Configure a command to fetch the feature flag client token in CI
+
+***Deprecated:***
+
+- The per-OS `DDA_FEATURE_FLAGS_CI_*` environment variables
+
 ## 0.38.1 - 2026-09-14
 
 ***Fixed:***

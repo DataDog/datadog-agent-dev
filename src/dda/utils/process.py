@@ -59,7 +59,9 @@ class SubprocessRunner:
 
         return exit_code
 
-    def attach(self, command: list[str] | str, **kwargs: Any) -> subprocess.CompletedProcess:
+    def attach(
+        self, command: list[str] | str, *, abort_on_missing: bool = True, **kwargs: Any
+    ) -> subprocess.CompletedProcess:
         """
         Run a command and wait for it to complete. By default, the command inherits the current process's standard
         input, output, and error streams.
@@ -76,6 +78,8 @@ class SubprocessRunner:
 
         Parameters:
             command: The command to run.
+            abort_on_missing: Whether to abort the application if the executable is not found, rather than raising
+                [`FileNotFoundError`][FileNotFoundError].
 
         Returns:
             The completed process.
@@ -91,6 +95,8 @@ class SubprocessRunner:
         try:
             process = subprocess.run(command, **kwargs)  # noqa: PLW1510
         except FileNotFoundError:
+            if not abort_on_missing:
+                raise
             self.__app.abort(f"Executable `{command[0]}` not found: {command}")
 
         if check and process.returncode:
