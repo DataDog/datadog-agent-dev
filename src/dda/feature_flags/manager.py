@@ -23,6 +23,15 @@ if TYPE_CHECKING:
     from dda.cli.application import Application
     from dda.config.model import RootConfig
 
+TOKEN_COMMAND_TIMEOUT = 30
+LEGACY_CI_TOKEN_ENV_VARS = (
+    AppEnvVars.FEATURE_FLAGS_CI_VAULT_PATH,
+    AppEnvVars.FEATURE_FLAGS_CI_VAULT_KEY,
+    AppEnvVars.FEATURE_FLAGS_CI_VAULT_PATH_MACOS,
+    AppEnvVars.FEATURE_FLAGS_CI_VAULT_KEY_MACOS,
+    AppEnvVars.FEATURE_FLAGS_CI_SSM_KEY_WINDOWS,
+)
+
 
 class FeatureFlagUser(User):
     def __init__(self, config: RootConfig) -> None:
@@ -166,21 +175,59 @@ class CIFeatureFlagManager(FeatureFlagManager):
         self._re_author_mail = re.compile(r"<([^>]+)>")
 
     def _get_client_token(self) -> str | None:
-        self._app.display_debug(f"Getting client token for {sys.platform}")
         try:
-            match sys.platform:
-                case "win32":
-                    return self.__get_client_token_windows()
-                case "darwin":
-                    return self.__get_client_token_macos()
-                case "linux":
-                    return self.__get_client_token_linux()
-                case _:
-                    return None
+            if client_token := os.getenv(AppEnvVars.FEATURE_FLAGS_CLIENT_TOKEN):
+                return client_token
+            if token_command := self.__token_command:
+                return self.__run_token_command(token_command)
+            return self.__get_legacy_client_token()
         except Exception as e:  # noqa: BLE001
             self._set_client_error(f"Error getting client token in CI: {e}")
             self._app.display_warning(f"Error getting client token: {e}, feature flag will be defaulted")
             return None
+
+    @property
+    def __token_command(self) -> list[str] | str:
+        if env_command := os.getenv(AppEnvVars.FEATURE_FLAGS_CI_TOKEN_COMMAND, "").strip():
+            return env_command
+        return self._app.config.feature_flags.ci.token_command
+
+    def __run_token_command(self, command: list[str] | str) -> str:
+        self._app.display_debug("Getting client token from the configured command")
+        process = self._app.subprocess.attach(
+            command,
+            abort_on_missing=False,
+            check=False,
+            capture_output=True,
+            encoding="utf-8",
+            timeout=TOKEN_COMMAND_TIMEOUT,
+        )
+        if process.returncode:
+            message = f"Token command exited with code {process.returncode}: {process.stderr.strip()[:500]}"
+            raise RuntimeError(message)
+        if not (token := process.stdout.strip()):
+            message = "Token command returned no output"
+            raise RuntimeError(message)
+        return token
+
+    def __get_legacy_client_token(self) -> str | None:
+        if not any(os.getenv(var) for var in LEGACY_CI_TOKEN_ENV_VARS):
+            return None
+
+        self._app.display_warning(
+            f"{', '.join(LEGACY_CI_TOKEN_ENV_VARS)} are deprecated, "
+            f"use {AppEnvVars.FEATURE_FLAGS_CI_TOKEN_COMMAND} instead"
+        )
+        self._app.display_debug(f"Getting client token for {sys.platform}")
+        match sys.platform:
+            case "win32":
+                return self.__get_client_token_windows()
+            case "darwin":
+                return self.__get_client_token_macos()
+            case "linux":
+                return self.__get_client_token_linux()
+            case _:
+                return None
 
     def __get_client_token_windows(self) -> str | None:  # noqa: PLR6301
         if (client_token := os.getenv(AppEnvVars.FEATURE_FLAGS_CI_SSM_KEY_WINDOWS)) is None:

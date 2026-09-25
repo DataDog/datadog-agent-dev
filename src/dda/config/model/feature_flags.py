@@ -16,7 +16,7 @@ class FeatureFlagsCIConfig(Struct, frozen=True, forbid_unknown_fields=True):
     ///
 
     Command whose output is used as the feature flag client token in CI. A string is split with POSIX shell rules,
-    except on Windows.
+    except on Windows. Overridden by the `DDA_FEATURE_FLAGS_CI_TOKEN_COMMAND` environment variable.
     """
 
     token_command: list[str] | str = field(name="token-command", default_factory=list)
