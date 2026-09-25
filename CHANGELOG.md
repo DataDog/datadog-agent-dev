@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ***Changed:***
 
 - Remove the per-OS `DDA_FEATURE_FLAGS_CI_*` environment variables in favor of the CI token command
+- Remove `boto3` from the core dependencies, it remains available through the `legacy-*` features
 
 ***Added:***
 
