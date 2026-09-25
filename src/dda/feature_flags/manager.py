@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import os
 import re
-import sys
 from abc import ABC, abstractmethod
 from functools import cached_property
 from typing import TYPE_CHECKING, Any
@@ -14,8 +13,6 @@ from msgspec import Struct
 
 from dda.config.constants import AppEnvVars
 from dda.feature_flags.client import DatadogFeatureFlag
-from dda.secrets.ssm import fetch_secret as fetch_secret_ssm
-from dda.secrets.vault import fetch_secret_ci
 from dda.user.datadog import User
 from dda.utils.platform import get_os_name
 
@@ -24,13 +21,6 @@ if TYPE_CHECKING:
     from dda.config.model import RootConfig
 
 TOKEN_COMMAND_TIMEOUT = 30
-LEGACY_CI_TOKEN_ENV_VARS = (
-    AppEnvVars.FEATURE_FLAGS_CI_VAULT_PATH,
-    AppEnvVars.FEATURE_FLAGS_CI_VAULT_KEY,
-    AppEnvVars.FEATURE_FLAGS_CI_VAULT_PATH_MACOS,
-    AppEnvVars.FEATURE_FLAGS_CI_VAULT_KEY_MACOS,
-    AppEnvVars.FEATURE_FLAGS_CI_SSM_KEY_WINDOWS,
-)
 
 
 class FeatureFlagUser(User):
@@ -180,11 +170,11 @@ class CIFeatureFlagManager(FeatureFlagManager):
                 return client_token
             if token_command := self.__token_command:
                 return self.__run_token_command(token_command)
-            return self.__get_legacy_client_token()
         except Exception as e:  # noqa: BLE001
             self._set_client_error(f"Error getting client token in CI: {e}")
             self._app.display_warning(f"Error getting client token: {e}, feature flag will be defaulted")
-            return None
+
+        return None
 
     @property
     def __token_command(self) -> list[str] | str:
@@ -209,44 +199,6 @@ class CIFeatureFlagManager(FeatureFlagManager):
             message = "Token command returned no output"
             raise RuntimeError(message)
         return token
-
-    def __get_legacy_client_token(self) -> str | None:
-        if not any(os.getenv(var) for var in LEGACY_CI_TOKEN_ENV_VARS):
-            return None
-
-        self._app.display_warning(
-            f"{', '.join(LEGACY_CI_TOKEN_ENV_VARS)} are deprecated, "
-            f"use {AppEnvVars.FEATURE_FLAGS_CI_TOKEN_COMMAND} instead"
-        )
-        self._app.display_debug(f"Getting client token for {sys.platform}")
-        match sys.platform:
-            case "win32":
-                return self.__get_client_token_windows()
-            case "darwin":
-                return self.__get_client_token_macos()
-            case "linux":
-                return self.__get_client_token_linux()
-            case _:
-                return None
-
-    def __get_client_token_windows(self) -> str | None:  # noqa: PLR6301
-        if (client_token := os.getenv(AppEnvVars.FEATURE_FLAGS_CI_SSM_KEY_WINDOWS)) is None:
-            return None
-        return fetch_secret_ssm(name=client_token)
-
-    def __get_client_token_macos(self) -> str | None:  # noqa: PLR6301
-        if (client_token := os.getenv(AppEnvVars.FEATURE_FLAGS_CI_VAULT_KEY_MACOS)) is None:
-            return None
-        if (vault_path := os.getenv(AppEnvVars.FEATURE_FLAGS_CI_VAULT_PATH_MACOS)) is None:
-            return None
-        return fetch_secret_ci(vault_path, client_token)
-
-    def __get_client_token_linux(self) -> str | None:  # noqa: PLR6301
-        if (client_token := os.getenv(AppEnvVars.FEATURE_FLAGS_CI_VAULT_KEY)) is None:
-            return None
-        if (vault_path := os.getenv(AppEnvVars.FEATURE_FLAGS_CI_VAULT_PATH)) is None:
-            return None
-        return fetch_secret_ci(vault_path, client_token)
 
     def _get_entity(self) -> str:  # noqa: PLR6301
         return os.getenv("CI_JOB_ID", "default_entity")

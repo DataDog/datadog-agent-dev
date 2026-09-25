@@ -10,7 +10,7 @@ import sys
 import pytest
 
 from dda.config.constants import AppEnvVars
-from dda.feature_flags.manager import LEGACY_CI_TOKEN_ENV_VARS, CIFeatureFlagManager, FeatureFlagEvaluationResult
+from dda.feature_flags.manager import CIFeatureFlagManager, FeatureFlagEvaluationResult
 
 
 def python_command(code: str) -> list[str]:
@@ -23,11 +23,7 @@ def command_string(args: list[str]) -> str:
 
 @pytest.fixture
 def ci_manager(app, monkeypatch, mocker):
-    for var in (
-        AppEnvVars.FEATURE_FLAGS_CLIENT_TOKEN,
-        AppEnvVars.FEATURE_FLAGS_CI_TOKEN_COMMAND,
-        *LEGACY_CI_TOKEN_ENV_VARS,
-    ):
+    for var in (AppEnvVars.FEATURE_FLAGS_CLIENT_TOKEN, AppEnvVars.FEATURE_FLAGS_CI_TOKEN_COMMAND):
         monkeypatch.delenv(var, raising=False)
     mocker.patch.object(app, "display_warning")
     return CIFeatureFlagManager(app)
@@ -40,14 +36,6 @@ def set_token_command(config_file):
         config_file.save()
 
     return set_command
-
-
-@pytest.fixture
-def legacy_linux_vars(monkeypatch, mocker):
-    monkeypatch.setattr(sys, "platform", "linux")
-    monkeypatch.setenv(AppEnvVars.FEATURE_FLAGS_CI_VAULT_PATH, "path")
-    monkeypatch.setenv(AppEnvVars.FEATURE_FLAGS_CI_VAULT_KEY, "key")
-    return mocker.patch("dda.feature_flags.manager.fetch_secret_ci", return_value="from-legacy")
 
 
 class TestSelfFeatureEnabled:
@@ -190,19 +178,6 @@ class TestCIFeatureFlagManager:
         assert result.defaulted is True
         assert error in result.error
         app.display_warning.assert_called_once()
-
-    def test_token_command_takes_precedence_over_legacy(self, ci_manager, set_token_command, app, legacy_linux_vars):
-        set_token_command(python_command("print('from-command')"))
-
-        assert ci_manager._get_client_token() == "from-command"  # noqa: SLF001
-        legacy_linux_vars.assert_not_called()
-        app.display_warning.assert_not_called()
-
-    def test_legacy_fallback_is_deprecated(self, ci_manager, app, legacy_linux_vars):
-        assert ci_manager._get_client_token() == "from-legacy"  # noqa: SLF001
-        legacy_linux_vars.assert_called_once_with("path", "key")
-        app.display_warning.assert_called_once()
-        assert "deprecated" in app.display_warning.call_args.args[0]
 
     def test_nothing_configured(self, ci_manager, app):
         assert ci_manager._get_client_token() is None  # noqa: SLF001

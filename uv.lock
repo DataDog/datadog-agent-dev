@@ -524,7 +524,6 @@ source = { editable = "." }
 dependencies = [
     { name = "ada-url" },
     { name = "binary" },
-    { name = "boto3" },
     { name = "click" },
     { name = "datadog-api-client" },
     { name = "dep-sync" },
@@ -741,7 +740,6 @@ virustotal = [
 requires-dist = [
     { name = "ada-url", specifier = "~=1.15.3" },
     { name = "binary", specifier = "~=1.0.2" },
-    { name = "boto3", specifier = "~=1.38.8" },
     { name = "click", specifier = "~=8.5.0" },
     { name = "datadog-api-client", specifier = "~=2.46" },
     { name = "dep-sync", specifier = "~=0.1" },
