@@ -20,10 +20,6 @@ variables:
   DDA_FEATURE_FLAGS_CI_TOKEN_COMMAND: vault kv get -field=token kv/path/to/secret
 ```
 
-## Deprecated variables
-
-`DDA_FEATURE_FLAGS_CI_VAULT_PATH`, `DDA_FEATURE_FLAGS_CI_VAULT_KEY`, their `_MACOS` variants and `DDA_FEATURE_FLAGS_CI_SSM_KEY_WINDOWS` still work but are deprecated. Use a token command instead.
-
 ## Notes
 
 - `dda` automatically scopes evaluations with CI context, including job name, job ID, stage, and branch.
