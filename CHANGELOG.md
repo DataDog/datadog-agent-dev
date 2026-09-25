@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+***Changed:***
+
+- Remove the per-OS `DDA_FEATURE_FLAGS_CI_*` environment variables in favor of the CI token command
+
 ***Added:***
 
 - Configure a command to fetch the feature flag client token in CI
