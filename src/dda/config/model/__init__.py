@@ -8,6 +8,7 @@ from typing import Any
 from msgspec import Struct, convert, field, to_builtins
 
 from dda.config.model.env import EnvConfig
+from dda.config.model.feature_flags import FeatureFlagsConfig
 from dda.config.model.github import GitHubConfig
 from dda.config.model.orgs import OrgConfig
 from dda.config.model.storage import StorageDirs
@@ -39,6 +40,7 @@ class RootConfig(Struct, frozen=True, omit_defaults=True):
     terminal: TerminalConfig = field(default_factory=TerminalConfig)
     update: UpdateConfig = field(default_factory=UpdateConfig)
     telemetry: TelemetryConfig = field(default_factory=TelemetryConfig)
+    feature_flags: FeatureFlagsConfig = field(name="feature-flags", default_factory=FeatureFlagsConfig)
 
 
 def construct_model(data: dict[str, Any]) -> RootConfig:
