@@ -203,14 +203,19 @@ class CIFeatureFlagManager(FeatureFlagManager):
             raise TokenCommandNotConfiguredError
 
         self._app.display_debug("Getting client token from the configured command")
-        process = self._app.subprocess.attach(
-            command,
-            abort_on_error=False,
-            check=False,
-            capture_output=True,
-            encoding="utf-8",
-            timeout=TOKEN_COMMAND_TIMEOUT,
-        )
+        try:
+            process = self._app.subprocess.attach(
+                command,
+                abort_on_error=False,
+                check=False,
+                capture_output=True,
+                encoding="utf-8",
+                timeout=TOKEN_COMMAND_TIMEOUT,
+            )
+        except FileNotFoundError:
+            executable = command[0] if isinstance(command, list) else command
+            message = f"Token command executable not found: {executable}"
+            raise RuntimeError(message) from None
         if process.returncode:
             message = f"Token command exited with code {process.returncode}: {process.stderr.strip()[:500]}"
             raise RuntimeError(message)

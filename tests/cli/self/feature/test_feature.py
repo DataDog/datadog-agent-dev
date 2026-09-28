@@ -174,7 +174,12 @@ class TestCIFeatureFlagManager:
                 id="non-zero exit",
             ),
             pytest.param(python_command("print('  ')"), "returned no output", 30, id="empty output"),
-            pytest.param(["dda-test-nonexistent-command"], "dda-test-nonexistent-command", 30, id="missing executable"),
+            pytest.param(
+                ["dda-test-nonexistent-command"],
+                "Token command executable not found: dda-test-nonexistent-command",
+                30,
+                id="missing executable",
+            ),
             pytest.param(python_command("import time; time.sleep(10)"), "timed out", 0.5, id="timeout"),
         ],
     )
