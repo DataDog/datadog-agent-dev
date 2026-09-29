@@ -8,18 +8,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
-***Changed:***
+## 0.39.0 - 2026-09-29
 
-- Remove the per-OS `DDA_FEATURE_FLAGS_CI_*` environment variables in favor of the CI token command
-- Remove `boto3` from the core dependencies, it remains available through the `legacy-*` features
+**Fixed:**
+
+- Make sure dda outputs as UTF-8 on Windows (#309)
 
 ***Added:***
 
-- Configure a command to fetch the feature flag client token in CI
+- Configure a command to fetch the client token for `dda self feature-flag` in CI (#310)
+- New `anomalydetection` dependency group for invoke tasks on `datadog-agent` (#313)
 
-***Deprecated:***
+***Removed:***
 
-- The per-OS `DDA_FEATURE_FLAGS_CI_*` environment variables
+- The per-OS `DDA_FEATURE_FLAGS_CI_*` environment variables and related feature flag managers (#311)
+- Remove `boto3` from the core dependencies, it remains available through the `legacy-*` features (#311)
 
 ## 0.38.1 - 2026-09-14
 
