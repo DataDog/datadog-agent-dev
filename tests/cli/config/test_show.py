@@ -66,6 +66,9 @@ def test_default_scrubbed(dda, config_file, helpers, default_cache_dir, default_
 
             [telemetry]
             anon = true
+
+            [feature-flags.ci]
+            token-command = []
             """
         ),
     )
@@ -131,6 +134,9 @@ def test_reveal(dda, config_file, helpers, default_cache_dir, default_data_dir, 
 
             [telemetry]
             anon = true
+
+            [feature-flags.ci]
+            token-command = []
             """
         ),
     )

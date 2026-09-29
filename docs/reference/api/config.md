@@ -87,6 +87,12 @@ The file can be managed by the [`config`](../cli/commands.md#dda-config) command
     options:
       heading_level: 3
 
+## Feature flags
+
+::: dda.config.model.feature_flags.FeatureFlagsCIConfig
+    options:
+      heading_level: 3
+
 ## Update
 
 ::: dda.config.model.update.UpdateConfig

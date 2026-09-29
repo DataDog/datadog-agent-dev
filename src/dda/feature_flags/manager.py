@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import os
 import re
-import sys
 from abc import ABC, abstractmethod
 from functools import cached_property
 from typing import TYPE_CHECKING, Any
@@ -14,14 +13,18 @@ from msgspec import Struct
 
 from dda.config.constants import AppEnvVars
 from dda.feature_flags.client import DatadogFeatureFlag
-from dda.secrets.ssm import fetch_secret as fetch_secret_ssm
-from dda.secrets.vault import fetch_secret_ci
 from dda.user.datadog import User
 from dda.utils.platform import get_os_name
 
 if TYPE_CHECKING:
     from dda.cli.application import Application
     from dda.config.model import RootConfig
+
+TOKEN_COMMAND_TIMEOUT = 30
+
+
+class TokenCommandNotConfiguredError(Exception):
+    pass
 
 
 class FeatureFlagUser(User):
@@ -166,40 +169,50 @@ class CIFeatureFlagManager(FeatureFlagManager):
         self._re_author_mail = re.compile(r"<([^>]+)>")
 
     def _get_client_token(self) -> str | None:
-        self._app.display_debug(f"Getting client token for {sys.platform}")
         try:
-            match sys.platform:
-                case "win32":
-                    return self.__get_client_token_windows()
-                case "darwin":
-                    return self.__get_client_token_macos()
-                case "linux":
-                    return self.__get_client_token_linux()
-                case _:
-                    return None
+            if client_token := os.getenv(AppEnvVars.FEATURE_FLAGS_CLIENT_TOKEN):
+                return client_token
+            try:
+                return self.__run_token_command()
+            except TokenCommandNotConfiguredError:
+                return None
         except Exception as e:  # noqa: BLE001
             self._set_client_error(f"Error getting client token in CI: {e}")
             self._app.display_warning(f"Error getting client token: {e}, feature flag will be defaulted")
-            return None
 
-    def __get_client_token_windows(self) -> str | None:  # noqa: PLR6301
-        if (client_token := os.getenv(AppEnvVars.FEATURE_FLAGS_CI_SSM_KEY_WINDOWS)) is None:
-            return None
-        return fetch_secret_ssm(name=client_token)
+        return None
 
-    def __get_client_token_macos(self) -> str | None:  # noqa: PLR6301
-        if (client_token := os.getenv(AppEnvVars.FEATURE_FLAGS_CI_VAULT_KEY_MACOS)) is None:
-            return None
-        if (vault_path := os.getenv(AppEnvVars.FEATURE_FLAGS_CI_VAULT_PATH_MACOS)) is None:
-            return None
-        return fetch_secret_ci(vault_path, client_token)
+    @property
+    def __token_command(self) -> list[str] | str:
+        if env_command := os.getenv(AppEnvVars.FEATURE_FLAGS_CI_TOKEN_COMMAND, "").strip():
+            return env_command
+        return self._app.config.feature_flags.ci.token_command
 
-    def __get_client_token_linux(self) -> str | None:  # noqa: PLR6301
-        if (client_token := os.getenv(AppEnvVars.FEATURE_FLAGS_CI_VAULT_KEY)) is None:
-            return None
-        if (vault_path := os.getenv(AppEnvVars.FEATURE_FLAGS_CI_VAULT_PATH)) is None:
-            return None
-        return fetch_secret_ci(vault_path, client_token)
+    def __run_token_command(self) -> str:
+        if not (command := self.__token_command):
+            raise TokenCommandNotConfiguredError
+
+        self._app.display_debug("Getting client token from the configured command")
+        try:
+            process = self._app.subprocess.attach(
+                command,
+                abort_on_error=False,
+                check=False,
+                capture_output=True,
+                encoding="utf-8",
+                timeout=TOKEN_COMMAND_TIMEOUT,
+            )
+        except FileNotFoundError:
+            executable = command[0] if isinstance(command, list) else command
+            message = f"Token command executable not found: {executable}"
+            raise RuntimeError(message) from None
+        if process.returncode:
+            message = f"Token command exited with code {process.returncode}: {process.stderr.strip()[:500]}"
+            raise RuntimeError(message)
+        if not (token := process.stdout.strip()):
+            message = "Token command returned no output"
+            raise RuntimeError(message)
+        return token
 
     def _get_entity(self) -> str:  # noqa: PLR6301
         return os.getenv("CI_JOB_ID", "default_entity")
