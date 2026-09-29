@@ -56,6 +56,9 @@ dependencies = [
 # Legacy groups are installed in isolation (`--only-group`, no core dependencies),
 # so any core dependency a group needs must be repeated here.
 [dependency-groups]
+anomalydetection = [
+    "optuna==4.5.0",
+]
 self-dev = [
     "hatch",
 ]
