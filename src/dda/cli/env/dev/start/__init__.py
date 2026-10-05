@@ -70,6 +70,10 @@ def cmd(ctx: click.Context, *, env_type: str, instance: str) -> None:
             f"To change the configuration, you must remove the environment after stopping it."
         )
 
+    # Restart with the saved transport, image and mounts instead of CLI defaults.
+    if env.config_file.is_file():
+        env = env_class(app=app, name=env_type, instance=instance)
+
     status = env.status()
     transition_states = {EnvironmentState.NONEXISTENT, EnvironmentState.STOPPED}
     if status.state not in transition_states:

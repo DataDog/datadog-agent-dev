@@ -1,0 +1,17 @@
+[
+  {
+    "State": {
+      "Status": "running",
+      "Running": true,
+      "Paused": false,
+      "Restarting": false,
+      "OOMKilled": false,
+      "Dead": false,
+      "Pid": 1348,
+      "ExitCode": 0,
+      "Error": "",
+      "StartedAt": "2026-10-05T15:04:44.404657113Z",
+      "FinishedAt": "0001-01-01T00:00:00Z"
+    }
+  }
+]

@@ -14,7 +14,7 @@ import msgspec
 import pytest
 
 from dda.config.constants import AppEnvVars
-from dda.env.dev.types.linux_container import LinuxContainer
+from dda.env.dev.types.linux_container import LinuxContainer, LinuxContainerConfig
 from dda.env.models import EnvironmentState, EnvironmentStatus
 from dda.utils.fs import Path, cp_r
 from dda.utils.git.constants import GitEnvVars
@@ -107,6 +107,7 @@ def test_default_config(app):
         "no_secrets": False,
         "repos": ["datadog-agent"],
         "shell": "zsh",
+        "transport": "ssh",
         "extra_volume_specs": [],
         "extra_mount_specs": [],
     }
@@ -1660,3 +1661,111 @@ class TestImportFiles:
             source_path = test_files_root / "folder1"
             with pytest.raises(FileExistsError):
                 linux_container.import_path(source=source_path, destination="/some_file.txt")
+
+
+class TestExecTransport:
+    @pytest.fixture
+    def container(self, app):
+        return LinuxContainer(
+            app=app,
+            name="linux-container",
+            instance="managed",
+            config=LinuxContainerConfig(transport="exec", shell="bash", no_pull=True, repos=[]),
+        )
+
+    def test_running_state_and_readiness(self, container, mocker):
+        # Fixture captured via record-external-calls skill on 2026-10-05 from the
+        # owned hotdog Podman CLI. extcalldebug does not instrument subprocesses.
+        # Keep the real State object; omit unrelated inspect metadata.
+        fixtures = Path(__file__).parent / "fixtures"
+        capture = mocker.patch.object(
+            container.docker,
+            "capture",
+            side_effect=[
+                (fixtures / "podman-running-state.json").read_text(),
+                (fixtures / "dda-ready.txt").read_text(),
+            ],
+        )
+        assert container.status().state == EnvironmentState.STARTED
+        container.check_readiness()
+        assert capture.call_args.args[0][:4] == ["exec", "--user", "dd", container.container_name]
+
+    def test_not_ready(self, container, mocker):
+        mocker.patch.object(container.docker, "capture", return_value="")
+        with pytest.raises(RuntimeError, match="setup is not ready"):
+            container.check_readiness()
+
+    def test_start_without_host_services_or_credentials(self, container, mocker):
+        mocker.patch.object(container, "status", return_value=EnvironmentStatus(state=EnvironmentState.NONEXISTENT))
+        wait = mocker.patch.object(container.docker, "wait")
+        mocker.patch.object(container, "check_readiness")
+        secrets = mocker.patch.object(container, "_add_secret_mounts")
+        shared = mocker.patch.object(container.shell, "collect_shared_files")
+        browser = mocker.patch.object(container, "ensure_browser_proxy_started")
+        ssh = mocker.patch.object(container, "ensure_ssh_config")
+        container.start()
+        command = wait.call_args.args[0]
+        assert "--init" in command
+        assert "DD_DEV_ENV_TRANSPORT=exec" in command
+        assert command[-2:] == ["-lc", ". /home/dd/.profile; exec /init/entrypoint.sh /bin/sleep infinity"]
+        assert "-p" not in command
+        assert "--add-host" not in command
+        assert not any("docker.sock" in arg for arg in command)
+        assert AppEnvVars.TELEMETRY_API_KEY not in command
+        assert "AWS_PROFILE" not in command
+        for method in [secrets, shared, browser, ssh]:
+            method.assert_not_called()
+
+    def test_restart_waits_for_setup(self, container, mocker):
+        mocker.patch.object(container, "status", return_value=EnvironmentStatus(state=EnvironmentState.STOPPED))
+        wait = mocker.patch.object(container.docker, "wait")
+        ready = mocker.patch.object(container, "check_readiness")
+        container.start()
+        assert wait.call_args.args[0] == ["start", container.container_name]
+        ready.assert_called_once_with()
+
+    def test_command_uses_selected_manager_and_checkout(self, container, mocker):
+        container.config.cli = "/tools/podman"
+        run = mocker.patch.object(container.app.subprocess, "run")
+        container.run_command(["dda", "inv", "test", "--targets", "./pkg/util/log"], repo="datadog-agent")
+        command = run.call_args.args[0]
+        assert command[:4] == ["/tools/podman", "exec", "--user", "dd"]
+        assert "HOME=/home/dd" in command
+        assert command[-1] == "cd /repos/datadog-agent && dda inv test --targets ./pkg/util/log"
+        assert "-t" not in command
+
+    @pytest.mark.parametrize("tty", [False, True])
+    def test_shell_tty_and_exit_status(self, container, mocker, tty):
+        mocker.patch.object(sys.stdin, "isatty", return_value=tty)
+        mocker.patch.object(sys.stdout, "isatty", return_value=tty)
+        attach = mocker.patch.object(container.app.subprocess, "attach", return_value=CompletedProcess([], 17))
+        with pytest.raises(SystemExit) as error:
+            container.launch_shell(repo="datadog-agent")
+        assert error.value.code == 17
+        command = attach.call_args.args[0]
+        assert "-i" in command
+        assert ("-t" in command) == tty
+        assert "/repos/datadog-agent" in command[-1]
+        assert attach.call_args.kwargs == {"check": False}
+
+    def test_clone_stays_with_caller(self, container):
+        container.config.clone = True
+        with pytest.raises(SystemExit):
+            container.start()
+
+    def test_editor_requires_ssh(self, container, mocker):
+        with pytest.raises(SystemExit):
+            container.code(editor=mocker.Mock())
+
+    def test_cli_restart_retains_exec_config(self, container, dda, mocker):
+        container.config.image = "pinned-development-image"
+        container.config.extra_volume_specs = ["/public-ca:/trust:ro"]
+        container.save_config()
+        mocker.patch.object(LinuxContainer, "status", return_value=EnvironmentStatus(state=EnvironmentState.STOPPED))
+        configs = []
+        mocker.patch.object(LinuxContainer, "start", autospec=True, side_effect=lambda env: configs.append(env.config))
+        result = dda("env", "dev", "start", "--id", "managed")
+        result.check(exit_code=0)
+        assert configs[0].transport == "exec"
+        assert configs[0].image == "pinned-development-image"
+        assert configs[0].extra_volume_specs == ["/public-ca:/trust:ro"]
