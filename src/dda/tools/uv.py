@@ -58,3 +58,12 @@ class UV(Tool):
                 )
 
         return VirtualEnv(path)
+
+    def install_tool(self, package: str, force: bool = False) -> None:  # noqa: FBT001,FBT002
+        """
+        Run `uv tool install <package>`, installing a tool usable outside of dda.
+        """
+        args = ["tool", "install", package]
+        if force:
+            args.append("--force")
+        self.wait(args, message=f"Installing {package}")
