@@ -2,11 +2,12 @@ import click
 
 from dda.cli.application import Application
 from dda.cli.base import dynamic_command, pass_app
+from dda.utils.platform import which
 
 
 def _check_ddgl(app: Application) -> bool:
     """Check if ddgl is installed and available on $PATH"""
-    out = app.subprocess.capture(["which", "ddgl"], check=False)
+    out = which("ddgl") or ""
     return len(out.strip()) > 0
 
 
