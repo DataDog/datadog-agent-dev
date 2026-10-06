@@ -58,3 +58,27 @@ class UV(Tool):
                 )
 
         return VirtualEnv(path)
+
+    def install_tool(self, package: str, force: bool = False) -> None:  # noqa: FBT001,FBT002
+        """
+        Run `uv tool install <package>`, installing a tool usable outside of dda.
+        """
+        args = ["tool", "install", package]
+        if force:
+            args.append("--force")
+        self.wait(args, message=f"Installing {package}")
+
+    def upgrade_tool(self, package: str) -> None:
+        """
+        Run `uv tool upgrade <package>`. Use package_name==<version> or repo@ref to install a specific version.
+        """
+        # Extract the version
+        if "==" in package:
+            name, version = package.split("==")
+        elif "@" in package:
+            name, version = package.split("@")
+        else:
+            name, version = package, "latest"
+        args = ["tool", "upgrade", "--prerelease=allow", package]
+        self.app.display_debug(f"Running {args}")
+        self.wait(args, message=f"Upgrading {name} to {version}")
