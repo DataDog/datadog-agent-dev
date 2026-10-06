@@ -73,9 +73,9 @@ class UV(Tool):
         Run `uv tool upgrade <package>`. Use package_name==<version> or repo@ref to install a specific version.
         """
         # Extract the version
-        if '==' in package:
-            name, version = package.split('==')
-        elif '@' in package:
+        if "==" in package:
+            name, version = package.split("==")
+        elif "@" in package:
             name, version = package.split("@")
         else:
             name, version = package, "latest"
