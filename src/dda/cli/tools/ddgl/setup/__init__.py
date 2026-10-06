@@ -40,7 +40,7 @@ def cmd(app: Application, *, ref: str | None, dev: bool, no_config: bool, force:
     app.tools.uv.install_tool(package, force=force)
 
     # Make sure ddgl is in path
-    if not _check_ddgl(app):
+    if not _check_ddgl():
         app.abort("ddgl not found in $PATH after install. Maybe run `uv tool update-shell` ?")
 
     if not no_config:
