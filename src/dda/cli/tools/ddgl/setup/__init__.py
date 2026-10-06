@@ -28,7 +28,7 @@ def cmd(app: Application, *, ref: str | None, dev: bool, no_config: bool, force:
     if not which("ddtool"):
         app.abort(
             "`ddtool` not found on PATH. This command is only meant for Datadog employees with access to `ddtool`. Please install it using `dogbrew install ddtool`",
-            code=1
+            code=1,
         )
 
     if dev:
