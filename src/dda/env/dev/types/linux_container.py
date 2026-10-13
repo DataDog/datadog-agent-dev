@@ -86,6 +86,11 @@ class LinuxContainerConfig(DeveloperEnvironmentConfig):
         Literal["ssh", "exec"],
         msgspec.Meta(extra={"help": "Use SSH for local development or container exec for managed sandboxes"}),
     ] = "ssh"
+    bits_code: Annotated[
+        bool,
+        msgspec.Meta(extra={"help": "Use Bits Code mode with container exec and host-side SCM operations"}),
+    ] = False
+
     no_secrets: Annotated[
         bool,
         msgspec.Meta(
@@ -133,6 +138,10 @@ This option may be supplied multiple times, and has the same syntax as the `-m/-
             }
         ),
     ] = msgspec.field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        if self.bits_code:
+            self.transport = "exec"
 
 
 class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
@@ -201,6 +210,8 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 ))
             else:
                 command.extend(("--init", "--entrypoint", "/bin/bash", "-e", "DD_DEV_ENV_TRANSPORT=exec"))
+            if self.config.bits_code:
+                command.extend(("-e", "DD_BITS_CODE=1"))
             if sys.platform != "win32":
                 command.extend((
                     "-e",

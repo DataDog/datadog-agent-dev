@@ -8,6 +8,7 @@ from functools import cached_property
 from typing import TYPE_CHECKING
 
 from dda.user.datadog import User
+from dda.utils.bits import running_in_bits_code
 
 if TYPE_CHECKING:
     from dda.cli.application import Application
@@ -95,7 +96,7 @@ class TelemetryManager:
 
     @cached_property
     def __enabled(self) -> bool:
-        return not self.__dissent_file.is_file()
+        return not running_in_bits_code() and not self.__dissent_file.is_file()
 
     @cached_property
     def __dissent_file(self) -> Path:

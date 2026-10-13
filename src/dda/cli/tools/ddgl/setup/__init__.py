@@ -2,6 +2,7 @@ import click
 
 from dda.cli.application import Application
 from dda.cli.base import dynamic_command, pass_app
+from dda.utils.bits import running_in_bits_code
 from dda.utils.platform import which
 
 
@@ -18,6 +19,13 @@ def _check_ddgl() -> bool:
 @click.option("--force", is_flag=True, help="Force install and overwrite config file")
 @pass_app
 def cmd(app: Application, *, ref: str | None, dev: bool, no_config: bool, force: bool) -> None:
+    if running_in_bits_code():
+        app.abort(
+            "ddgl setup is unavailable in Bits Code. Run GitLab operations on an authenticated host; "
+            "use the existing Bits SCM broker for repository operations. "
+            "No credentials were configured."
+        )
+
     if not force and _check_ddgl():
         app.abort(
             "ddgl is already installed. Use --force to reinstall and reset config or `dda tool ddgl update` to update.",

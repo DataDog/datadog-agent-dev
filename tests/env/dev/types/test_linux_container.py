@@ -100,6 +100,7 @@ def test_default_config(app):
 
     assert msgspec.to_builtins(container.config) == {
         "arch": None,
+        "bits_code": False,
         "cli": "docker",
         "clone": False,
         "image": "datadog/agent-dev-env-linux",
@@ -1769,3 +1770,44 @@ class TestExecTransport:
         assert configs[0].transport == "exec"
         assert configs[0].image == "pinned-development-image"
         assert configs[0].extra_volume_specs == ["/public-ca:/trust:ro"]
+
+
+class TestBitsCode:
+    def test_cli_persists_mode_and_exec(self, dda, app, mocker):
+        mocker.patch.object(
+            LinuxContainer, "status", return_value=EnvironmentStatus(state=EnvironmentState.NONEXISTENT)
+        )
+        start = mocker.patch.object(LinuxContainer, "start")
+        result = dda("env", "dev", "start", "--id", "bits", "--bits-code")
+        result.check(exit_code=0)
+        start.assert_called_once()
+        env = LinuxContainer(app=app, name="linux-container", instance="bits")
+        assert env.config.bits_code
+        assert env.config.transport == "exec"
+
+    def test_forward_marker_without_host_credentials(self, app, mocker):
+        container = LinuxContainer(
+            app=app,
+            name="linux-container",
+            instance="bits",
+            config=LinuxContainerConfig(bits_code=True, no_pull=True, repos=[]),
+        )
+        assert container.config.transport == "exec"
+        mocker.patch.object(container, "status", return_value=EnvironmentStatus(state=EnvironmentState.NONEXISTENT))
+        wait = mocker.patch.object(container.docker, "wait")
+        mocker.patch.object(container, "check_readiness")
+        secrets = mocker.patch.object(container, "_add_secret_mounts")
+        container.start()
+        command = wait.call_args.args[0]
+        assert "DD_BITS_CODE=1" in command
+        assert not any("docker.sock" in arg for arg in command)
+        secrets.assert_not_called()
+        container.save_config()
+        restored = LinuxContainer(app=app, name="linux-container", instance="bits")
+        assert restored.config.bits_code
+        assert restored.config.transport == "exec"
+
+    def test_default_unchanged(self):
+        config = LinuxContainerConfig()
+        assert not config.bits_code
+        assert config.transport == "ssh"

@@ -40,3 +40,36 @@ on the sandbox host, including real release tags needed by Agent's version
 lookup. Run build and test commands inside the mounted checkout. Container-local
 GitHub API calls and cloud tools still require a separately supported broker;
 exec mode does not authenticate these tools or grant additional capabilities.
+
+### Bits Code
+
+Use `DD_BITS_CODE=1 dda env dev start --bits-code --shell bash` in Bits Code.
+The saved `bits_code` option selects exec transport and sets `DD_BITS_CODE=1`
+in the container, including after restarting it. Set the marker on the host
+for all DDA commands as well: CLI startup happens before environment options
+are resolved. The marker is a behavior hint, never authentication or authority.
+Without this opt-in the default remains SSH.
+
+In this mode DDA skips optional update checks and telemetry credential discovery,
+and disables interactive terminal behavior. `dda tools ddgl setup` exits with
+an actionable error before installing tools or configuring token commands.
+Run authenticated GitLab operations on the host with its supported authentication;
+use the existing Bits SCM broker for Git operations. No host credentials or
+sockets are implicitly forwarded into the container.
+
+The mounted repository must be named `datadog-agent` beside the working
+directory from which DDA starts (or select its actual name with `--repo` and
+use that name with subsequent commands). Prepare that checkout and its release
+tags through the host SCM broker before starting the container.
+
+For sandbox egress interception, the Agent image accepts a caller-provided
+read-only trust directory:
+
+```console
+DD_BITS_CODE=1 dda env dev start --bits-code --shell bash \
+  --volume /path/to/public-trust:/run/codegen-trust:ro
+```
+
+The directory must contain `ca-certificates.crt`, `sandbox-proxy-ca.crt`, and
+`java-cacerts` exported by the sandbox's public-CA helper. It contains public
+trust material only. This mount does not supply identity or credentials.
