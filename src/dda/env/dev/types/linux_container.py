@@ -198,44 +198,52 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 self.container_name,
             ]
             if self.config.transport == "ssh":
-                command.extend((
-                    "-p",
-                    f"{self.ssh_port}:22",
-                    "-p",
-                    f"{self.mcp_port}:9000",
-                    "-v",
-                    "/var/run/docker.sock:/var/run/docker.sock",
-                    "--add-host",
-                    "host.docker.internal:host-gateway",
-                ))
+                command.extend(
+                    (
+                        "-p",
+                        f"{self.ssh_port}:22",
+                        "-p",
+                        f"{self.mcp_port}:9000",
+                        "-v",
+                        "/var/run/docker.sock:/var/run/docker.sock",
+                        "--add-host",
+                        "host.docker.internal:host-gateway",
+                    )
+                )
             else:
                 command.extend(("--init", "--entrypoint", "/bin/bash", "-e", "DD_DEV_ENV_TRANSPORT=exec"))
             if self.config.bits_code:
                 command.extend(("-e", "DD_BITS_CODE=1"))
             if sys.platform != "win32":
-                command.extend((
-                    "-e",
-                    f"HOST_UID={os.getuid()}",
-                    "-e",
-                    f"HOST_GID={os.getgid()}",
-                ))
+                command.extend(
+                    (
+                        "-e",
+                        f"HOST_UID={os.getuid()}",
+                        "-e",
+                        f"HOST_GID={os.getgid()}",
+                    )
+                )
             if self.config.transport == "ssh":
-                command.extend((
-                    "-e",
-                    "BROWSER",
-                    "-v",
-                    f"{self._xdg_open_script_path}:/usr/local/bin/xdg-open:ro",
-                ))
+                command.extend(
+                    (
+                        "-e",
+                        "BROWSER",
+                        "-v",
+                        f"{self._xdg_open_script_path}:/usr/local/bin/xdg-open:ro",
+                    )
+                )
 
             forwarded_vars = ["DD_SHELL"]
             if self.config.transport == "ssh":
                 forwarded_vars.extend((AppEnvVars.TELEMETRY_API_KEY, AppEnvVars.TELEMETRY_USER_MACHINE_ID))
-            forwarded_vars.extend((
-                GitEnvVars.AUTHOR_NAME,
-                GitEnvVars.AUTHOR_EMAIL,
-                AppEnvVars.ENV_TYPE,
-                AppEnvVars.ENV_MANAGER,
-            ))
+            forwarded_vars.extend(
+                (
+                    GitEnvVars.AUTHOR_NAME,
+                    GitEnvVars.AUTHOR_EMAIL,
+                    AppEnvVars.ENV_TYPE,
+                    AppEnvVars.ENV_MANAGER,
+                )
+            )
             if self.config.transport == "ssh":
                 forwarded_vars.extend(("AWS_PROFILE", "AWS_REGION", "AWS_DEFAULT_REGION"))
             for variable in forwarded_vars:
@@ -514,10 +522,12 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         # Share ~/.aws read-write so the container can refresh its SSO token cache.
         aws_dir = Path.home() / ".aws"
         if aws_dir.is_dir():
-            command.extend((
-                "--mount",
-                Mount(type="bind", source=str(aws_dir), path=f"{self.home_dir}/.aws").as_csv(),
-            ))
+            command.extend(
+                (
+                    "--mount",
+                    Mount(type="bind", source=str(aws_dir), path=f"{self.home_dir}/.aws").as_csv(),
+                )
+            )
 
     def _write_xdg_open_script(self) -> None:
         self._xdg_open_script_path.parent.ensure_dir()
@@ -534,7 +544,10 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             cwd = self.home_dir
 
         if self.config.transport == "exec":
-            return [*self.exec_base_command(), "/bin/bash", "-lc", self.shell.format_command(command, cwd=cwd)]
+            import shlex
+
+            shell_command = f"cd -- {shlex.quote(cwd)} && {shlex.join(command)}"
+            return [*self.exec_base_command(), "/bin/bash", "-lc", shell_command]
         ssh_command = self.ssh_base_command()
         ssh_command.append(self.shell.format_command(command, cwd=cwd))
         return ssh_command

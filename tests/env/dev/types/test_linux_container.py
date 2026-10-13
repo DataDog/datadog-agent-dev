@@ -1732,8 +1732,21 @@ class TestExecTransport:
         command = run.call_args.args[0]
         assert command[:4] == ["/tools/podman", "exec", "--user", "dd"]
         assert "HOME=/home/dd" in command
-        assert command[-1] == "cd /repos/datadog-agent && dda inv test --targets ./pkg/util/log"
+        assert command[-1] == "cd -- /repos/datadog-agent && dda inv test --targets ./pkg/util/log"
         assert "-t" not in command
+
+    @pytest.mark.skipif(sys.platform == "win32", reason="Exec transport runs in a Linux Bash shell")
+    def test_command_preserves_literal_arguments(self, container, tmp_path):
+        # Regression found in a live Bits Code run: embedded quotes became shell syntax.
+        cwd = tmp_path / 'checkout with spaces and "quotes"'
+        cwd.mkdir()
+        args = ['say "hello"', "it's literal", "$(touch unexpected)", "$HOME", "semi;colon", "a\nb"]
+        command = container.construct_command(
+            [sys.executable, "-c", "import json,sys; print(json.dumps(sys.argv[1:]))", *args], cwd=str(cwd)
+        )
+        result = subprocess.run(command[-3:], capture_output=True, text=True, check=True)
+        assert json.loads(result.stdout) == args
+        assert not (cwd / "unexpected").exists()
 
     @pytest.mark.parametrize("tty", [False, True])
     def test_shell_tty_and_exit_status(self, container, mocker, tty):
