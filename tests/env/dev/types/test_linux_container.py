@@ -1786,17 +1786,58 @@ class TestExecTransport:
 
 
 class TestBitsCode:
-    def test_cli_persists_mode_and_exec(self, dda, app, mocker):
+    @pytest.mark.parametrize(
+        ("marker", "options", "expected_bits"),
+        [
+            (None, [], False),
+            ("0", [], False),
+            ("true", [], False),
+            ("1", [], True),
+            (None, ["--bits-code"], True),
+            ("0", ["--bits-code"], True),
+        ],
+    )
+    def test_cli_persists_mode_and_exec(self, dda, app, mocker, monkeypatch, marker, options, expected_bits):
+        monkeypatch.delenv("DD_BITS_CODE", raising=False)
+        if marker is not None:
+            monkeypatch.setenv("DD_BITS_CODE", marker)
         mocker.patch.object(
             LinuxContainer, "status", return_value=EnvironmentStatus(state=EnvironmentState.NONEXISTENT)
         )
         start = mocker.patch.object(LinuxContainer, "start")
-        result = dda("env", "dev", "start", "--id", "bits", "--bits-code")
+        result = dda("env", "dev", "start", "--id", "bits", *options)
         result.check(exit_code=0)
         start.assert_called_once()
         env = LinuxContainer(app=app, name="linux-container", instance="bits")
-        assert env.config.bits_code
-        assert env.config.transport == "exec"
+        assert env.config.bits_code is expected_bits
+        assert env.config.transport == ("exec" if expected_bits else "ssh")
+
+    @pytest.mark.parametrize("saved_bits", [None, False, True])
+    @pytest.mark.parametrize("marker", ["0", "1"])
+    def test_restart_keeps_saved_mode(self, dda, app, mocker, monkeypatch, saved_bits, marker):
+        monkeypatch.setenv("DD_BITS_CODE", marker)
+        env = LinuxContainer(
+            app=app,
+            name="linux-container",
+            instance="bits-restart",
+            config=LinuxContainerConfig(bits_code=bool(saved_bits), image="saved-image"),
+        )
+        env.save_config()
+        if saved_bits is None:
+            # Instances created before exec/Bits support have neither setting.
+            saved_config = json.loads(env.config_file.read_text())
+            del saved_config["bits_code"]
+            del saved_config["transport"]
+            env.config_file.write_text(json.dumps(saved_config))
+        mocker.patch.object(LinuxContainer, "status", return_value=EnvironmentStatus(state=EnvironmentState.STOPPED))
+        configs = []
+        mocker.patch.object(LinuxContainer, "start", autospec=True, side_effect=lambda env: configs.append(env.config))
+        result = dda("env", "dev", "start", "--id", "bits-restart")
+        result.check(exit_code=0)
+        assert len(configs) == 1
+        assert configs[0].bits_code is bool(saved_bits)
+        assert configs[0].transport == ("exec" if saved_bits else "ssh")
+        assert configs[0].image == "saved-image"
 
     def test_forward_marker_without_host_credentials(self, app, mocker):
         container = LinuxContainer(

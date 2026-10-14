@@ -43,12 +43,24 @@ exec mode does not authenticate these tools or grant additional capabilities.
 
 ### Bits Code
 
-Use `DD_BITS_CODE=1 dda env dev start --bits-code --shell bash` in Bits Code.
-The saved `bits_code` option selects exec transport and sets `DD_BITS_CODE=1`
-in the container, including after restarting it. Set the marker on the host
-for all DDA commands as well: CLI startup happens before environment options
-are resolved. The marker is a behavior hint, never authentication or authority.
-Without this opt-in the default remains SSH.
+Export `DD_BITS_CODE=1` before running DDA commands in Bits Code:
+
+```console
+export DD_BITS_CODE=1
+dda env dev start
+dda env dev run dda inv test --targets ./pkg/util/log
+```
+
+The marker applies to host CLI startup and automatically selects Bits mode for
+new Linux container environments. DDA saves that mode, selects exec transport,
+and forwards `DD_BITS_CODE=1` into the container. The optional `--bits-code`
+container setting is unnecessary when the host marker is set.
+
+Existing environments keep their saved mode, image and mounts on restart,
+regardless of the current marker. To change an existing environment's mode,
+stop and remove it before creating it again with the desired settings.
+The marker is a behavior hint, never authentication or authority. Without this
+opt-in the default remains SSH.
 
 In this mode DDA skips optional update checks and telemetry credential discovery,
 and disables interactive terminal behavior. `dda tools ddgl setup` exits with
@@ -66,7 +78,7 @@ For sandbox egress interception, the Agent image accepts a caller-provided
 read-only trust directory:
 
 ```console
-DD_BITS_CODE=1 dda env dev start --bits-code --shell bash \
+DD_BITS_CODE=1 dda env dev start --shell bash \
   --volume /path/to/public-trust:/run/codegen-trust:ro
 ```
 

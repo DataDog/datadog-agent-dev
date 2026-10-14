@@ -10,6 +10,7 @@ import click
 from dda.cli.base import dynamic_command
 from dda.cli.env.dev.utils import get_env_type, option_env_type
 from dda.env.dev import get_dev_env
+from dda.utils.bits import running_in_bits_code
 
 if TYPE_CHECKING:
     from dda.cli.application import Application
@@ -50,6 +51,8 @@ def cmd(ctx: click.Context, *, env_type: str, instance: str) -> None:
     }
     user_config = dict(app.config.envs.get(env_type, {}))
     user_config.update(dynamic_options)
+    if env_type == "linux-container" and running_in_bits_code():
+        user_config["bits_code"] = True
     if "clone" not in user_config and app.config.env.dev.clone_repos:
         user_config["clone"] = True
     if "shell" not in user_config and app.config.env.dev.universal_shell:
