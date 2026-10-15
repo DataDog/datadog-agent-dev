@@ -89,6 +89,10 @@ mcp = [
 virustotal = [
     "vt-py~=0.21.0"
 ]
+go-ast = [
+    "tree-sitter~=0.26.0",
+    "tree-sitter-go~=0.25.0"
+]
 ### The following dependencies were defined in the build image repo
 # https://github.com/DataDog/datadog-agent-buildimages/blob/main/requirements/constraints.txt
 legacy-constraints = [
@@ -159,6 +163,7 @@ legacy-tasks = [
     { include-group = "legacy-notifications" },
     { include-group = "legacy-release" },
     { include-group = "legacy-test-infra-definitions" },
+    { include-group = "go-ast" },
     "binary==1.0.2",
     "debugpy==1.8.2",
     "rich==14.0.0",
