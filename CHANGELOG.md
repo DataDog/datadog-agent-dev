@@ -8,6 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+## 0.40.0 - 2026-10-15
+
+***Added:***
+
+- Add `ddgl` install, setup and update commands (#316)
+- Add new `go-ast` dependency group for use in `datadog-agent` invoke tasks (#318)
+
 ## 0.39.0 - 2026-09-29
 
 **Fixed:**
