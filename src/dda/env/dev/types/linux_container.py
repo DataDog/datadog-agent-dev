@@ -82,6 +82,15 @@ class LinuxContainerConfig(DeveloperEnvironmentConfig):
             }
         ),
     ] = None
+    transport: Annotated[
+        Literal["ssh", "exec"],
+        msgspec.Meta(extra={"help": "Use SSH for local development or container exec for managed sandboxes"}),
+    ] = "ssh"
+    bits_code: Annotated[
+        bool,
+        msgspec.Meta(extra={"help": "Use Bits Code mode with container exec and host-side SCM operations"}),
+    ] = False
+
     no_secrets: Annotated[
         bool,
         msgspec.Meta(
@@ -130,6 +139,10 @@ This option may be supplied multiple times, and has the same syntax as the `-m/-
         ),
     ] = msgspec.field(default_factory=list)
 
+    def __post_init__(self) -> None:
+        if self.bits_code:
+            self.transport = "exec"
+
 
 class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -152,10 +165,16 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
     def start(self) -> None:
         from dda.env.models import EnvironmentState
 
+        if self.config.transport == "exec" and self.config.clone:
+            self.app.abort("Exec transport requires local checkouts; clone repositories with the caller's SCM broker")
+
         status = self.__latest_status if self.__latest_status is not None else self.status()
         if status.state == EnvironmentState.STOPPED:
             self.docker.wait(["start", self.container_name], message=f"Starting container: {self.container_name}")
-            self.ensure_browser_proxy_started()
+            if self.config.transport == "ssh":
+                self.ensure_browser_proxy_started()
+            else:
+                self.check_readiness()
         else:
             from dda.config.constants import AppEnvVars
             from dda.utils.process import EnvVars
@@ -168,7 +187,8 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 self.docker.wait(pull_command, message=f"Pulling image: {self.config.image}")
 
             self.shared_dir.ensure_dir()
-            self._write_xdg_open_script()
+            if self.config.transport == "ssh":
+                self._write_xdg_open_script()
             command = [
                 "run",
                 "--pull",
@@ -176,17 +196,22 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 "-d",
                 "--name",
                 self.container_name,
-                "-p",
-                f"{self.ssh_port}:22",
-                "-p",
-                f"{self.mcp_port}:9000",
-                "-v",
-                "/var/run/docker.sock:/var/run/docker.sock",
             ]
-            command.extend((
-                "--add-host",
-                "host.docker.internal:host-gateway",
-            ))
+            if self.config.transport == "ssh":
+                command.extend((
+                    "-p",
+                    f"{self.ssh_port}:22",
+                    "-p",
+                    f"{self.mcp_port}:9000",
+                    "-v",
+                    "/var/run/docker.sock:/var/run/docker.sock",
+                    "--add-host",
+                    "host.docker.internal:host-gateway",
+                ))
+            else:
+                command.extend(("--init", "--entrypoint", "/bin/bash", "-e", "DD_DEV_ENV_TRANSPORT=exec"))
+            if self.config.bits_code:
+                command.extend(("-e", "DD_BITS_CODE=1"))
             if sys.platform != "win32":
                 command.extend((
                     "-e",
@@ -194,44 +219,35 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                     "-e",
                     f"HOST_GID={os.getgid()}",
                 ))
-            command.extend((
-                "-e",
-                "BROWSER",
-                "-v",
-                f"{self._xdg_open_script_path}:/usr/local/bin/xdg-open:ro",
-            ))
+            if self.config.transport == "ssh":
+                command.extend((
+                    "-e",
+                    "BROWSER",
+                    "-v",
+                    f"{self._xdg_open_script_path}:/usr/local/bin/xdg-open:ro",
+                ))
 
-            # These forwarded env vars reach SSH `run`/`shell` sessions, not just the daemon, because
-            # the image persists them to /etc/environment and pam_env loads them per session.
-            command.extend((
-                "-e",
-                "DD_SHELL",
-                "-e",
-                AppEnvVars.TELEMETRY_API_KEY,
-                "-e",
-                AppEnvVars.TELEMETRY_USER_MACHINE_ID,
-                "-e",
+            forwarded_vars = ["DD_SHELL"]
+            if self.config.transport == "ssh":
+                forwarded_vars.extend((AppEnvVars.TELEMETRY_API_KEY, AppEnvVars.TELEMETRY_USER_MACHINE_ID))
+            forwarded_vars.extend((
                 GitEnvVars.AUTHOR_NAME,
-                "-e",
                 GitEnvVars.AUTHOR_EMAIL,
-                "-e",
                 AppEnvVars.ENV_TYPE,
-                "-e",
                 AppEnvVars.ENV_MANAGER,
-                "-e",
-                "AWS_PROFILE",
-                "-e",
-                "AWS_REGION",
-                "-e",
-                "AWS_DEFAULT_REGION",
             ))
+            if self.config.transport == "ssh":
+                forwarded_vars.extend(("AWS_PROFILE", "AWS_REGION", "AWS_DEFAULT_REGION"))
+            for variable in forwarded_vars:
+                command.extend(("-e", variable))
 
             if self.config.arch is not None:
                 command.extend(("--platform", f"linux/{self.config.arch}"))
 
             command.extend(("-v", f"{self.shared_dir}:/.shared"))
 
-            for shared_shell_file in self.shell.collect_shared_files():
+            shared_shell_files = self.shell.collect_shared_files() if self.config.transport == "ssh" else []
+            for shared_shell_file in shared_shell_files:
                 unix_path = shared_shell_file.relative_to(self.global_shared_dir).as_posix()
                 command.extend(("-v", f"{shared_shell_file}:/.shared/{unix_path}"))
 
@@ -241,7 +257,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             for mount in self.cache_volumes:
                 command.extend(("--mount", mount.as_csv()))
 
-            if not self.config.no_secrets:
+            if self.config.transport == "ssh" and not self.config.no_secrets:
                 self._add_secret_mounts(command)
 
             if not self.config.clone:
@@ -263,14 +279,18 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 command.extend(("--volume", volume_spec))
 
             command.append(self.config.image)
+            if self.config.transport == "exec":
+                command.extend(("-lc", ". /home/dd/.profile; exec /init/entrypoint.sh /bin/sleep infinity"))
 
             env = EnvVars()
             env["DD_SHELL"] = self.config.shell
-            env["BROWSER"] = "xdg-open"
+            if self.config.transport == "ssh":
+                env["BROWSER"] = "xdg-open"
             env[AppEnvVars.ENV_TYPE] = self.name
             env[AppEnvVars.ENV_MANAGER] = "dda"
-            env[AppEnvVars.TELEMETRY_USER_MACHINE_ID] = self.app.telemetry.user.machine_id
-            if self.app.telemetry.api_key is not None:
+            if self.config.transport == "ssh":
+                env[AppEnvVars.TELEMETRY_USER_MACHINE_ID] = self.app.telemetry.user.machine_id
+            if self.config.transport == "ssh" and self.app.telemetry.api_key is not None:
                 env[AppEnvVars.TELEMETRY_API_KEY] = self.app.telemetry.api_key
             if self.app.config.tools.git.author.name:
                 env[GitEnvVars.AUTHOR_NAME] = self.app.config.tools.git.author.name
@@ -284,10 +304,11 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             )
 
             with self.app.status(f"Waiting for container: {self.container_name}"):
-                wait_for(self.check_readiness, timeout=30, interval=0.3)
+                wait_for(self.check_readiness, timeout=120 if self.config.transport == "exec" else 30, interval=0.3)
 
-            self.ensure_browser_proxy_started()
-            self.ensure_ssh_config()
+            if self.config.transport == "ssh":
+                self.ensure_browser_proxy_started()
+                self.ensure_ssh_config()
 
             if self.config.clone:
                 for repo_spec in self.config.repos:
@@ -344,6 +365,11 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         return status
 
     def launch_shell(self, *, repo: str | None = None) -> NoReturn:
+        if self.config.transport == "exec":
+            command = self.exec_base_command(interactive=True)
+            command.extend(("/bin/bash", "-lc", self.shell.get_login_command(cwd=self.repo_path(repo))))
+            process = self.app.subprocess.attach(command, check=False)
+            self.app.abort(code=process.returncode)
         self.ensure_ssh_config()
         self.ensure_browser_proxy_started()
         ssh_command = self.ssh_base_command()
@@ -352,6 +378,8 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         self.app.abort(code=process.returncode)
 
     def code(self, *, editor: EditorInterface, repo: str | None = None) -> None:
+        if self.config.transport == "exec":
+            self.app.abort("Editor SSH integration is unavailable with exec transport; use env dev shell or run")
         if editor.name not in {"vscode", "cursor"}:
             self.app.abort(f"Unsupported editor: {editor.name}")
 
@@ -375,8 +403,9 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         editor.open_via_ssh(server=self.hostname, port=self.ssh_port, path=repo_path)
 
     def run_command(self, command: list[str], *, repo: str | None = None) -> None:
-        self.ensure_ssh_config()
-        self.ensure_browser_proxy_started()
+        if self.config.transport == "ssh":
+            self.ensure_ssh_config()
+            self.ensure_browser_proxy_started()
         self.app.subprocess.run(self.construct_command(command, cwd=self.repo_path(repo)))
 
     def remove_cache(self) -> None:
@@ -504,11 +533,42 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         if cwd is None:
             cwd = self.home_dir
 
+        if self.config.transport == "exec":
+            import shlex
+
+            shell_command = f"cd -- {shlex.quote(cwd)} && {shlex.join(command)}"
+            return [*self.exec_base_command(), "/bin/bash", "-lc", shell_command]
         ssh_command = self.ssh_base_command()
         ssh_command.append(self.shell.format_command(command, cwd=cwd))
         return ssh_command
 
+    def exec_base_command(self, *, interactive: bool = False) -> list[str]:
+        command = [self.config.cli, "exec"]
+        if interactive:
+            command.append("-i")
+            if sys.stdin.isatty() and sys.stdout.isatty():
+                command.append("-t")
+        command.extend(("--user", "dd", "--env", "HOME=/home/dd", "--env", "USER=dd", self.container_name))
+        return command
+
     def check_readiness(self) -> None:
+        if self.config.transport == "exec":
+            output = self.docker.capture(
+                [
+                    "exec",
+                    "--user",
+                    "dd",
+                    self.container_name,
+                    "/bin/bash",
+                    "-lc",
+                    "test -f /.started && dda --version",
+                ],
+                check=False,
+            )
+            if not output.strip().startswith("dda, version "):
+                msg = f"Container `{self.container_name}` setup is not ready: {output}"
+                raise RuntimeError(msg)
+            return
         # The `docker logs` command outputs to stderr
         output = self.docker.capture(["logs", self.container_name], cross_streams=True)
         if "Server listening on :: port 22" not in output:

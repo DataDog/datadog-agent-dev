@@ -18,6 +18,7 @@ import rich_click as click
 from dda._version import __version__
 from dda.cli.base import dynamic_group
 from dda.config.constants import AppEnvVars, ConfigEnvVars
+from dda.utils.bits import running_in_bits_code
 from dda.utils.terminal import terminal_size
 
 if TYPE_CHECKING:
@@ -167,7 +168,7 @@ def dda(
         elif os.environ.get(AppEnvVars.FORCE_COLOR) == "1":
             color = True
 
-    if interactive is None and running_in_ci():
+    if running_in_bits_code() or (interactive is None and running_in_ci()):
         interactive = False
 
     try:

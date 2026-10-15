@@ -14,7 +14,7 @@ import msgspec
 import pytest
 
 from dda.config.constants import AppEnvVars
-from dda.env.dev.types.linux_container import LinuxContainer
+from dda.env.dev.types.linux_container import LinuxContainer, LinuxContainerConfig
 from dda.env.models import EnvironmentState, EnvironmentStatus
 from dda.utils.fs import Path, cp_r
 from dda.utils.git.constants import GitEnvVars
@@ -100,6 +100,7 @@ def test_default_config(app):
 
     assert msgspec.to_builtins(container.config) == {
         "arch": None,
+        "bits_code": False,
         "cli": "docker",
         "clone": False,
         "image": "datadog/agent-dev-env-linux",
@@ -107,6 +108,7 @@ def test_default_config(app):
         "no_secrets": False,
         "repos": ["datadog-agent"],
         "shell": "zsh",
+        "transport": "ssh",
         "extra_volume_specs": [],
         "extra_mount_specs": [],
     }
@@ -1660,3 +1662,206 @@ class TestImportFiles:
             source_path = test_files_root / "folder1"
             with pytest.raises(FileExistsError):
                 linux_container.import_path(source=source_path, destination="/some_file.txt")
+
+
+class TestExecTransport:
+    @pytest.fixture
+    def container(self, app):
+        return LinuxContainer(
+            app=app,
+            name="linux-container",
+            instance="managed",
+            config=LinuxContainerConfig(transport="exec", shell="bash", no_pull=True, repos=[]),
+        )
+
+    def test_running_state_and_readiness(self, container, mocker):
+        # Fixture captured via record-external-calls skill on 2026-10-05 from the
+        # owned hotdog Podman CLI. extcalldebug does not instrument subprocesses.
+        # Keep the real State object; omit unrelated inspect metadata.
+        fixtures = Path(__file__).parent / "fixtures"
+        capture = mocker.patch.object(
+            container.docker,
+            "capture",
+            side_effect=[
+                (fixtures / "podman-running-state.json").read_text(),
+                (fixtures / "dda-ready.txt").read_text(),
+            ],
+        )
+        assert container.status().state == EnvironmentState.STARTED
+        container.check_readiness()
+        assert capture.call_args.args[0][:4] == ["exec", "--user", "dd", container.container_name]
+
+    def test_not_ready(self, container, mocker):
+        mocker.patch.object(container.docker, "capture", return_value="")
+        with pytest.raises(RuntimeError, match="setup is not ready"):
+            container.check_readiness()
+
+    def test_start_without_host_services_or_credentials(self, container, mocker):
+        mocker.patch.object(container, "status", return_value=EnvironmentStatus(state=EnvironmentState.NONEXISTENT))
+        wait = mocker.patch.object(container.docker, "wait")
+        mocker.patch.object(container, "check_readiness")
+        secrets = mocker.patch.object(container, "_add_secret_mounts")
+        shared = mocker.patch.object(container.shell, "collect_shared_files")
+        browser = mocker.patch.object(container, "ensure_browser_proxy_started")
+        ssh = mocker.patch.object(container, "ensure_ssh_config")
+        container.start()
+        command = wait.call_args.args[0]
+        assert "--init" in command
+        assert "DD_DEV_ENV_TRANSPORT=exec" in command
+        assert command[-2:] == ["-lc", ". /home/dd/.profile; exec /init/entrypoint.sh /bin/sleep infinity"]
+        assert "-p" not in command
+        assert "--add-host" not in command
+        assert not any("docker.sock" in arg for arg in command)
+        assert AppEnvVars.TELEMETRY_API_KEY not in command
+        assert "AWS_PROFILE" not in command
+        for method in [secrets, shared, browser, ssh]:
+            method.assert_not_called()
+
+    def test_restart_waits_for_setup(self, container, mocker):
+        mocker.patch.object(container, "status", return_value=EnvironmentStatus(state=EnvironmentState.STOPPED))
+        wait = mocker.patch.object(container.docker, "wait")
+        ready = mocker.patch.object(container, "check_readiness")
+        container.start()
+        assert wait.call_args.args[0] == ["start", container.container_name]
+        ready.assert_called_once_with()
+
+    def test_command_uses_selected_manager_and_checkout(self, container, mocker):
+        container.config.cli = "/tools/podman"
+        run = mocker.patch.object(container.app.subprocess, "run")
+        container.run_command(["dda", "inv", "test", "--targets", "./pkg/util/log"], repo="datadog-agent")
+        command = run.call_args.args[0]
+        assert command[:4] == ["/tools/podman", "exec", "--user", "dd"]
+        assert "HOME=/home/dd" in command
+        assert command[-1] == "cd -- /repos/datadog-agent && dda inv test --targets ./pkg/util/log"
+        assert "-t" not in command
+
+    @pytest.mark.skipif(sys.platform == "win32", reason="Exec transport runs in a Linux Bash shell")
+    def test_command_preserves_literal_arguments(self, container, tmp_path):
+        # Regression found in a live Bits Code run: embedded quotes became shell syntax.
+        cwd = tmp_path / 'checkout with spaces and "quotes"'
+        cwd.mkdir()
+        args = ['say "hello"', "it's literal", "$(touch unexpected)", "$HOME", "semi;colon", "a\nb"]
+        command = container.construct_command(
+            [sys.executable, "-c", "import json,sys; print(json.dumps(sys.argv[1:]))", *args], cwd=str(cwd)
+        )
+        result = subprocess.run(command[-3:], capture_output=True, text=True, check=True)
+        assert json.loads(result.stdout) == args
+        assert not (cwd / "unexpected").exists()
+
+    @pytest.mark.parametrize("tty", [False, True])
+    def test_shell_tty_and_exit_status(self, container, mocker, tty):
+        mocker.patch.object(sys.stdin, "isatty", return_value=tty)
+        mocker.patch.object(sys.stdout, "isatty", return_value=tty)
+        attach = mocker.patch.object(container.app.subprocess, "attach", return_value=CompletedProcess([], 17))
+        with pytest.raises(SystemExit) as error:
+            container.launch_shell(repo="datadog-agent")
+        assert error.value.code == 17
+        command = attach.call_args.args[0]
+        assert "-i" in command
+        assert ("-t" in command) == tty
+        assert "/repos/datadog-agent" in command[-1]
+        assert attach.call_args.kwargs == {"check": False}
+
+    def test_clone_stays_with_caller(self, container):
+        container.config.clone = True
+        with pytest.raises(SystemExit):
+            container.start()
+
+    def test_editor_requires_ssh(self, container, mocker):
+        with pytest.raises(SystemExit):
+            container.code(editor=mocker.Mock())
+
+    def test_cli_restart_retains_exec_config(self, container, dda, mocker):
+        container.config.image = "pinned-development-image"
+        container.config.extra_volume_specs = ["/public-ca:/trust:ro"]
+        container.save_config()
+        mocker.patch.object(LinuxContainer, "status", return_value=EnvironmentStatus(state=EnvironmentState.STOPPED))
+        configs = []
+        mocker.patch.object(LinuxContainer, "start", autospec=True, side_effect=lambda env: configs.append(env.config))
+        result = dda("env", "dev", "start", "--id", "managed")
+        result.check(exit_code=0)
+        assert configs[0].transport == "exec"
+        assert configs[0].image == "pinned-development-image"
+        assert configs[0].extra_volume_specs == ["/public-ca:/trust:ro"]
+
+
+class TestBitsCode:
+    @pytest.mark.parametrize(
+        ("marker", "options", "expected_bits"),
+        [
+            (None, [], False),
+            ("0", [], False),
+            ("true", [], False),
+            ("1", [], True),
+            (None, ["--bits-code"], True),
+            ("0", ["--bits-code"], True),
+        ],
+    )
+    def test_cli_persists_mode_and_exec(self, dda, app, mocker, monkeypatch, marker, options, expected_bits):
+        monkeypatch.delenv("DD_BITS_CODE", raising=False)
+        if marker is not None:
+            monkeypatch.setenv("DD_BITS_CODE", marker)
+        mocker.patch.object(
+            LinuxContainer, "status", return_value=EnvironmentStatus(state=EnvironmentState.NONEXISTENT)
+        )
+        start = mocker.patch.object(LinuxContainer, "start")
+        result = dda("env", "dev", "start", "--id", "bits", *options)
+        result.check(exit_code=0)
+        start.assert_called_once()
+        env = LinuxContainer(app=app, name="linux-container", instance="bits")
+        assert env.config.bits_code is expected_bits
+        assert env.config.transport == ("exec" if expected_bits else "ssh")
+
+    @pytest.mark.parametrize("saved_bits", [None, False, True])
+    @pytest.mark.parametrize("marker", ["0", "1"])
+    def test_restart_keeps_saved_mode(self, dda, app, mocker, monkeypatch, saved_bits, marker):
+        monkeypatch.setenv("DD_BITS_CODE", marker)
+        env = LinuxContainer(
+            app=app,
+            name="linux-container",
+            instance="bits-restart",
+            config=LinuxContainerConfig(bits_code=bool(saved_bits), image="saved-image"),
+        )
+        env.save_config()
+        if saved_bits is None:
+            # Instances created before exec/Bits support have neither setting.
+            saved_config = json.loads(env.config_file.read_text())
+            del saved_config["bits_code"]
+            del saved_config["transport"]
+            env.config_file.write_text(json.dumps(saved_config))
+        mocker.patch.object(LinuxContainer, "status", return_value=EnvironmentStatus(state=EnvironmentState.STOPPED))
+        configs = []
+        mocker.patch.object(LinuxContainer, "start", autospec=True, side_effect=lambda env: configs.append(env.config))
+        result = dda("env", "dev", "start", "--id", "bits-restart")
+        result.check(exit_code=0)
+        assert len(configs) == 1
+        assert configs[0].bits_code is bool(saved_bits)
+        assert configs[0].transport == ("exec" if saved_bits else "ssh")
+        assert configs[0].image == "saved-image"
+
+    def test_forward_marker_without_host_credentials(self, app, mocker):
+        container = LinuxContainer(
+            app=app,
+            name="linux-container",
+            instance="bits",
+            config=LinuxContainerConfig(bits_code=True, no_pull=True, repos=[]),
+        )
+        assert container.config.transport == "exec"
+        mocker.patch.object(container, "status", return_value=EnvironmentStatus(state=EnvironmentState.NONEXISTENT))
+        wait = mocker.patch.object(container.docker, "wait")
+        mocker.patch.object(container, "check_readiness")
+        secrets = mocker.patch.object(container, "_add_secret_mounts")
+        container.start()
+        command = wait.call_args.args[0]
+        assert "DD_BITS_CODE=1" in command
+        assert not any("docker.sock" in arg for arg in command)
+        secrets.assert_not_called()
+        container.save_config()
+        restored = LinuxContainer(app=app, name="linux-container", instance="bits")
+        assert restored.config.bits_code
+        assert restored.config.transport == "exec"
+
+    def test_default_unchanged(self):
+        config = LinuxContainerConfig()
+        assert not config.bits_code
+        assert config.transport == "ssh"
