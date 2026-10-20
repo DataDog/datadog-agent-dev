@@ -32,6 +32,38 @@ def _make_xdg_open_script(proxy_port: int, ssh_port: int) -> str:
     return template.format(proxy_port=proxy_port, ssh_port=ssh_port)
 
 
+def get_worktree_git_common_dir(repo_path: Path) -> Path | None:
+    """Return the main repository's Git directory if `repo_path` is a linked Git worktree.
+
+    Only worktrees whose `.git` file contains an absolute `gitdir:` path are supported, since that path
+    can be mounted unchanged into the container. Windows host paths cannot, so they are ignored.
+    """
+    from dda.utils.fs import Path
+
+    if sys.platform == "win32":
+        return None
+
+    git_file = repo_path / ".git"
+    if not git_file.is_file():
+        return None
+
+    prefix, _, git_dir_value = git_file.read_text(encoding="utf-8").strip().partition(":")
+    git_dir = Path(git_dir_value.strip())
+    if prefix != "gitdir" or not git_dir.is_absolute():
+        return None
+
+    # Only linked worktrees have a `commondir` file, submodules do not
+    commondir_file = git_dir / "commondir"
+    if not commondir_file.is_file():
+        return None
+
+    common_dir = Path(commondir_file.read_text(encoding="utf-8").strip())
+    if not common_dir.is_absolute():
+        common_dir = git_dir / common_dir
+
+    return common_dir.resolve()
+
+
 if TYPE_CHECKING:
     from dda.env.models import EnvironmentStatus
     from dda.env.shells.interface import Shell
@@ -255,6 +287,11 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                         self.app.abort(f"Local repository not found: {repo}")
 
                     command.extend(("-v", f"{repo_path}:{self.repo_path(repo)}"))
+
+                    # A Git worktree's `.git` file points to an absolute path inside the main repository's Git
+                    # directory, so mount that directory at the same path to keep Git working in the container.
+                    if (git_common_dir := get_worktree_git_common_dir(repo_path)) is not None:
+                        command.extend(("-v", f"{git_common_dir}:{git_common_dir.as_posix()}"))
 
             for mount_spec in self.config.extra_mount_specs:
                 command.extend(("--mount", mount_spec))
@@ -488,6 +525,16 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             command.extend((
                 "--mount",
                 Mount(type="bind", source=str(aws_dir), path=f"{self.home_dir}/.aws").as_csv(),
+            ))
+
+        # Share the Codex CLI credentials read-write so the container can refresh its tokens. The image
+        # links every file under `/.shared/shell/codex` into its own `CODEX_HOME` at startup.
+        codex_home = Path(os.environ["CODEX_HOME"]) if os.environ.get("CODEX_HOME") else Path.home() / ".codex"
+        codex_auth_file = codex_home / "auth.json"
+        if codex_auth_file.is_file():
+            command.extend((
+                "--mount",
+                Mount(type="bind", source=str(codex_auth_file), path="/.shared/shell/codex/auth.json").as_csv(),
             ))
 
     def _write_xdg_open_script(self) -> None:

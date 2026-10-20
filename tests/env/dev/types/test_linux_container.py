@@ -14,7 +14,7 @@ import msgspec
 import pytest
 
 from dda.config.constants import AppEnvVars
-from dda.env.dev.types.linux_container import LinuxContainer
+from dda.env.dev.types.linux_container import LinuxContainer, get_worktree_git_common_dir
 from dda.env.models import EnvironmentState, EnvironmentStatus
 from dda.utils.fs import Path, cp_r
 from dda.utils.git.constants import GitEnvVars
@@ -62,6 +62,20 @@ def get_aws_mount(home_dir: str = "/home/dd") -> list[str]:
     return [
         "--mount",
         Mount(type="bind", source=str(aws_dir), path=f"{home_dir}/.aws").as_csv(),
+    ]
+
+
+def get_codex_mount() -> list[str]:
+    codex_home = Path(os.environ["CODEX_HOME"]) if os.environ.get("CODEX_HOME") else Path.home() / ".codex"
+    codex_auth_file = codex_home / "auth.json"
+    if not codex_auth_file.is_file():
+        return []
+
+    from dda.utils.container.model import Mount
+
+    return [
+        "--mount",
+        Mount(type="bind", source=str(codex_auth_file), path="/.shared/shell/codex/auth.json").as_csv(),
     ]
 
 
@@ -284,6 +298,7 @@ class TestStart:
                         f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/.shared/shell/zsh/.zsh_history",
                         *volumes,
                         *get_aws_mount(),
+                        *get_codex_mount(),
                         "-v",
                         f"{repo_dir}:/repos/datadog-agent",
                         "datadog/agent-dev-env-linux",
@@ -385,6 +400,7 @@ class TestStart:
                         f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/.shared/shell/zsh/.zsh_history",
                         *volumes,
                         *get_aws_mount(),
+                        *get_codex_mount(),
                         "datadog/agent-dev-env-linux",
                     ],
                 ),
@@ -500,6 +516,7 @@ class TestStart:
                         f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/.shared/shell/zsh/.zsh_history",
                         *volumes,
                         *get_aws_mount(),
+                        *get_codex_mount(),
                         "-v",
                         f"{repo_dir}:/repos/datadog-agent",
                         "datadog/agent-dev-env-linux",
@@ -609,6 +626,7 @@ class TestStart:
                         f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/.shared/shell/zsh/.zsh_history",
                         *volumes,
                         *get_aws_mount(),
+                        *get_codex_mount(),
                         "-v",
                         f"{repo1_dir}:/repos/datadog-agent",
                         "-v",
@@ -713,6 +731,7 @@ class TestStart:
                         f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/.shared/shell/zsh/.zsh_history",
                         *volumes,
                         *get_aws_mount(),
+                        *get_codex_mount(),
                         "datadog/agent-dev-env-linux",
                     ],
                 ),
@@ -852,6 +871,7 @@ class TestStart:
                         f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/.shared/shell/zsh/.zsh_history",
                         *volumes,
                         *get_aws_mount(),
+                        *get_codex_mount(),
                         *[(x if x != "-v" else "--volume") for x in volume_specs],
                         "datadog/agent-dev-env-linux",
                     ],
@@ -975,6 +995,7 @@ class TestStart:
                         f"{global_shared_dir / 'shell' / 'zsh' / '.zsh_history'}:/.shared/shell/zsh/.zsh_history",
                         *volumes,
                         *get_aws_mount(),
+                        *get_codex_mount(),
                         *[(x if x != "-m" else "--mount") for x in mount_specs],
                         "datadog/agent-dev-env-linux",
                     ],
@@ -1020,6 +1041,135 @@ class TestStart:
         # The ~/.aws mount is suppressed, but the non-secret AWS_* selectors are still forwarded.
         assert all("/home/dd/.aws" not in arg for arg in run_command)
         assert "AWS_PROFILE" in run_command
+        assert all("/.shared/shell/codex" not in arg for arg in run_command)
+
+    def test_codex_auth(self, dda, helpers, mocker, temp_dir):
+        from dda.utils.container.model import Mount
+        from dda.utils.process import EnvVars
+
+        codex_home = temp_dir / "codex"
+        codex_home.ensure_dir()
+        codex_auth_file = codex_home / "auth.json"
+        codex_auth_file.write_text("{}")
+
+        mocker.patch("dda.utils.ssh.write_server_config")
+        with (
+            temp_dir.as_cwd(),
+            EnvVars({"CODEX_HOME": str(codex_home)}),
+            helpers.hybrid_patch(
+                "subprocess.run",
+                return_values={
+                    # Start command checks the status
+                    1: CompletedProcess([], returncode=0, stdout="{}"),
+                    # Start method checks the status
+                    2: CompletedProcess([], returncode=0, stdout="{}"),
+                    # Capture container run
+                    # Readiness check
+                    4: CompletedProcess([], returncode=0, stdout="Server listening on :: port 22"),
+                    # Repo cloning
+                    5: CompletedProcess([], returncode=0, stdout="{}"),
+                },
+            ) as calls,
+        ):
+            result = dda("env", "dev", "start", "--no-pull", "--clone")
+
+        result.check_exit_code(0)
+
+        run_command = calls[0][0][0]
+        mount = Mount(type="bind", source=str(codex_auth_file), path="/.shared/shell/codex/auth.json").as_csv()
+        assert run_command[run_command.index(mount) - 1] == "--mount"
+
+    @pytest.mark.skipif(sys.platform == "win32", reason="Worktree Git directories are not mounted on Windows")
+    def test_worktree(self, dda, helpers, mocker, temp_dir):
+        main_git_dir = temp_dir / "main" / ".git"
+        worktree_git_dir = main_git_dir / "worktrees" / "datadog-agent"
+        worktree_git_dir.ensure_dir()
+        (worktree_git_dir / "commondir").write_text("../..\n")
+
+        repos_dir = temp_dir / "repos"
+        repo_dir = repos_dir / "datadog-agent"
+        repo_dir.ensure_dir()
+        (repo_dir / ".git").write_text(f"gitdir: {worktree_git_dir}\n")
+
+        mocker.patch("dda.utils.ssh.write_server_config")
+        with (
+            repo_dir.as_cwd(),
+            helpers.hybrid_patch(
+                "subprocess.run",
+                return_values={
+                    # Start command checks the status
+                    1: CompletedProcess([], returncode=0, stdout="{}"),
+                    # Start method checks the status
+                    2: CompletedProcess([], returncode=0, stdout="{}"),
+                    # Capture container run
+                    # Readiness check
+                    4: CompletedProcess([], returncode=0, stdout="Server listening on :: port 22"),
+                },
+            ) as calls,
+        ):
+            result = dda("env", "dev", "start", "--no-pull")
+
+        result.check_exit_code(0)
+
+        run_command = calls[0][0][0]
+        repo_mount_index = run_command.index(f"{repo_dir}:/repos/datadog-agent")
+        assert run_command[repo_mount_index + 1 : repo_mount_index + 3] == [
+            "-v",
+            f"{main_git_dir.resolve()}:{main_git_dir.resolve().as_posix()}",
+        ]
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Worktree Git directories are not mounted on Windows")
+class TestGetWorktreeGitCommonDir:
+    def test_worktree(self, temp_dir):
+        main_git_dir = temp_dir / "main" / ".git"
+        worktree_git_dir = main_git_dir / "worktrees" / "wt"
+        worktree_git_dir.ensure_dir()
+        (worktree_git_dir / "commondir").write_text("../..\n")
+        repo_dir = temp_dir / "wt"
+        repo_dir.ensure_dir()
+        (repo_dir / ".git").write_text(f"gitdir: {worktree_git_dir}\n")
+
+        assert get_worktree_git_common_dir(repo_dir) == main_git_dir.resolve()
+
+    def test_absolute_commondir(self, temp_dir):
+        main_git_dir = temp_dir / "main" / ".git"
+        worktree_git_dir = temp_dir / "elsewhere" / "wt"
+        worktree_git_dir.ensure_dir()
+        (worktree_git_dir / "commondir").write_text(f"{main_git_dir}\n")
+        repo_dir = temp_dir / "wt"
+        repo_dir.ensure_dir()
+        (repo_dir / ".git").write_text(f"gitdir: {worktree_git_dir}\n")
+
+        assert get_worktree_git_common_dir(repo_dir) == main_git_dir.resolve()
+
+    def test_regular_repository(self, temp_dir):
+        (temp_dir / ".git").ensure_dir()
+
+        assert get_worktree_git_common_dir(temp_dir) is None
+
+    def test_no_git(self, temp_dir):
+        assert get_worktree_git_common_dir(temp_dir) is None
+
+    def test_submodule(self, temp_dir):
+        # Submodules point to a Git directory without a `commondir` file
+        module_git_dir = temp_dir / "parent" / ".git" / "modules" / "sub"
+        module_git_dir.ensure_dir()
+        repo_dir = temp_dir / "sub"
+        repo_dir.ensure_dir()
+        (repo_dir / ".git").write_text(f"gitdir: {module_git_dir}\n")
+
+        assert get_worktree_git_common_dir(repo_dir) is None
+
+    def test_relative_gitdir(self, temp_dir):
+        worktree_git_dir = temp_dir / "main" / ".git" / "worktrees" / "wt"
+        worktree_git_dir.ensure_dir()
+        (worktree_git_dir / "commondir").write_text("../..\n")
+        repo_dir = temp_dir / "wt"
+        repo_dir.ensure_dir()
+        (repo_dir / ".git").write_text("gitdir: ../main/.git/worktrees/wt\n")
+
+        assert get_worktree_git_common_dir(repo_dir) is None
 
 
 class TestStop:
