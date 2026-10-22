@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
+import re
 from abc import ABC, abstractmethod
 from functools import cached_property
 from typing import TYPE_CHECKING, Annotated, Generic, NoReturn, cast
@@ -11,6 +12,57 @@ import msgspec
 
 if TYPE_CHECKING:
     from dda.utils.editors.interface import EditorInterface
+
+
+DEFAULT_GITHUB_OWNER = "DataDog"
+ENTERPRISE_GITHUB_OWNER = "ddoghq"
+GITHUB_OWNER_PATTERN = re.compile(r"(?!.*--)[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?")
+GITHUB_REPOSITORY_PATTERN = re.compile(r"[A-Za-z0-9._-]{1,100}")
+
+
+def is_enterprise_github_owner(owner: str) -> bool:
+    return owner == ENTERPRISE_GITHUB_OWNER or owner.startswith(f"{ENTERPRISE_GITHUB_OWNER}-")
+
+
+class RepositorySpec(msgspec.Struct, frozen=True):
+    owner: str
+    name: str
+    ref: str
+    qualified: bool
+
+    @classmethod
+    def parse(cls, value: str) -> RepositorySpec:
+        repository, _, ref = value.partition("@")
+        owner, separator, name = repository.partition("/")
+        if not separator:
+            name = owner
+            owner = DEFAULT_GITHUB_OWNER
+
+        if (
+            GITHUB_OWNER_PATTERN.fullmatch(owner) is None
+            or GITHUB_REPOSITORY_PATTERN.fullmatch(name) is None
+            or name in {".", ".."}
+        ):
+            msg = f"Invalid repository specification: {value}"
+            raise ValueError(msg)
+
+        normalized_owner = owner.casefold()
+        if is_enterprise_github_owner(normalized_owner) and owner != normalized_owner:
+            msg = (
+                f"Enterprise repository owner `{owner}` must use canonical lowercase casing: "
+                f"`{normalized_owner}/{name}`."
+            )
+            raise ValueError(msg)
+
+        return cls(owner=owner, name=name, ref=ref, qualified=bool(separator))
+
+    @property
+    def full_name(self) -> str:
+        return f"{self.owner}/{self.name}"
+
+    @property
+    def clone_name(self) -> str:
+        return self.full_name if self.qualified else self.name
 
 
 class DeveloperEnvironmentConfig(msgspec.Struct, kw_only=True):
@@ -26,6 +78,8 @@ supplied multiple times. Examples:
 
 - `datadog-agent` (default)
 - `datadog-agent@user/test`
+- `ddoghq/repository`
+- `ddoghq-sandbox/experiment`
 - `integrations-core@X.Y.Z`
 """
                 ),
@@ -330,7 +384,7 @@ class DeveloperEnvironmentInterface(ABC, Generic[ConfigT]):
         """
         The default repository to work on.
         """
-        return self.config.repos[0].split("@")[0]
+        return RepositorySpec.parse(self.config.repos[0]).name
 
     def save_config(self) -> None:
         self.config_file.parent.ensure_dir()
