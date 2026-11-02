@@ -10,9 +10,13 @@ from typing import TYPE_CHECKING, Annotated, Any, Literal, NoReturn
 
 import msgspec
 
-from dda.env.dev.interface import DeveloperEnvironmentConfig, DeveloperEnvironmentInterface
+from dda.env.dev.interface import (
+    DeveloperEnvironmentConfig,
+    DeveloperEnvironmentInterface,
+    RepositorySpec,
+    is_enterprise_github_owner,
+)
 from dda.utils.fs import cp_r, temp_directory
-from dda.utils.git.constants import GitEnvVars
 
 
 def _make_xdg_open_script(proxy_port: int, ssh_port: int) -> str:
@@ -87,7 +91,7 @@ class LinuxContainerConfig(DeveloperEnvironmentConfig):
         msgspec.Meta(
             extra={
                 "params": ["--no-secrets"],
-                "help": "Do not share host credentials or secrets with the dev env",
+                "help": "Do not mount host credential or secret files in the developer environment.",
             }
         ),
     ] = False
@@ -152,15 +156,20 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
     def start(self) -> None:
         from dda.env.models import EnvironmentState
 
+        _ = self.repository_specs
         status = self.__latest_status if self.__latest_status is not None else self.status()
         if status.state == EnvironmentState.STOPPED:
             self.docker.wait(["start", self.container_name], message=f"Starting container: {self.container_name}")
             self.ensure_browser_proxy_started()
         else:
             from dda.config.constants import AppEnvVars
+            from dda.env.dev.git_ssh import CONTEXT_DIR_NAME, write_git_ssh_context
             from dda.utils.process import EnvVars
             from dda.utils.retry import wait_for
 
+            host_repositories = self._host_repositories()
+            enterprise_error = write_git_ssh_context(self.app, self.shared_dir / CONTEXT_DIR_NAME)
+            self._validate_enterprise_access(enterprise_error)
             if not self.config.no_pull:
                 pull_command = ["pull", self.config.image]
                 if self.config.arch is not None:
@@ -211,10 +220,6 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
                 "-e",
                 AppEnvVars.TELEMETRY_USER_MACHINE_ID,
                 "-e",
-                GitEnvVars.AUTHOR_NAME,
-                "-e",
-                GitEnvVars.AUTHOR_EMAIL,
-                "-e",
                 AppEnvVars.ENV_TYPE,
                 "-e",
                 AppEnvVars.ENV_MANAGER,
@@ -244,17 +249,8 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             if not self.config.no_secrets:
                 self._add_secret_mounts(command)
 
-            if not self.config.clone:
-                from dda.utils.fs import Path
-
-                repos_path = Path.cwd().parent
-                for repo_spec in self.config.repos:
-                    repo = repo_spec.split("@")[0]
-                    repo_path = repos_path / repo
-                    if not repo_path.is_dir():
-                        self.app.abort(f"Local repository not found: {repo}")
-
-                    command.extend(("-v", f"{repo_path}:{self.repo_path(repo)}"))
+            for repository, repo_path in host_repositories.items():
+                command.extend(("-v", f"{repo_path}:{self.repo_path(repository.name)}"))
 
             for mount_spec in self.config.extra_mount_specs:
                 command.extend(("--mount", mount_spec))
@@ -272,11 +268,6 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             env[AppEnvVars.TELEMETRY_USER_MACHINE_ID] = self.app.telemetry.user.machine_id
             if self.app.telemetry.api_key is not None:
                 env[AppEnvVars.TELEMETRY_API_KEY] = self.app.telemetry.api_key
-            if self.app.config.tools.git.author.name:
-                env[GitEnvVars.AUTHOR_NAME] = self.app.config.tools.git.author.name
-            if self.app.config.tools.git.author.email:
-                env[GitEnvVars.AUTHOR_EMAIL] = self.app.config.tools.git.author.email
-
             self.docker.wait(
                 command,
                 message=f"Creating and starting container: {self.container_name}",
@@ -290,14 +281,13 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             self.ensure_ssh_config()
 
             if self.config.clone:
-                for repo_spec in self.config.repos:
-                    repo, _, ref = repo_spec.partition("@")
-                    if ref:
-                        clone_command = ["git", "dd-clone", repo, ref]
-                        wait_message = f"Cloning repository: {repo}@{ref}"
+                for repository in self.repository_specs:
+                    if repository.ref:
+                        clone_command = ["git", "dd-clone", repository.clone_name, repository.ref]
+                        wait_message = f"Cloning repository: {repository.clone_name}@{repository.ref}"
                     else:
-                        clone_command = ["git", "dd-clone", repo]
-                        wait_message = f"Cloning repository: {repo}"
+                        clone_command = ["git", "dd-clone", repository.clone_name]
+                        wait_message = f"Cloning repository: {repository.clone_name}"
 
                     self.app.subprocess.wait(self.construct_command(clone_command), message=wait_message)
 
@@ -346,8 +336,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
     def launch_shell(self, *, repo: str | None = None) -> NoReturn:
         self.ensure_ssh_config()
         self.ensure_browser_proxy_started()
-        ssh_command = self.ssh_base_command()
-        ssh_command.append(self.shell.get_login_command(cwd=self.repo_path(repo)))
+        ssh_command = self.ssh_command(self.shell.get_login_command(cwd=self.repo_path(repo)))
         process = self.app.subprocess.attach(ssh_command, check=False)
         self.app.abort(code=process.returncode)
 
@@ -472,6 +461,22 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
     def cache_volume_names(self) -> list[str]:
         return [volume.source for volume in self.cache_volumes if volume.source is not None]
 
+    @cached_property
+    def repository_specs(self) -> tuple[RepositorySpec, ...]:
+        try:
+            repositories = tuple(RepositorySpec.parse(value) for value in self.config.repos)
+        except ValueError as error:
+            self.app.abort(str(error))
+
+        names: set[str] = set()
+        for repository in repositories:
+            normalized_name = repository.name.casefold()
+            if normalized_name in names:
+                self.app.abort(f"Multiple configured repositories use the local name `{repository.name}`.")
+            names.add(normalized_name)
+
+        return repositories
+
     def get_volume_name(self, key: str) -> str:
         name = f"dda-env-dev-{self.name}-{key}"
         if self.config.arch is not None:
@@ -504,9 +509,7 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
         if cwd is None:
             cwd = self.home_dir
 
-        ssh_command = self.ssh_base_command()
-        ssh_command.append(self.shell.format_command(command, cwd=cwd))
-        return ssh_command
+        return self.ssh_command(self.shell.format_command(command, cwd=cwd))
 
     def check_readiness(self) -> None:
         # The `docker logs` command outputs to stderr
@@ -515,21 +518,106 @@ class LinuxContainer(DeveloperEnvironmentInterface[LinuxContainerConfig]):
             msg = f"Container `{self.container_name}` is not ready: {output}"
             raise RuntimeError(msg)
 
-    def ssh_base_command(self) -> list[str]:
-        from dda.utils.ssh import ssh_base_command
-
-        return ssh_base_command("dd@localhost", self.ssh_port)
+    def ssh_command(self, remote_command: str | None = None) -> list[str]:
+        return self.app.tools.ssh.get_command(
+            "dd@localhost",
+            port=self.ssh_port,
+            forward_agent=True,
+            quiet=True,
+            allocate_tty=True,
+            remote_command=remote_command,
+        )
 
     def ensure_ssh_config(self) -> None:
-        from dda.env.ssh import ensure_ssh_config
-
-        return ensure_ssh_config(self.hostname)
+        self.app.tools.ssh.write_host_config(
+            self.hostname,
+            {
+                "StrictHostKeyChecking": "no",
+                "ForwardAgent": "yes",
+                "UserKnownHostsFile": "/dev/null",
+                # Prevent passing local config, only supported on OpenSSH 8.7+ https://www.openssh.com/txt/release-8.7
+                "SetEnv": ["TERM=xterm-256color"],
+            },
+        )
 
     def repo_path(self, repo: str | None) -> str:
         if repo is None:
             repo = self.default_repo
+        else:
+            try:
+                repo = RepositorySpec.parse(repo).name
+            except ValueError as error:
+                self.app.abort(str(error))
 
         return f"/repos/{repo}"
+
+    def _host_repositories(self) -> dict[RepositorySpec, Path]:
+        if self.config.clone:
+            return {}
+
+        from dda.utils.fs import Path
+
+        repos_path = Path.cwd().parent
+        repositories = {}
+        for repository in self.repository_specs:
+            repo_path = repos_path / repository.name
+            if not repo_path.is_dir():
+                self.app.abort(f"Local repository not found: {repository.name}")
+            if is_enterprise_github_owner(repository.owner):
+                self._validate_enterprise_remote(repository, repo_path)
+            repositories[repository] = repo_path
+
+        return repositories
+
+    def _validate_enterprise_remote(self, repository: RepositorySpec, repo_path: Path) -> None:
+        origin = self.app.tools.git.capture(
+            ["config", "--local", "--get", "remote.origin.url"],
+            cwd=repo_path,
+            check=False,
+        ).strip()
+        full_name = repository.full_name
+        expected = f"https://github.com/{full_name}"
+        if self._normalize_repository_url(origin) != expected:
+            self.app.abort(
+                f"Mounted enterprise repository `{full_name}` must use the canonical HTTPS origin `{expected}` "
+                "so the developer environment can select its Git identity before translating network operations "
+                f'to SSH. Run `git -C "{repo_path}" remote set-url origin {expected}` on the host.'
+            )
+
+        push_urls = self.app.tools.git.capture(
+            ["config", "--local", "--get-all", "remote.origin.pushurl"],
+            cwd=repo_path,
+            check=False,
+        ).splitlines()
+        invalid_push_urls = [url for url in push_urls if self._normalize_repository_url(url) != expected]
+        if invalid_push_urls:
+            self.app.abort(
+                f"Mounted enterprise repository `{full_name}` has a noncanonical push URL: "
+                f"{', '.join(f'`{url}`' for url in invalid_push_urls)}. Remove explicit push URLs with "
+                f'`git -C "{repo_path}" config --local --unset-all remote.origin.pushurl` so pushes use the '
+                "canonical origin."
+            )
+
+    @staticmethod
+    def _normalize_repository_url(url: str) -> str:
+        normalized_url = url.rstrip("/")
+        if normalized_url.casefold().endswith(".git"):
+            normalized_url = normalized_url[:-4]
+        return normalized_url
+
+    def _validate_enterprise_access(self, reason: str | None) -> None:
+        if reason is None:
+            return
+
+        unavailable_owners = sorted({
+            repository.owner for repository in self.repository_specs if is_enterprise_github_owner(repository.owner)
+        })
+        if unavailable_owners:
+            owners = ", ".join(f"`{owner}`" for owner in unavailable_owners)
+            self.app.abort(
+                f"Enterprise repository access is unavailable for {owners}. {reason} Create the conventional public-key "
+                "selector or load its selected key into the host SSH agent before starting the developer environment."
+            )
 
     def _container_cp(self, source: str, destination: str, *args: Any) -> None:
         """Runs a `cp -r` command inside the context of the container"""

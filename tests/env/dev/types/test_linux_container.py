@@ -9,15 +9,15 @@ import subprocess
 import sys
 from contextlib import contextmanager
 from subprocess import CompletedProcess
+from unittest.mock import call
 
 import msgspec
 import pytest
 
 from dda.config.constants import AppEnvVars
-from dda.env.dev.types.linux_container import LinuxContainer
+from dda.env.dev.types.linux_container import LinuxContainer, LinuxContainerConfig
 from dda.env.models import EnvironmentState, EnvironmentStatus
 from dda.utils.fs import Path, cp_r
-from dda.utils.git.constants import GitEnvVars
 
 pytestmark = [pytest.mark.usefixtures("private_storage")]
 
@@ -37,6 +37,14 @@ def mock_spawn_daemon(mocker):
     # that blocks pytest cleanup (WinError 32). Mocking here keeps all platforms
     # consistent without skipping browser-proxy logic in production code.
     mocker.patch("dda.utils.process.SubprocessRunner.spawn_daemon", return_value=0)
+
+
+@pytest.fixture(autouse=True)
+def mock_git_ssh_context(mocker):
+    return mocker.patch(
+        "dda.env.dev.git_ssh.write_git_ssh_context",
+        return_value=None,
+    )
 
 
 @pytest.fixture(scope="module")
@@ -112,6 +120,42 @@ def test_default_config(app):
     }
 
 
+def test_owner_qualified_repo_path(app):
+    config = LinuxContainerConfig(repos=["ddoghq-sandbox/experiment"])
+    container = LinuxContainer(app=app, name="linux-container", instance="default", config=config)
+
+    assert container.repo_path(None) == "/repos/experiment"
+    assert container.repo_path("ddoghq/repository") == "/repos/repository"
+
+
+def test_repository_name_collision(app):
+    config = LinuxContainerConfig(repos=["ddoghq/project", "ddoghq-sandbox/project"])
+    container = LinuxContainer(app=app, name="linux-container", instance="default", config=config)
+
+    with pytest.raises(SystemExit):
+        _ = container.repository_specs
+
+
+def test_repository_spec_rejects_mixed_case_enterprise_owner(app):
+    config = LinuxContainerConfig(repos=["DDOGHQ/repository"])
+    container = LinuxContainer(app=app, name="linux-container", instance="default", config=config)
+
+    with pytest.raises(SystemExit):
+        _ = container.repository_specs
+
+    assert (
+        "Enterprise repository owner `DDOGHQ` must use canonical lowercase casing: `ddoghq/repository`"
+        in app.last_error
+    )
+
+
+def test_no_secrets_keeps_agent_forwarding(app):
+    config = LinuxContainerConfig(no_secrets=True)
+    container = LinuxContainer(app=app, name="linux-container", instance="default", config=config)
+
+    assert container.ssh_command()[1] == "-A"
+
+
 def test_xdg_open_script_uses_lf_line_endings(app):
     # The script is mounted into and executed by the Linux container. CRLF endings (the
     # Windows text-mode default) would turn the `#!/usr/bin/env python3` shebang into a
@@ -122,6 +166,105 @@ def test_xdg_open_script_uses_lf_line_endings(app):
     raw = container._xdg_open_script_path.read_bytes()  # noqa: SLF001
     assert b"\r" not in raw
     assert raw.startswith(b"#!/usr/bin/env python3\n")
+
+
+@pytest.mark.parametrize(
+    ("owner", "suffix"),
+    [("ddoghq", ""), ("ddoghq", ".git"), ("ddoghq", "/"), ("ddoghq-new-org", "")],
+)
+def test_mounted_enterprise_repository_accepts_canonical_https_origin(app, mocker, temp_dir, owner, suffix):
+    repos_dir = temp_dir / "repos"
+    repo_dir = repos_dir / "repository"
+    repo_dir.ensure_dir()
+    capture = mocker.patch.object(
+        app.tools.git,
+        "capture",
+        side_effect=[f"https://github.com/{owner}/repository{suffix}\n", ""],
+    )
+    config = LinuxContainerConfig(repos=[f"{owner}/repository"])
+    container = LinuxContainer(app=app, name="linux-container", instance="default", config=config)
+
+    with repo_dir.as_cwd():
+        repositories = container._host_repositories()  # noqa: SLF001
+
+    assert list(repositories.values()) == [repo_dir]
+    assert capture.call_args_list == [
+        call(["config", "--local", "--get", "remote.origin.url"], cwd=repo_dir, check=False),
+        call(["config", "--local", "--get-all", "remote.origin.pushurl"], cwd=repo_dir, check=False),
+    ]
+
+
+@pytest.mark.parametrize("owner", ["ddoghq", "ddoghq-new-org"])
+def test_mounted_enterprise_repository_rejects_ssh_origin(app, mocker, temp_dir, owner):
+    repos_dir = temp_dir / "repos"
+    repo_dir = repos_dir / "repository"
+    repo_dir.ensure_dir()
+    mocker.patch.object(app.tools.git, "capture", return_value=f"git@github.com-ddoghq:{owner}/repository\n")
+    config = LinuxContainerConfig(repos=[f"{owner}/repository"])
+    container = LinuxContainer(app=app, name="linux-container", instance="default", config=config)
+
+    with repo_dir.as_cwd(), pytest.raises(SystemExit):
+        container._host_repositories()  # noqa: SLF001
+
+    expected = f"https://github.com/{owner}/repository"
+    assert f"Mounted enterprise repository `{owner}/repository` must use the canonical HTTPS origin" in app.last_error
+    assert f'git -C "{repo_dir}" remote set-url origin {expected}' in app.last_error
+
+
+def test_mounted_enterprise_repository_rejects_mixed_case_owner(app, mocker, temp_dir):
+    repos_dir = temp_dir / "repos"
+    repo_dir = repos_dir / "repository"
+    repo_dir.ensure_dir()
+    mocker.patch.object(app.tools.git, "capture", return_value="https://github.com/DDOGHQ/repository\n")
+    config = LinuxContainerConfig(repos=["ddoghq/repository"])
+    container = LinuxContainer(app=app, name="linux-container", instance="default", config=config)
+
+    with repo_dir.as_cwd(), pytest.raises(SystemExit):
+        container._host_repositories()  # noqa: SLF001
+
+    assert "must use the canonical HTTPS origin `https://github.com/ddoghq/repository`" in app.last_error
+
+
+def test_mounted_enterprise_repository_accepts_canonical_push_urls(app, mocker, temp_dir):
+    repos_dir = temp_dir / "repos"
+    repo_dir = repos_dir / "repository"
+    repo_dir.ensure_dir()
+    mocker.patch.object(
+        app.tools.git,
+        "capture",
+        side_effect=[
+            "https://github.com/ddoghq/repository\n",
+            "https://github.com/ddoghq/repository.git\nhttps://github.com/ddoghq/repository/\n",
+        ],
+    )
+    config = LinuxContainerConfig(repos=["ddoghq/repository"])
+    container = LinuxContainer(app=app, name="linux-container", instance="default", config=config)
+
+    with repo_dir.as_cwd():
+        repositories = container._host_repositories()  # noqa: SLF001
+
+    assert list(repositories.values()) == [repo_dir]
+
+
+@pytest.mark.parametrize("owner", ["ddoghq", "ddoghq-new-org"])
+def test_mounted_enterprise_repository_rejects_noncanonical_push_url(app, mocker, temp_dir, owner):
+    repos_dir = temp_dir / "repos"
+    repo_dir = repos_dir / "repository"
+    repo_dir.ensure_dir()
+    push_url = f"git@github.com:{owner}/repository"
+    mocker.patch.object(
+        app.tools.git,
+        "capture",
+        side_effect=[f"https://github.com/{owner}/repository\n", f"{push_url}\n"],
+    )
+    config = LinuxContainerConfig(repos=[f"{owner}/repository"])
+    container = LinuxContainer(app=app, name="linux-container", instance="default", config=config)
+
+    with repo_dir.as_cwd(), pytest.raises(SystemExit):
+        container._host_repositories()  # noqa: SLF001
+
+    assert f"has a noncanonical push URL: `{push_url}`" in app.last_error
+    assert f'git -C "{repo_dir}" config --local --unset-all remote.origin.pushurl' in app.last_error
 
 
 class TestStatus:
@@ -167,6 +310,42 @@ class TestStatus:
 
 
 class TestStart:
+    @pytest.mark.parametrize("owner", ["DataDog", "ddoghqish"])
+    def test_personal_repositories_do_not_require_enterprise_identity(self, app, owner):
+        config = LinuxContainerConfig(repos=[f"{owner}/repository"])
+        container = LinuxContainer(app=app, name="linux-container", instance="default", config=config)
+
+        container._validate_enterprise_access("Missing enterprise selector.")  # noqa: SLF001
+
+    def test_invalid_repository_is_rejected_before_status_check(self, app, mocker, mock_git_ssh_context):
+        config = LinuxContainerConfig(repos=["../repository"], clone=True)
+        container = LinuxContainer(app=app, name="linux-container", instance="default", config=config)
+        status = mocker.patch.object(container, "status")
+
+        with pytest.raises(SystemExit):
+            container.start()
+
+        assert "Invalid repository specification" in app.last_error
+        status.assert_not_called()
+        mock_git_ssh_context.assert_not_called()
+
+    @pytest.mark.parametrize("owner", ["ddoghq", "ddoghq-sandbox", "ddoghq-new-org"])
+    def test_enterprise_clone_requires_available_identity(self, app, mocker, mock_git_ssh_context, owner):
+        config = LinuxContainerConfig(repos=[f"{owner}/repository"], clone=True, no_pull=True)
+        container = LinuxContainer(app=app, name="linux-container", instance="default", config=config)
+        mocker.patch.object(
+            container,
+            "status",
+            return_value=EnvironmentStatus(state=EnvironmentState.NONEXISTENT),
+        )
+        mock_git_ssh_context.return_value = "Missing enterprise selector."
+
+        with pytest.raises(SystemExit):
+            container.start()
+
+        assert "Enterprise repository access is unavailable" in app.last_error
+        assert f"for `{owner}`. Missing enterprise selector." in app.last_error
+
     def test_already_started(self, dda, helpers):
         with helpers.hybrid_patch(
             "subprocess.run",
@@ -186,13 +365,13 @@ class TestStart:
             ),
         )
 
-    def test_default(self, dda, helpers, mocker, temp_dir, host_user_args):
+    def test_default(self, dda, helpers, mocker, temp_dir, host_user_args, mock_git_ssh_context):
         repos_dir = temp_dir / "repos"
         repos_dir.ensure_dir()
         repo_dir = repos_dir / "datadog-agent"
         repo_dir.ensure_dir()
 
-        write_server_config = mocker.patch("dda.utils.ssh.write_server_config")
+        write_host_config = mocker.patch("dda.tools.ssh.SSH.write_host_config")
         with (
             repo_dir.as_cwd(),
             helpers.hybrid_patch(
@@ -222,9 +401,11 @@ class TestStart:
             ),
         )
 
-        assert_ssh_config_written(write_server_config, "localhost")
+        assert_ssh_config_written(write_host_config, "localhost")
 
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
+        mock_git_ssh_context.assert_called_once()
+        assert mock_git_ssh_context.call_args.args[1] == shared_dir / "git-ssh"
         global_shared_dir = shared_dir.parent.parent / ".shared"
         xdg_open_script_path = shared_dir.parent / "bin" / "xdg-open"
         starship_mount = get_starship_mount(global_shared_dir)
@@ -264,10 +445,6 @@ class TestStart:
                         "-e",
                         AppEnvVars.TELEMETRY_USER_MACHINE_ID,
                         "-e",
-                        GitEnvVars.AUTHOR_NAME,
-                        "-e",
-                        GitEnvVars.AUTHOR_EMAIL,
-                        "-e",
                         AppEnvVars.ENV_TYPE,
                         "-e",
                         AppEnvVars.ENV_MANAGER,
@@ -293,8 +470,29 @@ class TestStart:
             ),
         ]
 
-    def test_clone(self, dda, helpers, mocker, temp_dir, host_user_args):
-        write_server_config = mocker.patch("dda.utils.ssh.write_server_config")
+    def test_restart_does_not_refresh_git_ssh_context(self, dda, helpers, mock_git_ssh_context):
+        stopped = json.dumps([{"State": {"Status": "exited", "ExitCode": 0}}])
+        with helpers.hybrid_patch(
+            "subprocess.run",
+            return_values={
+                1: CompletedProcess([], returncode=0, stdout=stopped),
+                2: CompletedProcess([], returncode=0, stdout=stopped),
+            },
+        ):
+            result = dda("env", "dev", "start")
+
+        result.check(
+            exit_code=0,
+            output=helpers.dedent(
+                """
+                Starting container: dda-linux-container-default
+                """
+            ),
+        )
+        mock_git_ssh_context.assert_not_called()
+
+    def test_clone(self, dda, helpers, mocker, temp_dir, host_user_args, app):
+        write_host_config = mocker.patch("dda.tools.ssh.SSH.write_host_config")
         with helpers.hybrid_patch(
             "subprocess.run",
             return_values={
@@ -323,7 +521,7 @@ class TestStart:
             ),
         )
 
-        assert_ssh_config_written(write_server_config, "localhost")
+        assert_ssh_config_written(write_host_config, "localhost")
 
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
         global_shared_dir = shared_dir.parent.parent / ".shared"
@@ -365,10 +563,6 @@ class TestStart:
                         "-e",
                         AppEnvVars.TELEMETRY_USER_MACHINE_ID,
                         "-e",
-                        GitEnvVars.AUTHOR_NAME,
-                        "-e",
-                        GitEnvVars.AUTHOR_EMAIL,
-                        "-e",
                         AppEnvVars.ENV_TYPE,
                         "-e",
                         AppEnvVars.ENV_MANAGER,
@@ -393,7 +587,7 @@ class TestStart:
             (
                 (
                     [
-                        helpers.locate("ssh"),
+                        app.tools.ssh.path,
                         "-A",
                         "-q",
                         "-t",
@@ -414,7 +608,7 @@ class TestStart:
         repo_dir = repos_dir / "datadog-agent"
         repo_dir.ensure_dir()
 
-        write_server_config = mocker.patch("dda.utils.ssh.write_server_config")
+        write_host_config = mocker.patch("dda.tools.ssh.SSH.write_host_config")
         with (
             repo_dir.as_cwd(),
             helpers.hybrid_patch(
@@ -442,7 +636,7 @@ class TestStart:
             ),
         )
 
-        assert_ssh_config_written(write_server_config, "localhost")
+        assert_ssh_config_written(write_host_config, "localhost")
 
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
         global_shared_dir = shared_dir.parent.parent / ".shared"
@@ -479,10 +673,6 @@ class TestStart:
                         AppEnvVars.TELEMETRY_API_KEY,
                         "-e",
                         AppEnvVars.TELEMETRY_USER_MACHINE_ID,
-                        "-e",
-                        GitEnvVars.AUTHOR_NAME,
-                        "-e",
-                        GitEnvVars.AUTHOR_EMAIL,
                         "-e",
                         AppEnvVars.ENV_TYPE,
                         "-e",
@@ -517,7 +707,8 @@ class TestStart:
         repo2_dir = repos_dir / "integrations-core"
         repo2_dir.ensure_dir()
 
-        write_server_config = mocker.patch("dda.utils.ssh.write_server_config")
+        write_host_config = mocker.patch("dda.tools.ssh.SSH.write_host_config")
+        validate_enterprise_remote = mocker.patch.object(LinuxContainer, "_validate_enterprise_remote")
         with (
             repo1_dir.as_cwd(),
             helpers.hybrid_patch(
@@ -534,7 +725,7 @@ class TestStart:
                 },
             ) as calls,
         ):
-            result = dda("env", "dev", "start", "-r", "datadog-agent", "-r", "integrations-core")
+            result = dda("env", "dev", "start", "-r", "datadog-agent", "-r", "ddoghq/integrations-core")
 
         result.check(
             exit_code=0,
@@ -547,7 +738,8 @@ class TestStart:
             ),
         )
 
-        assert_ssh_config_written(write_server_config, "localhost")
+        assert_ssh_config_written(write_host_config, "localhost")
+        validate_enterprise_remote.assert_called_once()
 
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
         global_shared_dir = shared_dir.parent.parent / ".shared"
@@ -588,10 +780,6 @@ class TestStart:
                         AppEnvVars.TELEMETRY_API_KEY,
                         "-e",
                         AppEnvVars.TELEMETRY_USER_MACHINE_ID,
-                        "-e",
-                        GitEnvVars.AUTHOR_NAME,
-                        "-e",
-                        GitEnvVars.AUTHOR_EMAIL,
                         "-e",
                         AppEnvVars.ENV_TYPE,
                         "-e",
@@ -620,8 +808,8 @@ class TestStart:
             ),
         ]
 
-    def test_multiple_clones(self, dda, helpers, mocker, temp_dir, host_user_args):
-        write_server_config = mocker.patch("dda.utils.ssh.write_server_config")
+    def test_multiple_clones(self, dda, helpers, mocker, temp_dir, host_user_args, app):
+        write_host_config = mocker.patch("dda.tools.ssh.SSH.write_host_config")
         with helpers.hybrid_patch(
             "subprocess.run",
             return_values={
@@ -636,7 +824,16 @@ class TestStart:
                 # Capture repo cloning
             },
         ) as calls:
-            result = dda("env", "dev", "start", "-r", "datadog-agent@tag", "-r", "integrations-core", "--clone")
+            result = dda(
+                "env",
+                "dev",
+                "start",
+                "-r",
+                "datadog-agent@tag",
+                "-r",
+                "ddoghq-sandbox/integrations-core",
+                "--clone",
+            )
 
         result.check(
             exit_code=0,
@@ -646,12 +843,12 @@ class TestStart:
                 Creating and starting container: dda-linux-container-default
                 Waiting for container: dda-linux-container-default
                 Cloning repository: datadog-agent@tag
-                Cloning repository: integrations-core
+                Cloning repository: ddoghq-sandbox/integrations-core
                 """
             ),
         )
 
-        assert_ssh_config_written(write_server_config, "localhost")
+        assert_ssh_config_written(write_host_config, "localhost")
 
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
         global_shared_dir = shared_dir.parent.parent / ".shared"
@@ -693,10 +890,6 @@ class TestStart:
                         "-e",
                         AppEnvVars.TELEMETRY_USER_MACHINE_ID,
                         "-e",
-                        GitEnvVars.AUTHOR_NAME,
-                        "-e",
-                        GitEnvVars.AUTHOR_EMAIL,
-                        "-e",
                         AppEnvVars.ENV_TYPE,
                         "-e",
                         AppEnvVars.ENV_MANAGER,
@@ -721,7 +914,7 @@ class TestStart:
             (
                 (
                     [
-                        helpers.locate("ssh"),
+                        app.tools.ssh.path,
                         "-A",
                         "-q",
                         "-t",
@@ -737,7 +930,7 @@ class TestStart:
             (
                 (
                     [
-                        helpers.locate("ssh"),
+                        app.tools.ssh.path,
                         "-A",
                         "-q",
                         "-t",
@@ -745,7 +938,7 @@ class TestStart:
                         "26090",
                         "dd@localhost",
                         "--",
-                        "cd /home/dd && git dd-clone integrations-core",
+                        "cd /home/dd && git dd-clone ddoghq-sandbox/integrations-core",
                     ],
                 ),
                 {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE},
@@ -764,7 +957,7 @@ class TestStart:
         ],
     )
     def test_extra_volume_specs(self, dda, helpers, mocker, temp_dir, host_user_args, volume_specs):
-        mocker.patch("dda.utils.ssh.write_server_config")
+        mocker.patch("dda.tools.ssh.SSH.write_host_config")
 
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
         global_shared_dir = shared_dir.parent.parent / ".shared"
@@ -832,10 +1025,6 @@ class TestStart:
                         "-e",
                         AppEnvVars.TELEMETRY_USER_MACHINE_ID,
                         "-e",
-                        GitEnvVars.AUTHOR_NAME,
-                        "-e",
-                        GitEnvVars.AUTHOR_EMAIL,
-                        "-e",
                         AppEnvVars.ENV_TYPE,
                         "-e",
                         AppEnvVars.ENV_MANAGER,
@@ -886,7 +1075,7 @@ class TestStart:
         ],
     )
     def test_extra_mounts(self, dda, helpers, mocker, temp_dir, host_user_args, mount_specs):
-        mocker.patch("dda.utils.ssh.write_server_config")
+        mocker.patch("dda.tools.ssh.SSH.write_host_config")
 
         shared_dir = temp_dir / "data" / "env" / "dev" / "linux-container" / "default" / ".shared"
         global_shared_dir = shared_dir.parent.parent / ".shared"
@@ -955,10 +1144,6 @@ class TestStart:
                         "-e",
                         AppEnvVars.TELEMETRY_USER_MACHINE_ID,
                         "-e",
-                        GitEnvVars.AUTHOR_NAME,
-                        "-e",
-                        GitEnvVars.AUTHOR_EMAIL,
-                        "-e",
                         AppEnvVars.ENV_TYPE,
                         "-e",
                         AppEnvVars.ENV_MANAGER,
@@ -985,7 +1170,7 @@ class TestStart:
 
     def test_no_secrets(self, dda, helpers, mocker, temp_dir):
         # `--no-secrets` prevents the container from receiving host credentials even when the host has `~/.aws`.
-        mocker.patch("dda.utils.ssh.write_server_config")
+        write_host_config = mocker.patch("dda.tools.ssh.SSH.write_host_config")
         with (
             temp_dir.as_cwd(),
             helpers.hybrid_patch(
@@ -1020,6 +1205,7 @@ class TestStart:
         # The ~/.aws mount is suppressed, but the non-secret AWS_* selectors are still forwarded.
         assert all("/home/dd/.aws" not in arg for arg in run_command)
         assert "AWS_PROFILE" in run_command
+        assert_ssh_config_written(write_host_config, "localhost")
 
 
 class TestStop:
@@ -1109,7 +1295,7 @@ class TestRemove:
 
 
 class TestShell:
-    def test_default(self, dda, helpers, mocker):
+    def test_default(self, dda, helpers, mocker, mock_git_ssh_context, app):
         with helpers.hybrid_patch(
             "subprocess.run",
             return_values={
@@ -1118,18 +1304,19 @@ class TestShell:
                 # Capture ssh command
             },
         ) as calls:
-            write_server_config = mocker.patch("dda.utils.ssh.write_server_config")
+            write_host_config = mocker.patch("dda.tools.ssh.SSH.write_host_config")
 
             result = dda("env", "dev", "shell")
 
         result.check(exit_code=0)
 
-        assert_ssh_config_written(write_server_config, "localhost")
+        assert_ssh_config_written(write_host_config, "localhost")
+        mock_git_ssh_context.assert_not_called()
         assert calls == [
             (
                 (
                     [
-                        helpers.locate("ssh"),
+                        app.tools.ssh.path,
                         "-A",
                         "-q",
                         "-t",
@@ -1159,8 +1346,8 @@ class TestRun:
             ),
         )
 
-    def test_default(self, dda, helpers, mocker):
-        write_server_config = mocker.patch("dda.utils.ssh.write_server_config")
+    def test_default(self, dda, helpers, mocker, app):
+        write_host_config = mocker.patch("dda.tools.ssh.SSH.write_host_config")
         run = mocker.patch("dda.utils.process.SubprocessRunner.run")
 
         with helpers.hybrid_patch(
@@ -1174,10 +1361,10 @@ class TestRun:
 
         result.check(exit_code=0)
 
-        assert_ssh_config_written(write_server_config, "localhost")
+        assert_ssh_config_written(write_host_config, "localhost")
         run.assert_called_once_with(
             [
-                "ssh",
+                app.tools.ssh.path,
                 "-A",
                 "-q",
                 "-t",
@@ -1205,7 +1392,7 @@ class TestCode:
         )
 
     def test_default(self, dda, helpers, mocker):
-        write_server_config = mocker.patch("dda.utils.ssh.write_server_config")
+        write_host_config = mocker.patch("dda.tools.ssh.SSH.write_host_config")
         run = mocker.patch("dda.utils.process.SubprocessRunner.run")
 
         with helpers.hybrid_patch(
@@ -1227,7 +1414,7 @@ class TestCode:
             ),
         )
 
-        assert_ssh_config_written(write_server_config, "localhost")
+        assert_ssh_config_written(write_host_config, "localhost")
         run.assert_called_once_with(
             [
                 "code",
@@ -1238,7 +1425,7 @@ class TestCode:
         )
 
     def test_editor_flag(self, dda, helpers, mocker):
-        write_server_config = mocker.patch("dda.utils.ssh.write_server_config")
+        write_host_config = mocker.patch("dda.tools.ssh.SSH.write_host_config")
         run = mocker.patch("dda.utils.process.SubprocessRunner.run")
 
         with helpers.hybrid_patch(
@@ -1260,7 +1447,7 @@ class TestCode:
             ),
         )
 
-        assert_ssh_config_written(write_server_config, "localhost")
+        assert_ssh_config_written(write_host_config, "localhost")
         run.assert_called_once_with(
             [
                 "cursor",
@@ -1274,7 +1461,7 @@ class TestCode:
         config_file.data["env"]["dev"]["editor"] = "cursor"
         config_file.save()
 
-        write_server_config = mocker.patch("dda.utils.ssh.write_server_config")
+        write_host_config = mocker.patch("dda.tools.ssh.SSH.write_host_config")
         run = mocker.patch("dda.utils.process.SubprocessRunner.run")
 
         with helpers.hybrid_patch(
@@ -1296,7 +1483,7 @@ class TestCode:
             ),
         )
 
-        assert_ssh_config_written(write_server_config, "localhost")
+        assert_ssh_config_written(write_host_config, "localhost")
         run.assert_called_once_with(
             [
                 "cursor",

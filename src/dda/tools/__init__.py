@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from dda.tools.git import Git
     from dda.tools.github.core import GitHub
     from dda.tools.go import Go
+    from dda.tools.ssh import SSH
     from dda.tools.uv import UV
 
 
@@ -53,6 +54,12 @@ class Tools:
         from dda.tools.go import Go
 
         return Go(self.__app)
+
+    @cached_property
+    def ssh(self) -> SSH:
+        from dda.tools.ssh import SSH
+
+        return SSH(self.__app)
 
     @cached_property
     def uv(self) -> UV:
