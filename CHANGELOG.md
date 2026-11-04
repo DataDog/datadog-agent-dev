@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+***Fixed:***
+
+- Update `certifi` to 2026.10.23 and `uv` to 0.13.5 (#325)
+- Update standalone binaries to use PyApp 0.31.0 (#326)
+
 ## 0.40.0 - 2026-10-15
 
 ***Added:***
