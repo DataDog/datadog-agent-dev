@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, NoReturn, Self
 
 from dda.cli.terminal import Terminal
 from dda.config.constants import AppEnvVars
+from dda.utils.bits import running_in_bits_code
 from dda.utils.ci import running_in_ci
 
 if TYPE_CHECKING:
@@ -162,7 +163,12 @@ class Application(Terminal):
             self.display_info("dda self telemetry disable")
 
         update_checker = UpdateChecker(self)
-        if not running_in_ci() and self.config.update.mode == "check" and update_checker.ready():
+        if (
+            not running_in_bits_code()
+            and not running_in_ci()
+            and self.config.update.mode == "check"
+            and update_checker.ready()
+        ):
             try:
                 new_release = update_checker.new_release()
             except Exception as e:  # noqa: BLE001
