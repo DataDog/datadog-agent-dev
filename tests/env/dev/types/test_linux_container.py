@@ -14,7 +14,7 @@ import msgspec
 import pytest
 
 from dda.config.constants import AppEnvVars
-from dda.env.dev.types.linux_container import LinuxContainer, get_worktree_git_common_dir
+from dda.env.dev.types.linux_container import LinuxContainer, get_worktree_git_dirs
 from dda.env.models import EnvironmentState, EnvironmentStatus
 from dda.utils.fs import Path, cp_r
 from dda.utils.git.constants import GitEnvVars
@@ -1118,9 +1118,47 @@ class TestStart:
             f"{main_git_dir.resolve()}:{main_git_dir.resolve().as_posix()}",
         ]
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Worktree Git directories are not mounted on Windows")
+    def test_worktrees_same_repository(self, dda, helpers, mocker, temp_dir):
+        main_git_dir = temp_dir / "main" / ".git"
+        repos_dir = temp_dir / "repos"
+        for name in ("datadog-agent", "integrations-core"):
+            worktree_git_dir = main_git_dir / "worktrees" / name
+            worktree_git_dir.ensure_dir()
+            (worktree_git_dir / "commondir").write_text("../..\n")
+            (repos_dir / name).ensure_dir()
+            (repos_dir / name / ".git").write_text(f"gitdir: {worktree_git_dir}\n")
+
+        repo_dir = repos_dir / "datadog-agent"
+
+        mocker.patch("dda.utils.ssh.write_server_config")
+        with (
+            repo_dir.as_cwd(),
+            helpers.hybrid_patch(
+                "subprocess.run",
+                return_values={
+                    # Start command checks the status
+                    1: CompletedProcess([], returncode=0, stdout="{}"),
+                    # Start method checks the status
+                    2: CompletedProcess([], returncode=0, stdout="{}"),
+                    # Capture container run
+                    # Readiness check
+                    4: CompletedProcess([], returncode=0, stdout="Server listening on :: port 22"),
+                },
+            ) as calls,
+        ):
+            result = dda("env", "dev", "start", "--no-pull", "-r", "datadog-agent", "-r", "integrations-core")
+
+        result.check_exit_code(0)
+
+        run_command = calls[0][0][0]
+        git_dir_mount = f"{main_git_dir.resolve()}:{main_git_dir.resolve().as_posix()}"
+        assert run_command.count(git_dir_mount) == 1
+        assert run_command[run_command.index(git_dir_mount) - 1] == "-v"
+
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Worktree Git directories are not mounted on Windows")
-class TestGetWorktreeGitCommonDir:
+class TestGetWorktreeGitDirs:
     def test_worktree(self, temp_dir):
         main_git_dir = temp_dir / "main" / ".git"
         worktree_git_dir = main_git_dir / "worktrees" / "wt"
@@ -1130,7 +1168,7 @@ class TestGetWorktreeGitCommonDir:
         repo_dir.ensure_dir()
         (repo_dir / ".git").write_text(f"gitdir: {worktree_git_dir}\n")
 
-        assert get_worktree_git_common_dir(repo_dir) == main_git_dir.resolve()
+        assert get_worktree_git_dirs(repo_dir) == [main_git_dir.resolve()]
 
     def test_absolute_commondir(self, temp_dir):
         main_git_dir = temp_dir / "main" / ".git"
@@ -1141,15 +1179,15 @@ class TestGetWorktreeGitCommonDir:
         repo_dir.ensure_dir()
         (repo_dir / ".git").write_text(f"gitdir: {worktree_git_dir}\n")
 
-        assert get_worktree_git_common_dir(repo_dir) == main_git_dir.resolve()
+        assert get_worktree_git_dirs(repo_dir) == [main_git_dir.resolve(), worktree_git_dir.resolve()]
 
     def test_regular_repository(self, temp_dir):
         (temp_dir / ".git").ensure_dir()
 
-        assert get_worktree_git_common_dir(temp_dir) is None
+        assert get_worktree_git_dirs(temp_dir) == []
 
     def test_no_git(self, temp_dir):
-        assert get_worktree_git_common_dir(temp_dir) is None
+        assert get_worktree_git_dirs(temp_dir) == []
 
     def test_submodule(self, temp_dir):
         # Submodules point to a Git directory without a `commondir` file
@@ -1159,7 +1197,7 @@ class TestGetWorktreeGitCommonDir:
         repo_dir.ensure_dir()
         (repo_dir / ".git").write_text(f"gitdir: {module_git_dir}\n")
 
-        assert get_worktree_git_common_dir(repo_dir) is None
+        assert get_worktree_git_dirs(repo_dir) == []
 
     def test_relative_gitdir(self, temp_dir):
         worktree_git_dir = temp_dir / "main" / ".git" / "worktrees" / "wt"
@@ -1169,7 +1207,7 @@ class TestGetWorktreeGitCommonDir:
         repo_dir.ensure_dir()
         (repo_dir / ".git").write_text("gitdir: ../main/.git/worktrees/wt\n")
 
-        assert get_worktree_git_common_dir(repo_dir) is None
+        assert get_worktree_git_dirs(repo_dir) == []
 
 
 class TestStop:
