@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+## 0.40.1 - 2026-11-04
+
 ***Fixed:***
 
 - Update `certifi` to 2026.10.23 and `uv` to 0.13.5 (#325)
