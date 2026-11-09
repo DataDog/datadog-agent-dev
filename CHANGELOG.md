@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ***Fixed:***
 
-- Disable telemetry in CI unless `DDA_TELEMETRY_API_KEY` is set, which stops the telemetry submission warning in CI jobs
+- Disable telemetry in CI unless `DDA_TELEMETRY_API_KEY` is set, which stops the telemetry submission warning in CI jobs (#329)
 
 ## 0.40.1 - 2026-11-04
 
