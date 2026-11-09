@@ -95,6 +95,13 @@ class TelemetryManager:
 
     @cached_property
     def __enabled(self) -> bool:
+        from dda.config.constants import AppEnvVars
+        from dda.utils.ci import running_in_ci
+
+        # CI has no keyring to read the API key from, so only send telemetry there when the key is provided
+        if running_in_ci() and not os.environ.get(AppEnvVars.TELEMETRY_API_KEY):
+            return False
+
         return not self.__dissent_file.is_file()
 
     @cached_property
