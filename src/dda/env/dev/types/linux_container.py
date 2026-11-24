@@ -90,7 +90,7 @@ class LinuxContainerConfig(DeveloperEnvironmentConfig):
                 "help": "The container image to use",
             }
         ),
-    ] = "datadog/agent-dev-env-linux"
+    ] = "registry.datadoghq.com/agent-dev-env-linux"
     no_pull: Annotated[
         bool,
         msgspec.Meta(

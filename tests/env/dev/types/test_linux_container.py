@@ -116,7 +116,7 @@ def test_default_config(app):
         "arch": None,
         "cli": "docker",
         "clone": False,
-        "image": "datadog/agent-dev-env-linux",
+        "image": "registry.datadoghq.com/agent-dev-env-linux",
         "no_pull": False,
         "no_secrets": False,
         "repos": ["datadog-agent"],
@@ -229,7 +229,7 @@ class TestStart:
             exit_code=0,
             output=helpers.dedent(
                 """
-                Pulling image: datadog/agent-dev-env-linux
+                Pulling image: registry.datadoghq.com/agent-dev-env-linux
                 Creating and starting container: dda-linux-container-default
                 Waiting for container: dda-linux-container-default
                 """
@@ -245,7 +245,7 @@ class TestStart:
         volumes = get_volumes()
         assert calls == [
             (
-                ([helpers.locate("docker"), "pull", "datadog/agent-dev-env-linux"],),
+                ([helpers.locate("docker"), "pull", "registry.datadoghq.com/agent-dev-env-linux"],),
                 {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": mocker.ANY},
             ),
             (
@@ -301,7 +301,7 @@ class TestStart:
                         *get_codex_mount(),
                         "-v",
                         f"{repo_dir}:/repos/datadog-agent",
-                        "datadog/agent-dev-env-linux",
+                        "registry.datadoghq.com/agent-dev-env-linux",
                     ],
                 ),
                 {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": mocker.ANY},
@@ -330,7 +330,7 @@ class TestStart:
             exit_code=0,
             output=helpers.dedent(
                 """
-                Pulling image: datadog/agent-dev-env-linux
+                Pulling image: registry.datadoghq.com/agent-dev-env-linux
                 Creating and starting container: dda-linux-container-default
                 Waiting for container: dda-linux-container-default
                 Cloning repository: datadog-agent
@@ -347,7 +347,7 @@ class TestStart:
         volumes = get_volumes()
         assert calls == [
             (
-                ([helpers.locate("docker"), "pull", "datadog/agent-dev-env-linux"],),
+                ([helpers.locate("docker"), "pull", "registry.datadoghq.com/agent-dev-env-linux"],),
                 {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": mocker.ANY},
             ),
             (
@@ -401,7 +401,7 @@ class TestStart:
                         *volumes,
                         *get_aws_mount(),
                         *get_codex_mount(),
-                        "datadog/agent-dev-env-linux",
+                        "registry.datadoghq.com/agent-dev-env-linux",
                     ],
                 ),
                 {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": mocker.ANY},
@@ -519,7 +519,7 @@ class TestStart:
                         *get_codex_mount(),
                         "-v",
                         f"{repo_dir}:/repos/datadog-agent",
-                        "datadog/agent-dev-env-linux",
+                        "registry.datadoghq.com/agent-dev-env-linux",
                     ],
                 ),
                 {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": mocker.ANY},
@@ -557,7 +557,7 @@ class TestStart:
             exit_code=0,
             output=helpers.dedent(
                 """
-                Pulling image: datadog/agent-dev-env-linux
+                Pulling image: registry.datadoghq.com/agent-dev-env-linux
                 Creating and starting container: dda-linux-container-default
                 Waiting for container: dda-linux-container-default
                 """
@@ -573,7 +573,7 @@ class TestStart:
         volumes = get_volumes()
         assert calls == [
             (
-                ([helpers.locate("docker"), "pull", "datadog/agent-dev-env-linux"],),
+                ([helpers.locate("docker"), "pull", "registry.datadoghq.com/agent-dev-env-linux"],),
                 {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": mocker.ANY},
             ),
             (
@@ -631,7 +631,7 @@ class TestStart:
                         f"{repo1_dir}:/repos/datadog-agent",
                         "-v",
                         f"{repo2_dir}:/repos/integrations-core",
-                        "datadog/agent-dev-env-linux",
+                        "registry.datadoghq.com/agent-dev-env-linux",
                     ],
                 ),
                 {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": mocker.ANY},
@@ -660,7 +660,7 @@ class TestStart:
             exit_code=0,
             output=helpers.dedent(
                 """
-                Pulling image: datadog/agent-dev-env-linux
+                Pulling image: registry.datadoghq.com/agent-dev-env-linux
                 Creating and starting container: dda-linux-container-default
                 Waiting for container: dda-linux-container-default
                 Cloning repository: datadog-agent@tag
@@ -678,7 +678,7 @@ class TestStart:
         volumes = get_volumes()
         assert calls == [
             (
-                ([helpers.locate("docker"), "pull", "datadog/agent-dev-env-linux"],),
+                ([helpers.locate("docker"), "pull", "registry.datadoghq.com/agent-dev-env-linux"],),
                 {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": mocker.ANY},
             ),
             (
@@ -732,7 +732,7 @@ class TestStart:
                         *volumes,
                         *get_aws_mount(),
                         *get_codex_mount(),
-                        "datadog/agent-dev-env-linux",
+                        "registry.datadoghq.com/agent-dev-env-linux",
                     ],
                 ),
                 {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": mocker.ANY},
@@ -873,7 +873,7 @@ class TestStart:
                         *get_aws_mount(),
                         *get_codex_mount(),
                         *[(x if x != "-v" else "--volume") for x in volume_specs],
-                        "datadog/agent-dev-env-linux",
+                        "registry.datadoghq.com/agent-dev-env-linux",
                     ],
                 ),
                 {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": mocker.ANY},
@@ -997,7 +997,7 @@ class TestStart:
                         *get_aws_mount(),
                         *get_codex_mount(),
                         *[(x if x != "-m" else "--mount") for x in mount_specs],
-                        "datadog/agent-dev-env-linux",
+                        "registry.datadoghq.com/agent-dev-env-linux",
                     ],
                 ),
                 {"encoding": "utf-8", "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": mocker.ANY},
