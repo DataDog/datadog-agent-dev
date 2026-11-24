@@ -234,7 +234,7 @@ jobs:
     needs:
     - binaries
     - python-artifacts
-    runs-on: windows-2022
+    runs-on: windows-2025
 
     env:
       VERSION: ${{ needs.python-artifacts.outputs.version }}
@@ -319,7 +319,7 @@ jobs:
     needs:
     - binaries
     - python-artifacts
-    runs-on: macos-15
+    runs-on: macos-26
     environment:
       name: protected
 
@@ -346,7 +346,7 @@ jobs:
     needs:
     - binaries
     - python-artifacts
-    runs-on: macos-15
+    runs-on: macos-26
 
     steps:
     - name: Checkout code
